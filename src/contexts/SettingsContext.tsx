@@ -9,6 +9,7 @@ interface SettingsContextType {
   setLanguage: (language: 'fr' | 'en') => void;
   setCurrency: (currency: 'EUR' | 'USD' | 'XOF' | 'MAD') => void;
   t: (key: string) => string;
+  formatCurrency: (amount: number) => string;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -34,7 +35,44 @@ const translations = {
     edit: 'Modifier',
     delete: 'Supprimer',
     add: 'Ajouter',
-    close: 'Fermer'
+    close: 'Fermer',
+    // Currency symbols
+    currency_symbol: 'EUR' === 'EUR' ? '€' : 'USD' === 'USD' ? '$' : 'XOF' === 'XOF' ? 'FCFA' : 'MAD' === 'MAD' ? 'DH' : '€',
+    // Units
+    select_unit: 'Sélectionner une unité',
+    production_unit: 'Unité de production',
+    // Sales
+    new_sale: 'Nouvelle Vente',
+    client_name: 'Nom du client',
+    contact: 'Contact',
+    products: 'Produits',
+    total: 'Total',
+    payment_method: 'Mode de paiement',
+    notes: 'Notes',
+    // HR
+    employee_management: 'Gestion des Employés',
+    new_employee: 'Nouvel Employé',
+    first_name: 'Prénom',
+    last_name: 'Nom',
+    email: 'Email',
+    phone: 'Téléphone',
+    position: 'Poste',
+    salary: 'Salaire',
+    // Planning
+    planning_management: 'Planification & Organisation',
+    new_task: 'Nouvelle Tâche',
+    task_title: 'Titre de la tâche',
+    task_description: 'Description',
+    task_date: 'Date',
+    task_time: 'Heure',
+    // Weather
+    weather_dashboard: 'Météo Agricole',
+    current_conditions: 'Conditions actuelles',
+    temperature: 'Température',
+    humidity: 'Humidité',
+    precipitation: 'Précipitations',
+    wind_speed: 'Vitesse du vent',
+    forecast: 'Prévisions'
   },
   en: {
     // Navigation
@@ -56,17 +94,93 @@ const translations = {
     edit: 'Edit',
     delete: 'Delete',
     add: 'Add',
-    close: 'Close'
+    close: 'Close',
+    // Currency symbols
+    currency_symbol: 'EUR' === 'EUR' ? '€' : 'USD' === 'USD' ? '$' : 'XOF' === 'XOF' ? 'CFA' : 'MAD' === 'MAD' ? 'DH' : '€',
+    // Units  
+    select_unit: 'Select a unit',
+    production_unit: 'Production unit',
+    // Sales
+    new_sale: 'New Sale',
+    client_name: 'Client name',
+    contact: 'Contact',
+    products: 'Products',
+    total: 'Total',
+    payment_method: 'Payment method',
+    notes: 'Notes',
+    // HR
+    employee_management: 'Employee Management',
+    new_employee: 'New Employee',
+    first_name: 'First name',
+    last_name: 'Last name',
+    email: 'Email',
+    phone: 'Phone',
+    position: 'Position',
+    salary: 'Salary',
+    // Planning
+    planning_management: 'Planning & Organization',
+    new_task: 'New Task',
+    task_title: 'Task title',
+    task_description: 'Description',
+    task_date: 'Date',
+    task_time: 'Time',
+    // Weather
+    weather_dashboard: 'Agricultural Weather',
+    current_conditions: 'Current conditions',
+    temperature: 'Temperature',
+    humidity: 'Humidity',
+    precipitation: 'Precipitation',
+    wind_speed: 'Wind speed',
+    forecast: 'Forecast'
   }
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
-  const [language, setLanguage] = useState<'fr' | 'en'>('fr');
-  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('EUR');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>(() => {
+    return localStorage.getItem('app-theme') as 'light' | 'dark' | 'auto' || 'light';
+  });
+  const [language, setLanguage] = useState<'fr' | 'en'>(() => {
+    return localStorage.getItem('app-language') as 'fr' | 'en' || 'fr';
+  });
+  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>(() => {
+    return localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD' || 'EUR';
+  });
 
   const t = (key: string): string => {
     return translations[language][key] || key;
+  };
+
+  const formatCurrency = (amount: number): string => {
+    const currencySymbols = {
+      'EUR': '€',
+      'USD': '$', 
+      'XOF': 'FCFA',
+      'MAD': 'DH'
+    };
+    
+    const symbol = currencySymbols[currency];
+    const formatted = amount.toLocaleString(language === 'fr' ? 'fr-FR' : 'en-US');
+    
+    if (currency === 'XOF' || currency === 'MAD') {
+      return `${formatted} ${symbol}`;
+    } else {
+      return currency === 'USD' ? `${symbol}${formatted}` : `${formatted}${symbol}`;
+    }
+  };
+
+  const handleSetTheme = (newTheme: 'light' | 'dark' | 'auto') => {
+    setTheme(newTheme);
+    localStorage.setItem('app-theme', newTheme);
+  };
+
+  const handleSetLanguage = (newLanguage: 'fr' | 'en') => {
+    setLanguage(newLanguage);
+    localStorage.setItem('app-language', newLanguage);
+  };
+
+  const handleSetCurrency = (newCurrency: 'EUR' | 'USD' | 'XOF' | 'MAD') => {
+    setCurrency(newCurrency);
+    localStorage.setItem('app-currency', newCurrency);
   };
 
   useEffect(() => {
@@ -91,10 +205,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       theme,
       language,
       currency,
-      setTheme,
-      setLanguage,
-      setCurrency,
-      t
+      setTheme: handleSetTheme,
+      setLanguage: handleSetLanguage,
+      setCurrency: handleSetCurrency,
+      t,
+      formatCurrency
     }}>
       {children}
     </SettingsContext.Provider>

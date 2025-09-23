@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,8 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, Plus, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { useLogs } from '@/contexts/LogsContext';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Task {
   id: string;
@@ -23,6 +26,10 @@ interface Task {
 }
 
 const TaskScheduler = () => {
+  const { addLog } = useLogs();
+  const { units } = useProductionUnits();
+  const { t } = useSettings();
+  
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
@@ -33,7 +40,8 @@ const TaskScheduler = () => {
       dueDate: '2024-07-04',
       dueTime: '08:00',
       priority: 'high',
-      status: 'pending'
+      status: 'pending',
+      unitId: 'GROSS001'
     },
     {
       id: '2',
@@ -44,36 +52,40 @@ const TaskScheduler = () => {
       dueDate: '2024-07-04',
       dueTime: '10:00',
       priority: 'medium',
-      status: 'completed'
+      status: 'completed',
+      unitId: 'ECLO001'
     }
   ]);
 
   const [showAddTask, setShowAddTask] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [taskForm, setTaskForm] = useState({
     title: '',
     type: 'feeding' as Task['type'],
     description: '',
     assignedTo: '',
     dueDate: new Date().toISOString().split('T')[0],
     dueTime: '09:00',
-    priority: 'medium' as Task['priority']
+    priority: 'medium' as Task['priority'],
+    unitId: ''
   });
 
   const addTask = () => {
     const task: Task = {
       id: Date.now().toString(),
-      ...newTask,
+      ...taskForm,
       status: 'pending'
     };
     setTasks([...tasks, task]);
-    setNewTask({
+    addLog('Tâche ajoutée', 'Planification', `${taskForm.title} programmée pour ${taskForm.dueDate}`, 'info');
+    setTaskForm({
       title: '',
       type: 'feeding',
       description: '',
       assignedTo: '',
       dueDate: new Date().toISOString().split('T')[0],
       dueTime: '09:00',
-      priority: 'medium'
+      priority: 'medium',
+      unitId: ''
     });
     setShowAddTask(false);
   };
@@ -139,8 +151,8 @@ const TaskScheduler = () => {
                 <Label htmlFor="taskTitle">Titre de la tâche</Label>
                 <Input
                   id="taskTitle"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                  value={taskForm.title}
+                  onChange={(e) => setTaskForm({...taskForm, title: e.target.value})}
                   placeholder="Ex: Nourrissage des carpes"
                 />
               </div>
@@ -148,8 +160,8 @@ const TaskScheduler = () => {
               <div>
                 <Label htmlFor="taskType">Type de tâche</Label>
                 <Select 
-                  value={newTask.type} 
-                  onValueChange={(value) => setNewTask({...newTask, type: value as Task['type']})}
+                  value={taskForm.type} 
+                  onValueChange={(value) => setTaskForm({...taskForm, type: value as Task['type']})}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -168,8 +180,8 @@ const TaskScheduler = () => {
               <div>
                 <Label htmlFor="taskPriority">Priorité</Label>
                 <Select 
-                  value={newTask.priority} 
-                  onValueChange={(value) => setNewTask({...newTask, priority: value as Task['priority']})}
+                  value={taskForm.priority} 
+                  onValueChange={(value) => setTaskForm({...taskForm, priority: value as Task['priority']})}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -187,8 +199,8 @@ const TaskScheduler = () => {
                 <Input
                   id="taskDate"
                   type="date"
-                  value={newTask.dueDate}
-                  onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                  value={taskForm.dueDate}
+                  onChange={(e) => setTaskForm({...taskForm, dueDate: e.target.value})}
                 />
               </div>
 
@@ -197,8 +209,8 @@ const TaskScheduler = () => {
                 <Input
                   id="taskTime"
                   type="time"
-                  value={newTask.dueTime}
-                  onChange={(e) => setNewTask({...newTask, dueTime: e.target.value})}
+                  value={taskForm.dueTime}
+                  onChange={(e) => setTaskForm({...taskForm, dueTime: e.target.value})}
                 />
               </div>
 
@@ -206,18 +218,34 @@ const TaskScheduler = () => {
                 <Label htmlFor="taskAssigned">Assigné à</Label>
                 <Input
                   id="taskAssigned"
-                  value={newTask.assignedTo}
-                  onChange={(e) => setNewTask({...newTask, assignedTo: e.target.value})}
+                  value={taskForm.assignedTo}
+                  onChange={(e) => setTaskForm({...taskForm, assignedTo: e.target.value})}
                   placeholder="Nom de la personne"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="taskUnit">Unité de production</Label>
+                <Select value={taskForm.unitId} onValueChange={(value) => setTaskForm({...taskForm, unitId: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une unité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map(unit => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name} - {unit.type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="md:col-span-2">
                 <Label htmlFor="taskDescription">Description</Label>
                 <Textarea
                   id="taskDescription"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
                   placeholder="Détails de la tâche..."
                   rows={3}
                 />
@@ -258,6 +286,9 @@ const TaskScheduler = () => {
                       {task.dueDate} à {task.dueTime}
                     </div>
                     <span>Assigné à: <strong>{task.assignedTo}</strong></span>
+                    {task.unitId && (
+                      <span>Unité: <strong>{units.find(u => u.id === task.unitId)?.name}</strong></span>
+                    )}
                   </div>
                 </div>
                 
@@ -278,8 +309,9 @@ const TaskScheduler = () => {
                       <Button 
                         size="sm" 
                         onClick={() => updateTaskStatus(task.id, 'completed')}
+                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
-                        <CheckCircle className="w-4 h-4" />
+                        <CheckCircle2 className="w-3 h-3" />
                       </Button>
                     </div>
                   )}
