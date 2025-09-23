@@ -1,0 +1,381 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 180 83% 52%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 180 65% 85%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 180 83% 52%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 180 83% 52%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 180 65% 95%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 180 83% 52%;
+
+    /* Aquaculture specific colors */
+    --aqua-primary: 180 83% 52%;
+    --aqua-secondary: 180 65% 85%;
+    --ocean-primary: 210 80% 45%;
+    --ocean-secondary: 210 60% 75%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 180 83% 52%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 180 83% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 180 83% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Amélioration de la lisibilité sur mobile */
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    html {
+      font-size: 13px;
+    }
+  }
+
+  /* Ajustement automatique des textes */
+  h1, h2, h3, h4, h5, h6 {
+    @apply leading-tight;
+  }
+
+  /* Espacement mobile optimisé */
+  @media (max-width: 768px) {
+    .space-y-6 > * + * {
+      margin-top: 1rem !important;
+    }
+    
+    .space-y-4 > * + * {
+      margin-top: 0.75rem !important;
+    }
+    
+    .gap-6 {
+      gap: 1rem !important;
+    }
+    
+    .gap-4 {
+      gap: 0.75rem !important;
+    }
+
+    .p-6 {
+      padding: 1rem !important;
+    }
+
+    .px-6 {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    .py-6 {
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .space-y-4 > * + * {
+      margin-top: 0.5rem !important;
+    }
+    
+    .gap-4 {
+      gap: 0.5rem !important;
+    }
+
+    .p-4 {
+      padding: 0.75rem !important;
+    }
+
+    .px-4 {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    .text-2xl {
+      font-size: 1.25rem !important;
+      line-height: 1.75rem !important;
+    }
+
+    .text-xl {
+      font-size: 1.125rem !important;
+      line-height: 1.75rem !important;
+    }
+  }
+
+  /* Scrollbar personnalisé */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.4);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.6);
+  }
+}
+
+/* Animations personnalisées pour l'aquaculture */
+@layer utilities {
+  .animate-wave {
+    animation: wave 3s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 2s ease-in-out infinite;
+  }
+  
+  .bg-gradient-aqua {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--aqua-secondary)) 50%, hsl(var(--primary)) 100%);
+  }
+  
+  .bg-gradient-ocean {
+    background: linear-gradient(135deg, hsl(var(--ocean-primary)) 0%, hsl(var(--primary)) 50%, hsl(var(--ocean-secondary)) 100%);
+  }
+
+  /* Utilitaires responsifs professionnels */
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  .text-responsive-title {
+    @apply text-lg sm:text-xl lg:text-2xl xl:text-3xl;
+  }
+
+  .text-responsive-subtitle {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+
+  .text-responsive-small {
+    @apply text-xs sm:text-sm;
+  }
+
+  .p-responsive {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+
+  .px-responsive {
+    @apply px-3 sm:px-4 lg:px-6;
+  }
+
+  .py-responsive {
+    @apply py-3 sm:py-4 lg:py-6;
+  }
+
+  .m-responsive {
+    @apply m-3 sm:m-4 lg:m-6;
+  }
+
+  .gap-responsive {
+    @apply gap-3 sm:gap-4 lg:gap-6;
+  }
+
+  .space-y-responsive > * + * {
+    @apply mt-3 sm:mt-4 lg:mt-6;
+  }
+
+  /* Grilles responsives */
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  /* Cartes responsives */
+  .card-responsive {
+    @apply p-3 sm:p-4 lg:p-6 rounded-lg bg-card border shadow-sm;
+  }
+
+  /* Classes pour éviter les débordements sur mobile */
+  .safe-area-mobile {
+    @apply pb-20 md:pb-6;
+  }
+
+  .mobile-friendly-modal {
+    @apply max-h-[90vh] overflow-y-auto;
+  }
+
+  .mobile-friendly-table {
+    @apply text-xs sm:text-sm overflow-x-auto;
+  }
+
+  /* Support offline - à développer avec service worker */
+  .offline-indicator {
+    @apply fixed top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm z-50;
+  }
+
+  /* États de chargement */
+  .loading-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  /* Boutons responsifs */
+  .btn-responsive {
+    @apply px-3 py-2 sm:px-4 sm:py-2 lg:px-6 lg:py-3 text-sm sm:text-base;
+  }
+
+  /* Icônes responsives */
+  .icon-responsive {
+    @apply w-4 h-4 sm:w-5 sm:h-5;
+  }
+
+  .icon-responsive-lg {
+    @apply w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8;
+  }
+}
+
+/* Support pour les appareils tactiles */
+@media (hover: none) and (pointer: coarse) {
+  button, .clickable, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Améliorer l'expérience tactile */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Mode sombre supporté automatiquement par les variables CSS */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Animations pour les interactions */
+@keyframes wave {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(1deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-3px) rotate(-1deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Focus visible pour l'accessibilité */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Optimisation pour l'impression */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .bg-gradient-aqua,
+  .bg-gradient-ocean {
+    background: white !important;
+    color: black !important;
+  }
+}

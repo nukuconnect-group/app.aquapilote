@@ -1,0 +1,569 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign } from 'lucide-react';
+import { useLogs } from '@/contexts/LogsContext';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import ClientManager from './economics/ClientManager';
+import InvoiceManager from './economics/InvoiceManager';
+import DocumentTemplateManager from './economics/DocumentTemplateManager';
+
+interface Sale {
+  id: string;
+  date: string;
+  clientName: string;
+  clientContact: string;
+  unitId: string;
+  products: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+  totalAmount: number;
+  status: 'pending' | 'confirmed' | 'delivered' | 'paid';
+  paymentMethod: string;
+  notes: string;
+}
+
+const SalesManagement = () => {
+  const { addLog } = useLogs();
+  const { units, activeUnit } = useProductionUnits();
+  
+  const [showSaleDialog, setShowSaleDialog] = useState(false);
+  const [sales, setSales] = useState<Sale[]>([
+    {
+      id: 'V001',
+      date: '2024-03-15',
+      clientName: 'Restaurant Le Poisson Doré',
+      clientContact: '0123456789',
+      unitId: 'GROSS001',
+      products: [
+        { name: 'Carpes matures', quantity: 50, unitPrice: 15, total: 750 },
+        { name: 'Tilapias 500g+', quantity: 30, unitPrice: 18, total: 540 }
+      ],
+      totalAmount: 1290,
+      status: 'delivered',
+      paymentMethod: 'Virement',
+      notes: 'Livraison hebdomadaire'
+    }
+  ]);
+
+  const [newSale, setNewSale] = useState({
+    clientName: '',
+    clientContact: '',
+    unitId: activeUnit?.id || '',
+    products: [{ name: '', quantity: 0, unitPrice: 0 }],
+    paymentMethod: 'Espèces',
+    notes: ''
+  });
+
+  const [salesData] = useState({
+    totalRevenue: 125000,
+    totalOrders: 89,
+    totalClients: 24,
+    avgOrderValue: 1400,
+    monthlyGrowth: 12.5,
+    topProducts: [
+      { name: 'Carpes matures', quantity: 2500, revenue: 37500 },
+      { name: 'Tilapias 500g+', quantity: 1800, revenue: 32400 },
+      { name: 'Alevins carpe', quantity: 5000, revenue: 12500 }
+    ]
+  });
+
+  const handleSaveSale = () => {
+    const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
+    
+    const sale: Sale = {
+      id: `V${String(sales.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString().split('T')[0],
+      clientName: newSale.clientName,
+      clientContact: newSale.clientContact,
+      unitId: newSale.unitId,
+      products: newSale.products.map(p => ({
+        ...p,
+        total: p.quantity * p.unitPrice
+      })),
+      totalAmount,
+      status: 'pending',
+      paymentMethod: newSale.paymentMethod,
+      notes: newSale.notes
+    };
+
+    setSales(prev => [sale, ...prev]);
+    addLog('Nouvelle vente', 'Vente', `Vente créée pour ${sale.clientName} - ${totalAmount}€`, 'info');
+    
+    setNewSale({
+      clientName: '',
+      clientContact: '',
+      unitId: activeUnit?.id || '',
+      products: [{ name: '', quantity: 0, unitPrice: 0 }],
+      paymentMethod: 'Espèces',
+      notes: ''
+    });
+    setShowSaleDialog(false);
+  };
+
+  const addProduct = () => {
+    setNewSale(prev => ({
+      ...prev,
+      products: [...prev.products, { name: '', quantity: 0, unitPrice: 0 }]
+    }));
+  };
+
+  const updateProduct = (index: number, field: string, value: any) => {
+    setNewSale(prev => ({
+      ...prev,
+      products: prev.products.map((product, i) => 
+        i === index ? { ...product, [field]: value } : product
+      )
+    }));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'paid': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'confirmed': return 'Confirmée';
+      case 'delivered': return 'Livrée';
+      case 'paid': return 'Payée';
+      default: return status;
+    }
+  };
+
+  const generateSalesReport = () => {
+    const reportData = {
+      period: 'Mars 2024',
+      revenue: salesData.totalRevenue,
+      orders: salesData.totalOrders,
+      clients: salesData.totalClients,
+      products: salesData.topProducts,
+      units: units.map(unit => ({
+        name: unit.name,
+        type: unit.type,
+        revenue: Math.floor(Math.random() * 20000) + 5000
+      }))
+    };
+
+    const csvContent = [
+      ['Rapport de Ventes - ' + reportData.period],
+      [''],
+      ['Résumé Global'],
+      ['Chiffre d\'affaires total', reportData.revenue + '€'],
+      ['Nombre de commandes', reportData.orders],
+      ['Nombre de clients', reportData.clients],
+      [''],
+      ['Produits les plus vendus'],
+      ['Produit', 'Quantité', 'Chiffre d\'affaires'],
+      ...reportData.products.map(p => [p.name, p.quantity, p.revenue + '€']),
+      [''],
+      ['Ventes par unité'],
+      ['Unité', 'Type', 'Chiffre d\'affaires'],
+      ...reportData.units.map(u => [u.name, u.type, u.revenue + '€'])
+    ].map(row => Array.isArray(row) ? row.join(',') : row).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rapport_ventes_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    addLog('Export rapport', 'Vente', 'Rapport de ventes exporté en CSV', 'info');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* En-tête */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-xl text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Gestion des Ventes</h2>
+            <p className="text-green-100">Suivi des ventes, clients et facturation par unité</p>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle Vente
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Créer une Nouvelle Vente</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nom du client</Label>
+                      <Input 
+                        value={newSale.clientName}
+                        onChange={(e) => setNewSale(prev => ({ ...prev, clientName: e.target.value }))}
+                        placeholder="Nom du client"
+                      />
+                    </div>
+                    <div>
+                      <Label>Contact</Label>
+                      <Input 
+                        value={newSale.clientContact}
+                        onChange={(e) => setNewSale(prev => ({ ...prev, clientContact: e.target.value }))}
+                        placeholder="Téléphone ou email"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label>Unité de production</Label>
+                    <Select value={newSale.unitId} onValueChange={(value) => setNewSale(prev => ({ ...prev, unitId: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une unité" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map(unit => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.name} - {unit.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Produits</Label>
+                      <Button size="sm" variant="outline" onClick={addProduct}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Ajouter
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {newSale.products.map((product, index) => (
+                        <div key={index} className="grid grid-cols-4 gap-2 p-2 border rounded">
+                          <Input 
+                            placeholder="Produit"
+                            value={product.name}
+                            onChange={(e) => updateProduct(index, 'name', e.target.value)}
+                          />
+                          <Input 
+                            type="number"
+                            placeholder="Quantité"
+                            value={product.quantity || ''}
+                            onChange={(e) => updateProduct(index, 'quantity', parseInt(e.target.value) || 0)}
+                          />
+                          <Input 
+                            type="number"
+                            step="0.01"
+                            placeholder="Prix unitaire"
+                            value={product.unitPrice || ''}
+                            onChange={(e) => updateProduct(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          />
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium">
+                              {(product.quantity * product.unitPrice).toFixed(2)}€
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-right mt-2">
+                      <span className="text-lg font-bold">
+                        Total: {newSale.products.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0).toFixed(2)}€
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Mode de paiement</Label>
+                      <Select value={newSale.paymentMethod} onValueChange={(value) => setNewSale(prev => ({ ...prev, paymentMethod: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Espèces">Espèces</SelectItem>
+                          <SelectItem value="Virement">Virement</SelectItem>
+                          <SelectItem value="Carte">Carte bancaire</SelectItem>
+                          <SelectItem value="Chèque">Chèque</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Notes</Label>
+                      <Input 
+                        value={newSale.notes}
+                        onChange={(e) => setNewSale(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Notes additionnelles"
+                      />
+                    </div>
+                  </div>
+
+                  <Button onClick={handleSaveSale} className="w-full">
+                    Enregistrer la vente
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" onClick={generateSalesReport}>
+              <Download className="w-4 h-4 mr-2" />
+              Rapport
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">€{salesData.totalRevenue.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Chiffre d'affaires</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="w-8 h-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold">{salesData.totalOrders}</p>
+                <p className="text-sm text-gray-600">Commandes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Users className="w-8 h-8 text-purple-600" />
+              <div>
+                <p className="text-2xl font-bold">{salesData.totalClients}</p>
+                <p className="text-sm text-gray-600">Clients actifs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-8 h-8 text-orange-600" />
+              <div>
+                <p className="text-2xl font-bold">€{salesData.avgOrderValue}</p>
+                <p className="text-sm text-gray-600">Panier moyen</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs pour les différentes fonctionnalités */}
+      <Tabs defaultValue="history" className="space-y-4">
+        <TabsList className="grid grid-cols-6 w-full">
+          <TabsTrigger value="history">Historique</TabsTrigger>
+          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="clients">Clients</TabsTrigger>
+          <TabsTrigger value="invoices">Factures</TabsTrigger>
+          <TabsTrigger value="templates">Modèles</TabsTrigger>
+          <TabsTrigger value="products">Produits</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="history" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Historique Détaillé des Ventes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {sales.map(sale => (
+                  <div key={sale.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold">{sale.clientName}</h4>
+                        <p className="text-sm text-gray-600">
+                          {new Date(sale.date).toLocaleDateString('fr-FR')} - {sale.clientContact}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={getStatusColor(sale.status)}>
+                          {getStatusText(sale.status)}
+                        </Badge>
+                        <p className="text-lg font-bold text-green-600 mt-1">
+                          {sale.totalAmount.toFixed(2)}€
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded p-3 mb-3">
+                      <p className="text-sm font-medium mb-2">Produits vendus:</p>
+                      {sale.products.map((product, idx) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span>{product.name} x {product.quantity}</span>
+                          <span>{product.total.toFixed(2)}€</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Unité:</span>
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {units.find(u => u.id === sale.unitId)?.name}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Paiement:</span>
+                        <span className="ml-2 font-medium">{sale.paymentMethod}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Réf:</span>
+                        <span className="ml-2 font-mono">{sale.id}</span>
+                      </div>
+                    </div>
+                    
+                    {sale.notes && (
+                      <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                        <strong>Notes:</strong> {sale.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  Produits les plus vendus
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {salesData.topProducts.map((product, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-sm text-gray-600">{product.quantity} unités vendues</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">€{product.revenue.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-blue-600" />
+                  Ventes par unité
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {units.slice(0, 4).map((unit) => (
+                    <div key={unit.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{unit.name}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {unit.type}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-blue-600">
+                          €{(Math.floor(Math.random() * 20000) + 5000).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <ClientManager />
+        </TabsContent>
+
+        <TabsContent value="invoices">
+          <InvoiceManager />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <DocumentTemplateManager />
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Catalogue de Produits
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouveau Produit
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {salesData.topProducts.map((product, idx) => (
+                  <div key={idx} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">{product.name}</h4>
+                      <p className="text-sm text-gray-600">Stock disponible: {product.quantity} unités</p>
+                      <div className="flex items-center justify-between">
+                        <Badge className="bg-green-100 text-green-800">
+                          €{(product.revenue / product.quantity).toFixed(2)}/unité
+                        </Badge>
+                        <Button size="sm" variant="outline">
+                          Modifier
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default SalesManagement;
