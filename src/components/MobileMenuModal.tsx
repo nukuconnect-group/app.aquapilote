@@ -19,7 +19,9 @@ import {
   Package,
   Calculator,
   UserCheck,
-  ShoppingCart
+  ShoppingCart,
+  ShoppingBag,
+  Settings
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -50,8 +52,9 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       items: [
         { id: 'production', label: t('production'), icon: BarChart3, color: 'text-green-600' },
         { id: 'accounting', label: t('accounting'), icon: Calculator, color: 'text-emerald-600' },
+        { id: 'purchases', label: t('purchases'), icon: ShoppingCart, color: 'text-blue-600' },
+        { id: 'sales', label: t('sales'), icon: ShoppingBag, color: 'text-pink-600' },
         { id: 'hr', label: t('hr'), icon: UserCheck, color: 'text-indigo-600' },
-        { id: 'sales', label: t('sales'), icon: ShoppingCart, color: 'text-pink-600' },
       ]
     },
     // Planification et rapports
@@ -62,6 +65,13 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'weather', label: t('weather'), icon: CloudRain, color: 'text-sky-600' },
         { id: 'team', label: t('team'), icon: Users, color: 'text-pink-600' },
         { id: 'reports', label: t('reports'), icon: FileText, color: 'text-slate-600' }
+      ]
+    },
+    // Configuration
+    {
+      category: 'Configuration',
+      items: [
+        { id: 'settings', label: t('settings'), icon: Settings, color: 'text-gray-600' }
       ]
     }
   ];

@@ -34,7 +34,7 @@ const WeatherDashboard = () => {
   const [selectedZone, setSelectedZone] = useState('auto');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
-  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number, country?: string, city?: string} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
 
   const zones = [
@@ -288,11 +288,31 @@ const WeatherDashboard = () => {
     setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          });
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          
+          // Tentative de géocodage inverse pour obtenir le pays
+          try {
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=fr`);
+            const data = await response.json();
+            
+            setUserLocation({
+              lat,
+              lon,
+              country: data.countryName || 'Pays non identifié',
+              city: data.city || data.locality || 'Ville non identifiée'
+            });
+          } catch (error) {
+            // En cas d'échec du géocodage, utiliser les coordonnées uniquement
+            setUserLocation({
+              lat,
+              lon,
+              country: 'Pays non identifié',
+              city: 'Position GPS'
+            });
+          }
+          
           setSelectedZone('auto');
           setIsLocating(false);
         },
@@ -422,7 +442,12 @@ const WeatherDashboard = () => {
                 <SelectContent>
                   <div className="p-2 text-xs font-semibold text-gray-500 border-b">Ma Position</div>
                   <SelectItem value="auto" className="text-xs sm:text-sm">
-                    📍 Ma position actuelle
+                    📍 Ma position actuelle 
+                    {userLocation && userLocation.country && (
+                      <span className="text-muted-foreground ml-1">
+                        - {userLocation.city}, {userLocation.country}
+                      </span>
+                    )}
                   </SelectItem>
                   
                   <div className="p-2 text-xs font-semibold text-gray-500 border-b mt-2">Afrique de l'Ouest</div>
@@ -696,39 +721,84 @@ const WeatherDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Zones à forte pluviométrie */}
+      {/* Zones à surveillance météo proches */}
       <Card>
         <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-base sm:text-lg">Surveillance Pluviométrique</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Surveillance Zones Proches</CardTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Surveillance météorologique des zones dans un rayon de 200km
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {zones.filter(zone => zone.id !== 'auto').map((zone) => {
-              const zoneData = getWeatherForZone(zone.id);
-              const isHighRain = zoneData && zoneData.precipitation > 15;
-              return (
-                <div 
-                  key={zone.id} 
-                  className={`p-2 sm:p-3 border rounded-lg ${
-                    isHighRain ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1 sm:mb-2">
-                    <h4 className="font-medium text-sm sm:text-base">{zone.name}</h4>
-                    {isHighRain && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />}
-                  </div>
-                  <p className="text-lg sm:text-2xl font-bold text-blue-600">
-                    {zoneData ? zoneData.precipitation : 0}mm
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-600">{zone.coordinates}</p>
-                  {isHighRain && (
-                    <Badge className="mt-1 sm:mt-2 bg-blue-100 text-blue-800 text-xs">
-                      Zone à risque
-                    </Badge>
-                  )}
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {(() => {
+              const currentZone = zones.find(z => z.id === selectedZone);
+              if (!currentZone || selectedZone === 'auto') {
+                // Si position automatique ou zone non trouvée, afficher zones d'Afrique de l'Ouest par défaut
+                return zones.filter(zone => 
+                  ['Togo', 'Ghana', 'Bénin', 'Burkina Faso', 'Côte d\'Ivoire'].includes(zone.country)
+                ).slice(0, 6).map((zone) => {
+                  const zoneData = getWeatherForZone(zone.id);
+                  const isHighRain = zoneData && zoneData.precipitation > 15;
+                  return (
+                    <div 
+                      key={zone.id} 
+                      className={`p-2 sm:p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors ${
+                        isHighRain ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedZone(zone.id)}
+                    >
+                      <div className="flex items-center justify-between mb-1 sm:mb-2">
+                        <h4 className="font-medium text-sm sm:text-base">{zone.name}</h4>
+                        {isHighRain && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />}
+                      </div>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {zoneData ? `${zoneData.precipitation.toFixed(1)}mm` : '-- mm'}
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-gray-600">{zone.country}</p>
+                      {isHighRain && (
+                        <Badge className="mt-1 sm:mt-2 bg-blue-100 text-blue-800 text-xs">
+                          Zone à surveiller
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                });
+              } else {
+                // Afficher zones proches basées sur le continent de la zone sélectionnée
+                return zones.filter(zone => 
+                  zone.continent === currentZone.continent && 
+                  zone.id !== currentZone.id &&
+                  zone.id !== 'auto'
+                ).slice(0, 6).map((zone) => {
+                  const zoneData = getWeatherForZone(zone.id);
+                  const isHighRain = zoneData && zoneData.precipitation > 15;
+                  return (
+                    <div 
+                      key={zone.id} 
+                      className={`p-2 sm:p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors ${
+                        isHighRain ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedZone(zone.id)}
+                    >
+                      <div className="flex items-center justify-between mb-1 sm:mb-2">
+                        <h4 className="font-medium text-sm sm:text-base">{zone.name}</h4>
+                        {isHighRain && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />}
+                      </div>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {zoneData ? `${zoneData.precipitation.toFixed(1)}mm` : '-- mm'}
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-gray-600">{zone.country}</p>
+                      {isHighRain && (
+                        <Badge className="mt-1 sm:mt-2 bg-blue-100 text-blue-800 text-xs">
+                          Zone à surveiller
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                });
+              }
+            })()}
           </div>
         </CardContent>
       </Card>

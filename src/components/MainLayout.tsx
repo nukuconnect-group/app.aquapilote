@@ -16,6 +16,7 @@ import ProductionManagement from './ProductionManagement';
 import AccountingManagement from './AccountingManagement';
 import HRManagement from './HRManagement';
 import SalesManagement from './SalesManagement';
+import PurchasesManagement from './PurchasesManagement';
 import PlanningManagement from './PlanningManagement';
 import WeatherDashboard from './WeatherDashboard';
 import TeamManagement from './TeamManagement';
@@ -60,6 +61,8 @@ const MainLayout = () => {
         return <AccountingManagement />;
       case 'hr':
         return <HRManagement />;
+      case 'purchases':
+        return <PurchasesManagement />;
       case 'sales':
         return <SalesManagement />;
       case 'planning':

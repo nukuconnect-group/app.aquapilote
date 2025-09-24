@@ -77,6 +77,7 @@ const translations = {
     task_description: 'Description',
     task_date: 'Date',
     task_time: 'Heure',
+    purchases: 'Achats',
     // Weather
     weather_dashboard: 'Météo Agricole',
     current_conditions: 'Conditions actuelles',
@@ -148,6 +149,7 @@ const translations = {
     task_description: 'Description',
     task_date: 'Date',
     task_time: 'Time',
+    purchases: 'Purchases',
     // Weather
     weather_dashboard: 'Agricultural Weather',
     current_conditions: 'Current conditions',
