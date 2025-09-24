@@ -681,8 +681,8 @@ const WeatherDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {zones.filter(zone => zone.id !== 'auto').map((zone) => {
-              const zoneData = weatherDatabase[zone.id];
-              const isHighRain = zoneData.precipitation > 15;
+              const zoneData = getWeatherForZone(zone.id);
+              const isHighRain = zoneData && zoneData.precipitation > 15;
               return (
                 <div 
                   key={zone.id} 
@@ -695,7 +695,7 @@ const WeatherDashboard = () => {
                     {isHighRain && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />}
                   </div>
                   <p className="text-lg sm:text-2xl font-bold text-blue-600">
-                    {zoneData.precipitation}mm
+                    {zoneData ? zoneData.precipitation : 0}mm
                   </p>
                   <p className="text-[10px] sm:text-xs text-gray-600">{zone.coordinates}</p>
                   {isHighRain && (
