@@ -60,19 +60,19 @@ const IoTControlCenter = () => {
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 rounded-xl text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Centre de Contrôle & IoT</h2>
-            <p className="text-blue-100">Surveillance intelligente et automatisation avancée</p>
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-responsive rounded-xl text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-responsive">
+          <div className="flex-1">
+            <h2 className="text-responsive-title font-bold mb-2">Centre de Contrôle & IoT</h2>
+            <p className="text-blue-100 text-responsive">Surveillance intelligente et automatisation avancée</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 justify-end sm:justify-center">
             <div className="text-center">
-              <div className="text-2xl font-bold">{alerts.length}</div>
+              <div className="text-lg sm:text-2xl font-bold">{alerts.length}</div>
               <div className="text-xs text-blue-200">Alertes</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{droneStatus.connected}</div>
+              <div className="text-lg sm:text-2xl font-bold">{droneStatus.connected}</div>
               <div className="text-xs text-blue-200">Drones</div>
             </div>
           </div>
@@ -80,12 +80,12 @@ const IoTControlCenter = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-          <TabsTrigger value="environmental">Environnemental</TabsTrigger>
-          <TabsTrigger value="drones">Surveillance Drones</TabsTrigger>
-          <TabsTrigger value="automation">Automatisation</TabsTrigger>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full overflow-x-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap">Environnemental</TabsTrigger>
+          <TabsTrigger value="drones" className="text-xs sm:text-sm whitespace-nowrap">Surveillance</TabsTrigger>
+          <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap">Automatisation</TabsTrigger>
+          <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap">Configuration</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">

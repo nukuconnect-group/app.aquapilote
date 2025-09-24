@@ -14,10 +14,10 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
   const { t } = useSettings();
   
   const mainItems = [
-    { id: 'dashboard', label: 'Tableau', icon: Home, color: 'text-blue-600' },
-    { id: 'iot-control', label: 'IoT', icon: Wifi, color: 'text-cyan-600' },
-    { id: 'units', label: 'Unités', icon: Factory, color: 'text-purple-600' },
-    { id: 'fish', label: 'Poissons', icon: Fish, color: 'text-aqua-600' },
+    { id: 'dashboard', label: t('dashboard'), icon: Home, color: 'text-blue-600' },
+    { id: 'iot-control', label: t('iot-control'), icon: Wifi, color: 'text-cyan-600' },
+    { id: 'units', label: t('units'), icon: Factory, color: 'text-purple-600' },
+    { id: 'fish', label: t('fish'), icon: Fish, color: 'text-aqua-600' },
     { id: 'settings', label: 'Plus', icon: Settings, color: 'text-gray-500' }
   ];
 

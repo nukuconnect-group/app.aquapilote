@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 
 const PurchaseManager = () => {
@@ -19,7 +20,7 @@ const PurchaseManager = () => {
   const { 
     purchases, 
     units, 
-    currency,
+    setCurrency,
     setCurrency,
     addPurchase, 
     updatePurchase, 
@@ -79,7 +80,7 @@ const PurchaseManager = () => {
   ];
 
   const currencies = [
-    { code: 'FCFA', symbol: 'F CFA', name: 'Franc CFA' },
+    { code: 'XOF', symbol: 'F CFA', name: 'Franc CFA' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
     { code: 'USD', symbol: '$', name: 'Dollar US' }
   ];
@@ -93,7 +94,7 @@ const PurchaseManager = () => {
       description: newPurchase.description,
       supplier: newPurchase.supplier,
       amount: Number(newPurchase.amount),
-      currency: newPurchase.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newPurchase.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       quantity: newPurchase.quantity || undefined,
       unit: newPurchase.unit || undefined,
       paymentMethod: newPurchase.paymentMethod,
@@ -119,7 +120,7 @@ const PurchaseManager = () => {
       description: newPurchase.description,
       supplier: newPurchase.supplier,
       amount: Number(newPurchase.amount),
-      currency: newPurchase.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newPurchase.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       quantity: newPurchase.quantity || undefined,
       unit: newPurchase.unit || undefined,
       paymentMethod: newPurchase.paymentMethod,
@@ -292,7 +293,7 @@ const PurchaseManager = () => {
           <p className="text-sm text-gray-600">Suivi et catégorisation des dépenses d'exploitation</p>
         </div>
         <div className="flex gap-2">
-          <Select value={currency} onValueChange={(value) => setCurrency(value as 'FCFA' | 'EUR' | 'USD')}>
+          <Select value={currency} onValueChange={(value) => setCurrency(value as 'XOF' | 'EUR' | 'USD' | 'MAD')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -681,7 +682,7 @@ const PurchaseManager = () => {
                   <Label>Devise</Label>
                   <Select
                     value={newPurchase.currency}
-                    onValueChange={(value) => setNewPurchase({...newPurchase, currency: value as 'FCFA' | 'EUR' | 'USD'})}
+                    onValueChange={(value) => setNewPurchase({...newPurchase, currency: value as 'XOF' | 'EUR' | 'USD' | 'MAD'})}
                   >
                     <SelectTrigger>
                       <SelectValue />

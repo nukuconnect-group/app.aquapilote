@@ -308,8 +308,31 @@ const WeatherDashboard = () => {
   };
 
   useEffect(() => {
-    const loadWeatherData = () => {
-      const data = getWeatherForZone(selectedZone);
+    const loadWeatherData = async () => {
+      let data;
+      
+      if (selectedZone === 'auto' && userLocation) {
+        // Si l'utilisateur a une position GPS, utiliser celle-ci
+        data = {
+          zone: `Ma position (${userLocation.lat.toFixed(2)}°, ${userLocation.lon.toFixed(2)}°)`,
+          temperature: 26.3 + (Math.random() * 4 - 2),
+          humidity: 75 + (Math.random() * 10 - 5),
+          precipitation: 8.2 + (Math.random() * 5 - 2.5),
+          windSpeed: 12.1 + (Math.random() * 6 - 3),
+          condition: 'cloudy' as const,
+          uvIndex: 7 + Math.floor(Math.random() * 3 - 1),
+          pressure: 1012.5 + (Math.random() * 10 - 5),
+          forecast: Array.from({length: 5}, (_, i) => ({
+            day: i === 0 ? 'Aujourd\'hui' : i === 1 ? 'Demain' : i === 2 ? 'Après-demain' : `Dans ${i} jours`,
+            temp: Math.round(26 + (Math.random() * 6 - 3)),
+            condition: ['sunny', 'cloudy', 'rainy'][Math.floor(Math.random() * 3)] as 'sunny' | 'cloudy' | 'rainy',
+            precipitation: Math.round(Math.random() * 15)
+          }))
+        };
+      } else {
+        data = getWeatherForZone(selectedZone);
+      }
+      
       setWeatherData(data);
       
       const newAlerts: WeatherAlert[] = [];
@@ -348,7 +371,7 @@ const WeatherDashboard = () => {
     };
 
     loadWeatherData();
-  }, [selectedZone]);
+  }, [selectedZone, userLocation]);
 
   const getWeatherIcon = (condition: string) => {
     switch (condition) {

@@ -21,6 +21,7 @@ import {
   UserCheck,
   ShoppingCart
 } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface MobileMenuModalProps {
   isOpen: boolean;
@@ -30,35 +31,37 @@ interface MobileMenuModalProps {
 }
 
 const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenuModalProps) => {
+  const { t } = useSettings();
+  
   const menuItems = [
     // Modules essentiels
     { 
       category: 'Modules Essentiels',
       items: [
-        { id: 'infrastructures', label: 'Infrastructures', icon: Building, color: 'text-gray-600' },
-        { id: 'livestock', label: 'Cheptel', icon: Beef, color: 'text-brown-600' },
-        { id: 'feeding', label: 'Alimentation', icon: Utensils, color: 'text-orange-600' },
-        { id: 'health', label: 'Prophylaxie', icon: Heart, color: 'text-red-600' },
+        { id: 'infrastructures', label: t('infrastructures'), icon: Building, color: 'text-gray-600' },
+        { id: 'livestock', label: t('livestock'), icon: Beef, color: 'text-brown-600' },
+        { id: 'feeding', label: t('feeding'), icon: Utensils, color: 'text-orange-600' },
+        { id: 'health', label: t('health'), icon: Heart, color: 'text-red-600' },
       ]
     },
     // Gestion et production
     {
       category: 'Gestion & Production',
       items: [
-        { id: 'production', label: 'Production', icon: BarChart3, color: 'text-green-600' },
-        { id: 'accounting', label: 'Comptabilité', icon: Calculator, color: 'text-emerald-600' },
-        { id: 'hr', label: 'RH & Paie', icon: UserCheck, color: 'text-indigo-600' },
-        { id: 'sales', label: 'Vente', icon: ShoppingCart, color: 'text-pink-600' },
+        { id: 'production', label: t('production'), icon: BarChart3, color: 'text-green-600' },
+        { id: 'accounting', label: t('accounting'), icon: Calculator, color: 'text-emerald-600' },
+        { id: 'hr', label: t('hr'), icon: UserCheck, color: 'text-indigo-600' },
+        { id: 'sales', label: t('sales'), icon: ShoppingCart, color: 'text-pink-600' },
       ]
     },
     // Planification et rapports
     {
       category: 'Planification & Rapports',
       items: [
-        { id: 'planning', label: 'Planification', icon: Calendar, color: 'text-indigo-600' },
-        { id: 'weather', label: 'Météo', icon: CloudRain, color: 'text-sky-600' },
-        { id: 'team', label: 'Équipe', icon: Users, color: 'text-pink-600' },
-        { id: 'reports', label: 'Rapports', icon: FileText, color: 'text-slate-600' }
+        { id: 'planning', label: t('planning'), icon: Calendar, color: 'text-indigo-600' },
+        { id: 'weather', label: t('weather'), icon: CloudRain, color: 'text-sky-600' },
+        { id: 'team', label: t('team'), icon: Users, color: 'text-pink-600' },
+        { id: 'reports', label: t('reports'), icon: FileText, color: 'text-slate-600' }
       ]
     }
   ];

@@ -16,12 +16,24 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const translations = {
   fr: {
-    // Navigation
-    dashboard: 'Accueil',
+    // Navigation  
+    dashboard: 'Tableau de bord',
+    'iot-control': 'Centre IoT',
     units: 'Unités',
-    fish: 'Cheptel',
-    economics: 'Finance',
-    settings: 'Plus',
+    infrastructures: 'Infrastructures',
+    fish: 'Poissons',
+    livestock: 'Cheptel',
+    feeding: 'Alimentation',
+    health: 'Prophylaxie',
+    production: 'Production',
+    accounting: 'Comptabilité',
+    hr: 'RH & Paie',
+    sales: 'Vente',
+    planning: 'Planification',
+    weather: 'Météo',
+    team: 'Équipe',
+    reports: 'Rapports',
+    settings: 'Paramètres',
     // Settings
     appearance: 'Apparence',
     language: 'Langue',
@@ -77,10 +89,22 @@ const translations = {
   en: {
     // Navigation
     dashboard: 'Dashboard',
+    'iot-control': 'IoT Center',
     units: 'Units',
-    fish: 'Livestock',
-    economics: 'Finance',
-    settings: 'More',
+    infrastructures: 'Infrastructure',
+    fish: 'Fish',
+    livestock: 'Livestock',
+    feeding: 'Feeding',
+    health: 'Health',
+    production: 'Production',
+    accounting: 'Accounting',
+    hr: 'HR & Payroll',
+    sales: 'Sales',
+    planning: 'Planning',
+    weather: 'Weather',
+    team: 'Team',
+    reports: 'Reports',
+    settings: 'Settings',
     // Settings
     appearance: 'Appearance',
     language: 'Language',

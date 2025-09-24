@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useSettings } from './SettingsContext';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -81,7 +82,7 @@ export interface Purchase {
   description: string;
   supplier: string;
   amount: number;
-  currency: 'FCFA' | 'EUR' | 'USD';
+  currency: 'XOF' | 'EUR' | 'USD' | 'MAD';
   quantity?: number;
   unit?: string;
   paymentMethod: string;
@@ -101,7 +102,7 @@ export interface Transaction {
   category: string;
   description: string;
   amount: number;
-  currency: 'FCFA' | 'EUR' | 'USD';
+  currency: 'XOF' | 'EUR' | 'USD' | 'MAD';
   paymentMethod: string;
   reference?: string;
   supplier?: string;
@@ -118,7 +119,7 @@ export interface DepreciableAsset {
   name: string;
   category: string;
   purchasePrice: number;
-  currency: 'FCFA' | 'EUR' | 'USD';
+  currency: 'XOF' | 'EUR' | 'USD' | 'MAD';
   purchaseDate: string;
   depreciationMethod: 'linear' | 'accelerated';
   usefulLife: number; // en années
@@ -134,10 +135,9 @@ interface ProductionUnitsContextType {
   transactions: Transaction[];
   purchases: Purchase[];
   depreciableAssets: DepreciableAsset[];
-  currency: 'FCFA' | 'EUR' | 'USD';
+  currency: 'XOF' | 'EUR' | 'USD' | 'MAD';
   activeUnit: ProductionUnit | null;
   setActiveUnit: (unit: ProductionUnit | null) => void;
-  setCurrency: (currency: 'FCFA' | 'EUR' | 'USD') => void;
   setInfrastructures: (infrastructures: Infrastructure[]) => void;
   addUnit: (unit: Omit<ProductionUnit, 'id' | 'createdAt'>) => void;
   updateUnit: (id: string, updates: Partial<ProductionUnit>) => void;
@@ -184,7 +184,7 @@ export const useProductionUnits = () => {
 };
 
 export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState<'FCFA' | 'EUR' | 'USD'>('FCFA');
+  const { currency, formatCurrency } = useSettings();
   
   const [units, setUnits] = useState<ProductionUnit[]>([
     {
@@ -344,7 +344,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       description: 'Aliment poisson croissance 25kg',
       supplier: 'Biomar France',
       amount: 425000,
-      currency: 'FCFA',
+      currency: 'XOF',
       quantity: 10,
       unit: 'sacs',
       paymentMethod: 'Virement',
@@ -361,7 +361,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       description: 'Pompe à eau submersible 2000L/h',
       supplier: 'AquaTech Pro',
       amount: 225000,
-      currency: 'FCFA',
+      currency: 'XOF',
       quantity: 1,
       unit: 'unité',
       paymentMethod: 'Carte bancaire',
@@ -377,7 +377,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       category: 'Vente de poissons',
       description: 'Vente carpes - Restaurant Les Saveurs',
       amount: 1250000,
-      currency: 'FCFA',
+      currency: 'XOF',
       paymentMethod: 'Virement',
       client: 'Restaurant Les Saveurs',
       status: 'confirmed',
@@ -391,7 +391,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       category: 'Alimentation',
       description: 'Achat aliments Biomar',
       amount: 400000,
-      currency: 'FCFA',
+      currency: 'XOF',
       paymentMethod: 'Carte bancaire',
       supplier: 'Biomar',
       status: 'confirmed',
@@ -407,7 +407,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       name: 'Four électrique principal',
       category: 'Équipements de transformation',
       purchasePrice: 2500000,
-      currency: 'FCFA',
+      currency: 'XOF',
       purchaseDate: '2024-01-15',
       depreciationMethod: 'linear',
       usefulLife: 10,
@@ -421,7 +421,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       name: 'Système de filtration',
       category: 'Équipements de traitement',
       purchasePrice: 1800000,
-      currency: 'FCFA',
+      currency: 'XOF',
       purchaseDate: '2024-02-01',
       depreciationMethod: 'linear',
       usefulLife: 8,
@@ -435,19 +435,20 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
   const [activeUnit, setActiveUnit] = useState<ProductionUnit | null>(units[0]);
 
   const exchangeRates = {
-    'FCFA': 1,
+    'XOF': 1,
     'EUR': 655.957,
-    'USD': 600
+    'USD': 600,
+    'MAD': 10.8
   };
 
   const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
     if (fromCurrency === toCurrency) return amount;
     
-    // Convertir d'abord en FCFA
-    const fcfaAmount = fromCurrency === 'FCFA' ? amount : amount * exchangeRates[fromCurrency as keyof typeof exchangeRates];
+    // Convertir d'abord en XOF (Franc CFA)
+    const xofAmount = fromCurrency === 'XOF' ? amount : amount * exchangeRates[fromCurrency as keyof typeof exchangeRates];
     
     // Puis convertir vers la devise cible
-    return toCurrency === 'FCFA' ? fcfaAmount : fcfaAmount / exchangeRates[toCurrency as keyof typeof exchangeRates];
+    return toCurrency === 'XOF' ? xofAmount : xofAmount / exchangeRates[toCurrency as keyof typeof exchangeRates];
   };
 
   const addUnit = (unitData: Omit<ProductionUnit, 'id' | 'createdAt'>) => {
@@ -652,7 +653,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     const newAsset: DepreciableAsset = {
       ...assetData,
       id: Date.now().toString(),
-      currency: assetData.currency || currency
+      currency: assetData.currency || (currency === 'XOF' ? 'XOF' : currency)
     };
     setDepreciableAssets([...depreciableAssets, newAsset]);
   };
@@ -697,7 +698,6 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       currency,
       activeUnit,
       setActiveUnit,
-      setCurrency,
       setInfrastructures,
       addUnit,
       updateUnit,
