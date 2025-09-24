@@ -86,7 +86,7 @@ const TransactionManager = () => {
   ];
 
   const currencies = [
-    { code: 'FCFA', symbol: 'F CFA', name: 'Franc CFA' },
+    { code: 'XOF', symbol: 'F CFA', name: 'Franc CFA' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
     { code: 'USD', symbol: '$', name: 'Dollar US' }
   ];
@@ -99,7 +99,7 @@ const TransactionManager = () => {
       category: newTransaction.category,
       description: newTransaction.description,
       amount: Number(newTransaction.amount),
-      currency: newTransaction.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newTransaction.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       paymentMethod: newTransaction.paymentMethod,
       reference: newTransaction.reference,
       supplier: newTransaction.supplier || undefined,
@@ -122,7 +122,7 @@ const TransactionManager = () => {
       category: newTransaction.category,
       description: newTransaction.description,
       amount: Number(newTransaction.amount),
-      currency: newTransaction.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newTransaction.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       paymentMethod: newTransaction.paymentMethod,
       reference: newTransaction.reference,
       supplier: newTransaction.supplier || undefined,
@@ -256,7 +256,7 @@ const TransactionManager = () => {
           <p className="text-sm text-gray-600">Suivi des recettes et dépenses</p>
         </div>
         <div className="flex gap-2">
-          <Select value={currency} onValueChange={(value) => setCurrency(value as 'FCFA' | 'EUR' | 'USD')}>
+          <Select value={currency} onValueChange={(value) => setCurrency(value as 'XOF' | 'EUR' | 'USD' | 'MAD')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -580,7 +580,7 @@ const TransactionManager = () => {
                 <Label>Devise</Label>
                 <Select
                   value={newTransaction.currency}
-                  onValueChange={(value) => setNewTransaction({...newTransaction, currency: value as 'FCFA' | 'EUR' | 'USD'})}
+                  onValueChange={(value) => setNewTransaction({...newTransaction, currency: value as 'XOF' | 'EUR' | 'USD' | 'MAD'})}
                 >
                   <SelectTrigger>
                     <SelectValue />

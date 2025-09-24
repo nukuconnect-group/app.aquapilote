@@ -20,7 +20,7 @@ const PurchaseManager = () => {
   const { 
     purchases, 
     units, 
-    setCurrency,
+    currency,
     setCurrency,
     addPurchase, 
     updatePurchase, 

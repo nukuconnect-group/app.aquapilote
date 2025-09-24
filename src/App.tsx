@@ -14,18 +14,18 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <ProductionUnitsProvider>
-        <IoTProvider>
-          <LogsProvider>
-            <SettingsProvider>
+    <SettingsProvider>
+      <AuthProvider>
+        <ProductionUnitsProvider>
+          <IoTProvider>
+            <LogsProvider>
               <AppContent />
               <Toaster />
-            </SettingsProvider>
-          </LogsProvider>
-        </IoTProvider>
-      </ProductionUnitsProvider>
-    </AuthProvider>
+            </LogsProvider>
+          </IoTProvider>
+        </ProductionUnitsProvider>
+      </AuthProvider>
+    </SettingsProvider>
   );
 };
 

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { useSettings } from './SettingsContext';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -136,8 +135,10 @@ interface ProductionUnitsContextType {
   purchases: Purchase[];
   depreciableAssets: DepreciableAsset[];
   currency: 'XOF' | 'EUR' | 'USD' | 'MAD';
+  formatCurrency: (amount: number) => string;
   activeUnit: ProductionUnit | null;
   setActiveUnit: (unit: ProductionUnit | null) => void;
+  setCurrency: (currency: 'XOF' | 'EUR' | 'USD' | 'MAD') => void;
   setInfrastructures: (infrastructures: Infrastructure[]) => void;
   addUnit: (unit: Omit<ProductionUnit, 'id' | 'createdAt'>) => void;
   updateUnit: (id: string, updates: Partial<ProductionUnit>) => void;
@@ -184,7 +185,7 @@ export const useProductionUnits = () => {
 };
 
 export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) => {
-  const { currency, formatCurrency } = useSettings();
+  const [currency, setCurrency] = useState<'XOF' | 'EUR' | 'USD' | 'MAD'>('XOF');
   
   const [units, setUnits] = useState<ProductionUnit[]>([
     {
@@ -433,6 +434,24 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
   ]);
 
   const [activeUnit, setActiveUnit] = useState<ProductionUnit | null>(units[0]);
+
+  const formatCurrency = (amount: number): string => {
+    const currencySymbols = {
+      'XOF': 'FCFA',
+      'EUR': '€',
+      'USD': '$',
+      'MAD': 'DH'
+    };
+    
+    const symbol = currencySymbols[currency];
+    const formatted = amount.toLocaleString('fr-FR');
+    
+    if (currency === 'XOF' || currency === 'MAD') {
+      return `${formatted} ${symbol}`;
+    } else {
+      return currency === 'USD' ? `${symbol}${formatted}` : `${formatted}${symbol}`;
+    }
+  };
 
   const exchangeRates = {
     'XOF': 1,
@@ -696,8 +715,10 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       purchases,
       depreciableAssets,
       currency,
+      formatCurrency,
       activeUnit,
       setActiveUnit,
+      setCurrency,
       setInfrastructures,
       addUnit,
       updateUnit,

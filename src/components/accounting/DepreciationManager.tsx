@@ -52,7 +52,7 @@ const DepreciationManager = () => {
   ];
 
   const currencies = [
-    { code: 'FCFA', symbol: 'F CFA', name: 'Franc CFA' },
+    { code: 'XOF', symbol: 'F CFA', name: 'Franc CFA' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
     { code: 'USD', symbol: '$', name: 'Dollar US' }
   ];
@@ -65,7 +65,7 @@ const DepreciationManager = () => {
       name: newAsset.name,
       category: newAsset.category,
       purchasePrice: Number(newAsset.purchasePrice),
-      currency: newAsset.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newAsset.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       purchaseDate: newAsset.purchaseDate,
       depreciationMethod: newAsset.depreciationMethod,
       usefulLife: newAsset.usefulLife,
@@ -87,7 +87,7 @@ const DepreciationManager = () => {
       name: newAsset.name,
       category: newAsset.category,
       purchasePrice: Number(newAsset.purchasePrice),
-      currency: newAsset.currency as 'FCFA' | 'EUR' | 'USD',
+      currency: newAsset.currency as 'XOF' | 'EUR' | 'USD' | 'MAD',
       purchaseDate: newAsset.purchaseDate,
       depreciationMethod: newAsset.depreciationMethod,
       usefulLife: newAsset.usefulLife,
@@ -374,7 +374,7 @@ const DepreciationManager = () => {
                 <Label>Devise</Label>
                 <Select
                   value={newAsset.currency}
-                  onValueChange={(value) => setNewAsset({...newAsset, currency: value as 'FCFA' | 'EUR' | 'USD'})}
+                  onValueChange={(value) => setNewAsset({...newAsset, currency: value as 'XOF' | 'EUR' | 'USD' | 'MAD'})}
                 >
                   <SelectTrigger>
                     <SelectValue />

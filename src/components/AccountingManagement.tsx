@@ -38,7 +38,7 @@ const AccountingManagement = () => {
                 <Settings className="icon-responsive" />
                 <select 
                   value={currency} 
-                 onChange={(e) => setCurrency(e.target.value as 'XOF' | 'EUR' | 'USD' | 'MAD')}
+                onChange={(e) => setCurrency(e.target.value as 'XOF' | 'EUR' | 'USD' | 'MAD')}
                   className="bg-card/20 border border-border rounded px-2 py-1 text-responsive"
                 >
                   {currencies.map(curr => (
