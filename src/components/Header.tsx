@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Settings, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,23 +10,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
-
 const Header = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
-  const { t } = useSettings();
-  const { addLog } = useLogs();
-  const { toast } = useToast();
-
+  const {
+    user,
+    isAuthenticated,
+    logout
+  } = useAuth();
+  const {
+    t
+  } = useSettings();
+  const {
+    addLog
+  } = useLogs();
+  const {
+    toast
+  } = useToast();
   const handleLogin = () => {
     if (!isAuthenticated) {
       setIsRegistering(false);
       setShowLogin(true);
     }
   };
-
   const handleLogout = () => {
     addLog('Déconnexion', 'Authentification', `${user?.name} s'est déconnecté`, 'info');
     logout();
@@ -37,15 +43,12 @@ const Header = () => {
     });
     // Redirection automatique vers la page de connexion via le contexte d'authentification
   };
-
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
-
-  return (
-    <>
+  return <>
       <header className="bg-primary h-12 lg:h-14 sticky top-0 z-50 shadow-sm">
-        <div className="flex justify-between items-center h-full px-3 sm:px-4 lg:px-6">
+        <div className="flex justify-between items-center h-full px-3 sm:px-4 lg:px-6 rounded-md bg-emerald-800">
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
@@ -123,8 +126,7 @@ const Header = () => {
             </Dialog>
             
             {/* Profil utilisateur */}
-            {isAuthenticated && user ? (
-              <DropdownMenu>
+            {isAuthenticated && user ? <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center space-x-1 sm:space-x-2 cursor-pointer hover:bg-primary-foreground/10 rounded-lg p-1 transition-colors min-h-[44px] sm:min-h-0">
                     <Avatar className="w-6 h-6 sm:w-7 sm:h-7 border border-primary-foreground/30">
@@ -147,11 +149,9 @@ const Header = () => {
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
-                      {user.entreprise && (
-                        <p className="text-xs leading-none text-muted-foreground">
+                      {user.entreprise && <p className="text-xs leading-none text-muted-foreground">
                           {user.entreprise}
-                        </p>
-                      )}
+                        </p>}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -169,26 +169,14 @@ const Header = () => {
                     <span>Se déconnecter</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0">
+              </DropdownMenu> : <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0">
                 <LogOut className="w-4 h-4" />
-              </Button>
-            )}
+              </Button>}
           </div>
         </div>
       </header>
 
-      {showLogin && (
-        <LoginDialog 
-          isOpen={showLogin} 
-          onClose={() => setShowLogin(false)} 
-          isRegistering={isRegistering} 
-          onToggleMode={() => setIsRegistering(!isRegistering)} 
-        />
-      )}
-    </>
-  );
+      {showLogin && <LoginDialog isOpen={showLogin} onClose={() => setShowLogin(false)} isRegistering={isRegistering} onToggleMode={() => setIsRegistering(!isRegistering)} />}
+    </>;
 };
-
 export default Header;
