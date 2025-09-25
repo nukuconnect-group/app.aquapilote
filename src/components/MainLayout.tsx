@@ -120,7 +120,7 @@ const MainLayout = () => {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[20px]">
+              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[18px]">
                 <div className="w-full max-w-none">
                   {renderContent()}
                 </div>
