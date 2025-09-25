@@ -52,7 +52,7 @@ const Header = () => {
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
-              <h1 className="text-primary-foreground text-xs sm:text-sm lg:text-base font-bold tracking-wide">
+              <h1 className="text-primary-foreground sm:text-sm lg:text-base tracking-wide text-base font-medium">
                 AQUA PILOTE
               </h1>
               <p className="text-primary-foreground/80 text-xs leading-tight hidden sm:block">Gestion Piscicole Intelligente</p>
