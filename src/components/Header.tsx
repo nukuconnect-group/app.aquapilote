@@ -48,7 +48,7 @@ const Header = () => {
   };
   return <>
       <header className="bg-primary h-12 lg:h-14 sticky top-0 z-50 shadow-sm">
-        <div className="flex justify-between items-center h-full px-3 sm:px-4 lg:px-6 rounded-md bg-emerald-800">
+        <div className="flex justify-between items-center h-full px-3 sm:px-4 lg:px-6 rounded-md bg-emerald-800 mx-0 my-[5px] py-0">
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
