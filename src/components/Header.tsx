@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +17,7 @@ const Header = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { t } = useSettings();
   const { addLog } = useLogs();
   const { toast } = useToast();
 
@@ -128,19 +130,28 @@ const Header = () => {
                     <Avatar className="w-6 h-6 sm:w-7 sm:h-7 border border-primary-foreground/30">
                       <AvatarImage src={user.avatar} alt={user.name} />
                       <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-bold">
-                        {getInitials(user.name)}
+                        {getInitials(user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-primary-foreground text-xs hidden sm:inline">{user.name.split(' ')[0]}</span>
+                    <span className="text-primary-foreground text-xs hidden sm:inline">
+                      {user.prenom || user.name.split(' ')[0]}
+                    </span>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 z-50" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
+                      {user.entreprise && (
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.entreprise}
+                        </p>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

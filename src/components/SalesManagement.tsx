@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
@@ -36,6 +37,7 @@ interface Sale {
 const SalesManagement = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
+  const { formatCurrency } = useSettings();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [sales, setSales] = useState<Sale[]>([
@@ -98,7 +100,7 @@ const SalesManagement = () => {
     };
 
     setSales(prev => [sale, ...prev]);
-    addLog('Nouvelle vente', 'Vente', `Vente créée pour ${sale.clientName} - ${totalAmount}€`, 'info');
+    addLog('Nouvelle vente', 'Vente', `Vente créée pour ${sale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
     
     setNewSale({
       clientName: '',
@@ -277,7 +279,7 @@ const SalesManagement = () => {
                           />
                           <div className="flex items-center">
                             <span className="text-sm font-medium">
-                              {(product.quantity * product.unitPrice).toFixed(2)}€
+                              {formatCurrency(product.quantity * product.unitPrice)}
                             </span>
                           </div>
                         </div>
@@ -285,7 +287,7 @@ const SalesManagement = () => {
                     </div>
                     <div className="text-right mt-2">
                       <span className="text-lg font-bold">
-                        Total: {newSale.products.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0).toFixed(2)}€
+                        Total: {formatCurrency(newSale.products.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0))}
                       </span>
                     </div>
                   </div>
@@ -337,7 +339,7 @@ const SalesManagement = () => {
             <div className="flex items-center gap-3">
               <TrendingUp className="w-8 h-8 text-green-600" />
               <div>
-                <p className="text-2xl font-bold">€{salesData.totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{formatCurrency(salesData.totalRevenue)}</p>
                 <p className="text-sm text-gray-600">Chiffre d'affaires</p>
               </div>
             </div>
@@ -373,7 +375,7 @@ const SalesManagement = () => {
             <div className="flex items-center gap-3">
               <DollarSign className="w-8 h-8 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">€{salesData.avgOrderValue}</p>
+                <p className="text-2xl font-bold">{formatCurrency(salesData.avgOrderValue)}</p>
                 <p className="text-sm text-gray-600">Panier moyen</p>
               </div>
             </div>
@@ -416,7 +418,7 @@ const SalesManagement = () => {
                           {getStatusText(sale.status)}
                         </Badge>
                         <p className="text-lg font-bold text-green-600 mt-1">
-                          {sale.totalAmount.toFixed(2)}€
+                          {formatCurrency(sale.totalAmount)}
                         </p>
                       </div>
                     </div>
@@ -426,7 +428,7 @@ const SalesManagement = () => {
                       {sale.products.map((product, idx) => (
                         <div key={idx} className="flex justify-between text-sm">
                           <span>{product.name} x {product.quantity}</span>
-                          <span>{product.total.toFixed(2)}€</span>
+                          <span>{formatCurrency(product.total)}</span>
                         </div>
                       ))}
                     </div>

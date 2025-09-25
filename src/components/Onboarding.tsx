@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Fish, BarChart3, Users, Shield } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import SplashScreen from './SplashScreen';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -13,30 +15,32 @@ interface OnboardingProps {
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showSplash, setShowSplash] = useState(true);
+  const { t } = useSettings();
 
   const slides = [
     {
       icon: Fish,
-      title: "Gestion Aquacole Professionnelle",
-      description: "Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.",
+      title: t('professional_aquaculture_management') || "Gestion Aquacole Professionnelle",
+      description: t('optimize_aquaculture_production') || "Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.",
       bgColor: "bg-gradient-to-br from-blue-50 to-cyan-50"
     },
     {
       icon: BarChart3,
-      title: "Analyses et Statistiques Avancées",
-      description: "Suivez vos KPI en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.",
+      title: t('advanced_analytics') || "Analyses et Statistiques Avancées",
+      description: t('track_kpi_realtime') || "Suivez vos KPI en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.",
       bgColor: "bg-gradient-to-br from-green-50 to-emerald-50"
     },
     {
       icon: Users,
-      title: "Collaboration d'Équipe",
-      description: "Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.",
+      title: t('team_collaboration') || "Collaboration d'Équipe",
+      description: t('manage_team_tasks') || "Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.",
       bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50"
     },
     {
       icon: Shield,
-      title: "Sécurité et Fiabilité",
-      description: "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
+      title: t('security_reliability') || "Sécurité et Fiabilité",
+      description: t('data_protection') || "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
       bgColor: "bg-gradient-to-br from-orange-50 to-red-50"
     }
   ];
@@ -58,6 +62,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
   };
 
   const CurrentIcon = slides[currentSlide].icon;
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-aqua-50 to-blue-100">
@@ -105,7 +113,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 className="flex items-center gap-2"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Précédent
+                {t('previous') || 'Précédent'}
               </Button>
 
               <span className="text-sm text-gray-500">
@@ -118,7 +126,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 disabled={currentSlide === slides.length - 1}
                 className="flex items-center gap-2"
               >
-                Suivant
+                {t('next') || 'Suivant'}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -131,14 +139,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                     onClick={onRegister}
                     className="bg-gradient-aqua text-white px-8 py-3 text-lg font-semibold hover:opacity-90 transition-opacity"
                   >
-                    Créer un compte
+                    {t('create_account') || 'Créer un compte'}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={onLogin}
                     className="px-8 py-3 text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50"
                   >
-                    Se connecter
+                    {t('login') || 'Se connecter'}
                   </Button>
                 </div>
                 <Button
@@ -146,7 +154,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                   onClick={onComplete}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
-                  Passer l'introduction
+                  {t('skip_intro') || 'Passer l\'introduction'}
                 </Button>
               </div>
             )}

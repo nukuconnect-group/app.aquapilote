@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
@@ -18,6 +19,7 @@ const IntelligentDashboard = () => {
     getUnitFinancialData,
     getGlobalFinancialData
   } = useProductionUnits();
+  const { formatCurrency } = useSettings();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
   const unitEquipment = activeUnit ? getUnitEquipment(activeUnit.id) : [];
@@ -272,17 +274,17 @@ const IntelligentDashboard = () => {
       // global metrics
       [{
         title: 'CA Total',
-        value: `€${globalFinancialData.revenue.toLocaleString()}`,
+        value: formatCurrency(globalFinancialData.revenue),
         subtitle: 'Toutes unités',
         icon: TrendingUp
       }, {
         title: 'Charges',
-        value: `€${globalFinancialData.expenses.toLocaleString()}`,
+        value: formatCurrency(globalFinancialData.expenses),
         subtitle: 'Total dépenses',
         icon: Activity
       }, {
         title: 'Bénéfice',
-        value: `€${globalFinancialData.profit.toLocaleString()}`,
+        value: formatCurrency(globalFinancialData.profit),
         subtitle: 'Résultat net',
         icon: Fish
       }, {
