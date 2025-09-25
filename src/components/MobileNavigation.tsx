@@ -44,7 +44,7 @@ const MobileNavigation = ({
       <div className="flex justify-around items-center max-w-md mx-auto">
         {mainItems.map(item => <Button key={item.id} variant="ghost" size="sm" className={`flex flex-col items-center py-1.5 px-1 h-auto text-xs min-w-0 flex-1 min-h-[44px] ${activeTab === item.id ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`} onClick={() => onTabChange(item.id)}>
             <item.icon className={`w-4 h-4 mb-0.5 ${activeTab === item.id ? 'text-primary' : 'text-muted-foreground'}`} />
-            <span className="leading-tight truncate max-w-full font-medium text-emerald-800 text-xs">{item.label}</span>
+            <span className="leading-tight truncate max-w-full text-emerald-800 text-xs font-extrabold">{item.label}</span>
           </Button>)}
       </div>
     </div>;
