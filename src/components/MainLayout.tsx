@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navigation from './Navigation';
 import MobileNavigation from './MobileNavigation';
@@ -28,20 +27,18 @@ import ReportsManagement from './ReportsManagement';
 import SettingsManagement from './SettingsManagement';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { LogsProvider } from '@/contexts/LogsContext';
-
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  const { 
-    user, 
-    hasSeenOnboarding, 
-    completeOnboarding, 
-    hasSelectedPlan, 
-    completeSubscriptionSelection 
+  const {
+    user,
+    hasSeenOnboarding,
+    completeOnboarding,
+    hasSelectedPlan,
+    completeSubscriptionSelection
   } = useAuth();
-
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
@@ -49,12 +46,10 @@ const MainLayout = () => {
       setActiveTab(tab);
     }
   };
-
   const handleLogin = () => {
     setShowLogin(true);
     setShowRegister(false);
   };
-
   const handleRegister = () => {
     setShowRegister(true);
     setShowLogin(false);
@@ -62,20 +57,13 @@ const MainLayout = () => {
 
   // Afficher l'onboarding si pas encore vu
   if (!hasSeenOnboarding) {
-    return (
-      <Onboarding 
-        onComplete={completeOnboarding}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-      />
-    );
+    return <Onboarding onComplete={completeOnboarding} onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   // Afficher les plans de souscription si pas encore sélectionné et utilisateur connecté
   if (user && !hasSelectedPlan) {
     return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
   }
-
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -118,9 +106,7 @@ const MainLayout = () => {
         return <IntelligentDashboard />;
     }
   };
-
-  return (
-    <LogsProvider>
+  return <LogsProvider>
       <SettingsProvider>
         <div className="min-h-screen bg-background flex flex-col">
           {/* Header fixe en haut */}
@@ -134,7 +120,7 @@ const MainLayout = () => {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full">
+              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[23px]">
                 <div className="w-full max-w-none">
                   {renderContent()}
                 </div>
@@ -146,30 +132,18 @@ const MainLayout = () => {
           <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
           
           {/* Modal menu mobile */}
-          <MobileMenuModal 
-            isOpen={showMobileMenu}
-            onClose={() => setShowMobileMenu(false)}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+          <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Dialogs de connexion/inscription */}
-          <LoginDialog 
-            isOpen={showLogin || showRegister}
-            onClose={() => {
-              setShowLogin(false);
-              setShowRegister(false);
-            }}
-            isRegistering={showRegister}
-            onToggleMode={() => {
-              setShowLogin(!showLogin);
-              setShowRegister(!showRegister);
-            }}
-          />
+          <LoginDialog isOpen={showLogin || showRegister} onClose={() => {
+          setShowLogin(false);
+          setShowRegister(false);
+        }} isRegistering={showRegister} onToggleMode={() => {
+          setShowLogin(!showLogin);
+          setShowRegister(!showRegister);
+        }} />
         </div>
       </SettingsProvider>
-    </LogsProvider>
-  );
+    </LogsProvider>;
 };
-
 export default MainLayout;
