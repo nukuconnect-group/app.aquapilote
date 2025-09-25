@@ -5,6 +5,10 @@ import MobileNavigation from './MobileNavigation';
 import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
 import IntelligentDashboard from './IntelligentDashboard';
+import Onboarding from './Onboarding';
+import SubscriptionPlans from './SubscriptionPlans';
+import LoginDialog from './LoginDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
 import InfrastructureManagement from './InfrastructureManagement';
@@ -28,6 +32,15 @@ import { LogsProvider } from '@/contexts/LogsContext';
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const { 
+    user, 
+    hasSeenOnboarding, 
+    completeOnboarding, 
+    hasSelectedPlan, 
+    completeSubscriptionSelection 
+  } = useAuth();
 
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
@@ -36,6 +49,32 @@ const MainLayout = () => {
       setActiveTab(tab);
     }
   };
+
+  const handleLogin = () => {
+    setShowLogin(true);
+    setShowRegister(false);
+  };
+
+  const handleRegister = () => {
+    setShowRegister(true);
+    setShowLogin(false);
+  };
+
+  // Afficher l'onboarding si pas encore vu
+  if (!hasSeenOnboarding) {
+    return (
+      <Onboarding 
+        onComplete={completeOnboarding}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+      />
+    );
+  }
+
+  // Afficher les plans de souscription si pas encore sélectionné et utilisateur connecté
+  if (user && !hasSelectedPlan) {
+    return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -112,6 +151,20 @@ const MainLayout = () => {
             onClose={() => setShowMobileMenu(false)}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+          />
+
+          {/* Dialogs de connexion/inscription */}
+          <LoginDialog 
+            isOpen={showLogin || showRegister}
+            onClose={() => {
+              setShowLogin(false);
+              setShowRegister(false);
+            }}
+            isRegistering={showRegister}
+            onToggleMode={() => {
+              setShowLogin(!showLogin);
+              setShowRegister(!showRegister);
+            }}
           />
         </div>
       </SettingsProvider>

@@ -169,7 +169,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return localStorage.getItem('app-language') as 'fr' | 'en' || 'fr';
   });
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>(() => {
-    return localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD' || 'EUR';
+    return localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD' || 'XOF';
   });
 
   const t = (key: string): string => {

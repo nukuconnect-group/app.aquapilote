@@ -34,8 +34,10 @@ const SettingsManagement = () => {
       <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Paramètres</h2>
-            <p className="text-aqua-100 text-sm sm:text-base">Configuration et préférences du système</p>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('settings')}</h2>
+            <p className="text-aqua-100 text-sm sm:text-base">
+              {language === 'fr' ? 'Configuration et préférences du système' : 'System configuration and preferences'}
+            </p>
           </div>
           <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-aqua-100" />
         </div>
@@ -60,7 +62,7 @@ const SettingsManagement = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                 <User className="w-5 h-5 text-aqua-600" />
-                Informations personnelles
+                {t('profile') || 'Informations personnelles'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -225,35 +227,35 @@ const SettingsManagement = () => {
               
               <Separator />
               
-              <div>
-                <Label className="text-base font-medium mb-3 block">Langue</Label>
-                <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fr">🇫🇷 Français</SelectItem>
-                    <SelectItem value="en">🇬🇧 English</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <Label className="text-base font-medium mb-3 block">Devise</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EUR">€ Euro (EUR)</SelectItem>
-                    <SelectItem value="USD">$ Dollar US (USD)</SelectItem>
-                    <SelectItem value="XOF">CFA Franc (XOF)</SelectItem>
-                    <SelectItem value="MAD">Dirham (MAD)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label className="text-base font-medium mb-3 block">{t('language')}</Label>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                        <SelectItem value="en">🇬🇧 English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <Label className="text-base font-medium mb-3 block">{t('currency')}</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="XOF">F CFA (XOF)</SelectItem>
+                        <SelectItem value="EUR">€ Euro (EUR)</SelectItem>
+                        <SelectItem value="USD">$ Dollar US (USD)</SelectItem>
+                        <SelectItem value="MAD">Dirham (MAD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
             </CardContent>
           </Card>
         </TabsContent>

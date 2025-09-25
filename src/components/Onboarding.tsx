@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Fish, BarChart3, Users, Shield } from 'lucide-react';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -64,6 +65,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
         <CardContent className="p-0">
           <div className={`${slides[currentSlide].bgColor} p-8 sm:p-12 text-center transition-all duration-300`}>
             <div className="mb-6">
+              <img 
+                src={aquaPilotLogo} 
+                alt="AQUA PILOT" 
+                className="w-20 h-20 mx-auto mb-4"
+              />
               <CurrentIcon className="w-16 h-16 mx-auto text-aqua-600" />
             </div>
             
