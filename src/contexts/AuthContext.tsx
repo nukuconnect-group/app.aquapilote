@@ -13,6 +13,19 @@ interface User {
   capaciteProduction?: string;
   lastLogin?: string;
   subscriptionPlan?: string;
+  location?: {
+    address: string;
+    latitude?: number;
+    longitude?: number;
+    country?: string;
+    city?: string;
+  };
+  personnel?: {
+    totalPersonnel: number;
+    ouvriers: number;
+    cadres: number;
+  };
+  uniteType?: 'ecloserie' | 'grossissement' | 'commercialisation' | 'autre';
   notifications: {
     email: boolean;
     desktop: boolean;
@@ -24,7 +37,15 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<boolean>;
+  register: (userData: {
+    name: string;
+    email: string;
+    password: string;
+    entreprise: string;
+    location: User['location'];
+    personnel: User['personnel'];
+    uniteType: User['uniteType'];
+  }, subscriptionPlan?: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
   completeOnboarding: () => void;
@@ -169,7 +190,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<boolean> => {
+  const register = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    entreprise: string;
+    location: User['location'];
+    personnel: User['personnel'];
+    uniteType: User['uniteType'];
+  }, subscriptionPlan: string = 'trial'): Promise<boolean> => {
     setIsLoading(true);
     try {
       // Simulation d'une API d'inscription
@@ -177,13 +206,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const newUser: User = {
         id: Date.now().toString(),
-        name,
-        email,
+        name: userData.name,
+        email: userData.email,
         role: 'operator',
-        prenom: name.split(' ')[0] || '',
-        nom: name.split(' ')[1] || '',
-        entreprise: 'Nouvelle exploitation',
+        prenom: userData.name.split(' ')[0] || '',
+        nom: userData.name.split(' ')[1] || '',
+        entreprise: userData.entreprise,
         capaciteProduction: 'petite',
+        location: userData.location,
+        personnel: userData.personnel,
+        uniteType: userData.uniteType,
         subscriptionPlan,
         notifications: { email: true, desktop: true, sms: false },
         lastLogin: new Date().toISOString()
@@ -203,14 +235,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('current_user');
-    localStorage.removeItem('onboarding_seen');
-    localStorage.removeItem('plan_selected');
     setHasSeenOnboarding(false);
     setHasSelectedPlan(false);
     setSelectedSubscriptionPlan(null);
     
-    // Forcer the réinitialisation complète de l'état de l'application
-    window.location.reload();
+    // Retourner à l'onboarding au lieu de recharger la page
+    // window.location.reload();
   };
 
   return (

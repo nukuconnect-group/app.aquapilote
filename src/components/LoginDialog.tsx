@@ -47,7 +47,16 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         return;
       }
       
-      const success = await register(formData.name, formData.email, formData.password, selectedPlan || 'trial');
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        entreprise: 'Nouvelle exploitation',
+        location: { address: '', country: '', city: '' },
+        personnel: { totalPersonnel: 0, ouvriers: 0, cadres: 0 },
+        uniteType: 'autre' as const
+      };
+      const success = await register(userData, selectedPlan || 'trial');
       if (success) {
         toast({
           title: "Compte créé avec succès",

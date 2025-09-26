@@ -7,6 +7,8 @@ import IntelligentDashboard from './IntelligentDashboard';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
+import RegistrationForm from './RegistrationForm';
+import AuthManager from './AuthManager';
 import { useAuth } from '@/contexts/AuthContext';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
@@ -135,13 +137,12 @@ const MainLayout = () => {
           <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Dialogs de connexion/inscription */}
-          <LoginDialog isOpen={showLogin || showRegister} onClose={() => {
-          setShowLogin(false);
-          setShowRegister(false);
-        }} isRegistering={showRegister} onToggleMode={() => {
-          setShowLogin(!showLogin);
-          setShowRegister(!showRegister);
-        }} />
+          <AuthManager
+            isLoginOpen={showLogin}
+            isRegisterOpen={showRegister}
+            onCloseLogin={() => setShowLogin(false)}
+            onCloseRegister={() => setShowRegister(false)}
+          />
         </div>
       </SettingsProvider>
     </LogsProvider>;
