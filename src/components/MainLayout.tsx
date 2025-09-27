@@ -3,6 +3,7 @@ import Navigation from './Navigation';
 import MobileNavigation from './MobileNavigation';
 import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import IntelligentDashboard from './IntelligentDashboard';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
@@ -110,40 +111,42 @@ const MainLayout = () => {
   };
   return <LogsProvider>
       <SettingsProvider>
-        <div className="min-h-screen bg-background flex flex-col">
-          {/* Header fixe en haut */}
-          <Header />
-          
-          <div className="flex flex-1">
-            {/* Sidebar Navigation - masqué sur mobile */}
-            <div className="w-56 lg:w-64 bg-card shadow-sm hidden md:block border-r border-border">
-              <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <SidebarProvider>
+          <div className="min-h-screen bg-background flex flex-col w-full">
+            {/* Header fixe en haut */}
+            <header className="flex items-center h-12 lg:h-14 border-b px-0">
+              <SidebarTrigger className="ml-2 hidden md:inline-flex" />
+              <div className="flex-1">
+                <Header />
+              </div>
+            </header>
+            
+            <div className="flex flex-1 w-full">
+              {/* Sidebar Navigation - masqué sur mobile */}
+              <div className="hidden md:block">
+                <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+              </div>
+
+              {/* Main Content */}
+              <div className="flex-1 min-w-0">
+                <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full">
+                  <div className="w-full max-w-none">
+                    {renderContent()}
+                  </div>
+                </main>
+              </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 min-w-0">
-              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[18px]">
-                <div className="w-full max-w-none">
-                  {renderContent()}
-                </div>
-              </main>
-            </div>
+            {/* Navigation mobile en bas */}
+            <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+            
+            {/* Modal menu mobile */}
+            <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
+
+            {/* Dialogs de connexion/inscription */}
+            <AuthManager isLoginOpen={showLogin} isRegisterOpen={showRegister} onCloseLogin={() => setShowLogin(false)} onCloseRegister={() => setShowRegister(false)} />
           </div>
-
-          {/* Navigation mobile en bas */}
-          <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-          
-          {/* Modal menu mobile */}
-          <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {/* Dialogs de connexion/inscription */}
-          <AuthManager
-            isLoginOpen={showLogin}
-            isRegisterOpen={showRegister}
-            onCloseLogin={() => setShowLogin(false)}
-            onCloseRegister={() => setShowRegister(false)}
-          />
-        </div>
+        </SidebarProvider>
       </SettingsProvider>
     </LogsProvider>;
 };

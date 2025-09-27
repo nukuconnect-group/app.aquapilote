@@ -1,0 +1,58 @@
+{
+  "name": "AQUA PILOT - Gestion Piscicole Intelligente",
+  "short_name": "AQUA PILOT",
+  "description": "Application de gestion piscicole complète avec IoT et intelligence artificielle",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/assets/aqua-pilot-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/aqua-pilot-logo.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile.png", 
+      "sizes": "375x667",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tableau de bord",
+      "short_name": "Dashboard", 
+      "description": "Accès rapide au tableau de bord principal",
+      "url": "/?tab=dashboard",
+      "icons": [{ "src": "/assets/aqua-pilot-logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Centre IoT",
+      "short_name": "IoT",
+      "description": "Contrôle et surveillance IoT",
+      "url": "/?tab=iot-control",
+      "icons": [{ "src": "/assets/aqua-pilot-logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye }
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Employee {
   id: string;
@@ -46,6 +47,7 @@ const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units } = useProductionUnits();
+  const { formatCurrency } = useSettings();
 
   const [employees, setEmployees] = useState<Employee[]>([
     {
@@ -395,7 +397,7 @@ const HRManagement = () => {
             <div className="flex items-center gap-3">
               <TrendingUp className="w-8 h-8 text-purple-600" />
               <div>
-                <p className="text-2xl font-bold">€{hrStats.totalPayroll.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{formatCurrency(hrStats.totalPayroll)}</p>
                 <p className="text-sm text-gray-600">Masse salariale</p>
               </div>
             </div>
@@ -407,7 +409,7 @@ const HRManagement = () => {
             <div className="flex items-center gap-3">
               <Calendar className="w-8 h-8 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">€{Math.round(hrStats.avgSalary)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(Math.round(hrStats.avgSalary))}</p>
                 <p className="text-sm text-gray-600">Salaire moyen</p>
               </div>
             </div>
@@ -455,7 +457,7 @@ const HRManagement = () => {
                           {employee.unitName}
                         </Badge>
                       </TableCell>
-                      <TableCell>€{employee.salary.toLocaleString()}</TableCell>
+                      <TableCell>{formatCurrency(employee.salary)}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(employee.status)}>
                           {employee.status === 'active' ? 'Actif' : 
@@ -497,11 +499,11 @@ const HRManagement = () => {
                     <TableRow key={paySlip.id}>
                       <TableCell>{paySlip.employeeName}</TableCell>
                       <TableCell>{paySlip.period}</TableCell>
-                      <TableCell>€{paySlip.baseSalary}</TableCell>
-                      <TableCell>€{paySlip.overtime}</TableCell>
-                      <TableCell>€{paySlip.bonuses}</TableCell>
-                      <TableCell>€{paySlip.deductions}</TableCell>
-                      <TableCell className="font-bold">€{paySlip.netSalary}</TableCell>
+                      <TableCell>{formatCurrency(paySlip.baseSalary)}</TableCell>
+                      <TableCell>{formatCurrency(paySlip.overtime)}</TableCell>
+                      <TableCell>{formatCurrency(paySlip.bonuses)}</TableCell>
+                      <TableCell>{formatCurrency(paySlip.deductions)}</TableCell>
+                      <TableCell className="font-bold">{formatCurrency(paySlip.netSalary)}</TableCell>
                       <TableCell>
                         <Button
                           size="sm"
@@ -539,7 +541,7 @@ const HRManagement = () => {
                         <div className="text-right">
                           <p className="font-bold">{unitEmployees.length} employés</p>
                           <p className="text-sm text-gray-600">
-                            €{unitEmployees.reduce((sum, emp) => sum + emp.salary, 0).toLocaleString()}/mois
+                            {formatCurrency(unitEmployees.reduce((sum, emp) => sum + emp.salary, 0))}/mois
                           </p>
                         </div>
                       </div>

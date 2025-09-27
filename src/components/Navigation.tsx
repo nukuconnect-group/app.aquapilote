@@ -1,6 +1,17 @@
 
 import React from 'react';
 import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag } from 'lucide-react';
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarGroup, 
+  SidebarGroupContent, 
+  SidebarGroupLabel, 
+  SidebarMenu, 
+  SidebarMenuButton, 
+  SidebarMenuItem,
+  useSidebar 
+} from '@/components/ui/sidebar';
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -9,14 +20,11 @@ const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   onTabChange
 }) => {
+  const { state } = useSidebar();
   const navigationItems = [{
     id: 'dashboard',
     label: 'Tableau de Bord',
     icon: Home
-  }, {
-    id: 'iot-control',
-    label: 'Contrôle & IoT',
-    icon: Wifi
   }, {
     id: 'units',
     label: 'Toutes les unités',
@@ -70,6 +78,10 @@ const Navigation: React.FC<NavigationProps> = ({
     label: 'Météo',
     icon: Cloud
   }, {
+    id: 'iot-control',
+    label: 'Contrôle & IoT',
+    icon: Wifi
+  }, {
     id: 'team',
     label: 'Équipe',
     icon: Users
@@ -83,30 +95,32 @@ const Navigation: React.FC<NavigationProps> = ({
     icon: Settings
   }];
   return (
-    <nav className="h-full flex flex-col bg-card border-border">
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-2 py-3 space-y-1">
-          {navigationItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button 
-                key={item.id} 
-                onClick={() => onTabChange(item.id)} 
-                className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-primary/10 text-primary border-r-2 border-primary shadow-sm' 
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
-              >
-                <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span className="text-xs sm:text-sm truncate">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </nav>
+    <Sidebar className={state === "collapsed" ? "w-14" : "w-60"}>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map(item => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => onTabChange(item.id)}
+                      className={isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {state !== "collapsed" && <span>{item.label}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 };
 export default Navigation;
