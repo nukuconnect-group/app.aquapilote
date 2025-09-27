@@ -30,11 +30,13 @@ import ReportsManagement from './ReportsManagement';
 import SettingsManagement from './SettingsManagement';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { LogsProvider } from '@/contexts/LogsContext';
+
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  
   const {
     user,
     hasSeenOnboarding,
@@ -42,6 +44,7 @@ const MainLayout = () => {
     hasSelectedPlan,
     completeSubscriptionSelection
   } = useAuth();
+
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
@@ -49,10 +52,12 @@ const MainLayout = () => {
       setActiveTab(tab);
     }
   };
+
   const handleLogin = () => {
     setShowLogin(true);
     setShowRegister(false);
   };
+
   const handleRegister = () => {
     setShowRegister(true);
     setShowLogin(false);
@@ -67,6 +72,7 @@ const MainLayout = () => {
   if (user && !hasSelectedPlan) {
     return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
   }
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -109,12 +115,14 @@ const MainLayout = () => {
         return <IntelligentDashboard />;
     }
   };
-  return <LogsProvider>
+
+  return (
+    <LogsProvider>
       <SettingsProvider>
         <SidebarProvider>
           <div className="min-h-screen bg-background flex flex-col w-full">
             {/* Header fixe en haut */}
-            <header className="flex items-center h-12 lg:h-14 border-b px-0">
+            <header className="flex items-center h-12 lg:h-14 border-b">
               <SidebarTrigger className="ml-2 hidden md:inline-flex" />
               <div className="flex-1">
                 <Header />
@@ -144,10 +152,17 @@ const MainLayout = () => {
             <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
 
             {/* Dialogs de connexion/inscription */}
-            <AuthManager isLoginOpen={showLogin} isRegisterOpen={showRegister} onCloseLogin={() => setShowLogin(false)} onCloseRegister={() => setShowRegister(false)} />
+            <AuthManager
+              isLoginOpen={showLogin}
+              isRegisterOpen={showRegister}
+              onCloseLogin={() => setShowLogin(false)}
+              onCloseRegister={() => setShowRegister(false)}
+            />
           </div>
         </SidebarProvider>
       </SettingsProvider>
-    </LogsProvider>;
+    </LogsProvider>
+  );
 };
+
 export default MainLayout;
