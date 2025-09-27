@@ -190,14 +190,23 @@ const translations = {
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Détection automatique de la langue selon le navigateur
+  const detectBrowserLanguage = (): 'fr' | 'en' => {
+    const browserLang = navigator.language.split('-')[0];
+    const supportedLangs = ['fr', 'en'];
+    return supportedLangs.includes(browserLang) ? browserLang as 'fr' | 'en' : 'fr';
+  };
+
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>(() => {
     return localStorage.getItem('app-theme') as 'light' | 'dark' | 'auto' || 'light';
   });
   const [language, setLanguage] = useState<'fr' | 'en'>(() => {
-    return localStorage.getItem('app-language') as 'fr' | 'en' || 'fr';
+    const saved = localStorage.getItem('app-language') as 'fr' | 'en';
+    return saved || detectBrowserLanguage();
   });
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>(() => {
-    return localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD' || 'XOF';
+    const saved = localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD';
+    return saved || 'XOF';
   });
 
   const t = (key: string): string => {

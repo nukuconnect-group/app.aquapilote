@@ -49,8 +49,8 @@ const Header = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
   return <>
-      <header className="bg-primary h-12 lg:h-14 sticky top-0 z-50 shadow-sm">
-        <div className="flex justify-between items-center h-full lg:px-6 rounded-md bg-emerald-800 mx-0 px-0 sm:px-[10px] py-[23px]">
+      <header className="bg-primary h-12 lg:h-14 sticky top-0 z-50 shadow-sm w-full">
+        <div className="flex justify-between items-center h-full px-2 sm:px-4 lg:px-6 bg-emerald-800 w-full">
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
