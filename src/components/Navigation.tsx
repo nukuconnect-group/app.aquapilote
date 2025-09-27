@@ -14,6 +14,10 @@ const Navigation: React.FC<NavigationProps> = ({
     label: 'Tableau de Bord',
     icon: Home
   }, {
+    id: 'iot-control',
+    label: 'Contrôle & IoT',
+    icon: Wifi
+  }, {
     id: 'units',
     label: 'Toutes les unités',
     icon: Building2
@@ -65,10 +69,6 @@ const Navigation: React.FC<NavigationProps> = ({
     id: 'weather',
     label: 'Météo',
     icon: Cloud
-  }, {
-    id: 'iot-control',
-    label: 'Contrôle & IoT',
-    icon: Wifi
   }, {
     id: 'team',
     label: 'Équipe',
