@@ -1,40 +1,41 @@
 
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import MainLayout from '@/components/MainLayout';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ProductionUnitsProvider } from '@/contexts/ProductionUnitsContext';
-import { IoTProvider } from '@/contexts/IoTContext';
-import { LogsProvider } from '@/contexts/LogsContext';
-import { SettingsProvider } from '@/contexts/SettingsContext';
-import { Toaster } from '@/components/ui/toaster';
 
-const AppContent: React.FC = () => {
-  console.log('AppContent rendering');
-  return <MainLayout />;
+const TestComponent = () => {
+  return (
+    <div style={{
+      padding: '40px',
+      fontFamily: 'Arial, sans-serif',
+      backgroundColor: '#f0f0f0',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <h1 style={{ color: '#333', marginBottom: '20px' }}>
+        🐟 AQUA PILOT - Test Minimal
+      </h1>
+      <p style={{ color: '#666', fontSize: '18px', marginBottom: '30px' }}>
+        Application de gestion piscicole intelligente
+      </p>
+      <div style={{
+        padding: '20px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        textAlign: 'center'
+      }}>
+        <p>✅ React fonctionne correctement</p>
+        <p>🔄 Chargement des fonctionnalités en cours...</p>
+      </div>
+    </div>
+  );
 };
 
 const App: React.FC = () => {
-  console.log('App rendering');
-  
-  return (
-    <div style={{ minHeight: '100vh' }}>
-      <BrowserRouter>
-        <SettingsProvider>
-          <AuthProvider>
-            <ProductionUnitsProvider>
-              <IoTProvider>
-                <LogsProvider>
-                  <AppContent />
-                  <Toaster />
-                </LogsProvider>
-              </IoTProvider>
-            </ProductionUnitsProvider>
-          </AuthProvider>
-        </SettingsProvider>
-      </BrowserRouter>
-    </div>
-  );
+  console.log('App minimal rendering');
+  return <TestComponent />;
 };
 
 export default App;
