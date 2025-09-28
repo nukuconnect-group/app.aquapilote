@@ -97,17 +97,17 @@ const ResponsiveForm = ({
   };
 
   return (
-    <Card className={cn("w-full max-w-2xl mx-auto", className)}>
+    <Card className={cn("w-full card-responsive", className)}>
       {title && (
-        <CardHeader>
+        <CardHeader className="p-3 sm:p-4 lg:p-6">
           <CardTitle className="text-responsive-title">{title}</CardTitle>
         </CardHeader>
       )}
-      <CardContent>
+      <CardContent className={`space-y-responsive ${title ? 'p-3 sm:p-4 lg:p-6 pt-0' : 'p-3 sm:p-4 lg:p-6'}`}>
         <form onSubmit={onSubmit} className="space-y-responsive">
           <div className="grid-responsive-2 gap-responsive">
             {fields.map((field) => (
-              <div key={field.name} className="space-y-2">
+              <div key={field.name} className="space-y-2 w-full">
                 <Label 
                   htmlFor={field.name}
                   className="text-responsive-small font-medium"
@@ -122,11 +122,11 @@ const ResponsiveForm = ({
           
           {children}
           
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 w-full">
             <Button 
               type="submit" 
               disabled={submitLoading}
-              className="btn-responsive flex-1 touch-target"
+              className="btn-responsive order-1 w-full sm:flex-1 touch-target"
             >
               {submitLoading ? "Enregistrement..." : submitLabel}
             </Button>
@@ -135,7 +135,7 @@ const ResponsiveForm = ({
                 type="button"
                 variant="outline"
                 onClick={onCancel}
-                className="btn-responsive sm:w-auto touch-target"
+                className="btn-responsive order-2 w-full sm:w-auto touch-target"
               >
                 Annuler
               </Button>
