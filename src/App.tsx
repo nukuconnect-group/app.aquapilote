@@ -10,25 +10,30 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
 
 const AppContent: React.FC = () => {
+  console.log('AppContent rendering');
   return <MainLayout />;
 };
 
 const App: React.FC = () => {
+  console.log('App rendering');
+  
   return (
-    <BrowserRouter>
-      <SettingsProvider>
-        <AuthProvider>
-          <ProductionUnitsProvider>
-            <IoTProvider>
-              <LogsProvider>
-                <AppContent />
-                <Toaster />
-              </LogsProvider>
-            </IoTProvider>
-          </ProductionUnitsProvider>
-        </AuthProvider>
-      </SettingsProvider>
-    </BrowserRouter>
+    <div style={{ minHeight: '100vh' }}>
+      <BrowserRouter>
+        <SettingsProvider>
+          <AuthProvider>
+            <ProductionUnitsProvider>
+              <IoTProvider>
+                <LogsProvider>
+                  <AppContent />
+                  <Toaster />
+                </LogsProvider>
+              </IoTProvider>
+            </ProductionUnitsProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </BrowserRouter>
+    </div>
   );
 };
 
