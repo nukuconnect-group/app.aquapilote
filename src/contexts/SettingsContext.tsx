@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface SettingsContextType {
@@ -48,58 +47,51 @@ const translations = {
     delete: 'Supprimer',
     add: 'Ajouter',
     close: 'Fermer',
-    // Currency symbols
-    currency_symbol: 'EUR' === 'EUR' ? '€' : 'USD' === 'USD' ? '$' : 'XOF' === 'XOF' ? 'FCFA' : 'MAD' === 'MAD' ? 'DH' : '€',
-    // Units
-    select_unit: 'Sélectionner une unité',
-    production_unit: 'Unité de production',
-    // Sales
-    new_sale: 'Nouvelle Vente',
-    client_name: 'Nom du client',
-    contact: 'Contact',
-    products: 'Produits',
-    total: 'Total',
-    payment_method: 'Mode de paiement',
-    notes: 'Notes',
-    // HR
-    employee_management: 'Gestion des Employés',
-    new_employee: 'Nouvel Employé',
-    first_name: 'Prénom',
-    last_name: 'Nom',
-    email: 'Email',
-    phone: 'Téléphone',
-    position: 'Poste',
-    salary: 'Salaire',
-    // Planning
-    planning_management: 'Planification & Organisation',
-    new_task: 'Nouvelle Tâche',
-    task_title: 'Titre de la tâche',
-    task_description: 'Description',
-    task_date: 'Date',
-    task_time: 'Heure',
-    purchases: 'Achats',
-    // Onboarding
-    professional_aquaculture_management: 'Gestion Aquacole Professionnelle',
-    optimize_aquaculture_production: 'Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.',
-    advanced_analytics: 'Analyses et Statistiques Avancées',
-    track_kpi_realtime: 'Suivez vos KPI en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.',
-    team_collaboration: 'Collaboration d\'Équipe',
-    manage_team_tasks: 'Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.',
-    security_reliability: 'Sécurité et Fiabilité',
-    data_protection: 'Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.',
-    previous: 'Précédent',
-    next: 'Suivant',
-    create_account: 'Créer un compte',
-    login: 'Se connecter',
-    skip_intro: 'Passer l\'introduction',
-    // Weather
-    weather_dashboard: 'Météo Agricole',
-    current_conditions: 'Conditions actuelles',
+    yes: 'Oui',
+    no: 'Non',
+    loading: 'Chargement...',
+    error: 'Erreur',
+    success: 'Succès',
+    warning: 'Attention',
+    info: 'Information',
+    // Dashboard
+    welcome: 'Bienvenue',
+    overview: 'Vue d\'ensemble',
+    statistics: 'Statistiques',
+    recent_activity: 'Activité récente',
+    quick_actions: 'Actions rapides',
+    // Production
+    total_production: 'Production totale',
+    daily_production: 'Production journalière',
+    monthly_production: 'Production mensuelle',
+    annual_production: 'Production annuelle',
+    production_units: 'Unités de production',
+    active_ponds: 'Bassins actifs',
+    total_fish: 'Total poissons',
+    average_weight: 'Poids moyen',
+    // Health
+    health_status: 'État sanitaire',
+    mortality_rate: 'Taux de mortalité',
+    vaccinations: 'Vaccinations',
+    treatments: 'Traitements',
+    quarantine: 'Quarantaine',
+    // Feeding
+    daily_feeding: 'Alimentation quotidienne',
+    feed_consumption: 'Consommation d\'aliment',
+    feed_conversion_ratio: 'Taux de conversion',
+    feeding_schedule: 'Planning alimentaire',
+    // Environmental
+    water_quality: 'Qualité de l\'eau',
     temperature: 'Température',
-    humidity: 'Humidité',
-    precipitation: 'Précipitations',
-    wind_speed: 'Vitesse du vent',
-    forecast: 'Prévisions'
+    oxygen_level: 'Niveau d\'oxygène',
+    ph_level: 'Niveau pH',
+    salinity: 'Salinité',
+    // Finance
+    revenue: 'Chiffre d\'affaires',
+    expenses: 'Dépenses',
+    profit: 'Bénéfice',
+    cost_per_kg: 'Coût par kg',
+    profit_margin: 'Marge bénéficiaire'
   },
   en: {
     // Navigation
@@ -134,137 +126,152 @@ const translations = {
     delete: 'Delete',
     add: 'Add',
     close: 'Close',
-    // Currency symbols
-    currency_symbol: 'EUR' === 'EUR' ? '€' : 'USD' === 'USD' ? '$' : 'XOF' === 'XOF' ? 'CFA' : 'MAD' === 'MAD' ? 'DH' : '€',
-    // Units  
-    select_unit: 'Select a unit',
-    production_unit: 'Production unit',
-    // Sales
-    new_sale: 'New Sale',
-    client_name: 'Client name',
-    contact: 'Contact',
-    products: 'Products',
-    total: 'Total',
-    payment_method: 'Payment method',
-    notes: 'Notes',
-    // HR
-    employee_management: 'Employee Management',
-    new_employee: 'New Employee',
-    first_name: 'First name',
-    last_name: 'Last name',
-    email: 'Email',
-    phone: 'Phone',
-    position: 'Position',
-    salary: 'Salary',
-    // Planning
-    planning_management: 'Planning & Organization',
-    new_task: 'New Task',
-    task_title: 'Task title',
-    task_description: 'Description',
-    task_date: 'Date',
-    task_time: 'Time',
-    purchases: 'Purchases',
-    // Onboarding
-    professional_aquaculture_management: 'Professional Aquaculture Management',
-    optimize_aquaculture_production: 'Optimize your aquaculture production with comprehensive management tools for your ponds, livestock and production cycles.',
-    advanced_analytics: 'Advanced Analytics & Statistics',
-    track_kpi_realtime: 'Track your KPIs in real time, analyze your performance and plan your production cycles with precision.',
-    team_collaboration: 'Team Collaboration',
-    manage_team_tasks: 'Manage your team, assign tasks and maintain fluid communication to optimize your productivity.',
-    security_reliability: 'Security & Reliability',
-    data_protection: 'Your data is protected with automatic backups and professional-grade security system.',
-    previous: 'Previous',
-    next: 'Next',
-    create_account: 'Create Account',
-    login: 'Login',
-    skip_intro: 'Skip Introduction',
-    // Weather
-    weather_dashboard: 'Agricultural Weather',
-    current_conditions: 'Current conditions',
+    yes: 'Yes',
+    no: 'No',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    warning: 'Warning',
+    info: 'Information',
+    // Dashboard
+    welcome: 'Welcome',
+    overview: 'Overview',
+    statistics: 'Statistics',
+    recent_activity: 'Recent Activity',
+    quick_actions: 'Quick Actions',
+    // Production
+    total_production: 'Total Production',
+    daily_production: 'Daily Production',
+    monthly_production: 'Monthly Production',
+    annual_production: 'Annual Production',
+    production_units: 'Production Units',
+    active_ponds: 'Active Ponds',
+    total_fish: 'Total Fish',
+    average_weight: 'Average Weight',
+    // Health
+    health_status: 'Health Status',
+    mortality_rate: 'Mortality Rate',
+    vaccinations: 'Vaccinations',
+    treatments: 'Treatments',
+    quarantine: 'Quarantine',
+    // Feeding
+    daily_feeding: 'Daily Feeding',
+    feed_consumption: 'Feed Consumption',
+    feed_conversion_ratio: 'Feed Conversion Ratio',
+    feeding_schedule: 'Feeding Schedule',
+    // Environmental
+    water_quality: 'Water Quality',
     temperature: 'Temperature',
-    humidity: 'Humidity',
-    precipitation: 'Precipitation',
-    wind_speed: 'Wind speed',
-    forecast: 'Forecast'
+    oxygen_level: 'Oxygen Level',
+    ph_level: 'pH Level',
+    salinity: 'Salinity',
+    // Finance
+    revenue: 'Revenue',
+    expenses: 'Expenses',
+    profit: 'Profit',
+    cost_per_kg: 'Cost per kg',
+    profit_margin: 'Profit Margin'
   }
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>(() => {
-    return localStorage.getItem('app-theme') as 'light' | 'dark' | 'auto' || 'light';
-  });
-  const [language, setLanguage] = useState<'fr' | 'en'>(() => {
-    return localStorage.getItem('app-language') as 'fr' | 'en' || 'fr';
-  });
-  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>(() => {
-    return localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD' || 'XOF';
-  });
+  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
+  const [language, setLanguage] = useState<'fr' | 'en'>('fr');
+  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF');
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialisation sûre après le montage du composant
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('app-theme') as 'light' | 'dark' | 'auto';
+      const savedLanguage = localStorage.getItem('app-language') as 'fr' | 'en';
+      const savedCurrency = localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD';
+      
+      if (savedTheme) setTheme(savedTheme);
+      if (savedLanguage) setLanguage(savedLanguage);
+      if (savedCurrency) setCurrency(savedCurrency);
+    } catch (error) {
+      console.error('Error loading settings from localStorage:', error);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, []);
+
+  const handleSetTheme = (newTheme: 'light' | 'dark' | 'auto') => {
+    try {
+      localStorage.setItem('app-theme', newTheme);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
+    setTheme(newTheme);
+  };
+
+  const handleSetLanguage = (newLanguage: 'fr' | 'en') => {
+    try {
+      localStorage.setItem('app-language', newLanguage);
+    } catch (error) {
+      console.error('Error saving language:', error);
+    }
+    setLanguage(newLanguage);
+  };
+
+  const handleSetCurrency = (newCurrency: 'EUR' | 'USD' | 'XOF' | 'MAD') => {
+    try {
+      localStorage.setItem('app-currency', newCurrency);
+    } catch (error) {
+      console.error('Error saving currency:', error);
+    }
+    setCurrency(newCurrency);
+  };
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return translations[language]?.[key] || key;
   };
 
   const formatCurrency = (amount: number): string => {
     const currencySymbols = {
-      'EUR': '€',
-      'USD': '$', 
-      'XOF': 'FCFA',
-      'MAD': 'DH'
+      EUR: '€',
+      USD: '$',
+      XOF: 'CFA',
+      MAD: 'MAD'
     };
-    
-    const symbol = currencySymbols[currency];
-    const formatted = amount.toLocaleString(language === 'fr' ? 'fr-FR' : 'en-US');
-    
-    if (currency === 'XOF' || currency === 'MAD') {
-      return `${formatted} ${symbol}`;
-    } else {
-      return currency === 'USD' ? `${symbol}${formatted}` : `${formatted}${symbol}`;
-    }
+
+    const formattedAmount = new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+
+    return `${formattedAmount} ${currencySymbols[currency]}`;
   };
 
-  const handleSetTheme = (newTheme: 'light' | 'dark' | 'auto') => {
-    setTheme(newTheme);
-    localStorage.setItem('app-theme', newTheme);
-  };
-
-  const handleSetLanguage = (newLanguage: 'fr' | 'en') => {
-    setLanguage(newLanguage);
-    localStorage.setItem('app-language', newLanguage);
-  };
-
-  const handleSetCurrency = (newCurrency: 'EUR' | 'USD' | 'XOF' | 'MAD') => {
-    setCurrency(newCurrency);
-    localStorage.setItem('app-currency', newCurrency);
-  };
-
-  useEffect(() => {
-    // Apply theme
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      // Auto mode
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      if (mediaQuery.matches) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [theme]);
+  // Afficher un loader pendant l'initialisation
+  if (!isInitialized) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        Loading settings...
+      </div>
+    );
+  }
 
   return (
-    <SettingsContext.Provider value={{
-      theme,
-      language,
-      currency,
-      setTheme: handleSetTheme,
-      setLanguage: handleSetLanguage,
-      setCurrency: handleSetCurrency,
-      t,
-      formatCurrency
-    }}>
+    <SettingsContext.Provider
+      value={{
+        theme,
+        language,
+        currency,
+        setTheme: handleSetTheme,
+        setLanguage: handleSetLanguage,
+        setCurrency: handleSetCurrency,
+        t,
+        formatCurrency,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );
