@@ -7,8 +7,6 @@ import IntelligentDashboard from './IntelligentDashboard';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
-import RegistrationForm from './RegistrationForm';
-import AuthManager from './AuthManager';
 import { useAuth } from '@/contexts/AuthContext';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
@@ -122,7 +120,7 @@ const MainLayout = () => {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[18px]">
+              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[23px]">
                 <div className="w-full max-w-none">
                   {renderContent()}
                 </div>
@@ -137,12 +135,13 @@ const MainLayout = () => {
           <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Dialogs de connexion/inscription */}
-          <AuthManager
-            isLoginOpen={showLogin}
-            isRegisterOpen={showRegister}
-            onCloseLogin={() => setShowLogin(false)}
-            onCloseRegister={() => setShowRegister(false)}
-          />
+          <LoginDialog isOpen={showLogin || showRegister} onClose={() => {
+          setShowLogin(false);
+          setShowRegister(false);
+        }} isRegistering={showRegister} onToggleMode={() => {
+          setShowLogin(!showLogin);
+          setShowRegister(!showRegister);
+        }} />
         </div>
       </SettingsProvider>
     </LogsProvider>;
