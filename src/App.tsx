@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import MainLayout from '@/components/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProductionUnitsProvider } from '@/contexts/ProductionUnitsContext';
@@ -14,18 +15,20 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <ProductionUnitsProvider>
-          <IoTProvider>
-            <LogsProvider>
-              <AppContent />
-              <Toaster />
-            </LogsProvider>
-          </IoTProvider>
-        </ProductionUnitsProvider>
-      </AuthProvider>
-    </SettingsProvider>
+    <BrowserRouter>
+      <SettingsProvider>
+        <AuthProvider>
+          <ProductionUnitsProvider>
+            <IoTProvider>
+              <LogsProvider>
+                <AppContent />
+                <Toaster />
+              </LogsProvider>
+            </IoTProvider>
+          </ProductionUnitsProvider>
+        </AuthProvider>
+      </SettingsProvider>
+    </BrowserRouter>
   );
 };
 
