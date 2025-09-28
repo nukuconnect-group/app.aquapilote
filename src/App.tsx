@@ -1,10 +1,10 @@
 import React from 'react';
-import SimpleApp from './SimpleApp';
-import './App.css';
+import TestApp from './TestApp';
 
-// Version ultra-simplifiée sans aucune dépendance problématique
+// Test ultra-simple pour éliminer l'écran blanc
 function App() {
-  return <SimpleApp />;
+  console.log('App component rendu');
+  return <TestApp />;
 }
 
 export default App;
