@@ -7,6 +7,7 @@ import IntelligentDashboard from './IntelligentDashboard';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
+import EnhancedRegistration from './EnhancedRegistration';
 import { useAuth } from '@/contexts/AuthContext';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
@@ -31,7 +32,7 @@ const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
+  const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
   const {
     user,
     hasSeenOnboarding,
@@ -48,10 +49,11 @@ const MainLayout = () => {
   };
   const handleLogin = () => {
     setShowLogin(true);
-    setShowRegister(false);
+    setShowEnhancedRegister(false);
   };
+
   const handleRegister = () => {
-    setShowRegister(true);
+    setShowEnhancedRegister(true);
     setShowLogin(false);
   };
 
@@ -135,13 +137,19 @@ const MainLayout = () => {
           <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Dialogs de connexion/inscription */}
-          <LoginDialog isOpen={showLogin || showRegister} onClose={() => {
-          setShowLogin(false);
-          setShowRegister(false);
-        }} isRegistering={showRegister} onToggleMode={() => {
-          setShowLogin(!showLogin);
-          setShowRegister(!showRegister);
-        }} />
+          <LoginDialog 
+            isOpen={showLogin} 
+            onClose={() => setShowLogin(false)}
+            isRegistering={false} 
+            onToggleMode={handleRegister}
+          />
+          
+          {showEnhancedRegister && (
+            <EnhancedRegistration
+              onClose={() => setShowEnhancedRegister(false)}
+              onSwitchToLogin={handleLogin}
+            />
+          )}
         </div>
       </SettingsProvider>
     </LogsProvider>;

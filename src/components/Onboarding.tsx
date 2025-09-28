@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Fish, BarChart3, Users, Shield } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import featureManagementImg from '@/assets/feature-management.jpg';
+import featureAnalyticsImg from '@/assets/feature-analytics.jpg';
+import featureTeamImg from '@/assets/feature-team.jpg';
+import featureSecurityImg from '@/assets/feature-security.jpg';
 import SplashScreen from './SplashScreen';
+import PrivacyPolicy from './PrivacyPolicy';
 import { useSettings } from '@/contexts/SettingsContext';
 
 interface OnboardingProps {
@@ -16,6 +21,7 @@ interface OnboardingProps {
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showSplash, setShowSplash] = useState(true);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const { t } = useSettings();
 
   const slides = [
@@ -23,25 +29,29 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
       icon: Fish,
       title: t('professional_aquaculture_management') || "Gestion Aquacole Professionnelle",
       description: t('optimize_aquaculture_production') || "Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.",
-      bgColor: "bg-gradient-to-br from-blue-50 to-cyan-50"
+      bgColor: "bg-gradient-to-br from-blue-50 to-cyan-50",
+      image: featureManagementImg
     },
     {
       icon: BarChart3,
       title: t('advanced_analytics') || "Analyses et Statistiques Avancées",
       description: t('track_kpi_realtime') || "Suivez vos KPI en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.",
-      bgColor: "bg-gradient-to-br from-green-50 to-emerald-50"
+      bgColor: "bg-gradient-to-br from-green-50 to-emerald-50",
+      image: featureAnalyticsImg
     },
     {
       icon: Users,
       title: t('team_collaboration') || "Collaboration d'Équipe",
       description: t('manage_team_tasks') || "Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.",
-      bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50"
+      bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50",
+      image: featureTeamImg
     },
     {
       icon: Shield,
       title: t('security_reliability') || "Sécurité et Fiabilité",
       description: t('data_protection') || "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
-      bgColor: "bg-gradient-to-br from-orange-50 to-red-50"
+      bgColor: "bg-gradient-to-br from-orange-50 to-red-50",
+      image: featureSecurityImg
     }
   ];
 
@@ -67,6 +77,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
 
+  if (showPrivacy) {
+    return <PrivacyPolicy onAccept={() => setShowPrivacy(false)} />;
+  }
+
+  // Afficher la politique de confidentialité après le splash
+  if (!showPrivacy && !showSplash && currentSlide === 0) {
+    setShowPrivacy(true);
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-aqua-50 to-blue-100">
       <Card className="w-full max-w-2xl mx-auto shadow-2xl">
@@ -78,7 +98,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 alt="AQUA PILOT" 
                 className="w-20 h-20 mx-auto mb-4"
               />
-              <CurrentIcon className="w-16 h-16 mx-auto text-aqua-600" />
+              <CurrentIcon className="w-16 h-16 mx-auto text-aqua-600 mb-4" />
+            </div>
+
+            {/* Image AI pour la fonctionnalité */}
+            <div className="mb-6">
+              <img 
+                src={slides[currentSlide].image} 
+                alt={slides[currentSlide].title}
+                className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+              />
             </div>
             
             <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
@@ -133,30 +162,23 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
 
             {/* Boutons d'action finaux */}
             {currentSlide === slides.length - 1 && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    onClick={onRegister}
-                    className="bg-gradient-aqua text-white px-8 py-3 text-lg font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    {t('create_account') || 'Créer un compte'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={onLogin}
-                    className="px-8 py-3 text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50"
-                  >
-                    {t('login') || 'Se connecter'}
-                  </Button>
-                </div>
-                <Button
-                  variant="ghost"
-                  onClick={onComplete}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  {t('skip_intro') || 'Passer l\'introduction'}
-                </Button>
-              </div>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                onClick={onRegister}
+                className="bg-gradient-aqua text-white px-8 py-3 text-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                {t('create_account') || 'Créer un compte'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onLogin}
+                className="px-8 py-3 text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50"
+              >
+                {t('login') || 'Se connecter'}
+              </Button>
+            </div>
+          </div>
             )}
           </div>
         </CardContent>
