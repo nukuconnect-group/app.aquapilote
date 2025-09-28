@@ -23,10 +23,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { useSettings } from '@/contexts/SettingsContext';
 
 const FinanceManagement = () => {
-  const { currency } = useSettings();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [budgets, setBudgets] = useState([
     { id: 1, category: 'Alimentation', budget: 5000, spent: 4200, percentage: 84 },
@@ -60,9 +58,9 @@ const FinanceManagement = () => {
   ];
 
   const kpis = [
-    { title: 'Chiffre d\'Affaires', value: `${currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}22,000`, change: '+12%', trend: 'up', icon: DollarSign },
-    { title: 'Charges', value: `${currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}13,000`, change: '+5%', trend: 'up', icon: CreditCard },
-    { title: 'Bénéfice Net', value: `${currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}9,000`, change: '+28%', trend: 'up', icon: TrendingUp },
+    { title: 'Chiffre d\'Affaires', value: '€22,000', change: '+12%', trend: 'up', icon: DollarSign },
+    { title: 'Charges', value: '€13,000', change: '+5%', trend: 'up', icon: CreditCard },
+    { title: 'Bénéfice Net', value: '€9,000', change: '+28%', trend: 'up', icon: TrendingUp },
     { title: 'Marge Brute', value: '40.9%', change: '+2.1%', trend: 'up', icon: Target }
   ];
 

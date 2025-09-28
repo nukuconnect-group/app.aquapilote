@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calculator, BarChart3, DollarSign, CreditCard, AlertTriangle, Calendar } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
-import { useSettings } from '@/contexts/SettingsContext';
 
 interface AccountingDashboardProps {
   unitData: {
@@ -23,7 +22,6 @@ interface AccountingDashboardProps {
 }
 
 const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) => {
-  const { currency } = useSettings();
   const profitMargin = unitData.revenue > 0 ? (unitData.profit / unitData.revenue * 100).toFixed(1) : '0';
   
   const expenseCategories = [
@@ -159,9 +157,9 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
               <div className="text-sm">
                 <p className="font-medium">Prochaines échéances :</p>
                 <ul className="mt-2 space-y-1 text-gray-600">
-                  <li>• Salaires : 28/01 ({currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}3,200)</li>
-                  <li>• Fournisseur Biomar : 30/01 ({currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}800)</li>
-                  <li>• Assurance : 15/02 ({currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}450)</li>
+                  <li>• Salaires : 28/01 (€3,200)</li>
+                  <li>• Fournisseur Biomar : 30/01 (€800)</li>
+                  <li>• Assurance : 15/02 (€450)</li>
                 </ul>
               </div>
             </div>
