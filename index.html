@@ -2,13 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aqua-pilot-afrique-digital</title>
-    <meta name="description" content="Gestion de ferme piscicole avancée">
-    <meta name="author" content="Lovable" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#0EA5E9" />
+    <link rel="apple-touch-icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>AQUA PILOT - Gestion Aquacole Intelligente</title>
+    <meta name="description" content="Application professionnelle de gestion aquacole avec monitoring IoT et analytics avancés">
+    <meta name="author" content="AQUA PILOT Team" />
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
 
-    <meta property="og:title" content="aqua-pilot-afrique-digital" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:title" content="AQUA PILOT - Gestion Aquacole Intelligente" />
+    <meta property="og:description" content="Application professionnelle de gestion aquacole avec monitoring IoT et analytics avancés" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/social-images/social-1758369376559-LOGO AQUA PILOT.png">
 

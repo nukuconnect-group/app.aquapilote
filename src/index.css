@@ -365,7 +365,7 @@
   }
 }
 
-/* Support pour les appareils tactiles - Améliorations */
+/* Support pour les appareils tactiles - Améliorations pour mobile */
 @media (hover: none) and (pointer: coarse) {
   button, .clickable, [role="button"] {
     min-height: 48px;
@@ -389,6 +389,11 @@
   /* Espacement augmenté pour éviter les clics accidentels */
   .grid > *, .flex > * {
     margin: 2px;
+  }
+  
+  /* Éviter le zoom sur les inputs iOS */
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }
 
