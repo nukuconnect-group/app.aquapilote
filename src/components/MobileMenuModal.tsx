@@ -83,16 +83,16 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] p-0 mobile-friendly-modal mx-2">
-        <DialogHeader className="p-3 sm:p-4 pb-2">
-          <DialogTitle className="text-base sm:text-lg lg:text-xl font-bold">Menu principal</DialogTitle>
+      <DialogContent className="max-w-sm max-h-[85vh] p-0 mobile-friendly-modal">
+        <DialogHeader className="p-4 pb-2">
+          <DialogTitle className="text-responsive-title">Menu principal</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 px-3 sm:px-4 pb-4 max-h-[75vh]">
-          <div className="space-y-3 sm:space-y-4">
+        <ScrollArea className="flex-1 px-4 pb-4">
+          <div className="space-y-4 sm:space-y-6">
             {menuItems.map((category) => (
               <div key={category.category}>
-                <h3 className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3 uppercase tracking-wide">
                   {category.category}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -100,13 +100,13 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
                     <Button
                       key={item.id}
                       variant={activeTab === item.id ? 'default' : 'outline'}
-                      className="h-14 sm:h-16 flex flex-col items-center justify-center space-y-1 text-xs p-2 min-h-[56px] touch-manipulation"
+                      className="h-16 sm:h-18 flex flex-col items-center justify-center space-y-1 text-xs p-2 min-h-[60px] touch-manipulation"
                       onClick={() => handleItemClick(item.id)}
                     >
                       <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         activeTab === item.id ? 'text-primary-foreground' : 'text-muted-foreground'
                       }`} />
-                      <span className="font-medium leading-tight text-center text-[10px] sm:text-xs truncate">
+                      <span className="font-medium leading-tight text-center text-xs">
                         {item.label}
                       </span>
                     </Button>

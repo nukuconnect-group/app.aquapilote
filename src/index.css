@@ -98,11 +98,7 @@
   }
 
   body {
-    @apply bg-background text-foreground m-0 p-0;
-  }
-  
-  html, body {
-    @apply w-full max-w-none;
+    @apply bg-background text-foreground;
   }
 
   /* Amélioration de la lisibilité et taille de police mobile */
@@ -130,7 +126,7 @@
 
   @media (max-width: 480px) {
     html {
-      font-size: 14px;
+      font-size: 13px;
     }
     
     body {
@@ -138,35 +134,12 @@
     }
   }
 
-  @media (max-width: 360px) {
-    html {
-      font-size: 13px;
-    }
-    
-    body {
-      line-height: 1.65;
-    }
-  }
-
-  /* Réduction des débordements horizontaux */
-  * {
-    box-sizing: border-box;
-  }
-
-  body, html {
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-
   /* Ajustement automatique des textes */
   h1, h2, h3, h4, h5, h6 {
     @apply leading-tight;
-    word-wrap: break-word;
-    hyphens: auto;
   }
 
-  /* Optimisation des espacements pour éviter les espaces vides */
+  /* Espacement mobile optimisé */
   @media (max-width: 768px) {
     .space-y-6 > * + * {
       margin-top: 1rem !important;
@@ -197,13 +170,6 @@
       padding-top: 1rem !important;
       padding-bottom: 1rem !important;
     }
-    
-    /* Éliminer les espaces vides sur mobile */
-    .container {
-      max-width: 100vw !important;
-      padding-left: 0.75rem !important;
-      padding-right: 0.75rem !important;
-    }
   }
 
   @media (max-width: 480px) {
@@ -232,28 +198,6 @@
     .text-xl {
       font-size: 1.125rem !important;
       line-height: 1.75rem !important;
-    }
-
-    .container {
-      padding-left: 0.5rem !important;
-      padding-right: 0.5rem !important;
-    }
-  }
-
-  @media (max-width: 360px) {
-    .container {
-      padding-left: 0.25rem !important;
-      padding-right: 0.25rem !important;
-    }
-
-    .text-lg {
-      font-size: 1rem !important;
-      line-height: 1.5rem !important;
-    }
-
-    .text-base {
-      font-size: 0.9rem !important;
-      line-height: 1.4rem !important;
     }
   }
 
@@ -303,13 +247,13 @@
   }
 
   .text-responsive-title {
-    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl;
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
     line-height: 1.2;
     font-weight: 600;
   }
 
   .text-responsive-subtitle {
-    @apply text-base sm:text-lg md:text-xl lg:text-2xl;
+    @apply text-lg sm:text-xl md:text-2xl;
     line-height: 1.3;
     font-weight: 500;
   }
@@ -320,13 +264,8 @@
   }
   
   .text-responsive-caption {
-    @apply text-[10px] sm:text-xs md:text-sm;
+    @apply text-[11px] sm:text-xs md:text-sm;
     line-height: 1.3;
-  }
-
-  .text-responsive-micro {
-    @apply text-[9px] sm:text-[10px] md:text-xs;
-    line-height: 1.2;
   }
 
   .p-responsive {
@@ -366,57 +305,28 @@
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
   }
 
-  /* Cartes responsives - Optimisées pour éviter les espaces vides */
+  /* Cartes responsives - Améliorées pour mobile */
   .card-responsive {
-    @apply p-3 sm:p-4 lg:p-6 rounded-lg bg-card border shadow-sm;
+    @apply p-4 sm:p-4 lg:p-6 rounded-lg bg-card border shadow-sm;
     min-height: 80px;
-    width: 100%;
   }
   
   .card-responsive-sm {
-    @apply p-2 sm:p-3 lg:p-4 rounded-md bg-card border shadow-sm;
+    @apply p-3 sm:p-3 lg:p-4 rounded-md bg-card border shadow-sm;
     min-height: 60px;
-    width: 100%;
   }
 
-  /* Classes pour éviter les débordements et espaces vides */
+  /* Classes pour éviter les débordements sur mobile */
   .safe-area-mobile {
     @apply pb-20 md:pb-6;
-    width: 100%;
   }
 
   .mobile-friendly-modal {
     @apply max-h-[90vh] overflow-y-auto;
-    margin: 0;
-    width: 100%;
   }
 
   .mobile-friendly-table {
     @apply text-xs sm:text-sm overflow-x-auto;
-    width: 100%;
-  }
-
-  .full-width-container {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-  }
-
-  /* Safe Area pour les appareils avec encoche */
-  .safe-area-inset-top {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .safe-area-inset-left {
-    padding-left: env(safe-area-inset-left);
-  }
-
-  .safe-area-inset-right {
-    padding-right: env(safe-area-inset-right);
   }
 
   /* Support offline - à développer avec service worker */

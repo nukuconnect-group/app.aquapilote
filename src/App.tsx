@@ -1,15 +1,32 @@
 
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import AppWithPrivacy from '@/components/AppWithPrivacy';
-import './App.css';
+import MainLayout from '@/components/MainLayout';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ProductionUnitsProvider } from '@/contexts/ProductionUnitsContext';
+import { IoTProvider } from '@/contexts/IoTContext';
+import { LogsProvider } from '@/contexts/LogsContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import { Toaster } from '@/components/ui/toaster';
 
-function App() {
+const AppContent: React.FC = () => {
+  return <MainLayout />;
+};
+
+const App: React.FC = () => {
   return (
-    <Router>
-      <AppWithPrivacy />
-    </Router>
+    <SettingsProvider>
+      <AuthProvider>
+        <ProductionUnitsProvider>
+          <IoTProvider>
+            <LogsProvider>
+              <AppContent />
+              <Toaster />
+            </LogsProvider>
+          </IoTProvider>
+        </ProductionUnitsProvider>
+      </AuthProvider>
+    </SettingsProvider>
   );
-}
+};
 
 export default App;

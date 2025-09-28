@@ -3,7 +3,6 @@ import Navigation from './Navigation';
 import MobileNavigation from './MobileNavigation';
 import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import IntelligentDashboard from './IntelligentDashboard';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
@@ -30,13 +29,11 @@ import ReportsManagement from './ReportsManagement';
 import SettingsManagement from './SettingsManagement';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { LogsProvider } from '@/contexts/LogsContext';
-
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  
   const {
     user,
     hasSeenOnboarding,
@@ -44,7 +41,6 @@ const MainLayout = () => {
     hasSelectedPlan,
     completeSubscriptionSelection
   } = useAuth();
-
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
@@ -52,12 +48,10 @@ const MainLayout = () => {
       setActiveTab(tab);
     }
   };
-
   const handleLogin = () => {
     setShowLogin(true);
     setShowRegister(false);
   };
-
   const handleRegister = () => {
     setShowRegister(true);
     setShowLogin(false);
@@ -72,7 +66,6 @@ const MainLayout = () => {
   if (user && !hasSelectedPlan) {
     return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
   }
-
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -115,58 +108,43 @@ const MainLayout = () => {
         return <IntelligentDashboard />;
     }
   };
-
-  return (
-    <LogsProvider>
+  return <LogsProvider>
       <SettingsProvider>
-        <SidebarProvider>
-          <div className="min-h-screen bg-background flex flex-col w-full max-w-none m-0 p-0 overflow-x-hidden">
-            {/* Header fixe en haut */}
-            <div className="w-full max-w-none flex-shrink-0">
-              <Header />
-            </div>
-            
-            <div className="flex flex-1 w-full overflow-hidden">
-              {/* Sidebar Navigation - masqué sur mobile */}
-              <div className="hidden md:block flex-shrink-0">
-                <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-              </div>
-
-              {/* Main Content */}
-              <div className="flex-1 min-w-0 w-full max-w-none overflow-auto">
-                <main className="p-2 sm:p-4 lg:p-6 safe-area-mobile w-full max-w-none">
-                  <div className="w-full max-w-none overflow-hidden">
-                    {renderContent()}
-                  </div>
-                </main>
-              </div>
+        <div className="min-h-screen bg-background flex flex-col">
+          {/* Header fixe en haut */}
+          <Header />
+          
+          <div className="flex flex-1">
+            {/* Sidebar Navigation - masqué sur mobile */}
+            <div className="w-56 lg:w-64 bg-card shadow-sm hidden md:block border-r border-border">
+              <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
 
-            {/* Navigation mobile en bas */}
-            <div className="flex-shrink-0 md:hidden">
-              <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+            {/* Main Content */}
+            <div className="flex-1 min-w-0">
+              <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[18px]">
+                <div className="w-full max-w-none">
+                  {renderContent()}
+                </div>
+              </main>
             </div>
-            
-            {/* Modal menu mobile */}
-            <MobileMenuModal 
-              isOpen={showMobileMenu} 
-              onClose={() => setShowMobileMenu(false)} 
-              activeTab={activeTab} 
-              onTabChange={setActiveTab} 
-            />
-
-            {/* Dialogs de connexion/inscription */}
-            <AuthManager
-              isLoginOpen={showLogin}
-              isRegisterOpen={showRegister}
-              onCloseLogin={() => setShowLogin(false)}
-              onCloseRegister={() => setShowRegister(false)}
-            />
           </div>
-        </SidebarProvider>
-      </SettingsProvider>
-    </LogsProvider>
-  );
-};
 
+          {/* Navigation mobile en bas */}
+          <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+          
+          {/* Modal menu mobile */}
+          <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {/* Dialogs de connexion/inscription */}
+          <AuthManager
+            isLoginOpen={showLogin}
+            isRegisterOpen={showRegister}
+            onCloseLogin={() => setShowLogin(false)}
+            onCloseRegister={() => setShowRegister(false)}
+          />
+        </div>
+      </SettingsProvider>
+    </LogsProvider>;
+};
 export default MainLayout;
