@@ -4,6 +4,8 @@ import MobileNavigation from './MobileNavigation';
 import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
 import IntelligentDashboard from './IntelligentDashboard';
+import SplashScreen from './SplashScreen';
+import PrivacyPolicy from './PrivacyPolicy';
 import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
@@ -34,6 +36,8 @@ const MainLayout = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const {
     user,
     hasSeenOnboarding,
@@ -57,6 +61,29 @@ const MainLayout = () => {
     setShowEnhancedRegister(true);
     setShowLogin(false);
   };
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    const privacySeen = localStorage.getItem('privacy_accepted');
+    if (privacySeen !== 'true') {
+      setShowPrivacy(true);
+    }
+  };
+
+  const handlePrivacyAccept = () => {
+    localStorage.setItem('privacy_accepted', 'true');
+    setShowPrivacy(false);
+  };
+
+  // Afficher le splash screen au premier lancement
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  // Afficher la politique de confidentialité si pas encore acceptée
+  if (showPrivacy) {
+    return <PrivacyPolicy onAccept={handlePrivacyAccept} />;
+  }
 
   // Afficher l'onboarding si pas encore vu
   if (!hasSeenOnboarding) {

@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Building, Users, Fish, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Building, Users, Fish, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
 
 interface EnhancedRegistrationProps {
@@ -17,26 +18,29 @@ interface EnhancedRegistrationProps {
   selectedPlan?: string | null;
 }
 
-interface CompanyFormData {
-  // Informations personnelles
+interface FormData {
+  // Étape 1: Informations personnelles
   firstName: string;
   lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
   
-  // Informations entreprise
+  // Étape 2: Informations entreprise
   companyName: string;
-  companyType: string;
-  numberOfEmployees: string;
-  productionUnit: string[];
-  activities: string[];
-  annualProduction: string;
-  address: string;
+  sector: string;
+  location: string;
   phone: string;
+  employeeCount: string;
   
-  // Acceptation des conditions
-  acceptTerms: boolean;
+  // Étape 3: Unités de production (choix multiples)
+  productionUnits: string[];
+  
+  // Informations supplémentaires
+  hasProcessing: boolean;
+  hasMarketing: boolean;
+  hasAlgaeCulture: boolean;
+  otherActivities: string;
 }
 
 const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({ 
@@ -46,58 +50,97 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<CompanyFormData>({
+  const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
     companyName: '',
-    companyType: '',
-    numberOfEmployees: '',
-    productionUnit: [],
-    activities: [],
-    annualProduction: '',
-    address: '',
+    sector: '',
+    location: '',
     phone: '',
-    acceptTerms: false
+    employeeCount: '',
+    productionUnits: [],
+    hasProcessing: false,
+    hasMarketing: false,
+    hasAlgaeCulture: false,
+    otherActivities: ''
   });
   
   const { register, isLoading } = useAuth();
   const { toast } = useToast();
 
-  const handleInputChange = (field: keyof CompanyFormData, value: string | boolean | string[]) => {
+  const productionUnitOptions = [
+    'Écloserie',
+    'Grossissement',
+    'Pré-grossissement',
+    'Nurserie',
+    'Reproduction',
+    'Quarantaine'
+  ];
+  
+  const sectorOptions = [
+    'Pisciculture d\'eau douce',
+    'Aquaculture marine',
+    'Conchyliculture',
+    'Algaculture',
+    'Aquaponie',
+    'Autre'
+  ];
+
+  const handleInputChange = (field: keyof FormData, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleMultiSelectChange = (field: 'productionUnit' | 'activities', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
-    }));
+  const handleProductionUnitChange = (unit: string, checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        productionUnits: [...prev.productionUnits, unit]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        productionUnits: prev.productionUnits.filter(u => u !== unit)
+      }));
+    }
   };
-
-  const validateStep1 = () => {
-    return formData.firstName && formData.lastName && formData.email && 
-           formData.password && formData.password === formData.confirmPassword;
-  };
-
-  const validateStep2 = () => {
-    return formData.companyName && formData.companyType && formData.numberOfEmployees &&
-           formData.productionUnit.length > 0 && formData.acceptTerms;
+  
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.firstName && formData.lastName && formData.email && 
+               formData.password && formData.confirmPassword && 
+               formData.password === formData.confirmPassword;
+      case 2:
+        return formData.companyName && formData.sector && formData.location && 
+               formData.phone && formData.employeeCount;
+      case 3:
+        return formData.productionUnits.length > 0;
+      default:
+        return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (currentStep === 1 && validateStep1()) {
-      setCurrentStep(2);
+    if (currentStep < 3) {
+      if (canProceedToNextStep()) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        toast({
+          title: "Formulaire incomplet",
+          description: "Veuillez remplir tous les champs requis",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
-    if (currentStep === 2 && validateStep2()) {
+    // Étape finale: création du compte
+    if (canProceedToNextStep()) {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       const success = await register(fullName, formData.email, formData.password, selectedPlan || 'trial');
       
@@ -117,7 +160,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     } else {
       toast({
         title: "Formulaire incomplet",
-        description: "Veuillez remplir tous les champs requis",
+        description: "Veuillez sélectionner au moins une unité de production",
         variant: "destructive",
       });
     }
@@ -133,36 +176,49 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-center mb-4">
-            <img 
-              src={aquaPilotLogo} 
-              alt="AQUA PILOT" 
-              className="w-12 h-12"
-            />
-          </div>
-          <CardTitle className="text-center text-2xl">
-            Créer votre compte AQUA PILOT
-          </CardTitle>
-          <div className="text-center text-sm text-gray-600">
-            Étape {currentStep} sur 2 - {currentStep === 1 ? 'Informations personnelles' : 'Informations entreprise'}
-          </div>
-          
-          {selectedPlan && (
-            <div className="bg-aqua-50 p-3 rounded-lg border border-aqua-200 mt-4">
-              <p className="text-sm text-aqua-800">
-                <strong>Plan sélectionné :</strong> {getPlanName(selectedPlan)}
-              </p>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img 
+                src={aquaPilotLogo} 
+                alt="AQUA PILOT" 
+                className="w-16 h-16"
+              />
             </div>
-          )}
-        </CardHeader>
+            <DialogTitle className="text-2xl font-bold mb-2">
+              Créer votre compte AQUA PILOT
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Étape {currentStep} sur 3 - Rejoignez la révolution de l'aquaculture intelligente
+            </DialogDescription>
+          </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Progress indicator */}
+          <div className="flex justify-center mb-6">
+            <div className="flex space-x-2">
+              {[1, 2, 3].map((step) => (
+                <div
+                  key={step}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep >= step
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
+          </div>
+            {/* Étape 1: Informations personnelles */}
             {currentStep === 1 && (
-              <>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-center mb-4">
+                  Informations personnelles
+                </h3>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">Prénom *</Label>
@@ -232,196 +288,229 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                     onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                     required
                   />
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                    <p className="text-sm text-red-500 mt-1">Les mots de passe ne correspondent pas</p>
+                  )}
                 </div>
-              </>
+              </div>
             )}
 
+            {/* Étape 2: Informations entreprise */}
             {currentStep === 2 && (
-              <>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-center mb-4">
+                  Informations sur votre entreprise
+                </h3>
+                
                 <div>
                   <Label htmlFor="companyName">Nom de l'entreprise *</Label>
                   <Input
                     id="companyName"
                     type="text"
-                    placeholder="Nom de votre exploitation"
                     value={formData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="companyType">Type d'entreprise *</Label>
-                    <Select value={formData.companyType} onValueChange={(value) => handleInputChange('companyType', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez le type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="individual">Entreprise individuelle</SelectItem>
-                        <SelectItem value="sarl">SARL</SelectItem>
-                        <SelectItem value="sas">SAS</SelectItem>
-                        <SelectItem value="cooperative">Coopérative</SelectItem>
-                        <SelectItem value="association">Association</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="numberOfEmployees">Nombre d'employés *</Label>
-                    <Select value={formData.numberOfEmployees} onValueChange={(value) => handleInputChange('numberOfEmployees', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Nombre d'employés" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 employé</SelectItem>
-                        <SelectItem value="2-5">2-5 employés</SelectItem>
-                        <SelectItem value="6-10">6-10 employés</SelectItem>
-                        <SelectItem value="11-20">11-20 employés</SelectItem>
-                        <SelectItem value="21-50">21-50 employés</SelectItem>
-                        <SelectItem value="50+">Plus de 50 employés</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div>
-                  <Label>Unités de production * (plusieurs choix possibles)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {['Écloserie', 'Grossissement', 'Finition', 'Nurserie'].map((unit) => (
-                      <div key={unit} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={unit}
-                          checked={formData.productionUnit.includes(unit)}
-                          onCheckedChange={() => handleMultiSelectChange('productionUnit', unit)}
-                        />
-                        <Label htmlFor={unit} className="text-sm cursor-pointer">{unit}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Activités (plusieurs choix possibles)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {['Commercialisation', 'Transformation', 'Algue culture', 'Recherche', 'Formation', 'Consulting'].map((activity) => (
-                      <div key={activity} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={activity}
-                          checked={formData.activities.includes(activity)}
-                          onCheckedChange={() => handleMultiSelectChange('activities', activity)}
-                        />
-                        <Label htmlFor={activity} className="text-sm cursor-pointer">{activity}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="annualProduction">Production annuelle estimée</Label>
-                  <Select value={formData.annualProduction} onValueChange={(value) => handleInputChange('annualProduction', value)}>
+                  <Label htmlFor="sector">Secteur d'activité *</Label>
+                  <Select 
+                    value={formData.sector} 
+                    onValueChange={(value) => handleInputChange('sector', value)}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez la capacité" />
+                      <SelectValue placeholder="Sélectionnez votre secteur" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="small">Moins de 10 tonnes</SelectItem>
-                      <SelectItem value="medium">10-50 tonnes</SelectItem>
-                      <SelectItem value="large">50-200 tonnes</SelectItem>
-                      <SelectItem value="industrial">Plus de 200 tonnes</SelectItem>
+                      {sectorOptions.map((sector) => (
+                        <SelectItem key={sector} value={sector.toLowerCase().replace(/\s+/g, '-')}>
+                          {sector}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="address">Adresse de l'exploitation</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Adresse complète de votre exploitation"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    rows={2}
+                  <Label htmlFor="location">Localisation *</Label>
+                  <Input
+                    id="location"
+                    type="text"
+                    placeholder="Ville, Région, Pays"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone">Téléphone *</Label>
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="+33 1 23 45 67 89"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
+                    required
                   />
                 </div>
 
-                <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg">
-                  <Checkbox 
-                    id="acceptTerms"
-                    checked={formData.acceptTerms}
-                    onCheckedChange={(checked) => handleInputChange('acceptTerms', checked === true)}
-                  />
-                  <Label htmlFor="acceptTerms" className="text-sm cursor-pointer">
-                    J'accepte les conditions d'utilisation et la politique de confidentialité *
-                  </Label>
+                <div>
+                  <Label htmlFor="employeeCount">Nombre d'employés *</Label>
+                  <Select 
+                    value={formData.employeeCount} 
+                    onValueChange={(value) => handleInputChange('employeeCount', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nombre d'employés" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 employé</SelectItem>
+                      <SelectItem value="2-5">2-5 employés</SelectItem>
+                      <SelectItem value="6-10">6-10 employés</SelectItem>
+                      <SelectItem value="11-25">11-25 employés</SelectItem>
+                      <SelectItem value="26-50">26-50 employés</SelectItem>
+                      <SelectItem value="50+">Plus de 50 employés</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </>
+              </div>
             )}
 
-            <div className="flex justify-between pt-4">
-              {currentStep === 2 && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setCurrentStep(1)}
-                >
-                  <Building className="w-4 h-4 mr-2" />
-                  Retour
-                </Button>
-              )}
-              
-              <div className="flex gap-2 ml-auto">
-                <Button type="button" variant="ghost" onClick={onClose}>
-                  Annuler
-                </Button>
+            {/* Étape 3: Unités de production */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-center mb-4">
+                  Unités de production et activités
+                </h3>
                 
-                <Button type="submit" className="bg-gradient-aqua text-white" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {currentStep === 1 ? 'Suivant...' : 'Création...'}
-                    </>
-                  ) : (
-                    <>
-                      {currentStep === 1 ? (
-                        <>
-                          <Users className="w-4 h-4 mr-2" />
-                          Suivant
-                        </>
-                      ) : (
-                        <>
-                          <Fish className="w-4 h-4 mr-2" />
-                          Créer mon compte
-                        </>
-                      )}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+                <div>
+                  <Label className="text-base font-medium">Types d'unités de production * (plusieurs choix possibles)</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    {productionUnitOptions.map((unit) => (
+                      <div key={unit} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={unit}
+                          checked={formData.productionUnits.includes(unit)}
+                          onCheckedChange={(checked) => handleProductionUnitChange(unit, checked === true)}
+                        />
+                        <Label htmlFor={unit} className="text-sm cursor-pointer">
+                          {unit}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="text-center pt-4">
-              <button
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Activités complémentaires</Label>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="processing"
+                      checked={formData.hasProcessing}
+                      onCheckedChange={(checked) => handleInputChange('hasProcessing', checked === true)}
+                    />
+                    <Label htmlFor="processing" className="cursor-pointer">
+                      Transformation des produits
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="marketing"
+                      checked={formData.hasMarketing}
+                      onCheckedChange={(checked) => handleInputChange('hasMarketing', checked === true)}
+                    />
+                    <Label htmlFor="marketing" className="cursor-pointer">
+                      Commercialisation directe
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="algae"
+                      checked={formData.hasAlgaeCulture}
+                      onCheckedChange={(checked) => handleInputChange('hasAlgaeCulture', checked === true)}
+                    />
+                    <Label htmlFor="algae" className="cursor-pointer">
+                      Culture d'algues
+                    </Label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="otherActivities">Autres activités</Label>
+                  <Textarea
+                    id="otherActivities"
+                    placeholder="Décrivez vos autres activités..."
+                    value={formData.otherActivities}
+                    onChange={(e) => handleInputChange('otherActivities', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+
+          {/* Boutons de navigation */}
+          <div className="flex justify-between mt-6">
+            {currentStep > 1 && (
+              <Button
                 type="button"
-                onClick={onSwitchToLogin}
-                className="text-sm text-aqua-600 hover:text-aqua-700 underline"
+                variant="outline"
+                onClick={() => setCurrentStep(prev => prev - 1)}
               >
-                Déjà un compte ? Se connecter
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Précédent
+              </Button>
+            )}
+
+            <div className="flex-1" />
+
+            {currentStep < 3 ? (
+              <Button
+                type="button"
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                className="bg-gradient-aqua text-white"
+                disabled={!canProceedToNextStep()}
+              >
+                Suivant
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={isLoading || !canProceedToNextStep()}
+                className="bg-gradient-aqua text-white"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Créer mon compte
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          <div className="text-center pt-4">
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-sm text-aqua-600 hover:text-aqua-700 underline"
+            >
+              Déjà un compte ? Se connecter
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

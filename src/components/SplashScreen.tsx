@@ -10,22 +10,24 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Animation de progression sur 10 secondes
+    // Animation de progression sur 10 secondes (100ms * 100 = 10000ms)
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
+        const newProgress = prev + 1;
+        if (newProgress >= 100) {
           clearInterval(progressInterval);
           return 100;
         }
-        return prev + 1; // +1% toutes les 100ms = 10 secondes
+        return newProgress;
       });
-    }, 100);
+    }, 100); // 100ms par increment pour 10 secondes total
 
-    // Timer principal pour masquer le splash
+    // Timer principal pour masquer le splash après 10 secondes
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onComplete, 500); // Animation de sortie plus longue
-    }, 10000); // 10 secondes exactement
+      // Attendre la fin de l'animation de sortie avant d'appeler onComplete
+      setTimeout(onComplete, 600);
+    }, 10000); // Exactement 10 secondes
 
     return () => {
       clearTimeout(timer);
