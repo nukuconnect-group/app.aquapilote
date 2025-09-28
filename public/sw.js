@@ -1,8 +1,6 @@
-const CACHE_NAME = 'aqua-pilot-v2.0.0-fresh'; // Nouveau nom pour forcer la mise à jour
-const urlsToCache = [
-  '/',
-  '/manifest.json'
-];
+// Désactiver complètement le cache pour forcer le rechargement
+const CACHE_NAME = 'aqua-pilot-no-cache-' + Date.now();
+const urlsToCache = [];
 
 // Installation du service worker - nettoyage forcé
 self.addEventListener('install', (event) => {
@@ -46,23 +44,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Stratégie de mise en cache - Network First pour éviter les anciennes versions
+// Désactiver complètement le cache - toujours utiliser le réseau
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request).then((response) => {
-      // Si la requête réseau réussit, utiliser la nouvelle version
-      if (response && response.status === 200) {
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      }
-      throw new Error('Network response was not ok');
-    }).catch(() => {
-      // Fallback sur le cache seulement si le réseau échoue
-      return caches.match(event.request);
-    })
+    fetch(event.request.url + '?nocache=' + Date.now())
+      .catch(() => fetch(event.request))
   );
 });
 
