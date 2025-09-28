@@ -11,8 +11,26 @@ import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
 import EnhancedRegistration from './EnhancedRegistration';
 import PWAInstallPrompt from './PWAInstallPrompt';
-
+import { useAuth } from '@/contexts/AuthContext';
+import IoTControlCenter from './IoTControlCenter';
+import ProductionUnitsManagement from './ProductionUnitsManagement';
+import InfrastructureManagement from './InfrastructureManagement';
+import FishManagement from './FishManagement';
+import LivestockManagement from './LivestockManagement';
+import FeedingManagement from './FeedingManagement';
+import HealthMonitoring from './HealthMonitoring';
+import ProductionManagement from './ProductionManagement';
+import AccountingManagement from './AccountingManagement';
+import HRManagement from './HRManagement';
+import SalesManagement from './SalesManagement';
+import PurchasesManagement from './PurchasesManagement';
+import PlanningManagement from './PlanningManagement';
+import WeatherDashboard from './WeatherDashboard';
+import TeamManagement from './TeamManagement';
+import ReportsManagement from './ReportsManagement';
+import SettingsManagement from './SettingsManagement';
 const MainLayout = () => {
+  console.log('MainLayout rendering');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -20,11 +38,17 @@ const MainLayout = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showPrivacy, setShowPrivacy] = useState(false);
   
-  // États d'authentification simplifiés (sans context pour éviter les erreurs)
-  const [user, setUser] = useState(null);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [hasSelectedPlan, setHasSelectedPlan] = useState(false);
+  console.log('MainLayout state:', { showSplash, showPrivacy });
+  
+  const {
+    user,
+    hasSeenOnboarding,
+    completeOnboarding,
+    hasSelectedPlan,
+    completeSubscriptionSelection
+  } = useAuth();
 
+  console.log('Auth state:', { user: !!user, hasSeenOnboarding, hasSelectedPlan });
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
@@ -32,7 +56,6 @@ const MainLayout = () => {
       setActiveTab(tab);
     }
   };
-
   const handleLogin = () => {
     setShowLogin(true);
     setShowEnhancedRegister(false);
@@ -45,57 +68,84 @@ const MainLayout = () => {
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    try {
-      const privacySeen = localStorage.getItem('privacy_accepted');
-      if (privacySeen !== 'true') {
-        setShowPrivacy(true);
-      }
-    } catch (error) {
-      console.error('Erreur accès localStorage:', error);
+    const privacySeen = localStorage.getItem('privacy_accepted');
+    if (privacySeen !== 'true') {
+      setShowPrivacy(true);
     }
   };
 
   const handlePrivacyAccept = () => {
-    try {
-      localStorage.setItem('privacy_accepted', 'true');
-    } catch (error) {
-      console.error('Erreur sauvegarde localStorage:', error);
-    }
+    localStorage.setItem('privacy_accepted', 'true');
     setShowPrivacy(false);
-  };
-
-  const completeOnboarding = () => {
-    setHasSeenOnboarding(true);
-  };
-
-  const completeSubscriptionSelection = () => {
-    setHasSelectedPlan(true);
   };
 
   // Afficher le splash screen au premier lancement
   if (showSplash) {
+    console.log('Rendering SplashScreen');
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Afficher la politique de confidentialité si pas encore acceptée
   if (showPrivacy) {
+    console.log('Rendering PrivacyPolicy');
     return <PrivacyPolicy onAccept={handlePrivacyAccept} />;
   }
 
   // Afficher l'onboarding si pas encore vu
   if (!hasSeenOnboarding) {
+    console.log('Rendering Onboarding');
     return <Onboarding onComplete={completeOnboarding} onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   // Afficher les plans de souscription si pas encore sélectionné et utilisateur connecté
   if (user && !hasSelectedPlan) {
+    console.log('Rendering SubscriptionPlans');
     return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
   }
-
+  
+  console.log('Rendering main layout');
   const renderContent = () => {
-    return <IntelligentDashboard />;
+    switch (activeTab) {
+      case 'dashboard':
+        return <IntelligentDashboard />;
+      case 'iot-control':
+        return <IoTControlCenter />;
+      case 'units':
+        return <ProductionUnitsManagement />;
+      case 'infrastructures':
+        return <InfrastructureManagement />;
+      case 'fish':
+        return <FishManagement />;
+      case 'livestock':
+        return <LivestockManagement />;
+      case 'feeding':
+        return <FeedingManagement />;
+      case 'health':
+        return <HealthMonitoring />;
+      case 'production':
+        return <ProductionManagement />;
+      case 'accounting':
+        return <AccountingManagement />;
+      case 'hr':
+        return <HRManagement />;
+      case 'purchases':
+        return <PurchasesManagement />;
+      case 'sales':
+        return <SalesManagement />;
+      case 'planning':
+        return <PlanningManagement />;
+      case 'weather':
+        return <WeatherDashboard />;
+      case 'team':
+        return <TeamManagement />;
+      case 'reports':
+        return <ReportsManagement />;
+      case 'settings':
+        return <SettingsManagement />;
+      default:
+        return <IntelligentDashboard />;
+    }
   };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header fixe en haut */}
@@ -143,5 +193,4 @@ const MainLayout = () => {
     </div>
   );
 };
-
 export default MainLayout;
