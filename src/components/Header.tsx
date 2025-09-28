@@ -49,20 +49,22 @@ const Header = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
     return <>
-      <header className="bg-primary h-12 lg:h-14 sticky top-0 z-50 shadow-sm w-full">
-        <div className="flex justify-between items-center h-full bg-emerald-800 w-full">
+      <header className="bg-primary h-14 sm:h-16 sticky top-0 z-50 shadow-sm w-full">
+        <div className="flex justify-between items-center h-full bg-emerald-800 w-full px-2 sm:px-4 lg:px-6">
           {/* Logo et titre à gauche */}
-          <div className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4">
-            <div>
-              <h1 className="text-primary-foreground text-responsive-subtitle tracking-wide font-medium">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <div className="min-w-0">
+              <h1 className="text-primary-foreground text-lg sm:text-xl lg:text-2xl tracking-wide font-bold truncate">
                 AQUA PILOTE
               </h1>
-              <p className="text-primary-foreground/80 text-responsive-caption leading-tight hidden sm:block">Gestion Piscicole Intelligente</p>
+              <p className="text-primary-foreground/80 text-xs sm:text-sm leading-tight hidden sm:block truncate">
+                Gestion Piscicole Intelligente
+              </p>
             </div>
           </div>
 
           {/* Navigation actions à droite */}
-          <div className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             {/* Notifications */}
             <NotificationsPanel />
             

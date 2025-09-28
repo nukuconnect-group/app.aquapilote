@@ -40,12 +40,28 @@ const MobileNavigation = ({
     icon: Settings,
     color: 'text-gray-500'
   }];
-  return <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 md:hidden shadow-lg backdrop-blur-sm">
-      <div className="flex justify-around items-center max-w-md mx-auto py-1">
-        {mainItems.map(item => <Button key={item.id} variant="ghost" size="sm" className={`flex flex-col items-center py-2 px-1 h-auto min-w-0 flex-1 min-h-[60px] transition-colors ${activeTab === item.id ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`} onClick={() => onTabChange(item.id)}>
-            <item.icon className={`icon-responsive mb-1 transition-colors ${activeTab === item.id ? 'text-primary' : 'text-muted-foreground'}`} />
-            <span className="text-responsive-caption font-medium truncate max-w-full leading-tight">{item.label}</span>
-          </Button>)}
+  return <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 md:hidden shadow-lg backdrop-blur-sm safe-area-inset-bottom">
+      <div className="flex justify-around items-center w-full py-2 px-1">
+        {mainItems.map(item => 
+          <Button 
+            key={item.id} 
+            variant="ghost" 
+            size="sm" 
+            className={`flex flex-col items-center py-2 px-1 h-auto min-w-0 flex-1 min-h-[56px] transition-colors ${
+              activeTab === item.id 
+                ? 'text-primary bg-primary/10' 
+                : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+            }`} 
+            onClick={() => onTabChange(item.id)}
+          >
+            <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 mb-1 transition-colors ${
+              activeTab === item.id ? 'text-primary' : 'text-muted-foreground'
+            }`} />
+            <span className="text-[10px] sm:text-xs font-medium truncate max-w-full leading-tight text-center">
+              {item.label}
+            </span>
+          </Button>
+        )}
       </div>
     </div>;
 };

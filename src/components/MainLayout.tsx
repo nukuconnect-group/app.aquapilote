@@ -120,22 +120,22 @@ const MainLayout = () => {
     <LogsProvider>
       <SettingsProvider>
         <SidebarProvider>
-          <div className="min-h-screen bg-background flex flex-col w-full">
+          <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
             {/* Header fixe en haut */}
-            <div className="w-full">{/* Conteneur pleine largeur pour header */}
+            <div className="w-full flex-shrink-0">
               <Header />
             </div>
             
-            <div className="flex flex-1 w-full">
+            <div className="flex flex-1 w-full overflow-hidden">
               {/* Sidebar Navigation - masqué sur mobile */}
-              <div className="hidden md:block">
+              <div className="hidden md:block flex-shrink-0">
                 <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 min-w-0 w-full">
-                <main className="p-responsive overflow-auto safe-area-mobile w-full">
-                  <div className="w-full">
+              <div className="flex-1 min-w-0 w-full overflow-auto">
+                <main className="p-2 sm:p-4 lg:p-6 safe-area-mobile w-full max-w-full">
+                  <div className="w-full max-w-full overflow-hidden">
                     {renderContent()}
                   </div>
                 </main>
@@ -143,10 +143,17 @@ const MainLayout = () => {
             </div>
 
             {/* Navigation mobile en bas */}
-            <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+            <div className="flex-shrink-0 md:hidden">
+              <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+            </div>
             
             {/* Modal menu mobile */}
-            <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
+            <MobileMenuModal 
+              isOpen={showMobileMenu} 
+              onClose={() => setShowMobileMenu(false)} 
+              activeTab={activeTab} 
+              onTabChange={setActiveTab} 
+            />
 
             {/* Dialogs de connexion/inscription */}
             <AuthManager

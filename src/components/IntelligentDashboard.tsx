@@ -257,17 +257,17 @@ const IntelligentDashboard = () => {
       </div>
 
       {/* Métriques dynamiques */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {viewMode === 'unit' ? metrics.map((metric, index) => {
         const IconComponent = metric.icon;
-        return <Card key={index} className="hover:shadow-sm transition-shadow">
+        return <Card key={index} className="hover:shadow-sm transition-shadow w-full">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-aqua-600" />
+                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-aqua-600 flex-shrink-0" />
                   </div>
-                  <p className="text-base sm:text-xl font-bold truncate">{metric.value}</p>
+                  <p className="text-sm sm:text-base lg:text-xl font-bold truncate">{metric.value}</p>
                   <p className="text-xs sm:text-sm text-gray-600 truncate">{metric.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{metric.subtitle}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 truncate">{metric.subtitle}</p>
                 </CardContent>
               </Card>;
       }) :
@@ -294,14 +294,14 @@ const IntelligentDashboard = () => {
         icon: Factory
       }].map((metric, index) => {
         const IconComponent = metric.icon;
-        return <Card key={index} className="hover:shadow-sm transition-shadow">
+        return <Card key={index} className="hover:shadow-sm transition-shadow w-full">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                   </div>
-                  <p className="text-base sm:text-xl font-bold truncate">{metric.value}</p>
+                  <p className="text-sm sm:text-base lg:text-xl font-bold truncate">{metric.value}</p>
                   <p className="text-xs sm:text-sm text-gray-600 truncate">{metric.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{metric.subtitle}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 truncate">{metric.subtitle}</p>
                 </CardContent>
               </Card>;
       })}
