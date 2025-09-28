@@ -1,19 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aqua-pilot-afrique-digital</title>
-    <meta name="description" content="Gestion de ferme piscicole avancée">
-    <meta name="author" content="Lovable" />
+    <title>AQUA PILOT - Gestion Piscicole Intelligente</title>
+    <meta name="description" content="Application complète de gestion piscicole avec IoT et surveillance intelligente">
+    <meta name="author" content="AQUA PILOT" />
 
-    <meta property="og:title" content="aqua-pilot-afrique-digital" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AQUA PILOT">
+
+    <meta property="og:title" content="AQUA PILOT - Gestion Piscicole Intelligente" />
+    <meta property="og:description" content="Application complète de gestion piscicole avec IoT et surveillance intelligente" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/social-images/social-1758369376559-LOGO AQUA PILOT.png">
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:site" content="@aqua_pilot" />
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/social-images/social-1758369376559-LOGO AQUA PILOT.png">
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/uploads/1758369338751-LOGO AQUA PILOT.png">
 </head>
@@ -21,5 +29,20 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

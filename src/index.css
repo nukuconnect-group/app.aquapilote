@@ -139,7 +139,7 @@
     @apply leading-tight;
   }
 
-  /* Espacement mobile optimisé */
+  /* Optimisation des espacements pour éviter les espaces vides */
   @media (max-width: 768px) {
     .space-y-6 > * + * {
       margin-top: 1rem !important;
@@ -169,6 +169,13 @@
     .py-6 {
       padding-top: 1rem !important;
       padding-bottom: 1rem !important;
+    }
+    
+    /* Éliminer les espaces vides sur mobile */
+    .container, .w-full {
+      max-width: 100vw !important;
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
     }
   }
 
@@ -305,28 +312,40 @@
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
   }
 
-  /* Cartes responsives - Améliorées pour mobile */
+  /* Cartes responsives - Optimisées pour éviter les espaces vides */
   .card-responsive {
-    @apply p-4 sm:p-4 lg:p-6 rounded-lg bg-card border shadow-sm;
+    @apply p-3 sm:p-4 lg:p-6 rounded-lg bg-card border shadow-sm;
     min-height: 80px;
+    width: 100%;
   }
   
   .card-responsive-sm {
-    @apply p-3 sm:p-3 lg:p-4 rounded-md bg-card border shadow-sm;
+    @apply p-2 sm:p-3 lg:p-4 rounded-md bg-card border shadow-sm;
     min-height: 60px;
+    width: 100%;
   }
 
-  /* Classes pour éviter les débordements sur mobile */
+  /* Classes pour éviter les débordements et espaces vides */
   .safe-area-mobile {
     @apply pb-20 md:pb-6;
+    width: 100%;
   }
 
   .mobile-friendly-modal {
     @apply max-h-[90vh] overflow-y-auto;
+    margin: 0;
+    width: 100%;
   }
 
   .mobile-friendly-table {
     @apply text-xs sm:text-sm overflow-x-auto;
+    width: 100%;
+  }
+
+  .full-width-container {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
   }
 
   /* Support offline - à développer avec service worker */
