@@ -122,9 +122,12 @@ const MainLayout = () => {
         <SidebarProvider>
           <div className="min-h-screen bg-background flex flex-col w-full">
             {/* Header fixe en haut */}
-            <div className="w-full">{/* Conteneur pleine largeur pour header */}
-              <Header />
-            </div>
+            <header className="flex items-center h-12 lg:h-14 border-b">
+              <SidebarTrigger className="ml-2 hidden md:inline-flex" />
+              <div className="flex-1">
+                <Header />
+              </div>
+            </header>
             
             <div className="flex flex-1 w-full">
               {/* Sidebar Navigation - masqué sur mobile */}
@@ -133,9 +136,9 @@ const MainLayout = () => {
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 min-w-0 w-full">
-                <main className="p-responsive overflow-auto safe-area-mobile w-full">
-                  <div className="w-full">
+              <div className="flex-1 min-w-0">
+                <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full">
+                  <div className="w-full max-w-none">
                     {renderContent()}
                   </div>
                 </main>

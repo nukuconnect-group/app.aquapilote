@@ -1,10 +1,15 @@
-import React from 'react';
-import TestApp from './TestApp';
 
-// Test ultra-simple pour éliminer l'écran blanc
+import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import AppWithPrivacy from '@/components/AppWithPrivacy';
+import './App.css';
+
 function App() {
-  console.log('App component rendu');
-  return <TestApp />;
+  return (
+    <Router>
+      <AppWithPrivacy />
+    </Router>
+  );
 }
 
 export default App;

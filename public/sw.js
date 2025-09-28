@@ -1,33 +1,25 @@
-// Désactiver complètement le cache pour forcer le rechargement
-const CACHE_NAME = 'aqua-pilot-no-cache-' + Date.now();
-const urlsToCache = [];
+const CACHE_NAME = 'aqua-pilot-v1.0.0';
+const urlsToCache = [
+  '/',
+  '/static/js/bundle.js',
+  '/static/css/main.css',
+  '/assets/aqua-pilot-logo.png',
+  '/manifest.json'
+];
 
-// Installation du service worker - nettoyage forcé
+// Installation du service worker
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installation avec nettoyage forcé');
   event.waitUntil(
-    // Supprimer tous les anciens caches
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          console.log('Suppression du cache:', cacheName);
-          return caches.delete(cacheName);
-        })
-      );
-    }).then(() => {
-      // Créer le nouveau cache
-      return caches.open(CACHE_NAME);
-    }).then((cache) => {
-      console.log('Nouveau cache créé');
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Cache ouvert');
+        return cache.addAll(urlsToCache);
+      })
   );
-  self.skipWaiting(); // Force l'activation immédiate
 });
 
-// Activation du service worker - nettoyage complet
+// Activation du service worker
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activation avec nettoyage complet');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -38,17 +30,39 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => {
-      return self.clients.claim(); // Prendre le contrôle immédiatement
     })
   );
 });
 
-// Désactiver complètement le cache - toujours utiliser le réseau
+// Stratégie de mise en cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request.url + '?nocache=' + Date.now())
-      .catch(() => fetch(event.request))
+    caches.match(event.request)
+      .then((response) => {
+        // Cache hit - retourne la réponse
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then(
+          (response) => {
+            // Vérifier si nous avons reçu une réponse valide
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // IMPORTANT: Cloner la réponse
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
   );
 });
 
@@ -56,14 +70,5 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-  }
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          return caches.delete(cacheName);
-        })
-      );
-    });
   }
 });

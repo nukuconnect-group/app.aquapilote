@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShoppingCart, Plus, TrendingUp, Calendar, Package } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Calendar, FileText, Package, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -47,26 +48,15 @@ const ResponsivePurchases = () => {
       supplier: 'Équipement Piscicole Plus',
       category: 'Équipement',
       description: 'Pompe à oxygène 50L/min',
-      quantity: 1,
+      quantity: 2,
       unitPrice: 450,
-      totalAmount: 450,
+      totalAmount: 900,
       status: 'pending'
-    },
-    {
-      id: '3',
-      date: '2024-12-15',
-      supplier: 'Matériel Aquatique Pro',
-      category: 'Maintenance',
-      description: 'Filtres biologiques et accessoires',
-      quantity: 10,
-      unitPrice: 25,
-      totalAmount: 250,
-      status: 'paid'
     }
   ]);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [purchaseFormData, setPurchaseFormData] = useState({
     supplier: '',
     category: '',
     description: '',
@@ -79,25 +69,19 @@ const ResponsivePurchases = () => {
     'Équipement',
     'Maintenance',
     'Produits chimiques',
-    'Matériel de mesure',
+    'Énergie',
+    'Transport',
+    'Services',
     'Autres'
   ];
 
-  // Calculer les KPI
-  const totalPurchases = purchases.reduce((sum, p) => sum + p.totalAmount, 0);
-  const pendingPurchases = purchases.filter(p => p.status === 'pending').length;
-  const monthlyPurchases = purchases
-    .filter(p => new Date(p.date).getMonth() === new Date().getMonth())
-    .reduce((sum, p) => sum + p.totalAmount, 0);
-  const activeSuppliersCount = new Set(purchases.map(p => p.supplier)).size;
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'secondary';
-      case 'approved': return 'default';
-      case 'delivered': return 'outline';
-      case 'paid': return 'default';
-      default: return 'secondary';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'paid': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -111,11 +95,14 @@ const ResponsivePurchases = () => {
     }
   };
 
+  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.totalAmount, 0);
+  const pendingPurchases = purchases.filter(p => p.status === 'pending').length;
+
   const handleAddPurchase = () => {
-    if (!formData.supplier || !formData.category || !formData.description || formData.quantity <= 0 || formData.unitPrice <= 0) {
+    if (!purchaseFormData.supplier || !purchaseFormData.description) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs avec des valeurs valides",
+        description: "Veuillez remplir tous les champs obligatoires",
         variant: "destructive"
       });
       return;
@@ -124,52 +111,58 @@ const ResponsivePurchases = () => {
     const newPurchase: Purchase = {
       id: Date.now().toString(),
       date: new Date().toISOString().split('T')[0],
-      supplier: formData.supplier,
-      category: formData.category,
-      description: formData.description,
-      quantity: formData.quantity,
-      unitPrice: formData.unitPrice,
-      totalAmount: formData.quantity * formData.unitPrice,
+      ...purchaseFormData,
+      totalAmount: purchaseFormData.quantity * purchaseFormData.unitPrice,
       status: 'pending'
     };
 
-    setPurchases([newPurchase, ...purchases]);
-    setFormData({
+    setPurchases([...purchases, newPurchase]);
+    toast({
+      title: "Achat ajouté",
+      description: "Le nouvel achat a été ajouté avec succès"
+    });
+
+    // Reset form
+    setPurchaseFormData({
       supplier: '',
       category: '',
       description: '',
       quantity: 0,
       unitPrice: 0
     });
-    setIsDialogOpen(false);
-
-    toast({
-      title: "Achat ajouté",
-      description: "Le nouvel achat a été ajouté avec succès"
-    });
+    setShowPurchaseForm(false);
   };
 
+  // Mobile Card Component
   const PurchaseCard = ({ purchase }: { purchase: Purchase }) => (
-    <Card className="card-responsive-sm">
-      <CardContent className="p-3 space-y-2">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1 flex-1 min-w-0">
-            <h3 className="text-responsive-small font-semibold truncate">{purchase.supplier}</h3>
-            <p className="text-responsive-caption text-muted-foreground">{purchase.category}</p>
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
+            <h4 className="font-semibold text-sm mb-1">{purchase.description}</h4>
+            <p className="text-xs text-muted-foreground">{purchase.supplier}</p>
           </div>
-          <Badge variant={getStatusColor(purchase.status)} className="text-responsive-caption ml-2 flex-shrink-0">
+          <Badge className={`${getStatusColor(purchase.status)} text-xs ml-2`}>
             {getStatusLabel(purchase.status)}
           </Badge>
         </div>
-        <div className="space-y-1">
-          <p className="text-responsive-caption">{purchase.description}</p>
-          <div className="flex justify-between text-responsive-caption text-muted-foreground">
-            <span>Qté: {purchase.quantity}</span>
-            <span>Prix: {formatCurrency(purchase.unitPrice)}</span>
+        
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">Date:</span>
+            <p className="font-medium">{new Date(purchase.date).toLocaleDateString('fr-FR')}</p>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-responsive-caption text-muted-foreground">{purchase.date}</span>
-            <span className="text-responsive-small font-bold">{formatCurrency(purchase.totalAmount)}</span>
+          <div>
+            <span className="text-muted-foreground">Catégorie:</span>
+            <p className="font-medium">{purchase.category}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Quantité:</span>
+            <p className="font-medium">{purchase.quantity}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Total:</span>
+            <p className="font-bold text-primary">{formatCurrency(purchase.totalAmount)}</p>
           </div>
         </div>
       </CardContent>
@@ -177,108 +170,136 @@ const ResponsivePurchases = () => {
   );
 
   return (
-    <div className="w-full space-y-responsive">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
-        <div>
-          <h1 className="text-responsive-title">Gestion des achats</h1>
-          <p className="text-responsive text-muted-foreground">Gérez vos commandes et fournisseurs</p>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
+      <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-4 sm:p-6 rounded-xl text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2 sm:gap-3">
+              <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8" />
+              <span className="text-lg sm:text-2xl">Gestion des Achats</span>
+            </h2>
+            <p className="text-orange-100 text-sm sm:text-base">Suivi et catégorisation des dépenses d'exploitation</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base"
+            onClick={() => setShowPurchaseForm(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvel Achat
+          </Button>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="btn-responsive w-full sm:w-auto">
-          <Plus className="icon-responsive mr-2" />
-          Nouvel achat
-        </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid-responsive-4 gap-responsive">
-        <Card className="card-responsive-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+      {/* KPIs - Responsive Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
               <div>
-                <p className="text-responsive-caption text-muted-foreground">Total achats</p>
-                <p className="text-responsive-subtitle font-bold">{formatCurrency(totalPurchases)}</p>
+                <p className="text-lg sm:text-2xl font-bold">{formatCurrency(totalPurchases)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total achats</p>
               </div>
-              <ShoppingCart className="icon-responsive-lg text-primary" />
             </div>
           </CardContent>
         </Card>
         
-        <Card className="card-responsive-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
               <div>
-                <p className="text-responsive-caption text-muted-foreground">En attente</p>
-                <p className="text-responsive-subtitle font-bold">{pendingPurchases}</p>
+                <p className="text-lg sm:text-2xl font-bold">{purchases.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Commandes</p>
               </div>
-              <Calendar className="icon-responsive-lg text-orange-500" />
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="card-responsive-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
               <div>
-                <p className="text-responsive-caption text-muted-foreground">Ce mois</p>
-                <p className="text-responsive-subtitle font-bold">{formatCurrency(monthlyPurchases)}</p>
+                <p className="text-lg sm:text-2xl font-bold">{pendingPurchases}</p>
+                <p className="text-xs sm:text-sm text-gray-600">En attente</p>
               </div>
-              <TrendingUp className="icon-responsive-lg text-green-500" />
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="card-responsive-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               <div>
-                <p className="text-responsive-caption text-muted-foreground">Fournisseurs actifs</p>
-                <p className="text-responsive-subtitle font-bold">{activeSuppliersCount}</p>
+                <p className="text-lg sm:text-2xl font-bold">{formatCurrency(totalPurchases / 12)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Moy./mois</p>
               </div>
-              <Package className="icon-responsive-lg text-blue-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Purchases List */}
-      <Card className="card-responsive">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-responsive-subtitle">Liste des achats</CardTitle>
+      {/* Content - Mobile/Desktop Adaptive */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Liste des Achats</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 sm:p-6 sm:pt-0">
+        <CardContent>
           {isMobile ? (
-            <div className="space-y-2 p-4">
+            // Mobile: Card layout
+            <div className="space-y-3">
               {purchases.map((purchase) => (
                 <PurchaseCard key={purchase.id} purchase={purchase} />
               ))}
             </div>
           ) : (
-            <div className="mobile-friendly-table">
+            // Desktop: Table layout
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-responsive-small">Date</TableHead>
-                    <TableHead className="text-responsive-small">Fournisseur</TableHead>
-                    <TableHead className="text-responsive-small">Catégorie</TableHead>
-                    <TableHead className="text-responsive-small">Description</TableHead>
-                    <TableHead className="text-responsive-small text-right">Quantité</TableHead>
-                    <TableHead className="text-responsive-small text-right">Prix unitaire</TableHead>
-                    <TableHead className="text-responsive-small text-right">Total</TableHead>
-                    <TableHead className="text-responsive-small">Statut</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Fournisseur</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Description</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Catégorie</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Quantité</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Prix unitaire</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Total</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Statut</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchases.map((purchase) => (
                     <TableRow key={purchase.id}>
-                      <TableCell className="text-responsive-small">{purchase.date}</TableCell>
-                      <TableCell className="text-responsive-small font-medium">{purchase.supplier}</TableCell>
-                      <TableCell className="text-responsive-small">{purchase.category}</TableCell>
-                      <TableCell className="text-responsive-small">{purchase.description}</TableCell>
-                      <TableCell className="text-responsive-small text-right">{purchase.quantity}</TableCell>
-                      <TableCell className="text-responsive-small text-right">{formatCurrency(purchase.unitPrice)}</TableCell>
-                      <TableCell className="text-responsive-small text-right font-medium">{formatCurrency(purchase.totalAmount)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {new Date(purchase.date).toLocaleDateString('fr-FR')}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm font-medium">
+                        {purchase.supplier}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {purchase.description}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(purchase.status)} className="text-responsive-caption">
+                        <Badge variant="outline" className="text-xs">
+                          {purchase.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {purchase.quantity}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">
+                        {formatCurrency(purchase.unitPrice)}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm font-bold">
+                        {formatCurrency(purchase.totalAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(purchase.status)} text-xs`}>
                           {getStatusLabel(purchase.status)}
                         </Badge>
                       </TableCell>
@@ -292,91 +313,96 @@ const ResponsivePurchases = () => {
       </Card>
 
       {/* Add Purchase Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="mobile-friendly-modal w-full max-w-md mx-auto">
+      <Dialog open={showPurchaseForm} onOpenChange={setShowPurchaseForm}>
+        <DialogContent className="w-full max-w-md sm:max-w-2xl mx-4">
           <DialogHeader>
-            <DialogTitle className="text-responsive-subtitle">Nouvel achat</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Ajouter un nouvel achat</DialogTitle>
           </DialogHeader>
-          <div className="space-y-responsive">
-            <div className="space-y-2">
-              <Label htmlFor="supplier" className="text-responsive-small">Fournisseur</Label>
-              <Input
-                id="supplier"
-                value={formData.supplier}
-                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                placeholder="Nom du fournisseur"
-                className="text-responsive"
-              />
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm">Fournisseur *</Label>
+                <Input
+                  className="text-sm"
+                  value={purchaseFormData.supplier}
+                  onChange={(e) => setPurchaseFormData({...purchaseFormData, supplier: e.target.value})}
+                  placeholder="Nom du fournisseur"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">Catégorie *</Label>
+                <Select
+                  value={purchaseFormData.category}
+                  onValueChange={(value) => setPurchaseFormData({...purchaseFormData, category: value})}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category} className="text-sm">
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-responsive-small">Catégorie</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                <SelectTrigger className="text-responsive">
-                  <SelectValue placeholder="Sélectionner une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category} className="text-responsive">
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-responsive-small">Description</Label>
+            <div>
+              <Label className="text-sm">Description *</Label>
               <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="text-sm"
+                value={purchaseFormData.description}
+                onChange={(e) => setPurchaseFormData({...purchaseFormData, description: e.target.value})}
                 placeholder="Description de l'achat"
-                className="text-responsive"
               />
             </div>
 
-            <div className="grid-responsive-2 gap-responsive">
-              <div className="space-y-2">
-                <Label htmlFor="quantity" className="text-responsive-small">Quantité</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm">Quantité</Label>
                 <Input
-                  id="quantity"
+                  className="text-sm"
                   type="number"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                  value={purchaseFormData.quantity}
+                  onChange={(e) => setPurchaseFormData({...purchaseFormData, quantity: Number(e.target.value)})}
                   placeholder="0"
-                  className="text-responsive"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="unitPrice" className="text-responsive-small">Prix unitaire</Label>
+              <div>
+                <Label className="text-sm">Prix unitaire</Label>
                 <Input
-                  id="unitPrice"
+                  className="text-sm"
                   type="number"
                   step="0.01"
-                  value={formData.unitPrice}
-                  onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
+                  value={purchaseFormData.unitPrice}
+                  onChange={(e) => setPurchaseFormData({...purchaseFormData, unitPrice: Number(e.target.value)})}
                   placeholder="0.00"
-                  className="text-responsive"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
+            {purchaseFormData.quantity > 0 && purchaseFormData.unitPrice > 0 && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">
+                  Total: {formatCurrency(purchaseFormData.quantity * purchaseFormData.unitPrice)}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
               <Button
-                type="button"
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-                className="btn-responsive-sm order-2 sm:order-1"
+                onClick={() => setShowPurchaseForm(false)}
+                className="flex-1 text-sm"
               >
                 Annuler
               </Button>
               <Button
                 onClick={handleAddPurchase}
-                className="btn-responsive-sm order-1 sm:order-2"
+                className="flex-1 text-sm"
               >
-                <Plus className="icon-responsive mr-2" />
                 Ajouter l'achat
               </Button>
             </div>
