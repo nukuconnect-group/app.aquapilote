@@ -11,12 +11,16 @@ import PrivacyPolicy from '@/components/PrivacyPolicy';
 import { Toaster } from '@/components/ui/toaster';
 
 const AppWithPrivacy = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  const [showMainApp, setShowMainApp] = useState(false);
+  const [showSplash, setShowSplash] = React.useState(true);
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = React.useState(false);
+  const [showMainApp, setShowMainApp] = React.useState(false);
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    // S'assurer que le composant est monté avant d'accéder à localStorage
+    setIsInitialized(true);
+    
     // Vérifier si l'utilisateur a déjà accepté la politique de confidentialité
     const hasAcceptedPrivacy = localStorage.getItem('privacy-policy-accepted') === 'true';
     const hasSeenOnboarding = localStorage.getItem('onboarding-completed') === 'true';
@@ -29,6 +33,11 @@ const AppWithPrivacy = () => {
       setShowMainApp(true);
     }
   }, []);
+
+  // Ne rien rendre tant que le composant n'est pas initialisé
+  if (!isInitialized) {
+    return null;
+  }
 
   const handleSplashComplete = () => {
     setShowSplash(false);
