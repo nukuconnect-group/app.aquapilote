@@ -235,11 +235,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('current_user');
-    localStorage.removeItem('onboarding_seen');
-    localStorage.removeItem('plan_selected');
     setHasSeenOnboarding(false);
     setHasSelectedPlan(false);
     setSelectedSubscriptionPlan(null);
+    
+    // Retourner à l'onboarding au lieu de recharger la page
+    // window.location.reload();
   };
 
   return (

@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CreditCard, Plus, AlertTriangle, Calendar, Eye, Edit, Trash2, Download } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { useLogs } from '@/contexts/LogsContext';
-import { useSettings } from '@/contexts/SettingsContext';
 
 interface BankAccount {
   id: string;
@@ -36,7 +35,6 @@ interface Invoice {
 
 const CashFlowManager = () => {
   const { addLog } = useLogs();
-  const { currency } = useSettings();
 
   const [accounts, setAccounts] = useState<BankAccount[]>([
     { id: '1', name: 'Compte courant principal', type: 'checking', balance: 15420, currency: 'EUR' },
@@ -399,7 +397,7 @@ const CashFlowManager = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-orange-700">
-                    Votre trésorerie actuelle ({currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}{totalBalance.toLocaleString()}) est inférieure au seuil recommandé de {currency === 'XOF' ? 'F CFA ' : currency === 'EUR' ? '€' : '$'}5,000.
+                    Votre trésorerie actuelle (€{totalBalance.toLocaleString()}) est inférieure au seuil recommandé de €5,000.
                   </p>
                 </CardContent>
               </Card>

@@ -6,15 +6,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
-import LogoutDialog from './LogoutDialog';
-import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 const Header = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showLogout, setShowLogout] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const {
     user,
@@ -166,7 +164,7 @@ const Header = () => {
                     <span>Paramètres</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setShowLogout(true)} className="text-destructive">
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Se déconnecter</span>
                   </DropdownMenuItem>
@@ -179,11 +177,6 @@ const Header = () => {
       </header>
 
       {showLogin && <LoginDialog isOpen={showLogin} onClose={() => setShowLogin(false)} isRegistering={isRegistering} onToggleMode={() => setIsRegistering(!isRegistering)} />}
-      
-      <LogoutDialog 
-        isOpen={showLogout} 
-        onClose={() => setShowLogout(false)} 
-      />
     </>;
 };
 export default Header;
