@@ -120,9 +120,9 @@ const MainLayout = () => {
     <LogsProvider>
       <SettingsProvider>
         <SidebarProvider>
-          <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
+          <div className="min-h-screen bg-background flex flex-col w-full max-w-none m-0 p-0 overflow-x-hidden">
             {/* Header fixe en haut */}
-            <div className="w-full flex-shrink-0">
+            <div className="w-full max-w-none flex-shrink-0">
               <Header />
             </div>
             
@@ -133,9 +133,9 @@ const MainLayout = () => {
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 min-w-0 w-full overflow-auto">
-                <main className="p-2 sm:p-4 lg:p-6 safe-area-mobile w-full max-w-full">
-                  <div className="w-full max-w-full overflow-hidden">
+              <div className="flex-1 min-w-0 w-full max-w-none overflow-auto">
+                <main className="p-2 sm:p-4 lg:p-6 safe-area-mobile w-full max-w-none">
+                  <div className="w-full max-w-none overflow-hidden">
                     {renderContent()}
                   </div>
                 </main>
