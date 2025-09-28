@@ -8,6 +8,7 @@ import Onboarding from './Onboarding';
 import SubscriptionPlans from './SubscriptionPlans';
 import LoginDialog from './LoginDialog';
 import EnhancedRegistration from './EnhancedRegistration';
+import PWAInstallPrompt from './PWAInstallPrompt';
 import { useAuth } from '@/contexts/AuthContext';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
@@ -150,6 +151,9 @@ const MainLayout = () => {
               onSwitchToLogin={handleLogin}
             />
           )}
+
+          {/* PWA Install Prompt */}
+          {user && <PWAInstallPrompt />}
         </div>
       </SettingsProvider>
     </LogsProvider>;
