@@ -35,10 +35,10 @@ const MainLayout = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    return localStorage.getItem('aqua_pilot_splash') !== 'true';
+  });
   const [showPrivacy, setShowPrivacy] = useState(false);
-  
-  console.log('MainLayout state:', { showSplash, showPrivacy });
   
   const {
     user,
@@ -47,8 +47,6 @@ const MainLayout = () => {
     hasSelectedPlan,
     completeSubscriptionSelection
   } = useAuth();
-
-  console.log('Auth state:', { user: !!user, hasSeenOnboarding, hasSelectedPlan });
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
@@ -67,6 +65,7 @@ const MainLayout = () => {
   };
 
   const handleSplashComplete = () => {
+    localStorage.setItem('aqua_pilot_splash', 'true');
     setShowSplash(false);
     const privacySeen = localStorage.getItem('privacy_accepted');
     if (privacySeen !== 'true') {
@@ -81,29 +80,44 @@ const MainLayout = () => {
 
   // Afficher le splash screen au premier lancement
   if (showSplash) {
-    console.log('Rendering SplashScreen');
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Afficher la politique de confidentialité si pas encore acceptée
   if (showPrivacy) {
-    console.log('Rendering PrivacyPolicy');
     return <PrivacyPolicy onAccept={handlePrivacyAccept} />;
   }
 
   // Afficher l'onboarding si pas encore vu
   if (!hasSeenOnboarding) {
-    console.log('Rendering Onboarding');
     return <Onboarding onComplete={completeOnboarding} onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
-  // Afficher les plans de souscription si pas encore sélectionné et utilisateur connecté
-  if (user && !hasSelectedPlan) {
-    console.log('Rendering SubscriptionPlans');
+  // Protéger l'application - demander connexion si pas connecté
+  if (!user) {
+    return (
+      <>
+        <LoginDialog 
+          isOpen={!showEnhancedRegister} 
+          onClose={() => {}}
+          isRegistering={false} 
+          onToggleMode={handleRegister}
+        />
+        
+        {showEnhancedRegister && (
+          <EnhancedRegistration
+            onClose={() => setShowEnhancedRegister(false)}
+            onSwitchToLogin={handleLogin}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Afficher les plans de souscription si pas encore sélectionné
+  if (!hasSelectedPlan) {
     return <SubscriptionPlans onSelectPlan={() => {}} onSkip={completeSubscriptionSelection} />;
   }
-  
-  console.log('Rendering main layout');
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':

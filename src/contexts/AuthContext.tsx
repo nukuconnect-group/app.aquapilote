@@ -46,25 +46,24 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('AuthProvider initializing');
-  
-  // États de base avec valeurs par défaut sûres
-  const [user, setUser] = useState<User | null>(null);
+  // États de base avec localStorage
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('aqua_pilot_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(true); // Par défaut true pour tester
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
+    return localStorage.getItem('aqua_pilot_onboarding') === 'true';
+  });
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<string | null>(null);
-  const [hasSelectedPlan, setHasSelectedPlan] = useState(true); // Par défaut true pour tester
+  const [hasSelectedPlan, setHasSelectedPlan] = useState(true);
 
-  console.log('AuthProvider state initialized');
-
-  // Fonctions simplifiées pour les tests
   const completeOnboarding = () => {
-    console.log('Completing onboarding');
+    localStorage.setItem('aqua_pilot_onboarding', 'true');
     setHasSeenOnboarding(true);
   };
 
   const completeSubscriptionSelection = () => {
-    console.log('Completing subscription selection');
     setHasSelectedPlan(true);
   };
 
@@ -72,46 +71,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       const updatedUser = { ...user, notifications };
       setUser(updatedUser);
+      localStorage.setItem('aqua_pilot_user', JSON.stringify(updatedUser));
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    console.log('Login attempt');
     setIsLoading(true);
     
-    // Simulation simple
-    setTimeout(() => {
+    try {
+      // Simulation d'authentification - remplacer par vraie API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Démo: accepter admin@aquapilot.com / admin123
+      if (email === 'admin@aquapilot.com' && password === 'admin123') {
+        const newUser: User = {
+          id: '1',
+          name: 'Admin',
+          email: email,
+          role: 'admin',
+          notifications: {
+            email: true,
+            desktop: true,
+            sms: false
+          }
+        };
+        setUser(newUser);
+        localStorage.setItem('aqua_pilot_user', JSON.stringify(newUser));
+        setIsLoading(false);
+        return true;
+      }
+      
       setIsLoading(false);
-    }, 1000);
-    
-    return false; // Pour les tests, on reste non connecté
+      return false;
+    } catch (error) {
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<boolean> => {
-    console.log('Register attempt');
     setIsLoading(true);
     
-    setTimeout(() => {
+    try {
+      // Simulation d'inscription - remplacer par vraie API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newUser: User = {
+        id: Date.now().toString(),
+        name: name,
+        email: email,
+        role: 'operator',
+        subscriptionPlan: subscriptionPlan,
+        notifications: {
+          email: true,
+          desktop: true,
+          sms: false
+        }
+      };
+      
+      setUser(newUser);
+      localStorage.setItem('aqua_pilot_user', JSON.stringify(newUser));
       setIsLoading(false);
-    }, 1000);
-    
-    return false; // Pour les tests
+      return true;
+    } catch (error) {
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const logout = () => {
-    console.log('Logout');
     setUser(null);
-    setHasSeenOnboarding(false);
-    setHasSelectedPlan(false);
-    setSelectedSubscriptionPlan(null);
+    localStorage.removeItem('aqua_pilot_user');
   };
-
-  console.log('AuthProvider about to render, state:', {
-    user: !!user,
-    hasSeenOnboarding,
-    hasSelectedPlan,
-    isLoading
-  });
 
   return (
     <AuthContext.Provider value={{
