@@ -10,6 +10,7 @@ import featureTeamImg from '@/assets/feature-team.jpg';
 import featureSecurityImg from '@/assets/feature-security.jpg';
 import featureIoTImg from '@/assets/feature-iot.jpg';
 import PrivacyPolicy from './PrivacyPolicy';
+import SplashScreen from './SplashScreen';
 import { useSettings } from '@/contexts/SettingsContext';
 
 interface OnboardingProps {
@@ -20,7 +21,8 @@ interface OnboardingProps {
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [showPrivacy, setShowPrivacy] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const { t } = useSettings();
 
   const slides = [
@@ -78,6 +80,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
   };
 
   const CurrentIcon = slides[currentSlide].icon;
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => {
+      setShowSplash(false);
+      setShowPrivacy(true);
+    }} />;
+  }
 
   if (showPrivacy) {
     return <PrivacyPolicy onAccept={() => setShowPrivacy(false)} />;
