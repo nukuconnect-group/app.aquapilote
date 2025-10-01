@@ -8,7 +8,7 @@ import featureManagementImg from '@/assets/feature-management.jpg';
 import featureAnalyticsImg from '@/assets/feature-analytics.jpg';
 import featureTeamImg from '@/assets/feature-team.jpg';
 import featureSecurityImg from '@/assets/feature-security.jpg';
-import SplashScreen from './SplashScreen';
+import featureIoTImg from '@/assets/feature-iot.jpg';
 import PrivacyPolicy from './PrivacyPolicy';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -20,8 +20,7 @@ interface OnboardingProps {
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [showSplash, setShowSplash] = useState(true);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(true);
   const { t } = useSettings();
 
   const slides = [
@@ -52,6 +51,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
       description: t('data_protection') || "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
       bgColor: "bg-gradient-to-br from-orange-50 to-red-50",
       image: featureSecurityImg
+    },
+    {
+      icon: Fish,
+      title: "IoT et Monitoring Intelligent",
+      description: "Connectez vos équipements et surveillez vos bassins en temps réel avec des capteurs IoT. Automatisez vos opérations et recevez des alertes instantanées.",
+      bgColor: "bg-gradient-to-br from-teal-50 to-cyan-50",
+      image: featureIoTImg
     }
   ];
 
@@ -73,18 +79,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
 
   const CurrentIcon = slides[currentSlide].icon;
 
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
-
   if (showPrivacy) {
     return <PrivacyPolicy onAccept={() => setShowPrivacy(false)} />;
-  }
-
-  // Afficher la politique de confidentialité après le splash
-  if (!showPrivacy && !showSplash && currentSlide === 0) {
-    setShowPrivacy(true);
-    return null;
   }
 
   return (
@@ -175,7 +171,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 onClick={onLogin}
                 className="px-8 py-3 text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50"
               >
-                {t('login') || 'Se connecter'}
+                {t('login') || 'J\'ai déjà un compte'}
               </Button>
             </div>
           </div>
