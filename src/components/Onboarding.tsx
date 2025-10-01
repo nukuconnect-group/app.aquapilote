@@ -26,29 +26,29 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
   const slides = [
     {
       icon: Fish,
-      title: t('professional_aquaculture_management') || "Gestion Aquacole Professionnelle",
-      description: t('optimize_aquaculture_production') || "Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.",
+      title: "Gestion Aquacole Professionnelle",
+      description: "Optimisez votre production aquacole avec des outils de gestion complets pour vos bassins, cheptel et cycles de production.",
       bgColor: "bg-gradient-to-br from-blue-50 to-cyan-50",
       image: featureManagementImg
     },
     {
       icon: BarChart3,
-      title: t('advanced_analytics') || "Analyses et Statistiques Avancées",
-      description: t('track_kpi_realtime') || "Suivez vos KPI en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.",
+      title: "Analyses et Statistiques Avancées",
+      description: "Suivez vos indicateurs en temps réel, analysez vos performances et planifiez vos cycles de production avec précision.",
       bgColor: "bg-gradient-to-br from-green-50 to-emerald-50",
       image: featureAnalyticsImg
     },
     {
       icon: Users,
-      title: t('team_collaboration') || "Collaboration d'Équipe",
-      description: t('manage_team_tasks') || "Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.",
+      title: "Collaboration d'Équipe",
+      description: "Gérez votre équipe, assignez des tâches et maintenez une communication fluide pour optimiser votre productivité.",
       bgColor: "bg-gradient-to-br from-purple-50 to-indigo-50",
       image: featureTeamImg
     },
     {
       icon: Shield,
-      title: t('security_reliability') || "Sécurité et Fiabilité",
-      description: t('data_protection') || "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
+      title: "Sécurité et Fiabilité",
+      description: "Vos données sont protégées avec des sauvegardes automatiques et un système de sécurité de niveau professionnel.",
       bgColor: "bg-gradient-to-br from-orange-50 to-red-50",
       image: featureSecurityImg
     },
@@ -135,13 +135,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 variant="ghost"
                 onClick={prevSlide}
                 disabled={currentSlide === 0}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm sm:text-base"
               >
                 <ChevronLeft className="w-4 h-4" />
-                {t('previous') || 'Précédent'}
+                <span className="hidden sm:inline">Précédent</span>
               </Button>
 
-              <span className="text-sm text-gray-500">
+              <span className="text-xs sm:text-sm text-gray-500">
                 {currentSlide + 1} / {slides.length}
               </span>
 
@@ -149,29 +149,29 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
                 variant="ghost"
                 onClick={nextSlide}
                 disabled={currentSlide === slides.length - 1}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm sm:text-base"
               >
-                {t('next') || 'Suivant'}
+                <span className="hidden sm:inline">Suivant</span>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Boutons d'action finaux */}
             {currentSlide === slides.length - 1 && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="space-y-4 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full max-w-lg mx-auto px-4">
               <Button
                 onClick={onRegister}
-                className="bg-gradient-aqua text-white px-8 py-3 text-lg font-semibold hover:opacity-90 transition-opacity"
+                className="bg-gradient-aqua text-white px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto"
               >
-                {t('create_account') || 'Créer un compte'}
+                Créer un compte
               </Button>
               <Button
                 variant="outline"
                 onClick={onLogin}
-                className="px-8 py-3 text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50"
+                className="px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50 w-full sm:w-auto"
               >
-                {t('login') || 'J\'ai déjà un compte'}
+                J'ai déjà un compte
               </Button>
             </div>
           </div>
