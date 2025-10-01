@@ -161,14 +161,20 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
           <div className="space-y-4 w-full">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full max-w-lg mx-auto px-4">
               <Button
-                onClick={onRegister}
+                onClick={() => {
+                  onComplete();
+                  onRegister();
+                }}
                 className="bg-gradient-aqua text-white px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto"
               >
                 Créer un compte
               </Button>
               <Button
                 variant="outline"
-                onClick={onLogin}
+                onClick={() => {
+                  onComplete();
+                  onLogin();
+                }}
                 className="px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold border-aqua-600 text-aqua-700 hover:bg-aqua-50 w-full sm:w-auto"
               >
                 J'ai déjà un compte
