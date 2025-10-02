@@ -8,6 +8,7 @@ import { IoTProvider } from '@/contexts/IoTContext';
 import { LogsProvider } from '@/contexts/LogsContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 const AppContent: React.FC = () => {
   return <MainLayout />;
@@ -24,6 +25,7 @@ const App: React.FC = () => {
                 <div style={{ minHeight: '100vh' }}>
                   <AppContent />
                   <Toaster />
+                  <OfflineIndicator />
                 </div>
               </SettingsProvider>
             </LogsProvider>

@@ -8,8 +8,8 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
-import aquacultureBackground from '@/assets/aquaculture-background.jpg';
-import aquacultureMobileBackground from '@/assets/aquaculture-mobile-background.jpg';
+import fishColumnsDesktop from '@/assets/fish-columns-desktop.jpg';
+import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -98,7 +98,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div 
           className="hidden sm:block fixed inset-0 w-full h-full z-0"
           style={{ 
-            backgroundImage: `url(${aquacultureBackground})`,
+            backgroundImage: `url(${fishColumnsDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.7)',
@@ -111,7 +111,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div 
           className="sm:hidden fixed inset-0 w-full h-full z-0"
           style={{ 
-            backgroundImage: `url(${aquacultureMobileBackground})`,
+            backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.7)',
