@@ -8,7 +8,8 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
-import iotBackground from '@/assets/iot-background.png';
+import aquacultureBackground from '@/assets/aquaculture-background.jpg';
+import aquacultureMobileBackground from '@/assets/aquaculture-mobile-background.jpg';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -92,43 +93,60 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md mx-4 p-0 overflow-hidden">
-        {/* Image de fond floutée */}
+      <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-4 p-0 overflow-hidden max-h-[95vh] overflow-y-auto">
+        {/* Image de fond professionnelle - Desktop */}
         <div 
-          className="absolute inset-0 bg-cover bg-center blur-sm opacity-30 z-0"
-          style={{ backgroundImage: `url(${iotBackground})` }}
+          className="hidden sm:block absolute inset-0 bg-cover bg-center z-0"
+          style={{ 
+            backgroundImage: `url(${aquacultureBackground})`,
+            filter: 'brightness(0.7)'
+          }}
         />
         
+        {/* Image de fond professionnelle - Mobile */}
+        <div 
+          className="sm:hidden absolute inset-0 bg-cover bg-center z-0"
+          style={{ 
+            backgroundImage: `url(${aquacultureMobileBackground})`,
+            filter: 'brightness(0.7)'
+          }}
+        />
+        
+        {/* Overlay gradient pour meilleure lisibilité */}
+        <div className="absolute inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
+        
         {/* Contenu au-dessus du fond */}
-        <div className="relative z-10 bg-white/90 backdrop-blur-md p-4 sm:p-6">
+        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-4 sm:p-6 md:p-8 rounded-lg shadow-2xl m-2 sm:m-4">
           <DialogHeader>
-            <div className="flex items-center justify-center mb-3 sm:mb-4">
-              <img 
-                src={aquaPilotLogo} 
-                alt="AQUA PILOT" 
-                className="w-16 h-16 sm:w-20 sm:h-20"
-              />
+            <div className="flex items-center justify-center mb-4 sm:mb-6">
+              <div className="bg-white rounded-full p-2 shadow-lg">
+                <img 
+                  src={aquaPilotLogo} 
+                  alt="AQUA PILOT" 
+                  className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20"
+                />
+              </div>
             </div>
-            <DialogTitle className="text-center text-lg sm:text-xl md:text-2xl font-bold">
+            <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
               {isRegistering ? 'Créer un compte' : 'Se connecter'}
             </DialogTitle>
-            <DialogDescription className="text-center text-xs sm:text-sm">
-              {isRegistering ? 'Rejoignez AQUA PILOTE pour gérer votre exploitation' : 'Accédez à votre tableau de bord'}
+            <DialogDescription className="text-center text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 mt-2">
+              {isRegistering ? 'Rejoignez AQUA PILOT pour gérer votre exploitation aquacole' : 'Accédez à votre tableau de bord de gestion'}
             </DialogDescription>
           
             {selectedPlan && isRegistering && (
-              <div className="bg-aqua-50 p-2 sm:p-3 rounded-lg border border-aqua-200 mt-3 sm:mt-4">
-                <p className="text-xs sm:text-sm text-aqua-800">
+              <div className="bg-gradient-to-r from-aqua-50 to-ocean-50 dark:from-aqua-900/30 dark:to-ocean-900/30 p-3 sm:p-4 rounded-xl border-2 border-aqua-300 dark:border-aqua-600 mt-4 sm:mt-6 shadow-md">
+                <p className="text-sm sm:text-base md:text-lg text-aqua-900 dark:text-aqua-100 font-semibold">
                   <strong>Plan sélectionné :</strong> {getPlanName(selectedPlan)}
                 </p>
               </div>
             )}
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 mt-6">
             {isRegistering && (
               <div>
-                <Label htmlFor="name" className="text-xs sm:text-sm">Nom complet</Label>
+                <Label htmlFor="name" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Nom complet</Label>
                 <Input
                   id="name"
                   type="text"
@@ -136,13 +154,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="text-xs sm:text-sm h-9 sm:h-10"
+                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
                 />
               </div>
             )}
 
             <div>
-              <Label htmlFor="email" className="text-xs sm:text-sm">Email</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -150,13 +168,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="text-xs sm:text-sm h-9 sm:h-10"
+                className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
               />
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-xs sm:text-sm">Mot de passe</Label>
-              <div className="relative">
+              <Label htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Mot de passe</Label>
+              <div className="relative mt-1">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -164,21 +182,21 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="text-xs sm:text-sm h-9 sm:h-10 pr-10"
+                  className="text-sm sm:text-base h-10 sm:h-11 md:h-12 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" /> : <Eye className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
             </div>
 
             {isRegistering && (
               <div>
-                <Label htmlFor="confirmPassword" className="text-xs sm:text-sm">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Confirmer le mot de passe</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -186,15 +204,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
-                  className="text-xs sm:text-sm h-9 sm:h-10"
+                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
                 />
               </div>
             )}
 
-            <Button type="submit" className="w-full bg-gradient-aqua text-white text-xs sm:text-sm h-9 sm:h-10 font-medium" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-gradient-aqua hover:opacity-90 text-white text-sm sm:text-base md:text-lg h-10 sm:h-11 md:h-12 font-semibold shadow-lg hover:shadow-xl transition-all" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                   {isRegistering ? 'Création...' : 'Connexion...'}
                 </>
               ) : (
@@ -202,11 +220,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               )}
             </Button>
 
-            <div className="text-center pt-2">
+            <div className="text-center pt-3 sm:pt-4">
               <button
                 type="button"
                 onClick={onToggleMode}
-                className="text-xs sm:text-sm text-aqua-600 hover:text-aqua-700 underline"
+                className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
               >
                 {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
               </button>
