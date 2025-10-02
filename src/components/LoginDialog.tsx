@@ -4,9 +4,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Fish, Droplets, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import iotBackground from '@/assets/iot-background.png';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -90,129 +92,127 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md mx-4">
-        <DialogHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="w-12 h-12 bg-gradient-aqua rounded-lg flex items-center justify-center">
-                <Fish className="w-7 h-7 text-white animate-float" />
-              </div>
-              <Droplets className="w-5 h-5 text-aqua-400 absolute -top-1 -right-1 animate-wave" />
+      <DialogContent className="sm:max-w-md mx-4 p-0 overflow-hidden">
+        {/* Image de fond floutée */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-sm opacity-30 z-0"
+          style={{ backgroundImage: `url(${iotBackground})` }}
+        />
+        
+        {/* Contenu au-dessus du fond */}
+        <div className="relative z-10 bg-white/90 backdrop-blur-md p-4 sm:p-6">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-3 sm:mb-4">
+              <img 
+                src={aquaPilotLogo} 
+                alt="AQUA PILOT" 
+                className="w-16 h-16 sm:w-20 sm:h-20"
+              />
             </div>
-          </div>
-          <DialogTitle className="text-center text-xl sm:text-2xl">
-            {isRegistering ? 'Créer un compte' : 'Se connecter'}
-          </DialogTitle>
-          <DialogDescription className="text-center text-sm">
-            {isRegistering ? 'Rejoignez AQUA PILOTE pour gérer votre exploitation' : 'Accédez à votre tableau de bord'}
-          </DialogDescription>
+            <DialogTitle className="text-center text-lg sm:text-xl md:text-2xl font-bold">
+              {isRegistering ? 'Créer un compte' : 'Se connecter'}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs sm:text-sm">
+              {isRegistering ? 'Rejoignez AQUA PILOTE pour gérer votre exploitation' : 'Accédez à votre tableau de bord'}
+            </DialogDescription>
           
-          {selectedPlan && isRegistering && (
-            <div className="bg-aqua-50 p-3 rounded-lg border border-aqua-200 mt-4">
-              <p className="text-sm text-aqua-800">
-                <strong>Plan sélectionné :</strong> {getPlanName(selectedPlan)}
-              </p>
-            </div>
-          )}
-        </DialogHeader>
+            {selectedPlan && isRegistering && (
+              <div className="bg-aqua-50 p-2 sm:p-3 rounded-lg border border-aqua-200 mt-3 sm:mt-4">
+                <p className="text-xs sm:text-sm text-aqua-800">
+                  <strong>Plan sélectionné :</strong> {getPlanName(selectedPlan)}
+                </p>
+              </div>
+            )}
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegistering && (
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4">
+            {isRegistering && (
+              <div>
+                <Label htmlFor="name" className="text-xs sm:text-sm">Nom complet</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Votre nom complet"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="text-xs sm:text-sm h-9 sm:h-10"
+                />
+              </div>
+            )}
+
             <div>
-              <Label htmlFor="name" className="text-sm">Nom complet</Label>
+              <Label htmlFor="email" className="text-xs sm:text-sm">Email</Label>
               <Input
-                id="name"
-                type="text"
-                placeholder="Votre nom complet"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                id="email"
+                type="email"
+                placeholder="votre@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="text-sm"
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
-          )}
 
-          <div>
-            <Label htmlFor="email" className="text-sm">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="votre@email.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-              className="text-sm"
-            />
-          </div>
+            <div>
+              <Label htmlFor="password" className="text-xs sm:text-sm">Mot de passe</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  className="text-xs sm:text-sm h-9 sm:h-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" /> : <Eye className="w-3 h-3 sm:w-4 sm:h-4" />}
+                </button>
+              </div>
+            </div>
 
-          <div>
-            <Label htmlFor="password" className="text-sm">Mot de passe</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                className="text-sm pr-10"
-              />
+            {isRegistering && (
+              <div>
+                <Label htmlFor="confirmPassword" className="text-xs sm:text-sm">Confirmer le mot de passe</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  required
+                  className="text-xs sm:text-sm h-9 sm:h-10"
+                />
+              </div>
+            )}
+
+            <Button type="submit" className="w-full bg-gradient-aqua text-white text-xs sm:text-sm h-9 sm:h-10 font-medium" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                  {isRegistering ? 'Création...' : 'Connexion...'}
+                </>
+              ) : (
+                isRegistering ? 'Créer mon compte' : 'Se connecter'
+              )}
+            </Button>
+
+            <div className="text-center pt-2">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={onToggleMode}
+                className="text-xs sm:text-sm text-aqua-600 hover:text-aqua-700 underline"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
               </button>
             </div>
-          </div>
-
-          {isRegistering && (
-            <div>
-              <Label htmlFor="confirmPassword" className="text-sm">Confirmer le mot de passe</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                className="text-sm"
-              />
-            </div>
-          )}
-
-          <Button type="submit" className="w-full bg-gradient-aqua text-white text-sm" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isRegistering ? 'Création...' : 'Connexion...'}
-              </>
-            ) : (
-              isRegistering ? 'Créer mon compte' : 'Se connecter'
-            )}
-          </Button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={onToggleMode}
-              className="text-sm text-aqua-600 hover:text-aqua-700 underline"
-            >
-              {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
-            </button>
-          </div>
-
-          {!isRegistering && (
-            <div className="text-center">
-              <p className="text-xs text-gray-500 mb-2">Compte de démonstration :</p>
-              <div className="space-y-1 text-xs text-gray-600">
-                <p><strong>Email :</strong> demo@aquapilot.com</p>
-                <p><strong>Mot de passe :</strong> <code className="bg-gray-100 px-1 rounded">demo123</code></p>
-              </div>
-            </div>
-          )}
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,7 @@ import featureManagementImg from '@/assets/feature-management.jpg';
 import featureAnalyticsImg from '@/assets/feature-analytics.jpg';
 import featureTeamImg from '@/assets/feature-team.jpg';
 import featureSecurityImg from '@/assets/feature-security.jpg';
-import featureIoTImg from '@/assets/feature-iot.jpg';
+import iotBackground from '@/assets/iot-background.png';
 import PrivacyPolicy from './PrivacyPolicy';
 import SplashScreen from './SplashScreen';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -59,7 +59,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onLogin, onRegister
       title: "IoT et Monitoring Intelligent",
       description: "Connectez vos équipements et surveillez vos bassins en temps réel avec des capteurs IoT. Automatisez vos opérations et recevez des alertes instantanées.",
       bgColor: "bg-gradient-to-br from-teal-50 to-cyan-50",
-      image: featureIoTImg
+      image: iotBackground
     }
   ];
 
