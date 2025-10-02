@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import aquacultureBackground from '@/assets/aquaculture-background.jpg';
+import aquacultureMobileBackground from '@/assets/aquaculture-mobile-background.jpg';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -177,23 +179,56 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <img 
-                src={aquaPilotLogo} 
-                alt="AQUA PILOT" 
-                className="w-16 h-16"
-              />
+      <DialogContent className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
+        {/* Image de fond professionnelle - Desktop */}
+        <div 
+          className="hidden sm:block fixed inset-0 w-full h-full z-0"
+          style={{ 
+            backgroundImage: `url(${aquacultureBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.7)',
+            width: '100%',
+            height: '100vh'
+          }}
+        />
+        
+        {/* Image de fond professionnelle - Mobile */}
+        <div 
+          className="sm:hidden fixed inset-0 w-full h-full z-0"
+          style={{ 
+            backgroundImage: `url(${aquacultureMobileBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.7)',
+            width: '100%',
+            height: '100vh'
+          }}
+        />
+        
+        {/* Overlay gradient */}
+        <div className="fixed inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
+        
+        {/* Contenu centré */}
+        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-2xl mx-auto my-auto overflow-y-auto max-h-[90vh]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <div className="bg-white rounded-full p-3 shadow-xl">
+                  <img 
+                    src={aquaPilotLogo} 
+                    alt="AQUA PILOT" 
+                    className="w-16 h-16"
+                  />
+                </div>
+              </div>
+              <DialogTitle className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                Créer votre compte AQUA PILOT
+              </DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-300">
+                Étape {currentStep} sur 3 - Rejoignez la révolution de l'aquaculture intelligente
+              </DialogDescription>
             </div>
-            <DialogTitle className="text-2xl font-bold mb-2">
-              Créer votre compte AQUA PILOT
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Étape {currentStep} sur 3 - Rejoignez la révolution de l'aquaculture intelligente
-            </DialogDescription>
-          </div>
 
           {/* Progress indicator */}
           <div className="flex justify-center mb-6">
@@ -503,12 +538,13 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-sm text-aqua-600 hover:text-aqua-700 underline"
+              className="text-sm text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline"
             >
               Déjà un compte ? Se connecter
             </button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
