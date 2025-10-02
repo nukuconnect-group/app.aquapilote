@@ -185,7 +185,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
+    // Supprimer toutes les données utilisateur et réinitialiser l'onboarding
     localStorage.removeItem('aqua_pilot_user');
+    localStorage.removeItem('aqua_pilot_onboarding');
+    localStorage.removeItem('aqua_pilot_splash');
+    localStorage.removeItem('privacy_accepted');
+    
+    // Réinitialiser l'état de l'onboarding
+    setHasSeenOnboarding(false);
   };
 
   return (
