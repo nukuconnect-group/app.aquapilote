@@ -1,13 +1,13 @@
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import AppMinimal from './AppMinimal.tsx';
 import './index.css';
 
-// Force rebuild - v2.0
-console.log('AQUA PILOT - Application starting...');
+// REBUILD FORCÉ - Version 3.0
+console.log('🚀 AQUA PILOT - Rebuild forcé activé');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error('Root element not found');
 }
 
-createRoot(rootElement).render(<App />);
+createRoot(rootElement).render(<AppMinimal />);
