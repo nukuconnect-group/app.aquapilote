@@ -50,14 +50,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       const success = await register(formData.name, formData.email, formData.password, selectedPlan || 'trial');
       if (success) {
         toast({
-          title: "Compte créé avec succès",
-          description: "Bienvenue dans AQUA PILOTE !",
+          title: "✅ Compte créé avec succès",
+          description: "Bienvenue dans AQUA PILOT ! Vous pouvez maintenant vous connecter.",
         });
         onClose();
       } else {
         toast({
-          title: "Erreur lors de l'inscription",
-          description: "Veuillez réessayer",
+          title: "❌ Erreur lors de l'inscription",
+          description: "Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.",
           variant: "destructive",
         });
       }
@@ -65,14 +65,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       const success = await login(formData.email, formData.password);
       if (success) {
         toast({
-          title: "Connexion réussie",
-          description: "Bon retour sur AQUA PILOTE !",
+          title: "✅ Connexion réussie",
+          description: "Bon retour sur AQUA PILOT !",
         });
         onClose();
       } else {
         toast({
-          title: "Erreur de connexion",
-          description: "Email ou mot de passe incorrect",
+          title: "❌ Erreur de connexion",
+          description: "Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.",
           variant: "destructive",
         });
       }
@@ -205,10 +205,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
           {!isRegistering && (
             <div className="text-center">
-              <p className="text-xs text-gray-500 mb-2">Comptes de démonstration :</p>
+              <p className="text-xs text-gray-500 mb-2">Compte de démonstration :</p>
               <div className="space-y-1 text-xs text-gray-600">
-                <p>admin@aqua.com | manager@aqua.com | operator@aqua.com</p>
-                <p>Mot de passe : <code className="bg-gray-100 px-1 rounded">password</code></p>
+                <p><strong>Email :</strong> demo@aquapilot.com</p>
+                <p><strong>Mot de passe :</strong> <code className="bg-gray-100 px-1 rounded">demo123</code></p>
               </div>
             </div>
           )}

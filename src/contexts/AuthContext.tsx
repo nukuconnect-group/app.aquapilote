@@ -79,24 +79,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulation d'authentification - remplacer par vraie API
+      // Simulation d'authentification
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Démo: accepter admin@aquapilot.com / admin123
-      if (email === 'admin@aquapilot.com' && password === 'admin123') {
-        const newUser: User = {
-          id: '1',
-          name: 'Admin',
+      // Récupérer la liste des utilisateurs inscrits
+      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
+      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
+      
+      // Chercher l'utilisateur avec l'email et le mot de passe
+      const foundUser = registeredUsers.find(
+        (u: any) => u.email === email && u.password === password
+      );
+      
+      if (foundUser) {
+        // Créer l'objet utilisateur sans le mot de passe
+        const { password: _, ...userWithoutPassword } = foundUser;
+        const loggedInUser: User = {
+          ...userWithoutPassword,
+          lastLogin: new Date().toISOString(),
+        };
+        
+        setUser(loggedInUser);
+        localStorage.setItem('aqua_pilot_user', JSON.stringify(loggedInUser));
+        setIsLoading(false);
+        return true;
+      }
+      
+      // Compte démo par défaut
+      if (email === 'demo@aquapilot.com' && password === 'demo123') {
+        const demoUser: User = {
+          id: 'demo-1',
+          name: 'Utilisateur Démo',
           email: email,
-          role: 'admin',
+          role: 'operator',
           notifications: {
             email: true,
             desktop: true,
             sms: false
           }
         };
-        setUser(newUser);
-        localStorage.setItem('aqua_pilot_user', JSON.stringify(newUser));
+        setUser(demoUser);
+        localStorage.setItem('aqua_pilot_user', JSON.stringify(demoUser));
         setIsLoading(false);
         return true;
       }
@@ -113,14 +136,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulation d'inscription - remplacer par vraie API
+      // Simulation d'inscription
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const newUser: User = {
+      // Récupérer la liste des utilisateurs existants
+      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
+      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
+      
+      // Vérifier si l'email existe déjà
+      const emailExists = registeredUsers.some((u: any) => u.email === email);
+      if (emailExists) {
+        setIsLoading(false);
+        return false; // Email déjà utilisé
+      }
+      
+      // Créer le nouvel utilisateur avec le mot de passe
+      const newUserWithPassword = {
         id: Date.now().toString(),
         name: name,
         email: email,
-        role: 'operator',
+        password: password, // Stocké pour la connexion
+        role: 'operator' as const,
         subscriptionPlan: subscriptionPlan,
         notifications: {
           email: true,
@@ -129,8 +165,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       };
       
-      setUser(newUser);
-      localStorage.setItem('aqua_pilot_user', JSON.stringify(newUser));
+      // Ajouter à la liste des utilisateurs inscrits
+      registeredUsers.push(newUserWithPassword);
+      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
+      
+      // Créer l'objet utilisateur actif (sans mot de passe)
+      const { password: _, ...newUser } = newUserWithPassword;
+      const activeUser: User = newUser;
+      
+      setUser(activeUser);
+      localStorage.setItem('aqua_pilot_user', JSON.stringify(activeUser));
       setIsLoading(false);
       return true;
     } catch (error) {
