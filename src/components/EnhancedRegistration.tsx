@@ -187,7 +187,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             backgroundImage: `url(${fishColumnsDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.7)',
+            filter: 'brightness(0.85)',
             width: '100%',
             height: '100vh'
           }}
@@ -200,14 +200,14 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.7)',
+            filter: 'brightness(0.85)',
             width: '100%',
             height: '100vh'
           }}
         />
         
         {/* Overlay gradient */}
-        <div className="fixed inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
+        <div className="fixed inset-0 bg-gradient-to-br from-aqua-900/40 via-ocean-600/30 to-aqua-800/40 z-[1]" />
         
         {/* Contenu centré */}
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-2xl mx-auto my-auto overflow-y-auto max-h-[90vh]">
