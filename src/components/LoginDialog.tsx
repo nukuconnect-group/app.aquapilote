@@ -93,7 +93,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-6 sm:mx-4 p-0 overflow-hidden max-h-[95vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md md:max-w-lg mx-8 sm:mx-auto p-0 overflow-hidden max-h-[95vh] overflow-y-auto flex items-center justify-center">
         {/* Image de fond professionnelle - Desktop en pleine largeur */}
         <div 
           className="hidden sm:block absolute inset-0 w-full h-full bg-cover bg-center z-0"
@@ -116,14 +116,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
         
         {/* Contenu au-dessus du fond avec marges mobile */}
-        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-4 sm:p-6 md:p-8 rounded-lg shadow-2xl m-3 sm:m-4">
+        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-6 md:p-8 rounded-lg shadow-2xl m-6 sm:m-8 md:m-12 w-full max-w-md mx-auto">
           <DialogHeader>
-            <div className="flex items-center justify-center mb-4 sm:mb-6">
-              <div className="bg-white rounded-full p-2 shadow-lg">
+            <div className="flex items-center justify-center mb-6">
+              <div className="bg-white rounded-full p-3 shadow-xl">
                 <img 
                   src={aquaPilotLogo} 
                   alt="AQUA PILOT" 
-                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16"
+                  className="w-16 h-16 sm:w-14 sm:h-14 md:w-14 md:h-14"
                 />
               </div>
             </div>
