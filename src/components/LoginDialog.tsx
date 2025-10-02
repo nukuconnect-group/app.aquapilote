@@ -93,30 +93,38 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md md:max-w-lg mx-8 sm:mx-auto p-0 overflow-hidden max-h-[95vh] overflow-y-auto flex items-center justify-center">
+      <DialogContent className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
         {/* Image de fond professionnelle - Desktop en pleine largeur */}
         <div 
-          className="hidden sm:block absolute inset-0 w-full h-full bg-cover bg-center z-0"
+          className="hidden sm:block fixed inset-0 w-full h-full z-0"
           style={{ 
             backgroundImage: `url(${aquacultureBackground})`,
-            filter: 'brightness(0.7)'
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.7)',
+            width: '100%',
+            height: '100vh'
           }}
         />
         
         {/* Image de fond professionnelle - Mobile en pleine largeur */}
         <div 
-          className="sm:hidden absolute inset-0 w-full h-full bg-cover bg-center z-0"
+          className="sm:hidden fixed inset-0 w-full h-full z-0"
           style={{ 
             backgroundImage: `url(${aquacultureMobileBackground})`,
-            filter: 'brightness(0.7)'
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.7)',
+            width: '100%',
+            height: '100vh'
           }}
         />
         
         {/* Overlay gradient pour meilleure lisibilité */}
-        <div className="absolute inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
+        <div className="fixed inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
         
-        {/* Contenu au-dessus du fond avec marges mobile */}
-        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-6 md:p-8 rounded-lg shadow-2xl m-6 sm:m-8 md:m-12 w-full max-w-md mx-auto">
+        {/* Contenu au-dessus du fond - centré verticalement et horizontalement */}
+        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <div className="flex items-center justify-center mb-6">
               <div className="bg-white rounded-full p-3 shadow-xl">
