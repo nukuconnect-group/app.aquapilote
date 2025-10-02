@@ -93,19 +93,19 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-4 p-0 overflow-hidden max-h-[95vh] overflow-y-auto">
-        {/* Image de fond professionnelle - Desktop */}
+      <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-6 sm:mx-4 p-0 overflow-hidden max-h-[95vh] overflow-y-auto">
+        {/* Image de fond professionnelle - Desktop en pleine largeur */}
         <div 
-          className="hidden sm:block absolute inset-0 bg-cover bg-center z-0"
+          className="hidden sm:block absolute inset-0 w-full h-full bg-cover bg-center z-0"
           style={{ 
             backgroundImage: `url(${aquacultureBackground})`,
             filter: 'brightness(0.7)'
           }}
         />
         
-        {/* Image de fond professionnelle - Mobile */}
+        {/* Image de fond professionnelle - Mobile en pleine largeur */}
         <div 
-          className="sm:hidden absolute inset-0 bg-cover bg-center z-0"
+          className="sm:hidden absolute inset-0 w-full h-full bg-cover bg-center z-0"
           style={{ 
             backgroundImage: `url(${aquacultureMobileBackground})`,
             filter: 'brightness(0.7)'
@@ -115,15 +115,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         {/* Overlay gradient pour meilleure lisibilité */}
         <div className="absolute inset-0 bg-gradient-to-br from-aqua-900/60 via-ocean-600/50 to-aqua-800/60 z-[1]" />
         
-        {/* Contenu au-dessus du fond */}
-        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-4 sm:p-6 md:p-8 rounded-lg shadow-2xl m-2 sm:m-4">
+        {/* Contenu au-dessus du fond avec marges mobile */}
+        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-4 sm:p-6 md:p-8 rounded-lg shadow-2xl m-3 sm:m-4">
           <DialogHeader>
             <div className="flex items-center justify-center mb-4 sm:mb-6">
               <div className="bg-white rounded-full p-2 shadow-lg">
                 <img 
                   src={aquaPilotLogo} 
                   alt="AQUA PILOT" 
-                  className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20"
+                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16"
                 />
               </div>
             </div>
