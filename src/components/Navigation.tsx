@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag } from 'lucide-react';
+import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Shield, Truck } from 'lucide-react';
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -42,6 +42,10 @@ const Navigation: React.FC<NavigationProps> = ({
     label: 'Prophylaxie',
     icon: Heart
   }, {
+    id: 'transformation',
+    label: 'Transformation',
+    icon: Shield
+  }, {
     id: 'production',
     label: 'Production',
     icon: Package
@@ -57,6 +61,10 @@ const Navigation: React.FC<NavigationProps> = ({
     id: 'sales',
     label: 'Vente',
     icon: ShoppingBag
+  }, {
+    id: 'suppliers',
+    label: 'Fournisseurs',
+    icon: Truck
   }, {
     id: 'hr',
     label: 'Gestion RH',

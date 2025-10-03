@@ -19,8 +19,11 @@ import FishManagement from './FishManagement';
 import LivestockManagement from './LivestockManagement';
 import FeedingManagement from './FeedingManagement';
 import HealthMonitoring from './HealthMonitoring';
+import ProphylaxieManagement from './ProphylaxieManagement';
+import TransformationManagement from './TransformationManagement';
 import ProductionManagement from './ProductionManagement';
 import AccountingManagement from './AccountingManagement';
+import SuppliersManagement from './SuppliersManagement';
 import HRManagement from './HRManagement';
 import SalesManagement from './SalesManagement';
 import PurchasesManagement from './PurchasesManagement';
@@ -135,7 +138,9 @@ const MainLayout = () => {
       case 'feeding':
         return <FeedingManagement />;
       case 'health':
-        return <HealthMonitoring />;
+        return <ProphylaxieManagement />;
+      case 'transformation':
+        return <TransformationManagement />;
       case 'production':
         return <ProductionManagement />;
       case 'accounting':
@@ -146,6 +151,8 @@ const MainLayout = () => {
         return <PurchasesManagement />;
       case 'sales':
         return <SalesManagement />;
+      case 'suppliers':
+        return <SuppliersManagement />;
       case 'planning':
         return <PlanningManagement />;
       case 'weather':
