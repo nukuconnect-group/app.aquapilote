@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
-import fishColumnsDesktop from '@/assets/fish-columns-desktop.jpg';
+import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
 interface EnhancedRegistrationProps {
@@ -184,7 +184,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         <div 
           className="hidden sm:block fixed inset-0 w-full h-full z-0"
           style={{ 
-            backgroundImage: `url(${fishColumnsDesktop})`,
+            backgroundImage: `url(${aquacultureCagesDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.85)',
@@ -214,11 +214,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
-                <div className="bg-white rounded-full p-3 shadow-xl">
+                <div className="bg-white rounded-full p-4 shadow-xl">
                   <img 
                     src={aquaPilotLogo} 
                     alt="AQUA PILOT" 
-                    className="w-16 h-16"
+                    className="w-24 h-24"
                   />
                 </div>
               </div>
@@ -384,7 +384,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+33 1 23 45 67 89"
+                    placeholder="+228 XX XX XX XX"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     required

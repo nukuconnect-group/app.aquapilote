@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
-import fishColumnsDesktop from '@/assets/fish-columns-desktop.jpg';
+import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
 interface LoginDialogProps {
@@ -98,7 +98,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div 
           className="hidden sm:block fixed inset-0 w-full h-full z-0"
           style={{ 
-            backgroundImage: `url(${fishColumnsDesktop})`,
+            backgroundImage: `url(${aquacultureCagesDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.85)',
@@ -127,11 +127,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-white rounded-full p-3 shadow-xl">
+              <div className="bg-white rounded-full p-4 shadow-xl">
                 <img 
                   src={aquaPilotLogo} 
                   alt="AQUA PILOT" 
-                  className="w-16 h-16 sm:w-14 sm:h-14 md:w-14 md:h-14"
+                  className="w-24 h-24"
                 />
               </div>
             </div>
