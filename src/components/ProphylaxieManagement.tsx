@@ -20,10 +20,14 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Filter
+  Filter,
+  Wifi
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
+import CameraAnalysis from './prophylaxie/CameraAnalysis';
+import IoTModeAnalysis from './prophylaxie/IoTModeAnalysis';
+import ReportGenerator from './prophylaxie/ReportGenerator';
 
 interface Treatment {
   id: string;
@@ -56,6 +60,7 @@ const ProphylaxieManagement = () => {
   const [selectedUnitFilter, setSelectedUnitFilter] = useState<string>('all');
   const [showTreatmentDialog, setShowTreatmentDialog] = useState(false);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [showIoTDialog, setShowIoTDialog] = useState(false);
 
   const [treatments, setTreatments] = useState<Treatment[]>([
     {
@@ -203,12 +208,22 @@ const ProphylaxieManagement = () => {
     <div className="space-y-6 p-2 sm:p-0">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 rounded-xl text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold mb-2">Gestion de la Prophylaxie</h2>
-            <p className="text-red-100">Calendrier sanitaire et suivi des traitements</p>
+            <p className="text-red-100">Calendrier sanitaire et suivi des traitements avec IA</p>
           </div>
-          <Dialog open={showTreatmentDialog} onOpenChange={setShowTreatmentDialog}>
+          <div className="flex flex-wrap gap-2">
+            <CameraAnalysis />
+            <Button 
+              variant="outline" 
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+              onClick={() => setShowIoTDialog(true)}
+            >
+              <Wifi className="w-4 h-4 mr-2" />
+              Analyser avec IoT
+            </Button>
+            <Dialog open={showTreatmentDialog} onOpenChange={setShowTreatmentDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
                 <Plus className="w-4 h-4 mr-2" />
@@ -302,6 +317,7 @@ const ProphylaxieManagement = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
 
@@ -536,6 +552,12 @@ const ProphylaxieManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Génération de rapports */}
+      <ReportGenerator />
+
+      {/* Dialog IoT Analysis */}
+      <IoTModeAnalysis showDialog={showIoTDialog} onClose={() => setShowIoTDialog(false)} />
     </div>
   );
 };

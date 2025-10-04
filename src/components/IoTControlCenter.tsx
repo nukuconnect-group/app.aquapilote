@@ -23,6 +23,7 @@ import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useIoT } from '@/contexts/IoTContext';
 import EnvironmentalDashboard from './EnvironmentalDashboard';
 import MqttConfiguration from './MqttConfiguration';
+import IoTAIAnalysis from './iot/IoTAIAnalysis';
 
 const IoTControlCenter = () => {
   const { activeUnit, units } = useProductionUnits();
@@ -80,8 +81,9 @@ const IoTControlCenter = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full overflow-x-auto">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full overflow-x-auto">
           <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap">Analyse IA</TabsTrigger>
           <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap">Environnemental</TabsTrigger>
           <TabsTrigger value="drones" className="text-xs sm:text-sm whitespace-nowrap">Surveillance</TabsTrigger>
           <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap">Automatisation</TabsTrigger>
@@ -167,6 +169,10 @@ const IoTControlCenter = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai-analysis">
+          <IoTAIAnalysis />
         </TabsContent>
 
         <TabsContent value="environmental">
