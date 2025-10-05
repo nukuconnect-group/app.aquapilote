@@ -9,6 +9,7 @@ import { LogsProvider } from '@/contexts/LogsContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const AppContent: React.FC = () => {
   return <MainLayout />;
@@ -16,23 +17,25 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <SettingsProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <ProductionUnitsProvider>
-            <IoTProvider>
-              <LogsProvider>
-                <div style={{ minHeight: '100vh' }}>
-                  <AppContent />
-                  <Toaster />
-                  <OfflineIndicator />
-                </div>
-              </LogsProvider>
-            </IoTProvider>
-          </ProductionUnitsProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </SettingsProvider>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ProductionUnitsProvider>
+              <IoTProvider>
+                <LogsProvider>
+                  <div style={{ minHeight: '100vh' }}>
+                    <AppContent />
+                    <Toaster />
+                    <OfflineIndicator />
+                  </div>
+                </LogsProvider>
+              </IoTProvider>
+            </ProductionUnitsProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </SettingsProvider>
+    </ErrorBoundary>
   );
 };
 
