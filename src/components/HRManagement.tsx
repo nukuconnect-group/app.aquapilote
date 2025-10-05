@@ -13,6 +13,7 @@ import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye }
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import ProductionUnitSelector from './ProductionUnitSelector';
 
 interface Employee {
   id: string;
@@ -346,11 +347,12 @@ const HRManagement = () => {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Gestion des Ressources Humaines</h2>
-            <p className="text-blue-100">Personnel, paie et administration RH</p>
-          </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Gestion des Ressources Humaines</h2>
+              <p className="text-blue-100">Personnel, paie et administration RH</p>
+            </div>
           <div className="flex gap-2">
             <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" onClick={() => setShowPaySlipGenerator(true)}>
               <FileText className="w-4 h-4 mr-2" />
@@ -361,6 +363,8 @@ const HRManagement = () => {
               Nouvel Employé
             </Button>
           </div>
+          </div>
+          <ProductionUnitSelector />
         </div>
       </div>
 

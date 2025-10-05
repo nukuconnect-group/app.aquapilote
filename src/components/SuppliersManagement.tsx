@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import ProductionUnitSelector from './ProductionUnitSelector';
 import { 
   Users, 
-  Plus, 
+  Plus,
   Search,
   Phone,
   Mail,
@@ -306,11 +307,12 @@ const SuppliersManagement = () => {
     <div className="space-y-6 p-2 sm:p-0">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-6 rounded-xl text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Gestion des Fournisseurs</h2>
-            <p className="text-blue-100">Base de données et historique des commandes</p>
-          </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Gestion des Fournisseurs</h2>
+              <p className="text-blue-100">Base de données et historique des commandes</p>
+            </div>
           <div className="flex gap-2">
             <Dialog open={showSupplierDialog} onOpenChange={(open) => {
               setShowSupplierDialog(open);
@@ -504,6 +506,8 @@ const SuppliersManagement = () => {
               </DialogContent>
             </Dialog>
           </div>
+          </div>
+          <ProductionUnitSelector />
         </div>
       </div>
 

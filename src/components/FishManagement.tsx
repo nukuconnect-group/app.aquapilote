@@ -256,7 +256,12 @@ const FishManagement = () => {
         <div className="overflow-x-auto">
           <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-            <TabsTrigger value="control-fishing">Pêche de contrôle</TabsTrigger>
+            {activeUnit.type !== 'transformation' && activeUnit.type !== 'conservation' && (
+              <TabsTrigger value="control-fishing">Pêche de contrôle</TabsTrigger>
+            )}
+            {activeUnit.type === 'transformation' && (
+              <TabsTrigger value="batches">Lots transformés</TabsTrigger>
+            )}
             <TabsTrigger value="details">Détails</TabsTrigger>
             <TabsTrigger value="history">Historique</TabsTrigger>
           </TabsList>
@@ -314,12 +319,61 @@ const FishManagement = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="control-fishing" className="space-y-4">
-          <FishControlFishing 
-            unitId={activeUnit.id}
-            unitName={activeUnit.name}
-          />
-        </TabsContent>
+        {activeUnit.type !== 'transformation' && activeUnit.type !== 'conservation' && (
+          <TabsContent value="control-fishing" className="space-y-4">
+            <FishControlFishing 
+              unitId={activeUnit.id}
+              unitName={activeUnit.name}
+            />
+          </TabsContent>
+        )}
+
+        {activeUnit.type === 'transformation' && (
+          <TabsContent value="batches" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestion des lots transformés</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Suivez et gérez les lots de poissons transformés par espèce et type de transformation
+                  </p>
+                  {/* Example batch data */}
+                  <div className="grid gap-4">
+                    <div className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold">Lot #2024-001</h4>
+                          <p className="text-sm text-muted-foreground">Tilapia - Filet</p>
+                        </div>
+                        <Badge variant="outline">En cours</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Poids initial</p>
+                          <p className="font-medium">500 kg</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Poids transformé</p>
+                          <p className="font-medium">380 kg</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Rendement</p>
+                          <p className="font-medium">76%</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Date</p>
+                          <p className="font-medium">{new Date().toLocaleDateString('fr-FR')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="details">
           <Card>

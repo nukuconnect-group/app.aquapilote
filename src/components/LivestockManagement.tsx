@@ -293,20 +293,23 @@ const LivestockManagement = () => {
                     />
                   </div>
 
-                  <div>
-                    <Label>Plan d'alimentation</Label>
-                    <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Standard croissance">Standard croissance</SelectItem>
-                        <SelectItem value="Intensif">Intensif</SelectItem>
-                        <SelectItem value="Extensif">Extensif</SelectItem>
-                        <SelectItem value="Finition">Finition</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {units.find(u => u.id === formData.unitId)?.type !== 'transformation' && 
+                   units.find(u => u.id === formData.unitId)?.type !== 'conservation' && (
+                    <div>
+                      <Label>Plan d'alimentation</Label>
+                      <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Standard croissance">Standard croissance</SelectItem>
+                          <SelectItem value="Intensif">Intensif</SelectItem>
+                          <SelectItem value="Extensif">Extensif</SelectItem>
+                          <SelectItem value="Finition">Finition</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div>
                     <Label>Date de récolte prévue</Label>
@@ -436,10 +439,12 @@ const LivestockManagement = () => {
                         <p className="text-gray-600">Âge</p>
                         <p className="font-medium">{batch.currentAge} jours</p>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Plan alimentation</p>
-                        <p className="font-medium">{batch.feedingPlan}</p>
-                      </div>
+                      {batch.feedingPlan && (
+                        <div>
+                          <p className="text-gray-600">Plan alimentation</p>
+                          <p className="font-medium">{batch.feedingPlan}</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">

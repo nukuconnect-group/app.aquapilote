@@ -4,6 +4,7 @@ import { Calendar, Users, Clock, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TaskScheduler from './planning/TaskScheduler';
+import ProductionUnitSelector from './ProductionUnitSelector';
 
 const PlanningManagement = () => {
   const [selectedView, setSelectedView] = useState('day');
@@ -46,12 +47,13 @@ const PlanningManagement = () => {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 rounded-xl text-white">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Planification & Organisation</h2>
-            <p className="text-purple-100">Gestion complète des tâches quotidiennes, hebdomadaires et mensuelles</p>
-          </div>
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Planification & Organisation</h2>
+              <p className="text-purple-100">Gestion complète des tâches quotidiennes, hebdomadaires et mensuelles</p>
+            </div>
+            <div className="flex items-center gap-4 mt-4 md:mt-0">
             <div className="text-center">
               <div className="text-2xl font-bold">12</div>
               <div className="text-sm text-purple-100">Tâches aujourd'hui</div>
@@ -61,6 +63,8 @@ const PlanningManagement = () => {
               <div className="text-sm text-purple-100">Terminées</div>
             </div>
           </div>
+          </div>
+          <ProductionUnitSelector />
         </div>
       </div>
 

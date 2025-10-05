@@ -12,6 +12,7 @@ import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, Do
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import ProductionUnitSelector from './ProductionUnitSelector';
 import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
@@ -195,11 +196,12 @@ const SalesManagement = () => {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-xl text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Gestion des Ventes</h2>
-            <p className="text-green-100">Suivi des ventes, clients et facturation par unité</p>
-          </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Gestion des Ventes</h2>
+              <p className="text-green-100">Suivi des ventes, clients et facturation par unité</p>
+            </div>
           <div className="flex gap-2">
             <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
               <DialogTrigger asChild>
@@ -329,6 +331,8 @@ const SalesManagement = () => {
               Rapport
             </Button>
           </div>
+          </div>
+          <ProductionUnitSelector />
         </div>
       </div>
 

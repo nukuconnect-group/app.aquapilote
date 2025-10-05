@@ -90,11 +90,11 @@ const NotificationsPanel = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/20 h-8 w-8">
-          <Bell className="w-4 h-4" />
+        <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs flex items-center justify-center p-0">
-              {unreadCount}
+            <Badge className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold flex items-center justify-center p-0 rounded-full">
+              {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
         </Button>
