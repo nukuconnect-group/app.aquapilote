@@ -24,6 +24,7 @@ import { useIoT } from '@/contexts/IoTContext';
 import EnvironmentalDashboard from './EnvironmentalDashboard';
 import MqttConfiguration from './MqttConfiguration';
 import IoTAIAnalysis from './iot/IoTAIAnalysis';
+import IoTOverview from './iot/IoTOverview';
 
 const IoTControlCenter = () => {
   const { activeUnit, units } = useProductionUnits();
@@ -91,84 +92,7 @@ const IoTControlCenter = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Statut IoT */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="w-5 h-5 text-green-600" />
-                  Réseau IoT
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Capteurs actifs</span>
-                    <Badge className="bg-green-100 text-green-800">24 / 26</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Qualité signal</span>
-                    <Badge className="bg-blue-100 text-blue-800">Excellent</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Dernière sync</span>
-                    <span className="text-sm text-gray-600">Il y a 2 min</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Alertes critiques */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                  Alertes Critiques
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {alerts.slice(0, 3).map((alert, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded">
-                      <div className="text-sm">
-                        <div className="font-medium text-red-800">Oxygène faible</div>
-                        <div className="text-red-600">Bassin A - 4.2 mg/L</div>
-                      </div>
-                      <Badge variant="destructive" className="text-xs">Critique</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Surveillance par drones */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plane className="w-5 h-5 text-purple-600" />
-                  Drones Actifs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Drone #1</span>
-                    <div className="text-right">
-                      <Badge className="bg-green-100 text-green-800 text-xs">En mission</Badge>
-                      <div className="text-xs text-gray-600">Batterie: {droneStatus.battery[0]}%</div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Drone #2</span>
-                    <div className="text-right">
-                      <Badge className="bg-gray-100 text-gray-800 text-xs">En veille</Badge>
-                      <div className="text-xs text-gray-600">Batterie: {droneStatus.battery[1]}%</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <IoTOverview />
         </TabsContent>
 
         <TabsContent value="ai-analysis">

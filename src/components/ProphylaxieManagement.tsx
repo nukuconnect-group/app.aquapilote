@@ -28,6 +28,7 @@ import { useLogs } from '@/contexts/LogsContext';
 import CameraAnalysis from './prophylaxie/CameraAnalysis';
 import IoTModeAnalysis from './prophylaxie/IoTModeAnalysis';
 import ReportGenerator from './prophylaxie/ReportGenerator';
+import DiseaseManager from './prophylaxie/DiseaseManager';
 
 interface Treatment {
   id: string;
@@ -345,7 +346,7 @@ const ProphylaxieManagement = () => {
       </Card>
 
       <Tabs defaultValue="calendar" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="calendar">Calendrier</TabsTrigger>
           <TabsTrigger value="treatments">Traitements</TabsTrigger>
           <TabsTrigger value="alerts">
@@ -356,6 +357,7 @@ const ProphylaxieManagement = () => {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="diseases">Maladies</TabsTrigger>
           <TabsTrigger value="planning">Planning</TabsTrigger>
         </TabsList>
 
@@ -550,6 +552,10 @@ const ProphylaxieManagement = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="diseases">
+          <DiseaseManager />
         </TabsContent>
       </Tabs>
 

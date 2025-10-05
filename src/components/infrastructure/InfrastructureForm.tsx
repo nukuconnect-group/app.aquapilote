@@ -28,7 +28,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
   
   const [newInfrastructure, setNewInfrastructure] = useState({
     name: '',
-    unitId: '',
+    unitId: units.length > 0 ? units[0].id : '',
     type: '',
     customTypeName: '',
     capacity: 0,
@@ -145,7 +145,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
     if (!infrastructure) {
       setNewInfrastructure({
         name: '',
-        unitId: '',
+        unitId: units.length > 0 ? units[0].id : '',
         type: '',
         customTypeName: '',
         capacity: 0,
