@@ -16,23 +16,25 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ProductionUnitsProvider>
-          <IoTProvider>
-            <LogsProvider>
-              <SettingsProvider>
-                <div style={{ minHeight: '100vh' }}>
-                  <AppContent />
-                  <Toaster />
-                  <OfflineIndicator />
-                </div>
-              </SettingsProvider>
-            </LogsProvider>
-          </IoTProvider>
-        </ProductionUnitsProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <React.StrictMode>
+      <SettingsProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ProductionUnitsProvider>
+              <IoTProvider>
+                <LogsProvider>
+                  <div style={{ minHeight: '100vh' }}>
+                    <AppContent />
+                    <Toaster />
+                    <OfflineIndicator />
+                  </div>
+                </LogsProvider>
+              </IoTProvider>
+            </ProductionUnitsProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </SettingsProvider>
+    </React.StrictMode>
   );
 };
 
