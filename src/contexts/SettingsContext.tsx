@@ -91,7 +91,30 @@ const translations = {
     expenses: 'Dépenses',
     profit: 'Bénéfice',
     cost_per_kg: 'Coût par kg',
-    profit_margin: 'Marge bénéficiaire'
+    profit_margin: 'Marge bénéficiaire',
+    // IoT
+    iot_status: 'État IoT',
+    connected_sensors: 'Capteurs connectés',
+    active_alerts: 'Alertes actives',
+    global_health: 'Santé globale',
+    anomaly_rate: 'Taux d\'anomalies',
+    critical: 'Critique',
+    stable: 'Stable',
+    rising: 'En hausse',
+    falling: 'En baisse',
+    last_update: 'Dernière mise à jour',
+    detected_subjects: 'Sujets détectés',
+    health_score: 'Score de santé',
+    daily_growth: 'Croissance journalière',
+    daily_mortality: 'Mortalité journalière',
+    recommendations: 'Recommandations',
+    basin: 'Bassin',
+    sensor: 'Capteur',
+    value: 'Valeur',
+    status: 'État',
+    trend: 'Tendance',
+    evolution: 'Évolution',
+    parameters: 'Paramètres'
   },
   en: {
     // Navigation
@@ -170,7 +193,30 @@ const translations = {
     expenses: 'Expenses',
     profit: 'Profit',
     cost_per_kg: 'Cost per kg',
-    profit_margin: 'Profit Margin'
+    profit_margin: 'Profit Margin',
+    // IoT
+    iot_status: 'IoT Status',
+    connected_sensors: 'Connected Sensors',
+    active_alerts: 'Active Alerts',
+    global_health: 'Global Health',
+    anomaly_rate: 'Anomaly Rate',
+    critical: 'Critical',
+    stable: 'Stable',
+    rising: 'Rising',
+    falling: 'Falling',
+    last_update: 'Last Update',
+    detected_subjects: 'Detected Subjects',
+    health_score: 'Health Score',
+    daily_growth: 'Daily Growth',
+    daily_mortality: 'Daily Mortality',
+    recommendations: 'Recommendations',
+    basin: 'Basin',
+    sensor: 'Sensor',
+    value: 'Value',
+    status: 'Status',
+    trend: 'Trend',
+    evolution: 'Evolution',
+    parameters: 'Parameters'
   }
 };
 

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AIAnalysisData {
   unitId: string;
@@ -35,6 +36,7 @@ interface AIAnalysisData {
 const IoTAIAnalysis = () => {
   const { units, activeUnit } = useProductionUnits();
   const { toast } = useToast();
+  const { t, formatCurrency } = useSettings();
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<AIAnalysisData[]>([
     {
@@ -72,8 +74,8 @@ const IoTAIAnalysis = () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     toast({
-      title: "Analyse IA terminée",
-      description: `Données actualisées pour ${unitId ? units.find(u => u.id === unitId)?.name : 'toutes les unités'}`,
+      title: t('success'),
+      description: `${t('last_update')} : ${unitId ? units.find(u => u.id === unitId)?.name : t('overview')}`,
     });
     
     setAnalyzing(false);
@@ -93,11 +95,20 @@ const IoTAIAnalysis = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-300';
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'medium': return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'low': return 'bg-blue-100 text-blue-800 border-blue-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
+  };
+
+  const getPriorityText = (priority: string) => {
+    const priorities = {
+      high: t('critical'),
+      medium: t('warning'),
+      low: t('info')
+    };
+    return priorities[priority] || priority;
   };
 
   const getRecommendationIcon = (type: string) => {
@@ -120,7 +131,7 @@ const IoTAIAnalysis = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Brain className="w-6 h-6 text-purple-600" />
-              Analyse IA - {units.find(u => u.id === currentAnalysis.unitId)?.name}
+              {t('recommendations')} IA - {units.find(u => u.id === currentAnalysis.unitId)?.name}
             </CardTitle>
             <Button 
               onClick={() => runAIAnalysis(activeUnit?.id)}
@@ -128,7 +139,7 @@ const IoTAIAnalysis = () => {
               size="sm"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${analyzing ? 'animate-spin' : ''}`} />
-              {analyzing ? 'Analyse...' : 'Actualiser'}
+              {analyzing ? t('loading') : t('last_update')}
             </Button>
           </div>
         </CardHeader>
@@ -141,15 +152,15 @@ const IoTAIAnalysis = () => {
                 </span>
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Score de Santé Global</h3>
+                <h3 className="font-semibold text-lg">{t('health_score')} {t('global_health')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Basé sur 12 indicateurs clés
+                  {t('statistics')}
                 </p>
               </div>
             </div>
             <div className="flex items-center justify-center">
               <div className="text-xs text-muted-foreground">
-                Dernière analyse : {new Date(currentAnalysis.lastUpdate).toLocaleString('fr-FR')}
+                {t('last_update')} : {new Date(currentAnalysis.lastUpdate).toLocaleString()}
               </div>
             </div>
           </div>
@@ -165,8 +176,8 @@ const IoTAIAnalysis = () => {
               <Badge className="bg-blue-100 text-blue-800">IoT + IA</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.fishCount.toLocaleString()}</div>
-            <div className="text-sm text-muted-foreground">Poissons détectés</div>
-            <div className="text-xs text-green-600 mt-1">Détection automatique</div>
+            <div className="text-sm text-muted-foreground">{t('detected_subjects')}</div>
+            <div className="text-xs text-green-600 mt-1">{t('status')}</div>
           </CardContent>
         </Card>
 
@@ -174,11 +185,11 @@ const IoTAIAnalysis = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <Activity className="w-5 h-5 text-purple-600" />
-              <Badge className="bg-purple-100 text-purple-800">Estimé</Badge>
+              <Badge className="bg-purple-100 text-purple-800">{t('average_weight')}</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.averageWeight} g</div>
-            <div className="text-sm text-muted-foreground">Poids moyen</div>
-            <div className="text-xs text-green-600 mt-1">+{currentAnalysis.dailyGrowth}% / jour</div>
+            <div className="text-sm text-muted-foreground">{t('average_weight')}</div>
+            <div className="text-xs text-green-600 mt-1">+{currentAnalysis.dailyGrowth}% / {t('daily_production').toLowerCase()}</div>
           </CardContent>
         </Card>
 
@@ -189,8 +200,8 @@ const IoTAIAnalysis = () => {
               <Badge className="bg-green-100 text-green-800">IA</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.dailyGrowth}%</div>
-            <div className="text-sm text-muted-foreground">Croissance / jour</div>
-            <div className="text-xs text-muted-foreground mt-1">Basé sur 7 derniers jours</div>
+            <div className="text-sm text-muted-foreground">{t('daily_growth')}</div>
+            <div className="text-xs text-muted-foreground mt-1">{t('statistics')}</div>
           </CardContent>
         </Card>
 
@@ -199,13 +210,13 @@ const IoTAIAnalysis = () => {
             <div className="flex items-center justify-between mb-2">
               <AlertTriangle className="w-5 h-5 text-orange-600" />
               <Badge className={currentAnalysis.dailyMortality > 1 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                {currentAnalysis.dailyMortality > 1 ? 'Attention' : 'Normal'}
+                {currentAnalysis.dailyMortality > 1 ? t('warning') : t('normal')}
               </Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.dailyMortality}%</div>
-            <div className="text-sm text-muted-foreground">Mortalité / jour</div>
+            <div className="text-sm text-muted-foreground">{t('daily_mortality')}</div>
             <div className="text-xs text-muted-foreground mt-1">
-              ≈ {Math.round(currentAnalysis.fishCount * currentAnalysis.dailyMortality / 100)} sujets
+              ≈ {Math.round(currentAnalysis.fishCount * currentAnalysis.dailyMortality / 100)} {t('detected_subjects').toLowerCase()}
             </div>
           </CardContent>
         </Card>
@@ -216,7 +227,7 @@ const IoTAIAnalysis = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5 text-purple-600" />
-            Recommandations Intelligentes
+            {t('recommendations')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -233,13 +244,13 @@ const IoTAIAnalysis = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge className={getPriorityColor(rec.priority)}>
-                        Priorité {rec.priority === 'high' ? 'élevée' : rec.priority === 'medium' ? 'moyenne' : 'basse'}
+                        {getPriorityText(rec.priority)}
                       </Badge>
                     </div>
                     <p className="text-sm font-medium">{rec.message}</p>
                   </div>
                   <Button size="sm" variant="outline">
-                    Appliquer
+                    {t('add')}
                   </Button>
                 </div>
               </div>
@@ -251,7 +262,7 @@ const IoTAIAnalysis = () => {
       {/* Graphique de tendance santé */}
       <Card>
         <CardHeader>
-          <CardTitle>Évolution du Score de Santé (7 derniers jours)</CardTitle>
+          <CardTitle>{t('evolution')} {t('health_score')} (7 {t('daily_production').toLowerCase()})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

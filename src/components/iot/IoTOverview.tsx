@@ -9,9 +9,16 @@ import {
   Wind,
   TrendingUp,
   TrendingDown,
-  Minus
+  Minus,
+  Wifi,
+  AlertTriangle,
+  CheckCircle2,
+  Brain,
+  Fish
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useIoT } from '@/contexts/IoTContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface IoTModuleData {
   id: string;
@@ -26,6 +33,8 @@ interface IoTModuleData {
 
 const IoTOverview = () => {
   const { activeUnit, units } = useProductionUnits();
+  const { sensorReadings, getActiveAlerts, basins } = useIoT();
+  const { t, formatCurrency } = useSettings();
   
   const [iotModules, setIotModules] = useState<IoTModuleData[]>([
     {
@@ -196,12 +205,34 @@ const IoTOverview = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'normal': return 'Normal';
-      case 'warning': return 'Attention';
-      case 'critical': return 'Critique';
-      default: return 'Inconnu';
+      case 'normal': return t('normal');
+      case 'warning': return t('warning');
+      case 'critical': return t('critical');
+      default: return t('status');
     }
   };
+
+  const getTrendText = (trend: string) => {
+    switch (trend) {
+      case 'up': return t('rising');
+      case 'down': return t('falling');
+      case 'stable': return t('stable');
+      default: return t('stable');
+    }
+  };
+
+  // Calcul des statistiques globales
+  const activeAlerts = getActiveAlerts();
+  const criticalAlerts = activeAlerts.filter(a => a.status === 'critical').length;
+  const warningAlerts = activeAlerts.filter(a => a.status === 'warning').length;
+  const totalSensors = iotModules.length;
+  const activeSensors = iotModules.filter(m => m.status === 'normal').length;
+  const anomalyRate = ((totalSensors - activeSensors) / totalSensors * 100).toFixed(1);
+  const globalHealthScore = Math.round(iotModules.reduce((acc, m) => {
+    if (m.status === 'normal') return acc + 100;
+    if (m.status === 'warning') return acc + 70;
+    return acc + 40;
+  }, 0) / totalSensors);
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -224,6 +255,72 @@ const IoTOverview = () => {
 
   return (
     <div className="space-y-6">
+      {/* Statistiques Globales IoT */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Wifi className="w-5 h-5 text-blue-600" />
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-2xl font-bold">{activeSensors}/{totalSensors}</div>
+            <div className="text-sm text-muted-foreground">{t('connected_sensors')}</div>
+            <div className="text-xs text-green-600 mt-1">
+              {((activeSensors/totalSensors)*100).toFixed(0)}% {t('normal')}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <Badge className={activeAlerts.length > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                {activeAlerts.length > 0 ? t('warning') : t('normal')}
+              </Badge>
+            </div>
+            <div className="text-2xl font-bold">{activeAlerts.length}</div>
+            <div className="text-sm text-muted-foreground">{t('active_alerts')}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {criticalAlerts} {t('critical').toLowerCase()} • {warningAlerts} {t('warning').toLowerCase()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Brain className="w-5 h-5 text-purple-600" />
+              <Badge className={globalHealthScore >= 80 ? 'bg-green-100 text-green-800' : globalHealthScore >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}>
+                {globalHealthScore >= 80 ? t('normal') : t('warning')}
+              </Badge>
+            </div>
+            <div className="text-2xl font-bold">{globalHealthScore}/100</div>
+            <div className="text-sm text-muted-foreground">{t('global_health')}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {basins.length} {t('basin').toLowerCase()}(s) {t('active_ponds').toLowerCase()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-red-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Activity className="w-5 h-5 text-red-600" />
+              <Badge className={parseFloat(anomalyRate) > 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                {parseFloat(anomalyRate) > 10 ? t('critical') : t('normal')}
+              </Badge>
+            </div>
+            <div className="text-2xl font-bold">{anomalyRate}%</div>
+            <div className="text-sm text-muted-foreground">{t('anomaly_rate')}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {totalSensors - activeSensors} {t('sensor').toLowerCase()}(s) en anomalie
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modules IoT individuels */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {iotModules.map((module) => {
           const IconComponent = getModuleIcon(module.type);
@@ -256,8 +353,7 @@ const IoTOverview = () => {
                   <div className="flex flex-col items-end">
                     {getTrendIcon(module.trend)}
                     <div className="text-xs text-muted-foreground mt-1">
-                      {module.trend === 'up' ? 'En hausse' : 
-                       module.trend === 'down' ? 'En baisse' : 'Stable'}
+                      {getTrendText(module.trend)}
                     </div>
                   </div>
                 </div>
@@ -293,7 +389,7 @@ const IoTOverview = () => {
                 </div>
 
                 <div className="text-xs text-muted-foreground text-center">
-                  Dernière mise à jour : {new Date().toLocaleTimeString('fr-FR')}
+                  {t('last_update')} : {new Date().toLocaleTimeString()}
                 </div>
               </CardContent>
             </Card>
@@ -304,7 +400,7 @@ const IoTOverview = () => {
       {/* Graphiques détaillés */}
       <Card>
         <CardHeader>
-          <CardTitle>Évolution des paramètres (24h)</CardTitle>
+          <CardTitle>{t('evolution')} des {t('parameters').toLowerCase()} (24h)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-96">
