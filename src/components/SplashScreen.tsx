@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-optimized.webp';
 
 interface SplashScreenProps {
   onComplete: () => void;

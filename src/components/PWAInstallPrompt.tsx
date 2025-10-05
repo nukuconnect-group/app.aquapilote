@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Smartphone, X, Monitor } from 'lucide-react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo.png';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-optimized.webp';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
