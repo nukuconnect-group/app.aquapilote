@@ -2,7 +2,6 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Utensils, 
@@ -13,7 +12,6 @@ import {
   CloudRain, 
   Users, 
   FileText,
-  Activity,
   Wrench,
   Beef,
   Package,
@@ -21,7 +19,9 @@ import {
   UserCheck,
   ShoppingCart,
   ShoppingBag,
-  Settings
+  Settings,
+  Shield,
+  Truck
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -40,38 +40,52 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     { 
       category: 'Modules Essentiels',
       items: [
-        { id: 'infrastructures', label: t('infrastructures'), icon: Building, color: 'text-gray-600' },
-        { id: 'livestock', label: t('livestock'), icon: Beef, color: 'text-brown-600' },
-        { id: 'feeding', label: t('feeding'), icon: Utensils, color: 'text-orange-600' },
-        { id: 'health', label: t('health'), icon: Heart, color: 'text-red-600' },
+        { id: 'infrastructures', label: t('infrastructures'), icon: Building },
+        { id: 'livestock', label: t('livestock'), icon: Beef },
+        { id: 'feeding', label: t('feeding'), icon: Utensils },
+        { id: 'health', label: t('health'), icon: Heart },
       ]
     },
-    // Gestion et production
+    // Transformation et production
     {
-      category: 'Gestion & Production',
+      category: 'Transformation & Production',
       items: [
-        { id: 'production', label: t('production'), icon: BarChart3, color: 'text-green-600' },
-        { id: 'accounting', label: t('accounting'), icon: Calculator, color: 'text-emerald-600' },
-        { id: 'purchases', label: t('purchases'), icon: ShoppingCart, color: 'text-blue-600' },
-        { id: 'sales', label: t('sales'), icon: ShoppingBag, color: 'text-pink-600' },
-        { id: 'hr', label: t('hr'), icon: UserCheck, color: 'text-indigo-600' },
+        { id: 'transformation', label: 'Transformation', icon: Shield },
+        { id: 'production', label: t('production'), icon: Package },
+      ]
+    },
+    // Gestion financière
+    {
+      category: 'Gestion Financière',
+      items: [
+        { id: 'accounting', label: t('accounting'), icon: Calculator },
+        { id: 'purchases', label: 'Achats', icon: ShoppingCart },
+        { id: 'sales', label: t('sales'), icon: ShoppingBag },
+        { id: 'suppliers', label: 'Fournisseurs', icon: Truck },
+      ]
+    },
+    // Ressources humaines
+    {
+      category: 'Ressources Humaines',
+      items: [
+        { id: 'hr', label: t('hr'), icon: UserCheck },
+        { id: 'team', label: t('team'), icon: Users },
       ]
     },
     // Planification et rapports
     {
       category: 'Planification & Rapports',
       items: [
-        { id: 'planning', label: t('planning'), icon: Calendar, color: 'text-indigo-600' },
-        { id: 'weather', label: t('weather'), icon: CloudRain, color: 'text-sky-600' },
-        { id: 'team', label: t('team'), icon: Users, color: 'text-pink-600' },
-        { id: 'reports', label: t('reports'), icon: FileText, color: 'text-slate-600' }
+        { id: 'planning', label: t('planning'), icon: Calendar },
+        { id: 'weather', label: t('weather'), icon: CloudRain },
+        { id: 'reports', label: t('reports'), icon: FileText }
       ]
     },
     // Configuration
     {
       category: 'Configuration',
       items: [
-        { id: 'settings', label: t('settings'), icon: Settings, color: 'text-gray-600' }
+        { id: 'settings', label: t('settings'), icon: Settings }
       ]
     }
   ];
@@ -104,7 +118,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
                       onClick={() => handleItemClick(item.id)}
                     >
                       <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        activeTab === item.id ? 'text-primary-foreground' : 'text-muted-foreground'
+                        activeTab === item.id ? '' : 'text-muted-foreground'
                       }`} />
                       <span className="font-medium leading-tight text-center text-xs">
                         {item.label}
