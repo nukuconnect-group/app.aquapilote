@@ -221,7 +221,6 @@ const translations = {
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('SettingsProvider rendering');
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [language, setLanguage] = useState<'fr' | 'en'>('fr');
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF');

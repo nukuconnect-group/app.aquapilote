@@ -16,8 +16,6 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  console.log('App component rendering');
-  
   return (
     <SettingsProvider>
       <BrowserRouter>
