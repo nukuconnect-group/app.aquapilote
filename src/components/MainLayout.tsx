@@ -171,29 +171,28 @@ const MainLayout = () => {
   };
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex flex-col w-full">
-        {/* Header fixe en haut */}
-        <div className="flex items-center border-b border-border">
-          <div className="hidden md:block">
-            <SidebarTrigger className="ml-2" />
-          </div>
-          <Header />
+      <div className="min-h-screen bg-background flex w-full">
+        {/* Sidebar Navigation - masqué sur mobile */}
+        <div className="hidden md:flex">
+          <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
-        
-        <div className="flex flex-1 w-full">
-          {/* Sidebar Navigation - masqué sur mobile */}
-          <div className="hidden md:block">
-            <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[23px]">
-              <div className="w-full max-w-none">
-                {renderContent()}
-              </div>
-            </main>
+        {/* Conteneur principal avec header et contenu */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header fixe en haut */}
+          <div className="sticky top-0 z-40 flex items-center border-b border-border bg-background">
+            <div className="hidden md:block">
+              <SidebarTrigger className="ml-2" />
+            </div>
+            <Header />
           </div>
+          
+          {/* Main Content avec scroll */}
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 pb-20 md:pb-6">
+            <div className="w-full max-w-none">
+              {renderContent()}
+            </div>
+          </main>
         </div>
 
         {/* Navigation mobile en bas */}
