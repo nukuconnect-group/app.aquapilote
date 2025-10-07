@@ -8,10 +8,13 @@ import { BarChart3, Plus, TrendingUp, Activity, Clock } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import ProductionCycleForm from './production/ProductionCycleForm';
+import ProductionCycleDetails from './production/ProductionCycleDetails';
 
 const ProductionManagement = () => {
   const { activeUnit, getUnitCycles } = useProductionUnits();
   const [customCycles, setCustomCycles] = useState([]);
+  const [selectedCycle, setSelectedCycle] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   if (!activeUnit) {
     return (
@@ -45,6 +48,11 @@ const ProductionManagement = () => {
 
   const handleSaveCycle = (cycle) => {
     setCustomCycles([...customCycles, cycle]);
+  };
+
+  const handleShowDetails = (cycle) => {
+    setSelectedCycle(cycle);
+    setShowDetails(true);
   };
 
   return (
@@ -162,7 +170,12 @@ const ProductionManagement = () => {
                     )}
                     
                     <div className="pt-2 border-t flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleShowDetails(cycle)}
+                      >
                         Détails
                       </Button>
                       <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
@@ -231,6 +244,18 @@ const ProductionManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal des détails du cycle */}
+      {selectedCycle && (
+        <ProductionCycleDetails
+          cycle={selectedCycle}
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setSelectedCycle(null);
+          }}
+        />
+      )}
     </div>
   );
 };

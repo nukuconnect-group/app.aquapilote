@@ -179,16 +179,18 @@ const MainLayout = () => {
 
         {/* Conteneur principal avec header et contenu */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header fixe en haut */}
-          <div className="sticky top-0 z-40 flex items-center border-b border-border bg-background">
+          {/* Header fixe en haut sans marges sur mobile */}
+          <div className="sticky top-0 z-40 flex items-center border-b border-border bg-background w-full">
             <div className="hidden md:block">
               <SidebarTrigger className="ml-2" />
             </div>
-            <Header />
+            <div className="flex-1 w-full">
+              <Header />
+            </div>
           </div>
           
           {/* Main Content avec scroll */}
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 pb-20 md:pb-6">
+          <main className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-20 md:pb-6">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
