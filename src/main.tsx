@@ -36,8 +36,8 @@ if (!rootElement) {
   throw new Error('Root element not found');
 }
 
-createRoot(rootElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+console.log('Creating React root...');
+const root = createRoot(rootElement);
+
+console.log('Rendering App...');
+root.render(<App />);
