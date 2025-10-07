@@ -15,8 +15,10 @@ import {
   AlertTriangle, 
   TrendingDown,
   Edit,
-  Trash2
+  Trash2,
+  BarChart3
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface FeedStock {
   id: string;
@@ -195,6 +197,16 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
   };
 
   const getTotalValue = () => stocks.reduce((total, stock) => total + (stock.quantity * stock.cost), 0);
+
+  // Données pour le graphique d'évolution (simulé avec dates créées)
+  const stockEvolutionData = stocks
+    .slice()
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map(stock => ({
+      date: new Date(stock.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+      quantite: stock.quantity,
+      nom: stock.customName
+    }));
 
   return (
     <div className="space-y-4">
@@ -442,6 +454,45 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Graphique d'évolution des stocks */}
+      {stocks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="w-5 h-5" />
+              Évolution des Stocks d'Aliment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stockEvolutionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }} />
+                  <Tooltip 
+                    contentStyle={{ fontSize: 12 }}
+                    formatter={(value: any, name: string) => [
+                      `${value} kg`,
+                      'Quantité'
+                    ]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="quantite" 
+                    stroke="#f97316" 
+                    strokeWidth={2}
+                    name="Stock"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Liste des stocks */}

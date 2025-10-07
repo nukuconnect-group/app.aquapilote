@@ -23,12 +23,16 @@ interface CycleDetailsProps {
     currentQuantity: number;
     targetQuantity: number;
     notes?: string;
+    initialQuantity?: number;
+    stockingDate?: string;
+    fingerlingsCount?: number;
   };
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (cycle: any) => void;
 }
 
-const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, onClose }) => {
+const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, onClose, onEdit }) => {
   // Données calculées (à remplacer par de vraies données provenant du context/API)
   const daysElapsed = Math.floor((new Date().getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24));
   const expectedEndDate = cycle.endDate || 'Non défini';
@@ -44,16 +48,29 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span className="text-xl font-bold">{cycle.name}</span>
-            <Badge className={
-              cycle.status === 'active' ? 'bg-green-100 text-green-800' :
-              cycle.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-              'bg-yellow-100 text-yellow-800'
-            }>
-              {cycle.status}
-            </Badge>
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl font-bold">{cycle.name}</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Badge className={
+                cycle.status === 'active' ? 'bg-green-100 text-green-800' :
+                cycle.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                'bg-yellow-100 text-yellow-800'
+              }>
+                {cycle.status}
+              </Badge>
+              {onEdit && (
+                <button
+                  onClick={() => {
+                    onEdit(cycle);
+                    onClose();
+                  }}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200"
+                >
+                  Modifier
+                </button>
+              )}
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
@@ -77,6 +94,12 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                       : expectedEndDate}
                   </p>
                 </div>
+                {cycle.stockingDate && (
+                  <div>
+                    <p className="text-muted-foreground">Date d'empoisonnement</p>
+                    <p className="font-medium">{new Date(cycle.stockingDate).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-muted-foreground">Jours écoulés</p>
                   <p className="font-medium">{daysElapsed} jours</p>
@@ -98,12 +121,24 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
               </h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
+                  {cycle.initialQuantity && (
+                    <div>
+                      <p className="text-muted-foreground">Objectif initial</p>
+                      <p className="font-medium text-lg">{cycle.initialQuantity.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {cycle.fingerlingsCount && (
+                    <div>
+                      <p className="text-muted-foreground">Nombre d'alevins empoisonnés</p>
+                      <p className="font-medium text-lg">{cycle.fingerlingsCount.toLocaleString()}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-muted-foreground">Quantité actuelle</p>
                     <p className="font-medium text-lg">{cycle.currentQuantity.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Objectif final</p>
+                    <p className="text-muted-foreground">Objectif final prévu</p>
                     <p className="font-medium text-lg">{cycle.targetQuantity.toLocaleString()}</p>
                   </div>
                 </div>

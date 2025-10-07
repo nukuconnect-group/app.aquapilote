@@ -324,6 +324,37 @@ const FishControlFishing = ({ unitId, unitName }: FishControlFishingProps) => {
                   className="text-sm"
                 />
               </div>
+              {/* Calculs automatiques affichés */}
+              {newRecord.sampleSize > 0 && newRecord.totalWeight > 0 && (
+                <div className="sm:col-span-2 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Calculator className="w-4 h-4" />
+                    Calculs automatiques
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Poids moyen individuel</p>
+                      <p className="font-bold text-lg text-blue-800">
+                        {((newRecord.totalWeight * 1000) / newRecord.sampleSize).toFixed(1)}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Poids total général</p>
+                      <p className="font-bold text-lg text-blue-800">
+                        {newRecord.totalWeight.toFixed(2)} kg
+                      </p>
+                    </div>
+                    {newRecord.fishCount > 0 && (
+                      <div>
+                        <p className="text-gray-600">Rendement estimé (kg/m²)</p>
+                        <p className="font-bold text-lg text-blue-800">
+                          {((newRecord.fishCount * ((newRecord.totalWeight * 1000) / newRecord.sampleSize)) / 1000).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="sm:col-span-2 flex gap-2">
                 <Button onClick={handleSaveRecord} className="flex-1">
                   Enregistrer la pêche de contrôle

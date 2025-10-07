@@ -55,6 +55,11 @@ const ProductionManagement = () => {
     setShowDetails(true);
   };
 
+  const handleEditCycle = (cycle) => {
+    // Future: Implement cycle editing
+    console.log('Edit cycle:', cycle);
+  };
+
   return (
     <div className="space-y-6">
       {/* En-tête avec sélecteur d'unité */}
@@ -178,7 +183,12 @@ const ProductionManagement = () => {
                       >
                         Détails
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 sm:flex-none"
+                        onClick={() => handleEditCycle(cycle)}
+                      >
                         Modifier
                       </Button>
                     </div>
@@ -254,6 +264,7 @@ const ProductionManagement = () => {
             setShowDetails(false);
             setSelectedCycle(null);
           }}
+          onEdit={handleEditCycle}
         />
       )}
     </div>
