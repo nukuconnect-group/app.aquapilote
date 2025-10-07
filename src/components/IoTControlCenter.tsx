@@ -82,14 +82,28 @@ const IoTControlCenter = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full overflow-x-auto">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Vue d'ensemble</TabsTrigger>
-          <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap">Analyse IA</TabsTrigger>
-          <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap">Environnemental</TabsTrigger>
-          <TabsTrigger value="drones" className="text-xs sm:text-sm whitespace-nowrap">Surveillance</TabsTrigger>
-          <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap">Automatisation</TabsTrigger>
-          <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap">Configuration</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-auto min-w-full sm:w-full gap-1">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Vue d'ensemble
+            </TabsTrigger>
+            <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Analyse IA
+            </TabsTrigger>
+            <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Environnemental
+            </TabsTrigger>
+            <TabsTrigger value="drones" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Surveillance
+            </TabsTrigger>
+            <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Automatisation
+            </TabsTrigger>
+            <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+              Configuration
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <IoTOverview />
