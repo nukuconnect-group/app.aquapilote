@@ -10,7 +10,6 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 const AppContent: React.FC = () => {
   return <MainLayout />;
@@ -25,13 +24,11 @@ const App: React.FC = () => {
             <ProductionUnitsProvider>
               <IoTProvider>
                 <LogsProvider>
-                  <SidebarProvider>
-                    <div style={{ minHeight: '100vh' }}>
-                      <AppContent />
-                      <Toaster />
-                      <OfflineIndicator />
-                    </div>
-                  </SidebarProvider>
+                  <div style={{ minHeight: '100vh' }}>
+                    <AppContent />
+                    <Toaster />
+                    <OfflineIndicator />
+                  </div>
                 </LogsProvider>
               </IoTProvider>
             </ProductionUnitsProvider>
