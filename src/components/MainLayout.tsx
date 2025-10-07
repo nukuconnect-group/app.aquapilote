@@ -4,7 +4,7 @@ import MobileNavigation from './MobileNavigation';
 import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
 import { AppSidebar } from './AppSidebar';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import IntelligentDashboard from './IntelligentDashboard';
 import SplashScreen from './SplashScreen';
 import PrivacyPolicy from './PrivacyPolicy';
@@ -170,57 +170,55 @@ const MainLayout = () => {
     }
   };
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-background flex flex-col w-full">
-        {/* Header fixe en haut */}
-        <div className="flex items-center border-b border-border">
-          <div className="hidden md:block">
-            <SidebarTrigger className="ml-2" />
-          </div>
-          <Header />
+    <div className="min-h-screen bg-background flex flex-col w-full">
+      {/* Header fixe en haut */}
+      <div className="flex items-center border-b border-border">
+        <div className="hidden md:block">
+          <SidebarTrigger className="ml-2" />
         </div>
-        
-        <div className="flex flex-1 w-full">
-          {/* Sidebar Navigation - masqué sur mobile */}
-          <div className="hidden md:block">
-            <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[23px]">
-              <div className="w-full max-w-none">
-                {renderContent()}
-              </div>
-            </main>
-          </div>
-        </div>
-
-        {/* Navigation mobile en bas */}
-        <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-        
-        {/* Modal menu mobile */}
-        <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {/* Dialogs de connexion/inscription */}
-        <LoginDialog 
-          isOpen={showLogin} 
-          onClose={() => setShowLogin(false)}
-          isRegistering={false} 
-          onToggleMode={handleRegister}
-        />
-        
-        {showEnhancedRegister && (
-          <EnhancedRegistration
-            onClose={() => setShowEnhancedRegister(false)}
-            onSwitchToLogin={handleLogin}
-          />
-        )}
-
-        {/* PWA Install Prompt */}
-        {user && <PWAInstallPrompt />}
+        <Header />
       </div>
-    </SidebarProvider>
+      
+      <div className="flex flex-1 w-full">
+        {/* Sidebar Navigation - masqué sur mobile */}
+        <div className="hidden md:block">
+          <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          <main className="p-3 sm:p-4 lg:p-6 overflow-auto pb-20 md:pb-6 max-w-full px-[4px] py-[23px]">
+            <div className="w-full max-w-none">
+              {renderContent()}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {/* Navigation mobile en bas */}
+      <MobileNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      
+      {/* Modal menu mobile */}
+      <MobileMenuModal isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Dialogs de connexion/inscription */}
+      <LoginDialog 
+        isOpen={showLogin} 
+        onClose={() => setShowLogin(false)}
+        isRegistering={false} 
+        onToggleMode={handleRegister}
+      />
+      
+      {showEnhancedRegister && (
+        <EnhancedRegistration
+          onClose={() => setShowEnhancedRegister(false)}
+          onSwitchToLogin={handleLogin}
+        />
+      )}
+
+      {/* PWA Install Prompt */}
+      {user && <PWAInstallPrompt />}
+    </div>
   );
 };
 export default MainLayout;
