@@ -17,25 +17,25 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <SettingsProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <ProductionUnitsProvider>
-            <IoTProvider>
-              <LogsProvider>
-                <ErrorBoundary>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ProductionUnitsProvider>
+              <IoTProvider>
+                <LogsProvider>
                   <div style={{ minHeight: '100vh' }}>
                     <AppContent />
                     <Toaster />
                     <OfflineIndicator />
                   </div>
-                </ErrorBoundary>
-              </LogsProvider>
-            </IoTProvider>
-          </ProductionUnitsProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </SettingsProvider>
+                </LogsProvider>
+              </IoTProvider>
+            </ProductionUnitsProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </SettingsProvider>
+    </ErrorBoundary>
   );
 };
 
