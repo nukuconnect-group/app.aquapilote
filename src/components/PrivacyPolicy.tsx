@@ -5,24 +5,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, FileText } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-optimized.webp';
-
 interface PrivacyPolicyProps {
   onAccept: () => void;
 }
-
-const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onAccept }) => {
+const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({
+  onAccept
+}) => {
   const [isAccepted, setIsAccepted] = useState(false);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-aqua-50 to-blue-100">
+  return <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-aqua-50 to-blue-100">
       <Card className="w-full max-w-2xl mx-auto shadow-2xl">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
-            <img 
-              src={aquaPilotLogo} 
-              alt="AQUA PILOT" 
-              className="w-16 h-16"
-            />
+            <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-16 h-16" />
           </div>
           <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <Shield className="w-6 h-6 text-aqua-600" />
@@ -75,31 +69,18 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onAccept }) => {
           </ScrollArea>
 
           <div className="flex items-center space-x-2 p-4 bg-aqua-50 rounded-lg">
-            <Checkbox 
-              id="privacy-accept" 
-              checked={isAccepted}
-              onCheckedChange={(checked) => setIsAccepted(checked === true)}
-            />
-            <label 
-              htmlFor="privacy-accept" 
-              className="text-sm text-gray-700 cursor-pointer"
-            >
+            <Checkbox id="privacy-accept" checked={isAccepted} onCheckedChange={checked => setIsAccepted(checked === true)} />
+            <label htmlFor="privacy-accept" className="text-sm text-gray-700 cursor-pointer">
               J'ai lu et j'accepte la politique de confidentialité d'AQUA PILOT
             </label>
           </div>
 
-          <Button 
-            onClick={onAccept}
-            disabled={!isAccepted}
-            className="w-full bg-gradient-aqua text-white"
-          >
+          <Button onClick={onAccept} disabled={!isAccepted} className="w-full bg-gradient-aqua text-white bg-zinc-800 hover:bg-zinc-700">
             <FileText className="w-4 h-4 mr-2" />
             Continuer
           </Button>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default PrivacyPolicy;
