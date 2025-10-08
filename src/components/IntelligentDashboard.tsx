@@ -19,7 +19,9 @@ const IntelligentDashboard = () => {
     getUnitFinancialData,
     getGlobalFinancialData
   } = useProductionUnits();
-  const { formatCurrency } = useSettings();
+  const {
+    formatCurrency
+  } = useSettings();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
   const unitEquipment = activeUnit ? getUnitEquipment(activeUnit.id) : [];
@@ -211,7 +213,7 @@ const IntelligentDashboard = () => {
   return <div className="space-y-4 sm:space-y-6">
       {/* En-tête amélioré du tableau de bord */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-xl shadow-lg">
-        <div className="p-6 text-white">
+        <div className="p-6 text-white px-[18px] py-[18px]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
               
