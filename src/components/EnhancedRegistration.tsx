@@ -266,7 +266,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                       <SelectValue placeholder="Sélectionnez votre secteur" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sectorOptions.map(sector => <SelectItem key={sector} value={sector.toLowerCase().replace(/\s+/g, '-')}>
+                      {sectorOptions.map(sector => <SelectItem key={sector} value={sector.toLowerCase().replace(/\s+/g, '-')} className="text-zinc-700">
                           {sector}
                         </SelectItem>)}
                     </SelectContent>
