@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, User, Bell, Palette, Shield, Database, Download, Upload, Save, Eye, EyeOff, Smartphone, Mail, Lock, Globe, Moon, Sun } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SettingsManagement = () => {
   const { 
     theme, language, currency, offlineMode, showOfflineIndicator,
     setTheme, setLanguage, setCurrency, setOfflineMode, setShowOfflineIndicator, t 
   } = useSettings();
+  const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -24,12 +26,25 @@ const SettingsManagement = () => {
     alerts: true
   });
   const [userProfile, setUserProfile] = useState({
-    nom: 'Jean Dupont',
-    email: 'jean.dupont@example.com',
-    telephone: '+33 6 12 34 56 78',
-    entreprise: 'Aquaculture Pro',
-    adresse: '123 Rue de la Pisciculture, 75001 Paris'
+    nom: '',
+    email: '',
+    telephone: '',
+    entreprise: '',
+    adresse: ''
   });
+
+  // Charger les données du vrai utilisateur connecté
+  useEffect(() => {
+    if (user) {
+      setUserProfile({
+        nom: user.name || '',
+        email: user.email || '',
+        telephone: '', // Propriété non définie dans le type User actuel
+        entreprise: user.entreprise || '',
+        adresse: '' // Propriété non définie dans le type User actuel
+      });
+    }
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -393,6 +408,10 @@ const SettingsManagement = () => {
                   <div>
                     <span className="text-gray-600">Stockage:</span>
                     <span className="ml-2 font-medium">IndexedDB</span>
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="text-gray-600">Développeur:</span>
+                    <span className="ml-2 font-medium">Startup AFRICA HORIZON AQUATIC</span>
                   </div>
                 </div>
               </div>

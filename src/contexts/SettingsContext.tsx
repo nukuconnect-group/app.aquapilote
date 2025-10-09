@@ -253,6 +253,36 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
+  // Appliquer le thème au document
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const root = document.documentElement;
+    
+    const applyTheme = (themeToApply: 'light' | 'dark') => {
+      if (themeToApply === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    if (theme === 'auto') {
+      // Détection du thème système
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches ? 'dark' : 'light');
+      
+      const handler = (e: MediaQueryListEvent) => {
+        applyTheme(e.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      applyTheme(theme);
+    }
+  }, [theme, isInitialized]);
+
   const handleSetTheme = (newTheme: 'light' | 'dark' | 'auto') => {
     try {
       localStorage.setItem('app-theme', newTheme);
