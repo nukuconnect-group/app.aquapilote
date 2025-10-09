@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,9 +20,11 @@ import {
   ShoppingBag,
   Settings,
   Shield,
-  Truck
+  Truck,
+  UserCog
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileMenuModalProps {
   isOpen: boolean;
@@ -33,12 +34,13 @@ interface MobileMenuModalProps {
 }
 
 const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenuModalProps) => {
-  const { t } = useSettings();
+  const { t, language } = useSettings();
+  const { user } = useAuth();
   
   const menuItems = [
     // Modules essentiels
     { 
-      category: 'Modules Essentiels',
+      category: language === 'fr' ? 'Modules Essentiels' : 'Essential Modules',
       items: [
         { id: 'infrastructures', label: t('infrastructures'), icon: Building },
         { id: 'livestock', label: t('livestock'), icon: Beef },
@@ -48,25 +50,25 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     },
     // Transformation et production
     {
-      category: 'Transformation & Production',
+      category: language === 'fr' ? 'Transformation & Production' : 'Transformation & Production',
       items: [
-        { id: 'transformation', label: 'Transformation', icon: Shield },
+        { id: 'transformation', label: t('transformation'), icon: Shield },
         { id: 'production', label: t('production'), icon: Package },
       ]
     },
     // Gestion financière
     {
-      category: 'Gestion Financière',
+      category: language === 'fr' ? 'Gestion Financière' : 'Financial Management',
       items: [
         { id: 'accounting', label: t('accounting'), icon: Calculator },
-        { id: 'purchases', label: 'Achats', icon: ShoppingCart },
+        { id: 'purchases', label: t('purchases'), icon: ShoppingCart },
         { id: 'sales', label: t('sales'), icon: ShoppingBag },
-        { id: 'suppliers', label: 'Fournisseurs', icon: Truck },
+        { id: 'suppliers', label: t('suppliers'), icon: Truck },
       ]
     },
     // Ressources humaines
     {
-      category: 'Ressources Humaines',
+      category: language === 'fr' ? 'Ressources Humaines' : 'Human Resources',
       items: [
         { id: 'hr', label: t('hr'), icon: UserCheck },
         { id: 'team', label: t('team'), icon: Users },
@@ -74,7 +76,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     },
     // Planification et rapports
     {
-      category: 'Planification & Rapports',
+      category: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
       items: [
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'weather', label: t('weather'), icon: CloudRain },
@@ -83,12 +85,22 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     },
     // Configuration
     {
-      category: 'Configuration',
+      category: language === 'fr' ? 'Configuration' : 'Configuration',
       items: [
         { id: 'settings', label: t('settings'), icon: Settings }
       ]
     }
   ];
+
+  // Ajouter section Admin si l'utilisateur est admin
+  if (user?.role === 'admin') {
+    menuItems.push({
+      category: language === 'fr' ? 'Administration' : 'Administration',
+      items: [
+        { id: 'admin', label: t('admin'), icon: UserCog }
+      ]
+    });
+  }
 
   const handleItemClick = (tabId: string) => {
     onTabChange(tabId);
@@ -99,7 +111,9 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm max-h-[85vh] p-0 mobile-friendly-modal">
         <DialogHeader className="p-4 pb-2">
-          <DialogTitle className="text-responsive-title">Menu principal</DialogTitle>
+          <DialogTitle className="text-responsive-title">
+            {language === 'fr' ? 'Menu principal' : 'Main Menu'}
+          </DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="flex-1 px-4 pb-4">

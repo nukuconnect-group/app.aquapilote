@@ -1,95 +1,52 @@
 
 import React from 'react';
-import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Shield, Truck } from 'lucide-react';
+import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Shield, Truck, UserCog } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
+
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
+
 const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   onTabChange
 }) => {
-  const navigationItems = [{
-    id: 'dashboard',
-    label: 'Tableau de Bord',
-    icon: Home
-  }, {
-    id: 'iot-control',
-    label: 'Contrôle & IoT',
-    icon: Wifi
-  }, {
-    id: 'units',
-    label: 'Toutes les unités',
-    icon: Building2
-  }, {
-    id: 'infrastructures',
-    label: 'Infrastructures',
-    icon: Wrench
-  }, {
-    id: 'fish',
-    label: 'Poissons',
-    icon: Fish
-  }, {
-    id: 'livestock',
-    label: 'Cheptel',
-    icon: Beef
-  }, {
-    id: 'feeding',
-    label: 'Alimentation',
-    icon: Utensils
-  }, {
-    id: 'health',
-    label: 'Prophylaxie',
-    icon: Heart
-  }, {
-    id: 'transformation',
-    label: 'Transformation',
-    icon: Shield
-  }, {
-    id: 'production',
-    label: 'Production',
-    icon: Package
-  }, {
-    id: 'accounting',
-    label: 'Comptabilité',
-    icon: Calculator
-  }, {
-    id: 'purchases',
-    label: 'Achats',
-    icon: ShoppingCart
-  }, {
-    id: 'sales',
-    label: 'Vente',
-    icon: ShoppingBag
-  }, {
-    id: 'suppliers',
-    label: 'Fournisseurs',
-    icon: Truck
-  }, {
-    id: 'hr',
-    label: 'Gestion RH',
-    icon: UserCheck
-  }, {
-    id: 'planning',
-    label: 'Planification',
-    icon: Calendar
-  }, {
-    id: 'weather',
-    label: 'Météo',
-    icon: Cloud
-  }, {
-    id: 'team',
-    label: 'Équipe',
-    icon: Users
-  }, {
-    id: 'reports',
-    label: 'Rapports',
-    icon: FileText
-  }, {
-    id: 'settings',
-    label: 'Paramètres',
-    icon: Settings
-  }];
+  const { t } = useSettings();
+  const { user } = useAuth();
+  
+  const navigationItems = [
+    { id: 'dashboard', label: t('dashboard'), icon: Home },
+    { id: 'iot-control', label: t('iot-control'), icon: Wifi },
+    { id: 'units', label: t('units'), icon: Building2 },
+    { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
+    { id: 'fish', label: t('fish'), icon: Fish },
+    { id: 'livestock', label: t('livestock'), icon: Beef },
+    { id: 'feeding', label: t('feeding'), icon: Utensils },
+    { id: 'health', label: t('health'), icon: Heart },
+    { id: 'transformation', label: t('transformation'), icon: Shield },
+    { id: 'production', label: t('production'), icon: Package },
+    { id: 'accounting', label: t('accounting'), icon: Calculator },
+    { id: 'purchases', label: t('purchases'), icon: ShoppingCart },
+    { id: 'sales', label: t('sales'), icon: ShoppingBag },
+    { id: 'suppliers', label: t('suppliers'), icon: Truck },
+    { id: 'hr', label: t('hr'), icon: UserCheck },
+    { id: 'planning', label: t('planning'), icon: Calendar },
+    { id: 'weather', label: t('weather'), icon: Cloud },
+    { id: 'team', label: t('team'), icon: Users },
+    { id: 'reports', label: t('reports'), icon: FileText },
+    { id: 'settings', label: t('settings'), icon: Settings },
+  ];
+
+  // Ajouter l'option admin si l'utilisateur est admin
+  if (user?.role === 'admin') {
+    navigationItems.push({
+      id: 'admin',
+      label: t('admin'),
+      icon: UserCog,
+    });
+  }
   return (
     <nav className="h-full flex flex-col bg-card border-border">
       <div className="flex-1 overflow-y-auto">

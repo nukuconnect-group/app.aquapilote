@@ -53,9 +53,9 @@ const Header = () => {
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
               <h1 className="text-primary-foreground sm:text-sm lg:text-base tracking-wide text-base font-medium px-[5px]">
-                AQUA PILOTE
+                {t('app_title')}
               </h1>
-              <p className="text-primary-foreground/80 text-xs leading-tight hidden sm:block">Gestion Piscicole Intelligente</p>
+              <p className="text-primary-foreground/80 text-xs leading-tight hidden sm:block">{t('app_subtitle')}</p>
             </div>
           </div>
 
@@ -73,7 +73,7 @@ const Header = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md mobile-friendly-modal">
                 <DialogHeader>
-                  <DialogTitle className="text-responsive-title">Paramètres système</DialogTitle>
+                  <DialogTitle className="text-responsive-title">{t('system_settings')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
@@ -157,16 +157,16 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <UserCircle className="mr-2 h-4 w-4" />
-                    <span>Profil</span>
+                    <span>{t('profile')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowSettings(true)}>
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Paramètres</span>
+                    <span>{t('settings')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Se déconnecter</span>
+                    <span>{t('logout')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu> : <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0">

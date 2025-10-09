@@ -5,7 +5,9 @@ import MobileMenuModal from './MobileMenuModal';
 import Header from './Header';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import Dashboard from '@/components/Dashboard';
 import IntelligentDashboard from './IntelligentDashboard';
+import AdminDashboard from './AdminDashboard';
 import SplashScreen from './SplashScreen';
 import PrivacyPolicy from './PrivacyPolicy';
 import Onboarding from './Onboarding';
@@ -165,6 +167,8 @@ const MainLayout = () => {
         return <ReportsManagement />;
       case 'settings':
         return <SettingsManagement />;
+      case 'admin':
+        return <AdminDashboard />;
       default:
         return <IntelligentDashboard />;
     }

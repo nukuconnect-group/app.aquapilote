@@ -65,12 +65,12 @@ const SettingsManagement = () => {
       <Tabs defaultValue="profile" className="space-y-4">
         <div className="overflow-x-auto">
           <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 min-w-[600px] sm:min-w-0">
-            <TabsTrigger value="profile" className="text-xs px-2">Profil</TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs px-2">Notifications</TabsTrigger>
-            <TabsTrigger value="appearance" className="text-xs px-2">Apparence</TabsTrigger>
-            <TabsTrigger value="security" className="text-xs px-2">Sécurité</TabsTrigger>
-            <TabsTrigger value="system" className="text-xs px-2">Système</TabsTrigger>
-            <TabsTrigger value="backup" className="text-xs px-2">Sauvegarde</TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs px-2">{t('profile')}</TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs px-2">{t('notifications')}</TabsTrigger>
+            <TabsTrigger value="appearance" className="text-xs px-2">{t('appearance')}</TabsTrigger>
+            <TabsTrigger value="security" className="text-xs px-2">{language === 'fr' ? 'Sécurité' : 'Security'}</TabsTrigger>
+            <TabsTrigger value="system" className="text-xs px-2">{language === 'fr' ? 'Système' : 'System'}</TabsTrigger>
+            <TabsTrigger value="backup" className="text-xs px-2">{t('backup_restore')}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -80,13 +80,13 @@ const SettingsManagement = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                 <User className="w-5 h-5 text-aqua-600" />
-                {t('profile') || 'Informations personnelles'}
+                {t('personal_info')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="nom">Nom complet</Label>
+                  <Label htmlFor="nom">{t('full_name')}</Label>
                   <Input 
                     id="nom" 
                     value={userProfile.nom} 
@@ -94,7 +94,7 @@ const SettingsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('email')}</Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -103,7 +103,7 @@ const SettingsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Label htmlFor="telephone">{t('phone')}</Label>
                   <Input 
                     id="telephone" 
                     value={userProfile.telephone} 
@@ -111,7 +111,7 @@ const SettingsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="entreprise">Entreprise</Label>
+                  <Label htmlFor="entreprise">{t('company')}</Label>
                   <Input 
                     id="entreprise" 
                     value={userProfile.entreprise} 
@@ -120,7 +120,7 @@ const SettingsManagement = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="adresse">Adresse</Label>
+                <Label htmlFor="adresse">{t('address')}</Label>
                 <Input 
                   id="adresse" 
                   value={userProfile.adresse} 
@@ -129,7 +129,7 @@ const SettingsManagement = () => {
               </div>
               <Button className="w-full md:w-auto">
                 <Save className="w-4 h-4 mr-2" />
-                Sauvegarder les modifications
+                {t('save_changes')}
               </Button>
             </CardContent>
           </Card>
@@ -141,15 +141,15 @@ const SettingsManagement = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                 <Bell className="w-5 h-5 text-aqua-600" />
-                Préférences de notification
+                {t('notification_preferences')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">Notifications par email</Label>
-                    <p className="text-sm text-gray-600">Recevoir les alertes par email</p>
+                    <Label className="text-base font-medium">{t('email_notifications')}</Label>
+                    <p className="text-sm text-gray-600">{t('receive_email_alerts')}</p>
                   </div>
                   <Switch 
                     checked={notifications.email} 
@@ -161,8 +161,8 @@ const SettingsManagement = () => {
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">Notifications push</Label>
-                    <p className="text-sm text-gray-600">Notifications sur votre appareil</p>
+                    <Label className="text-base font-medium">{t('push_notifications')}</Label>
+                    <p className="text-sm text-gray-600">{t('device_notifications')}</p>
                   </div>
                   <Switch 
                     checked={notifications.push} 
@@ -174,8 +174,8 @@ const SettingsManagement = () => {
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">SMS d'urgence</Label>
-                    <p className="text-sm text-gray-600">SMS pour les alertes critiques</p>
+                    <Label className="text-base font-medium">{t('sms_emergency')}</Label>
+                    <p className="text-sm text-gray-600">{t('sms_critical_alerts')}</p>
                   </div>
                   <Switch 
                     checked={notifications.sms} 
@@ -187,8 +187,8 @@ const SettingsManagement = () => {
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">Alertes système</Label>
-                    <p className="text-sm text-gray-600">Notifications pour les événements système</p>
+                    <Label className="text-base font-medium">{t('system_alerts')}</Label>
+                    <p className="text-sm text-gray-600">{t('system_events_notifications')}</p>
                   </div>
                   <Switch 
                     checked={notifications.alerts} 
@@ -206,12 +206,12 @@ const SettingsManagement = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                 <Palette className="w-5 h-5 text-aqua-600" />
-                Thème et apparence
+                {t('theme_appearance')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label className="text-base font-medium mb-3 block">Mode d'affichage</Label>
+                <Label className="text-base font-medium mb-3 block">{t('display_mode')}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button 
                     className={`p-3 border-2 rounded-lg transition-colors ${
@@ -220,7 +220,7 @@ const SettingsManagement = () => {
                     onClick={() => setTheme('light')}
                   >
                     <Sun className="w-6 h-6 mx-auto mb-2 text-aqua-600" />
-                    <span className="text-sm font-medium">Clair</span>
+                    <span className="text-sm font-medium">{t('light')}</span>
                   </button>
                   <button 
                     className={`p-3 border-2 rounded-lg transition-colors ${
@@ -229,7 +229,7 @@ const SettingsManagement = () => {
                     onClick={() => setTheme('dark')}
                   >
                     <Moon className="w-6 h-6 mx-auto mb-2 text-gray-600" />
-                    <span className="text-sm font-medium">Sombre</span>
+                    <span className="text-sm font-medium">{t('dark')}</span>
                   </button>
                   <button 
                     className={`p-3 border-2 rounded-lg transition-colors ${
@@ -238,7 +238,7 @@ const SettingsManagement = () => {
                     onClick={() => setTheme('auto')}
                   >
                     <Smartphone className="w-6 h-6 mx-auto mb-2 text-gray-600" />
-                    <span className="text-sm font-medium">Auto</span>
+                    <span className="text-sm font-medium">{t('auto')}</span>
                   </button>
                 </div>
               </div>
