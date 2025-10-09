@@ -101,6 +101,38 @@
     @apply bg-background text-foreground;
   }
 
+  /* PWA - Prévenir les comportements par défaut du navigateur mobile */
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  /* iOS PWA - Prévenir le pull-to-refresh */
+  body {
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+
+  #root {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Support PWA - Safe area pour les écrans avec encoche */
+  @supports (padding: max(0px)) {
+    body {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+  }
+
   /* Amélioration de la lisibilité et taille de police mobile */
   html {
     font-size: 16px;
@@ -329,9 +361,13 @@
     @apply text-xs sm:text-sm overflow-x-auto;
   }
 
-  /* Support offline - à développer avec service worker */
-  .offline-indicator {
-    @apply fixed top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm z-50;
+  /* Support offline - Mode hors ligne toujours fonctionnel */
+  .offline-ready {
+    @apply transition-opacity duration-300;
+  }
+
+  .offline-ready.loading {
+    @apply opacity-50;
   }
 
   /* États de chargement */
@@ -371,6 +407,7 @@
     min-height: 48px;
     min-width: 48px;
     padding: 12px 16px;
+    -webkit-tap-highlight-color: transparent;
   }
   
   /* Améliorer l'expérience tactile */
@@ -384,6 +421,7 @@
   a, input, select, textarea, [role="tab"], [role="menuitem"] {
     min-height: 44px;
     padding: 8px 12px;
+    -webkit-tap-highlight-color: transparent;
   }
   
   /* Espacement augmenté pour éviter les clics accidentels */
@@ -391,9 +429,14 @@
     margin: 2px;
   }
   
-  /* Éviter le zoom sur les inputs iOS */
-  input, select, textarea {
+  /* Éviter le zoom sur les inputs iOS - CRITIQUE pour PWA */
+  input, select, textarea, button {
     font-size: 16px !important;
+  }
+
+  /* Améliorer le défilement sur iOS */
+  * {
+    -webkit-overflow-scrolling: touch;
   }
 }
 

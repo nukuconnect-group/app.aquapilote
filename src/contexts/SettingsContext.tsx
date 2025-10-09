@@ -4,9 +4,13 @@ interface SettingsContextType {
   theme: 'light' | 'dark' | 'auto';
   language: 'fr' | 'en';
   currency: 'EUR' | 'USD' | 'XOF' | 'MAD';
+  offlineMode: boolean;
+  showOfflineIndicator: boolean;
   setTheme: (theme: 'light' | 'dark' | 'auto') => void;
   setLanguage: (language: 'fr' | 'en') => void;
   setCurrency: (currency: 'EUR' | 'USD' | 'XOF' | 'MAD') => void;
+  setOfflineMode: (enabled: boolean) => void;
+  setShowOfflineIndicator: (show: boolean) => void;
   t: (key: string) => string;
   formatCurrency: (amount: number) => string;
 }
@@ -224,6 +228,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [language, setLanguage] = useState<'fr' | 'en'>('fr');
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF');
+  const [offlineMode, setOfflineModeState] = useState<boolean>(true);
+  const [showOfflineIndicator, setShowOfflineIndicatorState] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialisation sûre après le montage du composant
@@ -232,10 +238,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedTheme = localStorage.getItem('app-theme') as 'light' | 'dark' | 'auto';
       const savedLanguage = localStorage.getItem('app-language') as 'fr' | 'en';
       const savedCurrency = localStorage.getItem('app-currency') as 'EUR' | 'USD' | 'XOF' | 'MAD';
+      const savedOfflineMode = localStorage.getItem('app-offline-mode');
+      const savedShowOfflineIndicator = localStorage.getItem('app-show-offline-indicator');
       
       if (savedTheme) setTheme(savedTheme);
       if (savedLanguage) setLanguage(savedLanguage);
       if (savedCurrency) setCurrency(savedCurrency);
+      if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
+      if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
     } catch (error) {
       console.error('Error loading settings from localStorage:', error);
     } finally {
@@ -268,6 +278,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error('Error saving currency:', error);
     }
     setCurrency(newCurrency);
+  };
+
+  const handleSetOfflineMode = (enabled: boolean) => {
+    try {
+      localStorage.setItem('app-offline-mode', String(enabled));
+    } catch (error) {
+      console.error('Error saving offline mode:', error);
+    }
+    setOfflineModeState(enabled);
+  };
+
+  const handleSetShowOfflineIndicator = (show: boolean) => {
+    try {
+      localStorage.setItem('app-show-offline-indicator', String(show));
+    } catch (error) {
+      console.error('Error saving show offline indicator:', error);
+    }
+    setShowOfflineIndicatorState(show);
   };
 
   const t = (key: string): string => {
@@ -311,9 +339,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         theme,
         language,
         currency,
+        offlineMode,
+        showOfflineIndicator,
         setTheme: handleSetTheme,
         setLanguage: handleSetLanguage,
         setCurrency: handleSetCurrency,
+        setOfflineMode: handleSetOfflineMode,
+        setShowOfflineIndicator: handleSetShowOfflineIndicator,
         t,
         formatCurrency,
       }}

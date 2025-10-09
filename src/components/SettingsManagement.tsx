@@ -12,7 +12,10 @@ import { Settings, User, Bell, Palette, Shield, Database, Download, Upload, Save
 import { useSettings } from '@/contexts/SettingsContext';
 
 const SettingsManagement = () => {
-  const { theme, language, currency, setTheme, setLanguage, setCurrency, t } = useSettings();
+  const { 
+    theme, language, currency, offlineMode, showOfflineIndicator,
+    setTheme, setLanguage, setCurrency, setOfflineMode, setShowOfflineIndicator, t 
+  } = useSettings();
   const [showPassword, setShowPassword] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -319,6 +322,46 @@ const SettingsManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Mode hors ligne et stockage local</h4>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <Label className="text-base font-medium">Mode hors ligne</Label>
+                    <p className="text-sm text-gray-600">
+                      Permet à l'application de fonctionner sans connexion internet
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={offlineMode} 
+                    onCheckedChange={setOfflineMode}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <Label className="text-base font-medium">Afficher l'indicateur de synchronisation</Label>
+                    <p className="text-sm text-gray-600">
+                      Affiche le nombre d'actions en attente de synchronisation
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={showOfflineIndicator} 
+                    onCheckedChange={setShowOfflineIndicator}
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>💡 Astuce :</strong> L'application fonctionne automatiquement hors ligne. 
+                    Vos données sont sauvegardées localement et synchronisées automatiquement 
+                    dès que la connexion est rétablie.
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Fuseau horaire</Label>
@@ -342,6 +385,14 @@ const SettingsManagement = () => {
                   <div>
                     <span className="text-gray-600">Dernière MAJ:</span>
                     <span className="ml-2 font-medium">15 juin 2024</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">PWA:</span>
+                    <span className="ml-2 font-medium">✓ Compatible iOS/Android</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Stockage:</span>
+                    <span className="ml-2 font-medium">IndexedDB</span>
                   </div>
                 </div>
               </div>

@@ -6,6 +6,7 @@ const DYNAMIC_CACHE = 'aqua-pilot-dynamic-v2';
 // Ressources essentielles à mettre en cache
 const STATIC_FILES = [
   '/',
+  '/index.html',
   '/manifest.json',
   '/src/assets/aqua-pilot-logo.png',
   'https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/uploads/1758369338751-LOGO AQUA PILOT.png'
@@ -18,7 +19,9 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('[SW] Precaching static files');
-        return cache.addAll(STATIC_FILES);
+        return cache.addAll(STATIC_FILES).catch(err => {
+          console.error('[SW] Error caching files:', err);
+        });
       })
       .then(() => {
         console.log('[SW] Installation completed');
@@ -49,65 +52,70 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Stratégie de cache
+// Stratégie de cache - Cache-first pour fonctionner hors ligne
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
   // Skip non-GET requests
   if (request.method !== 'GET') return;
   
-  // Cache-first pour les ressources statiques
-  if (request.url.includes('/assets/') || request.url.includes('/static/')) {
-    event.respondWith(
-      caches.match(request)
-        .then((response) => {
-          return response || fetch(request)
-            .then((fetchResponse) => {
-              return caches.open(STATIC_CACHE)
-                .then((cache) => {
-                  cache.put(request, fetchResponse.clone());
-                  return fetchResponse;
-                });
-            });
-        })
-        .catch(() => {
-          // Fallback pour les images
-          if (request.destination === 'image') {
-            return new Response('', { status: 200, statusText: 'OK' });
-          }
-        })
-    );
-    return;
-  }
-  
-  // Network-first pour les pages et APIs
+  // Ignorer les requêtes non-HTTP
+  if (!request.url.startsWith('http')) return;
+
+  // Stratégie cache-first agressive pour toutes les ressources
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Mettre en cache les réponses valides
-        if (response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(DYNAMIC_CACHE)
-            .then((cache) => {
-              cache.put(request, responseToCache);
+    caches.match(request)
+      .then((cachedResponse) => {
+        // Retourner le cache immédiatement si disponible
+        if (cachedResponse) {
+          // Mettre à jour le cache en arrière-plan
+          fetch(request)
+            .then((response) => {
+              if (response && response.status === 200) {
+                const responseToCache = response.clone();
+                caches.open(DYNAMIC_CACHE)
+                  .then((cache) => {
+                    cache.put(request, responseToCache);
+                  });
+              }
+            })
+            .catch(() => {
+              // Ignorer les erreurs réseau en mode hors ligne
             });
+          
+          return cachedResponse;
         }
-        return response;
-      })
-      .catch(() => {
-        // Fallback vers le cache
-        return caches.match(request)
+
+        // Si pas en cache, essayer de récupérer
+        return fetch(request)
           .then((response) => {
-            return response || caches.match('/')
-              .then((fallback) => {
-                return fallback || new Response('Hors ligne - AQUA PILOT', {
-                  status: 503,
-                  statusText: 'Service Unavailable',
-                  headers: new Headers({
-                    'Content-Type': 'text/html'
-                  })
+            if (!response || response.status !== 200 || response.type === 'error') {
+              return response;
+            }
+
+            const responseToCache = response.clone();
+            caches.open(DYNAMIC_CACHE)
+              .then((cache) => {
+                cache.put(request, responseToCache);
+              });
+
+            return response;
+          })
+          .catch(() => {
+            // En cas d'échec, retourner la page principale pour les navigations
+            if (request.mode === 'navigate') {
+              return caches.match('/').then(response => {
+                return response || new Response('<!DOCTYPE html><html><head><title>AQUA PILOT</title></head><body><div id="root"></div></body></html>', {
+                  headers: { 'Content-Type': 'text/html' }
                 });
               });
+            }
+
+            // Pour les autres ressources, retourner une réponse vide
+            return new Response('', {
+              status: 200,
+              statusText: 'OK'
+            });
           });
       })
   );

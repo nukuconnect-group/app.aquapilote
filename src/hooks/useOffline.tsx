@@ -12,20 +12,10 @@ export const useOffline = () => {
       const online = navigator.onLine;
       setIsOnline(online);
 
+      // Ne plus afficher de toast "hors ligne" - l'app fonctionne toujours
       if (online) {
-        toast({
-          title: "Connexion rétablie",
-          description: "Synchronisation des données en cours...",
-          duration: 3000,
-        });
+        // Synchroniser silencieusement en arrière-plan
         syncPendingActions();
-      } else {
-        toast({
-          title: "Mode hors ligne",
-          description: "Vos modifications seront synchronisées à la reconnexion.",
-          variant: "destructive",
-          duration: 3000,
-        });
       }
     };
 
@@ -72,14 +62,7 @@ export const useOffline = () => {
     try {
       await offlineStorage.addPendingAction({ type, data, endpoint, method });
       setPendingActionsCount(prev => prev + 1);
-      
-      if (!isOnline) {
-        toast({
-          title: "Action enregistrée",
-          description: "Sera synchronisée à la reconnexion",
-          duration: 2000,
-        });
-      }
+      // Ne plus afficher de toast - l'action est sauvegardée localement
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'action:', error);
       toast({
