@@ -242,7 +242,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedShowOfflineIndicator = localStorage.getItem('app-show-offline-indicator');
       
       if (savedTheme) setTheme(savedTheme);
-      if (savedLanguage) setLanguage(savedLanguage);
+      
+      // Détection automatique de la langue du navigateur si aucune langue sauvegardée
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+      } else {
+        const browserLanguage = navigator.language.toLowerCase();
+        const detectedLanguage = browserLanguage.startsWith('fr') ? 'fr' : 'en';
+        setLanguage(detectedLanguage);
+        localStorage.setItem('app-language', detectedLanguage);
+      }
+      
       if (savedCurrency) setCurrency(savedCurrency);
       if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
       if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
