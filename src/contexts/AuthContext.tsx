@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<boolean>;
+  resetPassword: (email: string, newPassword: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
   completeOnboarding: () => void;
@@ -183,15 +184,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string, newPassword: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
+      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
+      
+      const userIndex = registeredUsers.findIndex((u: any) => u.email === email);
+      
+      if (userIndex === -1) {
+        setIsLoading(false);
+        return false;
+      }
+      
+      registeredUsers[userIndex].password = newPassword;
+      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
+      
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   const logout = () => {
     setUser(null);
-    // Supprimer toutes les données utilisateur et réinitialiser l'onboarding
     localStorage.removeItem('aqua_pilot_user');
     localStorage.removeItem('aqua_pilot_onboarding');
     localStorage.removeItem('aqua_pilot_splash');
     localStorage.removeItem('privacy_accepted');
-    
-    // Réinitialiser l'état de l'onboarding
     setHasSeenOnboarding(false);
   };
 
@@ -201,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login,
       logout,
       register,
+      resetPassword,
       isLoading,
       hasSeenOnboarding,
       completeOnboarding,

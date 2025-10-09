@@ -198,7 +198,7 @@ const LivestockManagement = () => {
                   Ajouter un lot
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Ajouter un nouveau lot</DialogTitle>
                   <DialogDescription>

@@ -27,6 +27,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   selectedPlan = null 
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,11 +35,39 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     confirmPassword: ''
   });
   
-  const { login, register, isLoading } = useAuth();
+  const { login, register, resetPassword, isLoading } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (showResetPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: "Erreur",
+          description: "Les mots de passe ne correspondent pas",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const success = await resetPassword(formData.email, formData.password);
+      if (success) {
+        toast({
+          title: "✅ Mot de passe réinitialisé",
+          description: "Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.",
+        });
+        setShowResetPassword(false);
+        setFormData({ name: '', email: formData.email, password: '', confirmPassword: '' });
+      } else {
+        toast({
+          title: "❌ Erreur",
+          description: "Email introuvable. Veuillez créer un compte.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
     
     if (isRegistering) {
       if (formData.password !== formData.confirmPassword) {
@@ -136,10 +165,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               </div>
             </div>
             <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              {isRegistering ? 'Créer un compte' : 'Se connecter'}
+              {showResetPassword ? 'Réinitialiser le mot de passe' : isRegistering ? 'Créer un compte' : 'Se connecter'}
             </DialogTitle>
             <DialogDescription className="text-center text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 mt-2">
-              {isRegistering ? 'Rejoignez AQUA PILOT pour gérer votre exploitation aquacole' : 'Accédez à votre tableau de bord de gestion'}
+              {showResetPassword ? 'Entrez votre email et un nouveau mot de passe' : isRegistering ? 'Rejoignez AQUA PILOT pour gérer votre exploitation aquacole' : 'Accédez à votre tableau de bord de gestion'}
             </DialogDescription>
           
             {selectedPlan && isRegistering && (
@@ -152,7 +181,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 mt-6">
-            {isRegistering && (
+            {isRegistering && !showResetPassword && (
               <div>
                 <Label htmlFor="name" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Nom complet</Label>
                 <Input
@@ -202,7 +231,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               </div>
             </div>
 
-            {isRegistering && (
+            {(isRegistering || showResetPassword) && (
               <div>
                 <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Confirmer le mot de passe</Label>
                 <Input
@@ -221,21 +250,44 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
-                  {isRegistering ? 'Création...' : 'Connexion...'}
+                  {showResetPassword ? 'Réinitialisation...' : isRegistering ? 'Création...' : 'Connexion...'}
                 </>
               ) : (
-                isRegistering ? 'Créer mon compte' : 'Se connecter'
+                showResetPassword ? 'Réinitialiser le mot de passe' : isRegistering ? 'Créer mon compte' : 'Se connecter'
               )}
             </Button>
 
-            <div className="text-center pt-3 sm:pt-4">
-              <button
-                type="button"
-                onClick={onToggleMode}
-                className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
-              >
-                {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
-              </button>
+            <div className="text-center pt-3 sm:pt-4 space-y-2">
+              {!showResetPassword && !isRegistering && (
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(true)}
+                  className="block w-full text-sm sm:text-base text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              )}
+              
+              {showResetPassword ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetPassword(false);
+                    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+                  }}
+                  className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
+                >
+                  Retour à la connexion
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onToggleMode}
+                  className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
+                >
+                  {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
+                </button>
+              )}
             </div>
           </form>
         </div>
