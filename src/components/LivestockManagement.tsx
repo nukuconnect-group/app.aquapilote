@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface LivestockBatch {
   id: string;
@@ -36,6 +37,7 @@ const LivestockManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units } = useProductionUnits();
+  const { t } = useSettings();
   
   const [selectedUnit, setSelectedUnit] = useState('all');
   const [livestockBatches, setLivestockBatches] = useState<LivestockBatch[]>([

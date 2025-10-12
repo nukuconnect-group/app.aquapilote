@@ -13,6 +13,7 @@ import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
 import ResponsiveCard from './ResponsiveCard';
 import ResponsiveTable from './ResponsiveTable';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface FeedingRecord {
   id: string;
@@ -33,6 +34,7 @@ interface FeedingRecord {
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const [feedingRecords, setFeedingRecords] = useState<FeedingRecord[]>([
     {
       id: '1',

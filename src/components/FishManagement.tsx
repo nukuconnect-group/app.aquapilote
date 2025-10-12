@@ -7,9 +7,11 @@ import { Fish, Plus, TrendingUp, AlertTriangle, Eye, Scale } from 'lucide-react'
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import FishControlFishing from './fish/FishControlFishing';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const FishManagement = () => {
   const { activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   
   if (!activeUnit) {
     return (

@@ -20,7 +20,8 @@ const IntelligentDashboard = () => {
     getGlobalFinancialData
   } = useProductionUnits();
   const {
-    formatCurrency
+    formatCurrency,
+    t
   } = useSettings();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
@@ -35,15 +36,15 @@ const IntelligentDashboard = () => {
       livestock: null
     };
     const baseMetrics = [{
-      title: "Stock Actuel",
+      title: t('current_stock'),
       value: activeUnit.currentStock.toLocaleString(),
-      subtitle: `${(activeUnit.currentStock / activeUnit.capacity * 100).toFixed(1)}% de capacité`,
+      subtitle: `${(activeUnit.currentStock / activeUnit.capacity * 100).toFixed(1)}% ${t('capacity_percent')}`,
       icon: Fish,
       color: "aqua"
     }, {
-      title: "Cycles Actifs",
+      title: t('active_cycles_label'),
       value: unitCycles.filter(c => c.status === 'active').length.toString(),
-      subtitle: `${unitCycles.length} total`,
+      subtitle: `${unitCycles.length} ${t('total_label')}`,
       icon: Activity,
       color: "green"
     }];
@@ -54,27 +55,27 @@ const IntelligentDashboard = () => {
         return {
           // ecloserie data
           metrics: [...baseMetrics, {
-            title: "Géniteurs Mâles",
+            title: t('male_breeders'),
             value: "45",
-            subtitle: "Matures pour reproduction",
+            subtitle: t('mature_breeding'),
             icon: Fish,
             color: "blue"
           }, {
-            title: "Géniteurs Femelles",
+            title: t('female_breeders'),
             value: "38",
-            subtitle: "En période de ponte",
+            subtitle: t('spawning_period'),
             icon: Heart,
             color: "pink"
           }, {
-            title: "Taux de Fécondité",
+            title: t('fertility_rate'),
             value: "89%",
-            subtitle: "+3% vs cycle précédent",
+            subtitle: `+3% ${t('vs_previous_cycle')}`,
             icon: Egg,
             color: "yellow"
           }, {
-            title: "Alevins Produits",
+            title: t('fry_produced'),
             value: "125,000",
-            subtitle: "Ce cycle",
+            subtitle: t('this_cycle'),
             icon: Activity,
             color: "green"
           }],
@@ -93,21 +94,21 @@ const IntelligentDashboard = () => {
       case 'transformation':
         return {
           metrics: [...baseMetrics, {
-            title: "Poissons Transformés",
+            title: t('fish_transformed'),
             value: "2,450 kg",
-            subtitle: "Cette semaine",
+            subtitle: t('this_week'),
             icon: Scale,
             color: "orange"
           }, {
-            title: "Équipements Actifs",
+            title: t('active_equipment_label'),
             value: unitEquipment.filter(eq => eq.status === 'active').length.toString(),
-            subtitle: `${unitEquipment.length} total`,
+            subtitle: `${unitEquipment.length} ${t('total_label')}`,
             icon: Factory,
             color: "purple"
           }, {
-            title: "Rendement",
+            title: t('yield_label'),
             value: "78%",
-            subtitle: "Taux de découpe",
+            subtitle: t('cutting_rate'),
             icon: TrendingUp,
             color: "green"
           }],
@@ -116,19 +117,19 @@ const IntelligentDashboard = () => {
       case 'conservation':
         return {
           metrics: [...baseMetrics, {
-            title: "Chambres Froides",
+            title: t('cold_rooms'),
             value: unitEquipment.filter(eq => eq.type.includes('chambre_froide')).length.toString(),
-            subtitle: "Toutes opérationnelles",
+            subtitle: t('all_operational'),
             icon: Thermometer,
             color: "blue"
           }, {
-            title: "Température Moy.",
+            title: t('avg_temperature'),
             value: "-2.5°C",
-            subtitle: "Dans les normes",
+            subtitle: t('within_standards'),
             icon: Thermometer,
             color: "cyan"
           }, {
-            title: "Capacité Utilisée",
+            title: t('capacity_used'),
             value: "85%",
             subtitle: "1,700/2,000 kg",
             icon: Factory,
@@ -139,15 +140,15 @@ const IntelligentDashboard = () => {
       case 'grossissement':
         return {
           metrics: [...baseMetrics, {
-            title: "Croissance Moy.",
+            title: t('avg_growth'),
             value: "125g",
-            subtitle: "Poids moyen actuel",
+            subtitle: t('current_avg_weight'),
             icon: TrendingUp,
             color: "green"
           }, {
-            title: "Mortalité",
+            title: t('mortality_label'),
             value: "2.1%",
-            subtitle: "Taux acceptable",
+            subtitle: t('acceptable_rate'),
             icon: Activity,
             color: "red"
           }],
@@ -174,20 +175,20 @@ const IntelligentDashboard = () => {
                 <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
                   <Fish className="w-8 h-8 text-white" />
                 </div>
-                <div>
+                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
-                    Tableau de Bord Intelligent
+                    {t('intelligent_dashboard')}
                   </h1>
                   <p className="text-blue-100 text-base font-medium">
-                    Vue adaptée à votre unité de production
+                    {t('adapted_view')}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                 <div className="text-left sm:text-right">
-                  <p className="text-xs sm:text-sm text-blue-200 font-medium">Dernière mise à jour</p>
-                  <p className="font-bold text-sm sm:text-base">Aujourd'hui, 14:30</p>
+                  <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                  <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
                 </div>
               </div>
             </div>
@@ -202,10 +203,10 @@ const IntelligentDashboard = () => {
         <div className="text-center py-8 sm:py-12">
           <Fish className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-base sm:text-lg font-semibold text-gray-600 mb-2">
-            Aucune unité sélectionnée
+            {t('no_unit_selected')}
           </h3>
           <p className="text-sm sm:text-base text-gray-500">
-            Sélectionnez une unité de production pour voir ses données spécifiques
+            {t('select_unit_prompt')}
           </p>
         </div>
       </div>;
@@ -219,18 +220,18 @@ const IntelligentDashboard = () => {
               
               <div>
                 <h1 className="sm:text-3xl mb-2 tracking-tight text-xl font-extrabold">
-                  Tableau de Bord Intelligent
+                  {t('intelligent_dashboard')}
                 </h1>
                 <p className="text-blue-100 font-medium text-sm">
-                  Vue adaptée à votre unité de production
+                  {t('adapted_view')}
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <div className="text-left sm:text-right">
-                <p className="text-xs sm:text-sm text-blue-200 font-medium">Dernière mise à jour</p>
-                <p className="font-bold text-sm sm:text-base">Aujourd'hui, 14:30</p>
+                <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
               </div>
             </div>
           </div>
@@ -246,10 +247,10 @@ const IntelligentDashboard = () => {
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center justify-between">
         <div className="flex gap-2">
           <Button variant={viewMode === 'unit' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('unit')} disabled={!activeUnit} className="text-xs sm:text-sm">
-            Vue Unité
+            {t('unit_view')}
           </Button>
           <Button variant={viewMode === 'global' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('global')} className="text-xs sm:text-sm">
-            Vue Globale
+            {t('global_view')}
           </Button>
         </div>
 
@@ -275,24 +276,24 @@ const IntelligentDashboard = () => {
       }) :
       // global metrics
       [{
-        title: 'CA Total',
+        title: t('revenue'),
         value: formatCurrency(globalFinancialData.revenue),
-        subtitle: 'Toutes unités',
+        subtitle: t('all_units_label'),
         icon: TrendingUp
       }, {
-        title: 'Charges',
+        title: t('expenses'),
         value: formatCurrency(globalFinancialData.expenses),
-        subtitle: 'Total dépenses',
+        subtitle: t('total_production'),
         icon: Activity
       }, {
-        title: 'Bénéfice',
+        title: t('profit'),
         value: formatCurrency(globalFinancialData.profit),
-        subtitle: 'Résultat net',
+        subtitle: t('profit_margin'),
         icon: Fish
       }, {
-        title: 'Marge',
+        title: t('profit_margin'),
         value: `${(globalFinancialData.profit / globalFinancialData.revenue * 100).toFixed(1)}%`,
-        subtitle: 'Rentabilité',
+        subtitle: t('profit_margin'),
         icon: Factory
       }].map((metric, index) => {
         const IconComponent = metric.icon;
