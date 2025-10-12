@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -24,7 +26,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<boolean>;
-  resetPassword: (email: string, newPassword: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
   completeOnboarding: () => void;
@@ -47,20 +49,81 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // États de base avec localStorage
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('aqua_pilot_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
-    return localStorage.getItem('aqua_pilot_onboarding') === 'true';
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<string | null>(null);
   const [hasSelectedPlan, setHasSelectedPlan] = useState(true);
 
+  // Fetch user profile and roles from Supabase
+  const fetchUserData = async (supabaseUser: SupabaseUser) => {
+    try {
+      // Get profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      // Get roles
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', supabaseUser.id);
+
+      const role = userRoles?.[0]?.role || 'operator';
+
+      const userData: User = {
+        id: supabaseUser.id,
+        name: profile?.full_name || supabaseUser.email || '',
+        email: supabaseUser.email || '',
+        role: role as 'admin' | 'manager' | 'operator',
+        avatar: profile?.avatar_url,
+        lastLogin: new Date().toISOString(),
+        notifications: {
+          email: true,
+          desktop: true,
+          sms: false
+        }
+      };
+
+      setUser(userData);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  // Set up auth state listener
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserData(session.user);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserData(session.user);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const completeOnboarding = () => {
-    localStorage.setItem('aqua_pilot_onboarding', 'true');
     setHasSeenOnboarding(true);
   };
 
@@ -72,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       const updatedUser = { ...user, notifications };
       setUser(updatedUser);
-      localStorage.setItem('aqua_pilot_user', JSON.stringify(updatedUser));
     }
   };
 
@@ -80,47 +142,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulation d'authentification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Récupérer la liste des utilisateurs inscrits
-      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-      
-      // Chercher l'utilisateur avec l'email et le mot de passe
-      const foundUser = registeredUsers.find(
-        (u: any) => u.email === email && u.password === password
-      );
-      
-      if (foundUser) {
-        // Créer l'objet utilisateur sans le mot de passe
-        const { password: _, ...userWithoutPassword } = foundUser;
-        const loggedInUser: User = {
-          ...userWithoutPassword,
-          lastLogin: new Date().toISOString(),
-        };
-        
-        setUser(loggedInUser);
-        localStorage.setItem('aqua_pilot_user', JSON.stringify(loggedInUser));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
         setIsLoading(false);
-        return true;
+        return false;
       }
-      
-      // Compte démo par défaut
-      if (email === 'demo@aquapilot.com' && password === 'demo123') {
-        const demoUser: User = {
-          id: 'demo-1',
-          name: 'Utilisateur Démo',
-          email: email,
-          role: 'operator',
-          notifications: {
-            email: true,
-            desktop: true,
-            sms: false
-          }
-        };
-        setUser(demoUser);
-        localStorage.setItem('aqua_pilot_user', JSON.stringify(demoUser));
+
+      if (data.user) {
+        await fetchUserData(data.user);
         setIsLoading(false);
         return true;
       }
@@ -128,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
     } catch (error) {
+      console.error('Login error:', error);
       setIsLoading(false);
       return false;
     }
@@ -137,86 +171,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulation d'inscription
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const redirectUrl = `${window.location.origin}/`;
       
-      // Récupérer la liste des utilisateurs existants
-      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-      
-      // Vérifier si l'email existe déjà
-      const emailExists = registeredUsers.some((u: any) => u.email === email);
-      if (emailExists) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: name,
+            subscription_plan: subscriptionPlan
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Registration error:', error);
         setIsLoading(false);
-        return false; // Email déjà utilisé
+        return false;
+      }
+
+      if (data.user) {
+        // User will be automatically created with trigger
+        setIsLoading(false);
+        return true;
       }
       
-      // Créer le nouvel utilisateur avec le mot de passe
-      const newUserWithPassword = {
-        id: Date.now().toString(),
-        name: name,
-        email: email,
-        password: password, // Stocké pour la connexion
-        role: 'operator' as const,
-        subscriptionPlan: subscriptionPlan,
-        notifications: {
-          email: true,
-          desktop: true,
-          sms: false
-        }
-      };
-      
-      // Ajouter à la liste des utilisateurs inscrits
-      registeredUsers.push(newUserWithPassword);
-      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
-      
-      // Créer l'objet utilisateur actif (sans mot de passe)
-      const { password: _, ...newUser } = newUserWithPassword;
-      const activeUser: User = newUser;
-      
-      setUser(activeUser);
-      localStorage.setItem('aqua_pilot_user', JSON.stringify(activeUser));
       setIsLoading(false);
-      return true;
+      return false;
     } catch (error) {
+      console.error('Registration error:', error);
       setIsLoading(false);
       return false;
     }
   };
 
-  const resetPassword = async (email: string, newPassword: string): Promise<boolean> => {
+  const resetPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-      const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-      
-      const userIndex = registeredUsers.findIndex((u: any) => u.email === email);
-      
-      if (userIndex === -1) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        console.error('Reset password error:', error);
         setIsLoading(false);
         return false;
       }
       
-      registeredUsers[userIndex].password = newPassword;
-      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
-      
       setIsLoading(false);
       return true;
     } catch (error) {
+      console.error('Reset password error:', error);
       setIsLoading(false);
       return false;
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('aqua_pilot_user');
-    localStorage.removeItem('aqua_pilot_onboarding');
-    localStorage.removeItem('aqua_pilot_splash');
-    localStorage.removeItem('privacy_accepted');
+    setSession(null);
     setHasSeenOnboarding(false);
   };
 

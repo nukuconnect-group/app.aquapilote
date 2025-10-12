@@ -7,87 +7,110 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, UserCheck, TrendingUp, Activity, Search, Filter, Edit, Trash2, Key, Eye, BarChart3, Calendar } from 'lucide-react';
+import { Users, UserPlus, UserCheck, TrendingUp, Activity, Search, Key, Trash2 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-interface User {
+interface UserProfile {
   id: string;
-  name: string;
   email: string;
+  full_name: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UserRole {
+  id: string;
+  user_id: string;
   role: 'admin' | 'manager' | 'operator';
-  subscriptionPlan?: string;
-  subscriptionDuration?: number;
-  status: 'active' | 'inactive';
-  registrationDate: string;
-  lastActivity?: string;
-  password?: string;
+  created_at: string;
+}
+
+interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'admin' | 'manager' | 'operator';
+  created_at: string;
 }
 
 const AdminDashboard = () => {
   const { t } = useSettings();
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterSubscription, setFilterSubscription] = useState<string>('all');
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [newUser, setNewUser] = useState({
-    name: '',
     email: '',
     password: '',
-    role: 'operator' as 'admin' | 'manager' | 'operator',
-    subscriptionPlan: 'trial',
-    subscriptionDuration: 30,
-    status: 'active' as 'active' | 'inactive'
+    full_name: '',
+    role: 'operator' as 'admin' | 'manager' | 'operator'
   });
 
-  // Charger les utilisateurs depuis localStorage
+  // Load users from Supabase
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Get all user roles
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with roles
+      const usersData: AdminUser[] = (profiles || []).map(profile => {
+        const userRole = roles?.find(r => r.user_id === profile.id);
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name || profile.email,
+          role: (userRole?.role || 'operator') as 'admin' | 'manager' | 'operator',
+          created_at: profile.created_at
+        };
+      });
+
+      setUsers(usersData);
+      setFilteredUsers(usersData);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors du chargement des utilisateurs',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-    const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-    
-    // Ajouter l'utilisateur démo
-    const demoUser: User = {
-      id: 'demo-1',
-      name: 'Utilisateur Démo',
-      email: 'demo@aquapilot.com',
-      role: 'operator',
-      subscriptionPlan: 'trial',
-      subscriptionDuration: 30,
-      status: 'active',
-      registrationDate: '2024-01-01',
-      lastActivity: new Date().toISOString()
-    };
-
-    const allUsers = [demoUser, ...registeredUsers.map((u: any) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      subscriptionPlan: u.subscriptionPlan || 'trial',
-      subscriptionDuration: u.subscriptionDuration || 30,
-      status: u.status || 'active',
-      registrationDate: u.registrationDate || new Date().toISOString().split('T')[0],
-      lastActivity: u.lastLogin || new Date().toISOString(),
-      password: u.password
-    }))];
-
-    setUsers(allUsers);
-    setFilteredUsers(allUsers);
+    loadUsers();
   }, []);
 
-  // Filtrer les utilisateurs
+  // Filter users
   useEffect(() => {
     let filtered = users;
 
     if (searchTerm) {
       filtered = filtered.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -96,129 +119,159 @@ const AdminDashboard = () => {
       filtered = filtered.filter(user => user.role === filterRole);
     }
 
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(user => user.status === filterStatus);
-    }
-
-    if (filterSubscription !== 'all') {
-      filtered = filtered.filter(user => user.subscriptionPlan === filterSubscription);
-    }
-
     setFilteredUsers(filtered);
-  }, [searchTerm, filterRole, filterStatus, filterSubscription, users]);
+  }, [searchTerm, filterRole, users]);
 
-  const handleAddUser = () => {
-    const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-    const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
+  const handleAddUser = async () => {
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: newUser.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: newUser.full_name
+        }
+      });
 
-    const emailExists = registeredUsers.some((u: any) => u.email === newUser.email);
-    if (emailExists) {
+      if (authError) {
+        toast({
+          title: t('error'),
+          description: authError.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Update role if not operator (default)
+      if (authData.user && newUser.role !== 'operator') {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role: newUser.role })
+          .eq('user_id', authData.user.id);
+
+        if (roleError) {
+          console.error('Error updating role:', roleError);
+        }
+      }
+
+      toast({
+        title: t('success'),
+        description: 'Utilisateur créé avec succès'
+      });
+
+      setIsAddUserDialogOpen(false);
+      setNewUser({
+        email: '',
+        password: '',
+        full_name: '',
+        role: 'operator'
+      });
+
+      // Reload users
+      loadUsers();
+    } catch (error) {
+      console.error('Error adding user:', error);
       toast({
         title: t('error'),
-        description: 'Un utilisateur avec cet email existe déjà',
+        description: 'Erreur lors de la création de l\'utilisateur',
         variant: 'destructive'
       });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
       return;
     }
 
-    const userToAdd = {
-      id: Date.now().toString(),
-      name: newUser.name,
-      email: newUser.email,
-      password: newUser.password,
-      role: newUser.role,
-      subscriptionPlan: newUser.subscriptionPlan,
-      subscriptionDuration: newUser.subscriptionDuration,
-      status: newUser.status,
-      registrationDate: new Date().toISOString().split('T')[0],
-      notifications: {
-        email: true,
-        desktop: true,
-        sms: false
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
       }
-    };
 
-    registeredUsers.push(userToAdd);
-    localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
-
-    setUsers(prev => [...prev, { ...userToAdd, lastActivity: new Date().toISOString() }]);
-    setIsAddUserDialogOpen(false);
-    setNewUser({
-      name: '',
-      email: '',
-      password: '',
-      role: 'operator',
-      subscriptionPlan: 'trial',
-      subscriptionDuration: 30,
-      status: 'active'
-    });
-
-    toast({
-      title: t('success'),
-      description: t('user_created_success')
-    });
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    if (userId === 'demo-1') {
       toast({
-        title: t('warning'),
-        description: 'Impossible de supprimer l\'utilisateur démo',
+        title: t('success'),
+        description: 'Utilisateur supprimé avec succès'
+      });
+
+      loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors de la suppression',
         variant: 'destructive'
       });
-      return;
     }
-
-    const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-    const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-    const updatedUsers = registeredUsers.filter((u: any) => u.id !== userId);
-    localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(updatedUsers));
-
-    setUsers(prev => prev.filter(u => u.id !== userId));
-
-    toast({
-      title: t('success'),
-      description: t('user_deleted_success')
-    });
   };
 
-  const handleToggleStatus = (userId: string) => {
-    const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-    const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-    
-    const userIndex = registeredUsers.findIndex((u: any) => u.id === userId);
-    if (userIndex !== -1) {
-      registeredUsers[userIndex].status = registeredUsers[userIndex].status === 'active' ? 'inactive' : 'active';
-      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
+  const handleResetPassword = async (userId: string, userEmail: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: 'Email de réinitialisation envoyé'
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors de la réinitialisation',
+        variant: 'destructive'
+      });
     }
-
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
-    ));
-
-    toast({
-      title: t('success'),
-      description: users.find(u => u.id === userId)?.status === 'active' 
-        ? t('user_deactivated_success') 
-        : t('user_activated_success')
-    });
   };
 
-  const handleResetPassword = (userId: string) => {
-    const newPassword = 'Reset123!';
-    const registeredUsersJson = localStorage.getItem('aqua_pilot_registered_users');
-    const registeredUsers = registeredUsersJson ? JSON.parse(registeredUsersJson) : [];
-    
-    const userIndex = registeredUsers.findIndex((u: any) => u.id === userId);
-    if (userIndex !== -1) {
-      registeredUsers[userIndex].password = newPassword;
-      localStorage.setItem('aqua_pilot_registered_users', JSON.stringify(registeredUsers));
-    }
+  const handleChangeRole = async (userId: string, newRole: 'admin' | 'manager' | 'operator') => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
 
-    toast({
-      title: t('success'),
-      description: `${t('password_reset_success')} : ${newPassword}`
-    });
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: 'Rôle modifié avec succès'
+      });
+
+      loadUsers();
+    } catch (error) {
+      console.error('Error changing role:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors de la modification du rôle',
+        variant: 'destructive'
+      });
+    }
   };
 
   const getRoleBadgeVariant = (role: string) => {
@@ -229,53 +282,50 @@ const AdminDashboard = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    return status === 'active' ? 'default' : 'secondary';
-  };
-
-  const getSubscriptionBadgeVariant = (plan: string) => {
-    switch (plan) {
-      case 'enterprise': return 'default';
-      case 'pro': return 'default';
-      case 'basic': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
   const stats = {
     totalUsers: users.length,
-    activeUsers: users.filter(u => u.status === 'active').length,
-    newSubscriptions: users.filter(u => {
-      const regDate = new Date(u.registrationDate);
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return regDate > monthAgo;
-    }).length,
-    activeSubscriptions: users.filter(u => u.status === 'active' && u.subscriptionPlan).length,
+    admins: users.filter(u => u.role === 'admin').length,
+    managers: users.filter(u => u.role === 'manager').length,
+    operators: users.filter(u => u.role === 'operator').length
   };
+
+  // Check if current user is admin
+  if (currentUser?.role !== 'admin') {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('admin_dashboard')}</h2>
             <p className="text-blue-100 text-sm sm:text-base">
-              {t('user_management')} & {t('subscription_management')}
+              Gestion des utilisateurs et des rôles
             </p>
           </div>
           <Users className="w-8 h-8 text-blue-100" />
         </div>
       </div>
 
-      {/* Statistiques */}
+      {/* Statistics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t('total_users')}</p>
+                <p className="text-sm text-muted-foreground">Total utilisateurs</p>
                 <p className="text-2xl font-bold">{stats.totalUsers}</p>
               </div>
               <Users className="w-8 h-8 text-blue-600" />
@@ -287,10 +337,10 @@ const AdminDashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t('active_users')}</p>
-                <p className="text-2xl font-bold">{stats.activeUsers}</p>
+                <p className="text-sm text-muted-foreground">Administrateurs</p>
+                <p className="text-2xl font-bold">{stats.admins}</p>
               </div>
-              <UserCheck className="w-8 h-8 text-green-600" />
+              <UserCheck className="w-8 h-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -299,8 +349,8 @@ const AdminDashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t('new_subscriptions')}</p>
-                <p className="text-2xl font-bold">{stats.newSubscriptions}</p>
+                <p className="text-sm text-muted-foreground">Managers</p>
+                <p className="text-2xl font-bold">{stats.managers}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-orange-600" />
             </div>
@@ -311,42 +361,42 @@ const AdminDashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t('active_subscriptions')}</p>
-                <p className="text-2xl font-bold">{stats.activeSubscriptions}</p>
+                <p className="text-sm text-muted-foreground">Opérateurs</p>
+                <p className="text-2xl font-bold">{stats.operators}</p>
               </div>
-              <Activity className="w-8 h-8 text-purple-600" />
+              <Activity className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Table des utilisateurs */}
+      {/* Users table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>{t('user_management')}</CardTitle>
+            <CardTitle>Gestion des utilisateurs</CardTitle>
             <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <UserPlus className="w-4 h-4 mr-2" />
-                  {t('add_user')}
+                  Ajouter un utilisateur
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{t('add_new_user')}</DialogTitle>
+                  <DialogTitle>Nouvel utilisateur</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div>
-                    <Label htmlFor="name">{t('name')}</Label>
+                    <Label htmlFor="full_name">Nom complet</Label>
                     <Input 
-                      id="name" 
-                      value={newUser.name} 
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      id="full_name" 
+                      value={newUser.full_name} 
+                      onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">{t('email')}</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input 
                       id="email" 
                       type="email"
@@ -355,7 +405,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="password">{t('password')}</Label>
+                    <Label htmlFor="password">Mot de passe</Label>
                     <Input 
                       id="password" 
                       type="password"
@@ -364,98 +414,49 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="role">{t('role')}</Label>
+                    <Label htmlFor="role">Rôle</Label>
                     <Select value={newUser.role} onValueChange={(value: any) => setNewUser({ ...newUser, role: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="operator">{t('operator_role')}</SelectItem>
-                        <SelectItem value="manager">{t('manager_role')}</SelectItem>
-                        <SelectItem value="admin">{t('admin_role')}</SelectItem>
+                        <SelectItem value="operator">Opérateur</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Administrateur</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="subscription">{t('subscription_plan')}</Label>
-                    <Select value={newUser.subscriptionPlan} onValueChange={(value) => setNewUser({ ...newUser, subscriptionPlan: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="trial">{t('trial_plan')}</SelectItem>
-                        <SelectItem value="basic">{t('basic_plan')}</SelectItem>
-                        <SelectItem value="pro">{t('pro_plan')}</SelectItem>
-                        <SelectItem value="enterprise">{t('enterprise_plan')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="duration">{t('subscription_duration')} ({t('days')})</Label>
-                    <Input 
-                      id="duration" 
-                      type="number"
-                      value={newUser.subscriptionDuration} 
-                      onChange={(e) => setNewUser({ ...newUser, subscriptionDuration: parseInt(e.target.value) })}
-                    />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleAddUser}>{t('add')}</Button>
+                  <Button onClick={handleAddUser}>Ajouter</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filtres et recherche */}
+          {/* Search */}
           <div className="mb-4 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input 
-                placeholder={t('search_users')}
+                placeholder="Rechercher un utilisateur..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('filter_by_role')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_roles')}</SelectItem>
-                  <SelectItem value="admin">{t('admin_role')}</SelectItem>
-                  <SelectItem value="manager">{t('manager_role')}</SelectItem>
-                  <SelectItem value="operator">{t('operator_role')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('filter_by_status')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_statuses')}</SelectItem>
-                  <SelectItem value="active">{t('active')}</SelectItem>
-                  <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterSubscription} onValueChange={setFilterSubscription}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('filter_by_subscription')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_subscriptions')}</SelectItem>
-                  <SelectItem value="trial">{t('trial_plan')}</SelectItem>
-                  <SelectItem value="basic">{t('basic_plan')}</SelectItem>
-                  <SelectItem value="pro">{t('pro_plan')}</SelectItem>
-                  <SelectItem value="enterprise">{t('enterprise_plan')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={filterRole} onValueChange={setFilterRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrer par rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les rôles</SelectItem>
+                <SelectItem value="admin">Administrateur</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="operator">Opérateur</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Table */}
@@ -463,63 +464,74 @@ const AdminDashboard = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('name')}</TableHead>
-                  <TableHead>{t('email')}</TableHead>
-                  <TableHead>{t('role')}</TableHead>
-                  <TableHead>{t('subscription_type')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
-                  <TableHead>{t('registration_date')}</TableHead>
-                  <TableHead>{t('actions')}</TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead>Date d'inscription</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {t(`${user.role}_role`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getSubscriptionBadgeVariant(user.subscriptionPlan || 'trial')}>
-                        {t(`${user.subscriptionPlan || 'trial'}_plan`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(user.status)}>
-                        {t(user.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(user.registrationDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleToggleStatus(user.id)}
-                        >
-                          {user.status === 'active' ? t('deactivate') : t('activate')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleResetPassword(user.id)}
-                        >
-                          <Key className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Chargement...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Aucun utilisateur trouvé
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select 
+                          value={user.role} 
+                          onValueChange={(value: any) => handleChangeRole(user.id, value)}
+                          disabled={user.id === currentUser?.id}
+                        >
+                          <SelectTrigger className="w-32">
+                            <Badge variant={getRoleBadgeVariant(user.role)}>
+                              {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'Opérateur'}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="operator">Opérateur</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResetPassword(user.id, user.email)}
+                            title="Réinitialiser le mot de passe"
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={user.id === currentUser?.id}
+                            title="Supprimer l'utilisateur"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
