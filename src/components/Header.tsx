@@ -47,20 +47,20 @@ const Header = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
   return <>
-      <header className="bg-primary h-12 lg:h-14 w-full">
-        <div className="flex justify-between items-center h-full bg-emerald-800 w-full px-0 sm:px-4 lg:px-6 mx-0 my-0 py-0">
+      <header className="bg-emerald-800 h-12 lg:h-14 w-full sticky top-0 z-40 shadow-md">
+        <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6">
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div>
-              <h1 className="text-primary-foreground sm:text-sm lg:text-base tracking-wide text-base font-medium px-[5px]">
+              <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold">
                 {t('app_title')}
               </h1>
-              <p className="text-primary-foreground/80 text-xs leading-tight hidden sm:block">{t('app_subtitle')}</p>
+              <p className="text-primary-foreground/80 text-[10px] sm:text-xs leading-tight hidden sm:block">{t('app_subtitle')}</p>
             </div>
           </div>
 
           {/* Navigation actions à droite */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Notifications */}
             <NotificationsPanel />
             
@@ -128,8 +128,8 @@ const Header = () => {
             {/* Profil utilisateur */}
             {isAuthenticated && user ? <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center space-x-1 sm:space-x-2 cursor-pointer hover:bg-primary-foreground/10 rounded-lg p-1 transition-colors min-h-[44px] sm:min-h-0">
-                    <Avatar className="w-6 h-6 sm:w-7 sm:h-7 border border-primary-foreground/30">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 text-primary-foreground hover:bg-primary-foreground/20 h-9 px-2">
+                    <Avatar className="w-7 h-7 sm:w-8 sm:h-8 border border-primary-foreground/30">
                       <AvatarImage src={user.avatar} alt={user.name} />
                       <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-bold">
                         {getInitials(user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name)}
@@ -138,7 +138,7 @@ const Header = () => {
                     <span className="text-primary-foreground text-xs hidden sm:inline">
                       {user.prenom || user.name.split(' ')[0]}
                     </span>
-                  </div>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 z-50" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
@@ -169,8 +169,8 @@ const Header = () => {
                     <span>{t('logout')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu> : <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0">
-                <LogOut className="w-4 h-4" />
+              </DropdownMenu> : <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-9 px-3 text-xs sm:text-sm font-medium">
+                Connexion
               </Button>}
           </div>
         </div>
