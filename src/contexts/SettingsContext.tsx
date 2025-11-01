@@ -1,3 +1,4 @@
+// React core imports
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface SettingsContextType {
