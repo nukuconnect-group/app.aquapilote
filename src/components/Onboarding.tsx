@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Fish, BarChart3, Users, Shield } from 'lucide-react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-optimized.webp';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 import featureManagementImg from '@/assets/feature-management.jpg';
 import featureAnalyticsImg from '@/assets/feature-analytics.jpg';
 import featureTeamImg from '@/assets/feature-team.jpg';

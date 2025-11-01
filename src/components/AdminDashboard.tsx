@@ -147,7 +147,7 @@ const AdminDashboard = () => {
       if (authData.user && newUser.role !== 'operator') {
         const { error: roleError } = await supabase
           .from('user_roles')
-          .update({ role: newUser.role })
+          .update({ role: newUser.role as any })
           .eq('user_id', authData.user.id);
 
         if (roleError) {
@@ -246,7 +246,7 @@ const AdminDashboard = () => {
     try {
       const { error } = await supabase
         .from('user_roles')
-        .update({ role: newRole })
+        .update({ role: newRole as any })
         .eq('user_id', userId);
 
       if (error) {

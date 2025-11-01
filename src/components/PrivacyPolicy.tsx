@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, FileText } from 'lucide-react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-optimized.webp';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 interface PrivacyPolicyProps {
   onAccept: () => void;
 }
