@@ -123,18 +123,27 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
     // Étape finale: création du compte
     if (canProceedToNextStep()) {
+      if (formData.password.length < 8) {
+        toast({
+          title: "❌ Mot de passe trop court",
+          description: "Le mot de passe doit contenir au moins 8 caractères",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const fullName = `${formData.firstName} ${formData.lastName}`;
       const success = await register(fullName, formData.email, formData.password, selectedPlan || 'trial');
       if (success) {
         toast({
-          title: "Inscription réussie",
-          description: "Bienvenue dans AQUA PILOT !"
+          title: "✅ Inscription réussie",
+          description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
         });
-        onClose();
+        onSwitchToLogin();
       } else {
         toast({
-          title: "Erreur lors de l'inscription",
-          description: "Veuillez réessayer",
+          title: "❌ Erreur lors de l'inscription",
+          description: "Vérifiez que l'email n'est pas déjà utilisé et que tous les champs sont valides.",
           variant: "destructive"
         });
       }

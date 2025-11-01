@@ -219,13 +219,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        if (import.meta.env.DEV) console.error('Registration error:', error.message);
+        if (import.meta.env.DEV) console.error('Registration error:', error.message, error);
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
-        // User will be automatically created with trigger
         setIsLoading(false);
         return true;
       }

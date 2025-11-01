@@ -83,9 +83,27 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
     
     if (isRegistering) {
+      if (!formData.name || !formData.email || !formData.password) {
+        toast({
+          title: "❌ Champs manquants",
+          description: "Veuillez remplir tous les champs obligatoires",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (formData.password.length < 8) {
+        toast({
+          title: "❌ Mot de passe trop court",
+          description: "Le mot de passe doit contenir au moins 8 caractères",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         toast({
-          title: "Erreur",
+          title: "❌ Erreur",
           description: "Les mots de passe ne correspondent pas",
           variant: "destructive",
         });
@@ -95,14 +113,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       const success = await register(formData.name, formData.email, formData.password, selectedPlan || 'trial');
       if (success) {
         toast({
-          title: "✅ Compte créé avec succès",
-          description: "Bienvenue dans AQUA PILOT ! Vous pouvez maintenant vous connecter.",
+          title: "✅ Inscription réussie",
+          description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
         });
-        onClose();
+        onToggleMode();
       } else {
         toast({
           title: "❌ Erreur lors de l'inscription",
-          description: "Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.",
+          description: "Vérifiez que l'email n'est pas déjà utilisé et que tous les champs sont corrects.",
           variant: "destructive",
         });
       }
