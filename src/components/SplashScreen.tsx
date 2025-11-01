@@ -49,7 +49,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
               src={aquaPilotLogo} 
               alt="AQUA PILOT" 
               className="w-32 h-32 mx-auto drop-shadow-2xl rounded-2xl"
-              fetchPriority="high"
             />
           </div>
           {/* Cercles animés autour du logo */}
