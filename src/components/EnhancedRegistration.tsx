@@ -157,9 +157,19 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       }
 
       try {
-        const fullName = `${firstName} ${lastName}`;
-        const success = await register(fullName, email, password, selectedPlan || 'trial');
-        if (success) {
+        const fullName = `${firstName.trim()} ${lastName.trim()}`;
+        
+        if (fullName.trim().length < 3) {
+          toast({
+            title: "❌ Nom invalide",
+            description: "Veuillez entrer votre prénom et nom complets",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const result = await register(fullName, email, password, selectedPlan || 'trial');
+        if (result.success) {
           toast({
             title: "✅ Inscription réussie",
             description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
@@ -168,7 +178,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         } else {
           toast({
             title: "❌ Erreur lors de l'inscription",
-            description: "Cet email est peut-être déjà utilisé. Essayez de vous connecter ou utilisez un autre email.",
+            description: result.error || "Une erreur est survenue lors de l'inscription",
             variant: "destructive"
           });
         }

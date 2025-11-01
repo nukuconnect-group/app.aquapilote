@@ -136,8 +136,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       }
       
       try {
-        const success = await register(name, email, password, selectedPlan || 'trial');
-        if (success) {
+        const result = await register(name, email, password, selectedPlan || 'trial');
+        if (result.success) {
           toast({
             title: "✅ Inscription réussie",
             description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
@@ -147,7 +147,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         } else {
           toast({
             title: "❌ Erreur lors de l'inscription",
-            description: "Cet email est peut-être déjà utilisé. Essayez de vous connecter ou utilisez un autre email.",
+            description: result.error || "Une erreur est survenue lors de l'inscription",
             variant: "destructive",
           });
         }

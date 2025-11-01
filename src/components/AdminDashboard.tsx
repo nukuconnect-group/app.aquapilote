@@ -26,7 +26,7 @@ interface UserProfile {
 interface UserRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'manager' | 'operator';
+  role: 'admin' | 'manager' | 'operator' | 'user';
   created_at: string;
 }
 
@@ -34,7 +34,7 @@ interface AdminUser {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'manager' | 'operator';
+  role: 'admin' | 'manager' | 'operator' | 'user';
   created_at: string;
 }
 
@@ -52,7 +52,7 @@ const AdminDashboard = () => {
     email: '',
     password: '',
     full_name: '',
-    role: 'operator' as 'admin' | 'manager' | 'operator'
+    role: 'user' as 'admin' | 'manager' | 'operator' | 'user'
   });
 
   // Load users from Supabase
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
           id: profile.id,
           email: profile.email,
           full_name: profile.full_name || profile.email,
-          role: (userRole?.role || 'operator') as 'admin' | 'manager' | 'operator',
+          role: (userRole?.role || 'user') as 'admin' | 'manager' | 'operator' | 'user',
           created_at: profile.created_at
         };
       });
@@ -256,7 +256,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleChangeRole = async (userId: string, newRole: 'admin' | 'manager' | 'operator') => {
+  const handleChangeRole = async (userId: string, newRole: 'admin' | 'manager' | 'operator' | 'user') => {
     try {
       const { error } = await supabase
         .from('user_roles')
@@ -292,7 +292,8 @@ const AdminDashboard = () => {
     switch (role) {
       case 'admin': return 'destructive';
       case 'manager': return 'default';
-      default: return 'secondary';
+      case 'operator': return 'secondary';
+      default: return 'outline';
     }
   };
 
@@ -434,6 +435,7 @@ const AdminDashboard = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="user">Utilisateur</SelectItem>
                         <SelectItem value="operator">Opérateur</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="admin">Administrateur</SelectItem>
@@ -469,6 +471,7 @@ const AdminDashboard = () => {
                 <SelectItem value="admin">Administrateur</SelectItem>
                 <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="operator">Opérateur</SelectItem>
+                <SelectItem value="user">Utilisateur</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -511,10 +514,11 @@ const AdminDashboard = () => {
                         >
                           <SelectTrigger className="w-32">
                             <Badge variant={getRoleBadgeVariant(user.role)}>
-                              {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'Opérateur'}
+                              {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : user.role === 'operator' ? 'Opérateur' : 'Utilisateur'}
                             </Badge>
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="user">Utilisateur</SelectItem>
                             <SelectItem value="operator">Opérateur</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>

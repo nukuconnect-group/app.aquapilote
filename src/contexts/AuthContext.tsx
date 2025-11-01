@@ -6,7 +6,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'operator';
+  role: 'admin' | 'manager' | 'operator' | 'user';
   avatar?: string;
   prenom?: string;
   nom?: string;
@@ -25,7 +25,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
@@ -72,13 +72,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select('role')
         .eq('user_id', supabaseUser.id);
 
-      const role = userRoles?.[0]?.role || 'operator';
+      const role = userRoles?.[0]?.role || 'user';
 
       const userData: User = {
         id: supabaseUser.id,
         name: profile?.full_name || supabaseUser.email || '',
         email: supabaseUser.email || '',
-        role: role as 'admin' | 'manager' | 'operator',
+        role: role as 'admin' | 'manager' | 'operator' | 'user',
         avatar: profile?.avatar_url,
         lastLogin: new Date().toISOString(),
         notifications: {
@@ -181,29 +181,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     // Validation basique
     if (!name || !email || !password) {
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Tous les champs sont requis' };
+    }
+
+    // Validation nom
+    if (name.trim().length < 2) {
+      setIsLoading(false);
+      return { success: false, error: 'Le nom doit contenir au moins 2 caractères' };
     }
 
     // Validation format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Format d\'email invalide' };
     }
 
     // Validation longueur mot de passe
     if (password.length < 8) {
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Le mot de passe doit contenir au moins 8 caractères' };
+    }
+
+    // Validation complexité mot de passe
+    if (!/[A-Z]/.test(password)) {
+      setIsLoading(false);
+      return { success: false, error: 'Le mot de passe doit contenir au moins une majuscule' };
+    }
+    if (!/[a-z]/.test(password)) {
+      setIsLoading(false);
+      return { success: false, error: 'Le mot de passe doit contenir au moins une minuscule' };
+    }
+    if (!/[0-9]/.test(password)) {
+      setIsLoading(false);
+      return { success: false, error: 'Le mot de passe doit contenir au moins un chiffre' };
     }
     
     try {
+      // Vérifier si l'email existe déjà
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingUsers) {
+        setIsLoading(false);
+        return { success: false, error: 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez un autre email.' };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -221,20 +253,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         if (import.meta.env.DEV) console.error('Registration error:', error.message, error);
         setIsLoading(false);
-        return false;
+        
+        // Gestion des erreurs spécifiques
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+          return { success: false, error: 'Cet email est déjà utilisé. Essayez de vous connecter.' };
+        }
+        
+        return { success: false, error: `Erreur d'inscription: ${error.message}` };
       }
 
       if (data.user) {
         setIsLoading(false);
-        return true;
+        return { success: true };
       }
       
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Une erreur est survenue lors de l\'inscription' };
     } catch (error) {
       if (import.meta.env.DEV) console.error('Registration error:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Une erreur technique est survenue. Veuillez réessayer.' };
     }
   };
 
