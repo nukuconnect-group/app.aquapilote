@@ -61,7 +61,7 @@ class OfflineStorage {
       const request = store.add(pendingAction);
 
       request.onsuccess = () => {
-        console.log('✅ Action mise en file d\'attente:', pendingAction);
+        if (import.meta.env.DEV) console.log('✅ Action mise en file d\'attente:', pendingAction);
         resolve();
       };
       request.onerror = () => reject(request.error);
@@ -138,30 +138,50 @@ class OfflineStorage {
     const pendingActions = await this.getPendingActions();
     
     if (pendingActions.length === 0) {
-      console.log('✅ Aucune action en attente');
+      if (import.meta.env.DEV) console.log('✅ Aucune action en attente');
       return;
     }
 
-    console.log(`🔄 Synchronisation de ${pendingActions.length} action(s) en attente...`);
+    if (import.meta.env.DEV) console.log(`🔄 Synchronisation de ${pendingActions.length} action(s) en attente...`);
+
+    // Get authentication session for sync
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      console.warn('Cannot sync without authentication - clearing offline queue');
+      return;
+    }
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     for (const action of pendingActions) {
       try {
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+
+        // Add authentication headers for Supabase endpoints
+        if (action.endpoint.includes(SUPABASE_URL)) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+          headers['apikey'] = SUPABASE_ANON_KEY;
+        }
+
         const response = await fetch(action.endpoint, {
           method: action.method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(action.data),
         });
 
         if (response.ok) {
           await this.removePendingAction(action.id);
-          console.log('✅ Action synchronisée:', action.type);
+          if (import.meta.env.DEV) console.log('✅ Action synchronisée:', action.type);
         } else {
-          console.warn('⚠️ Échec de synchronisation:', action.type, response.status);
+          if (import.meta.env.DEV) console.warn('⚠️ Échec de synchronisation:', action.type, response.status);
         }
       } catch (error) {
-        console.error('❌ Erreur lors de la synchronisation:', error);
+        if (import.meta.env.DEV) console.error('❌ Erreur lors de la synchronisation:', error);
       }
     }
   }
@@ -175,17 +195,17 @@ offlineStorage.init().catch(console.error);
 
 // Écouter le retour de la connexion
 window.addEventListener('online', async () => {
-  console.log('🌐 Connexion rétablie - Synchronisation...');
+  if (import.meta.env.DEV) console.log('🌐 Connexion rétablie - Synchronisation...');
   try {
     await offlineStorage.syncPendingActions();
-    console.log('✅ Synchronisation terminée');
+    if (import.meta.env.DEV) console.log('✅ Synchronisation terminée');
   } catch (error) {
-    console.error('❌ Erreur de synchronisation:', error);
+    if (import.meta.env.DEV) console.error('❌ Erreur de synchronisation:', error);
   }
 });
 
 window.addEventListener('offline', () => {
-  console.log('📴 Mode hors ligne activé');
+  if (import.meta.env.DEV) console.log('📴 Mode hors ligne activé');
 });
 
 // Exposer les informations de connexion
