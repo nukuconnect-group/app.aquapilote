@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { userCreationSchema } from '@/lib/validation';
 
 interface UserProfile {
   id: string;
@@ -89,7 +90,7 @@ const AdminDashboard = () => {
       setUsers(usersData);
       setFilteredUsers(usersData);
     } catch (error) {
-      console.error('Error loading users:', error);
+      if (import.meta.env.DEV) console.error('Error loading users:', error);
       toast({
         title: t('error'),
         description: 'Erreur lors du chargement des utilisateurs',
@@ -124,13 +125,26 @@ const AdminDashboard = () => {
 
   const handleAddUser = async () => {
     try {
+      // Validate input data
+      const validation = userCreationSchema.safeParse(newUser);
+      
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast({
+          title: 'Erreur de validation',
+          description: firstError.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUser.email,
-        password: newUser.password,
+        email: validation.data.email,
+        password: validation.data.password,
         email_confirm: true,
         user_metadata: {
-          full_name: newUser.full_name
+          full_name: validation.data.full_name
         }
       });
 
@@ -144,14 +158,14 @@ const AdminDashboard = () => {
       }
 
       // Update role if not operator (default)
-      if (authData.user && newUser.role !== 'operator') {
+      if (authData.user && validation.data.role !== 'operator') {
         const { error: roleError } = await supabase
           .from('user_roles')
-          .update({ role: newUser.role as any })
+          .update({ role: validation.data.role as any })
           .eq('user_id', authData.user.id);
 
         if (roleError) {
-          console.error('Error updating role:', roleError);
+          if (import.meta.env.DEV) console.error('Error updating role:', roleError);
         }
       }
 
@@ -171,7 +185,7 @@ const AdminDashboard = () => {
       // Reload users
       loadUsers();
     } catch (error) {
-      console.error('Error adding user:', error);
+      if (import.meta.env.DEV) console.error('Error adding user:', error);
       toast({
         title: t('error'),
         description: 'Erreur lors de la création de l\'utilisateur',
@@ -204,7 +218,7 @@ const AdminDashboard = () => {
 
       loadUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
+      if (import.meta.env.DEV) console.error('Error deleting user:', error);
       toast({
         title: t('error'),
         description: 'Erreur lors de la suppression',
@@ -233,7 +247,7 @@ const AdminDashboard = () => {
         description: 'Email de réinitialisation envoyé'
       });
     } catch (error) {
-      console.error('Error resetting password:', error);
+      if (import.meta.env.DEV) console.error('Error resetting password:', error);
       toast({
         title: t('error'),
         description: 'Erreur lors de la réinitialisation',
@@ -265,7 +279,7 @@ const AdminDashboard = () => {
 
       loadUsers();
     } catch (error) {
-      console.error('Error changing role:', error);
+      if (import.meta.env.DEV) console.error('Error changing role:', error);
       toast({
         title: t('error'),
         description: 'Erreur lors de la modification du rôle',

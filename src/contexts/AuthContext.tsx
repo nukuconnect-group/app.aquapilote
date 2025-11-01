@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(userData);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      if (import.meta.env.DEV) console.error('Error fetching user data:', error);
     }
   };
 
@@ -161,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      if (import.meta.env.DEV) console.error('Login error:', error);
       setIsLoading(false);
       return false;
     }
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('Registration error:', error);
+        if (import.meta.env.DEV) console.error('Registration error:', error);
         setIsLoading(false);
         return false;
       }
@@ -200,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error('Registration error:', error);
+      if (import.meta.env.DEV) console.error('Registration error:', error);
       setIsLoading(false);
       return false;
     }
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('Reset password error:', error);
+        if (import.meta.env.DEV) console.error('Reset password error:', error);
         setIsLoading(false);
         return false;
       }
@@ -223,7 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Reset password error:', error);
+      if (import.meta.env.DEV) console.error('Reset password error:', error);
       setIsLoading(false);
       return false;
     }
