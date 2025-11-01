@@ -64,14 +64,25 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     e.preventDefault();
     
     if (showResetPassword) {
-      const success = await resetPassword(formData.email);
+      // Validation email pour reset
+      const email = formData.email.trim().toLowerCase();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast({
+          title: "❌ Email invalide",
+          description: "Veuillez entrer une adresse email valide.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const success = await resetPassword(email);
       if (success) {
         toast({
           title: "✅ Email envoyé",
           description: "Un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception.",
         });
         setShowResetPassword(false);
-        setFormData({ name: '', email: formData.email, password: '', confirmPassword: '' });
+        setFormData({ name: '', email: email, password: '', confirmPassword: '' });
       } else {
         toast({
           title: "❌ Erreur",
@@ -83,16 +94,30 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
     
     if (isRegistering) {
-      if (!formData.name || !formData.email || !formData.password) {
+      // Validation complète pour l'inscription
+      const name = formData.name.trim();
+      const email = formData.email.trim().toLowerCase();
+      const password = formData.password;
+
+      if (!name || name.length < 2) {
         toast({
-          title: "❌ Champs manquants",
-          description: "Veuillez remplir tous les champs obligatoires",
+          title: "❌ Nom invalide",
+          description: "Le nom doit contenir au moins 2 caractères",
           variant: "destructive",
         });
         return;
       }
 
-      if (formData.password.length < 8) {
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast({
+          title: "❌ Email invalide",
+          description: "Veuillez entrer une adresse email valide",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (password.length < 8) {
         toast({
           title: "❌ Mot de passe trop court",
           description: "Le mot de passe doit contenir au moins 8 caractères",
@@ -101,7 +126,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         return;
       }
 
-      if (formData.password !== formData.confirmPassword) {
+      if (password !== formData.confirmPassword) {
         toast({
           title: "❌ Erreur",
           description: "Les mots de passe ne correspondent pas",
@@ -110,32 +135,72 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         return;
       }
       
-      const success = await register(formData.name, formData.email, formData.password, selectedPlan || 'trial');
-      if (success) {
+      try {
+        const success = await register(name, email, password, selectedPlan || 'trial');
+        if (success) {
+          toast({
+            title: "✅ Inscription réussie",
+            description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
+          });
+          setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+          onToggleMode();
+        } else {
+          toast({
+            title: "❌ Erreur lors de l'inscription",
+            description: "Cet email est peut-être déjà utilisé. Essayez de vous connecter ou utilisez un autre email.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
         toast({
-          title: "✅ Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
-        });
-        onToggleMode();
-      } else {
-        toast({
-          title: "❌ Erreur lors de l'inscription",
-          description: "Vérifiez que l'email n'est pas déjà utilisé et que tous les champs sont corrects.",
+          title: "❌ Erreur technique",
+          description: "Une erreur est survenue. Réessayez dans quelques instants.",
           variant: "destructive",
         });
       }
     } else {
-      const success = await login(formData.email, formData.password);
-      if (success) {
+      // Validation pour la connexion
+      const email = formData.email.trim().toLowerCase();
+      const password = formData.password;
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast({
-          title: "✅ Connexion réussie",
-          description: "Bon retour sur AQUA PILOT !",
+          title: "❌ Email invalide",
+          description: "Veuillez entrer une adresse email valide",
+          variant: "destructive",
         });
-        onClose();
-      } else {
+        return;
+      }
+
+      if (!password || password.length < 8) {
         toast({
-          title: "❌ Erreur de connexion",
-          description: "Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.",
+          title: "❌ Mot de passe invalide",
+          description: "Le mot de passe doit contenir au moins 8 caractères",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const success = await login(email, password);
+        if (success) {
+          toast({
+            title: "✅ Connexion réussie",
+            description: "Bon retour sur AQUA PILOT !",
+          });
+          setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+          onClose();
+        } else {
+          toast({
+            title: "❌ Erreur de connexion",
+            description: "Email ou mot de passe incorrect. Vérifiez vos identifiants.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "❌ Erreur technique",
+          description: "Problème de connexion. Vérifiez votre connexion internet.",
           variant: "destructive",
         });
       }

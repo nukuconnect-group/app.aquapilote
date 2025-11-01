@@ -121,9 +121,33 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       return;
     }
 
-    // Étape finale: création du compte
+    // Étape finale: création du compte avec validation complète
     if (canProceedToNextStep()) {
-      if (formData.password.length < 8) {
+      const firstName = formData.firstName.trim();
+      const lastName = formData.lastName.trim();
+      const email = formData.email.trim().toLowerCase();
+      const password = formData.password;
+
+      // Validations
+      if (!firstName || firstName.length < 2 || !lastName || lastName.length < 2) {
+        toast({
+          title: "❌ Nom invalide",
+          description: "Le prénom et le nom doivent contenir au moins 2 caractères",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast({
+          title: "❌ Email invalide",
+          description: "Veuillez entrer une adresse email valide",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (password.length < 8) {
         toast({
           title: "❌ Mot de passe trop court",
           description: "Le mot de passe doit contenir au moins 8 caractères",
@@ -132,18 +156,26 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         return;
       }
 
-      const fullName = `${formData.firstName} ${formData.lastName}`;
-      const success = await register(fullName, formData.email, formData.password, selectedPlan || 'trial');
-      if (success) {
+      try {
+        const fullName = `${firstName} ${lastName}`;
+        const success = await register(fullName, email, password, selectedPlan || 'trial');
+        if (success) {
+          toast({
+            title: "✅ Inscription réussie",
+            description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
+          });
+          onSwitchToLogin();
+        } else {
+          toast({
+            title: "❌ Erreur lors de l'inscription",
+            description: "Cet email est peut-être déjà utilisé. Essayez de vous connecter ou utilisez un autre email.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
         toast({
-          title: "✅ Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
-        });
-        onSwitchToLogin();
-      } else {
-        toast({
-          title: "❌ Erreur lors de l'inscription",
-          description: "Vérifiez que l'email n'est pas déjà utilisé et que tous les champs sont valides.",
+          title: "❌ Erreur technique",
+          description: "Une erreur est survenue. Réessayez dans quelques instants.",
           variant: "destructive"
         });
       }
