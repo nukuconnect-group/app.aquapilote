@@ -169,19 +169,19 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-white rounded-full p-4 shadow-xl">
+              <div className="bg-white rounded-full p-3 shadow-xl">
                 <img 
                   src={aquaPilotLogo} 
                   alt="AQUA PILOT" 
-                  className="w-24 h-24"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
                 />
               </div>
             </div>
-            <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+            <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               {showResetPassword ? 'Réinitialiser le mot de passe' : isRegistering ? 'Créer un compte' : 'Se connecter'}
             </DialogTitle>
-            <DialogDescription className="text-center text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 mt-2">
-              {showResetPassword ? 'Entrez votre email et un nouveau mot de passe' : isRegistering ? 'Rejoignez AQUA PILOT pour gérer votre exploitation aquacole' : 'Accédez à votre tableau de bord de gestion'}
+            <DialogDescription className="text-center text-sm sm:text-base md:text-lg text-muted-foreground mt-2">
+              {showResetPassword ? 'Entrez votre email pour recevoir un lien de réinitialisation' : isRegistering ? 'Rejoignez AQUA PILOT pour gérer votre exploitation aquacole' : 'Accédez à votre tableau de bord de gestion'}
             </DialogDescription>
           
             {selectedPlan && isRegistering && (
@@ -196,7 +196,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 mt-6">
             {isRegistering && !showResetPassword && (
               <div>
-                <Label htmlFor="name" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Nom complet</Label>
+                <Label htmlFor="name" className="text-sm sm:text-base font-medium text-card-foreground">Nom complet *</Label>
                 <Input
                   id="name"
                   type="text"
@@ -204,13 +204,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
+                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12 bg-background text-foreground"
                 />
               </div>
             )}
 
             <div>
-              <Label htmlFor="email" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Email</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base font-medium text-card-foreground">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -218,12 +218,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
+                className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12 bg-background text-foreground"
               />
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Mot de passe</Label>
+              <Label htmlFor="password" className="text-sm sm:text-base font-medium text-card-foreground">Mot de passe *</Label>
               <div className="relative mt-1">
                 <Input
                   id="password"
@@ -232,21 +232,23 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="text-sm sm:text-base h-10 sm:h-11 md:h-12 pr-10"
+                  minLength={8}
+                  className="text-sm sm:text-base h-10 sm:h-11 md:h-12 pr-10 bg-background text-foreground"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
+              {isRegistering && <p className="text-xs text-muted-foreground mt-1">Minimum 8 caractères</p>}
             </div>
 
             {isRegistering && !showResetPassword && (
               <div>
-                <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-medium text-card-foreground">Confirmer le mot de passe *</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -254,7 +256,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
-                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12"
+                  minLength={8}
+                  className="mt-1 text-sm sm:text-base h-10 sm:h-11 md:h-12 bg-background text-foreground"
                 />
               </div>
             )}
@@ -273,10 +276,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
             {!showResetPassword && (
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                  <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">Ou continuer avec</span>
+                  <span className="px-2 bg-white dark:bg-gray-900 text-muted-foreground">Ou continuer avec</span>
                 </div>
               </div>
             )}
@@ -303,7 +306,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowResetPassword(true)}
-                  className="block w-full text-sm sm:text-base text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
+                  className="block w-full text-sm sm:text-base text-muted-foreground hover:text-foreground underline"
                 >
                   Mot de passe oublié ?
                 </button>
@@ -316,7 +319,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                     setShowResetPassword(false);
                     setFormData({ name: '', email: '', password: '', confirmPassword: '' });
                   }}
-                  className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
+                  className="text-sm sm:text-base text-primary hover:text-primary/80 underline font-medium"
                 >
                   Retour à la connexion
                 </button>
@@ -324,7 +327,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 <button
                   type="button"
                   onClick={onToggleMode}
-                  className="text-sm sm:text-base text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline font-medium"
+                  className="text-sm sm:text-base text-primary hover:text-primary/80 underline font-medium"
                 >
                   {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
                 </button>

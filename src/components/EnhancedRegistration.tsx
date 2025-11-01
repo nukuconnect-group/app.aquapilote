@@ -188,14 +188,14 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
-                <div className="bg-white rounded-full p-4 shadow-xl">
-                  <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-24 h-24" />
+                <div className="bg-white rounded-full p-3 shadow-xl">
+                  <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
                 </div>
               </div>
-              <DialogTitle className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+              <DialogTitle className="text-2xl font-bold mb-2 text-foreground">
                 Créer votre compte AQUA PILOT
               </DialogTitle>
-              <DialogDescription className="text-gray-600 dark:text-gray-300">
+              <DialogDescription className="text-muted-foreground">
                 Étape {currentStep} sur 3 - Rejoignez la révolution de l'aquaculture intelligente
               </DialogDescription>
             </div>
@@ -210,63 +210,64 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           </div>
             {/* Étape 1: Informations personnelles */}
             {currentStep === 1 && <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-center mb-4">
+                <h3 className="text-lg font-semibold text-center mb-4 text-foreground">
                   Informations personnelles
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">Prénom *</Label>
-                    <Input id="firstName" type="text" placeholder="Votre prénom" value={formData.firstName} onChange={e => handleInputChange('firstName', e.target.value)} required />
+                    <Label htmlFor="firstName" className="text-card-foreground">Prénom *</Label>
+                    <Input id="firstName" type="text" placeholder="Votre prénom" value={formData.firstName} onChange={e => handleInputChange('firstName', e.target.value)} required className="bg-background text-foreground" />
                   </div>
                   
                   <div>
-                    <Label htmlFor="lastName">Nom *</Label>
-                    <Input id="lastName" type="text" placeholder="Votre nom" value={formData.lastName} onChange={e => handleInputChange('lastName', e.target.value)} required />
+                    <Label htmlFor="lastName" className="text-card-foreground">Nom *</Label>
+                    <Input id="lastName" type="text" placeholder="Votre nom" value={formData.lastName} onChange={e => handleInputChange('lastName', e.target.value)} required className="bg-background text-foreground" />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input id="email" type="email" placeholder="votre@email.com" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} required />
+                  <Label htmlFor="email" className="text-card-foreground">Email *</Label>
+                  <Input id="email" type="email" placeholder="votre@email.com" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} required className="bg-background text-foreground" />
                 </div>
 
                 <div>
-                  <Label htmlFor="password">Mot de passe *</Label>
+                  <Label htmlFor="password" className="text-card-foreground">Mot de passe *</Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} required />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} required minLength={8} className="bg-background text-foreground" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">Minimum 8 caractères</p>
                 </div>
 
                 <div>
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-                  <Input id="confirmPassword" type="password" placeholder="••••••••" value={formData.confirmPassword} onChange={e => handleInputChange('confirmPassword', e.target.value)} required />
-                  {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-sm text-red-500 mt-1">Les mots de passe ne correspondent pas</p>}
+                  <Label htmlFor="confirmPassword" className="text-card-foreground">Confirmer le mot de passe *</Label>
+                  <Input id="confirmPassword" type="password" placeholder="••••••••" value={formData.confirmPassword} onChange={e => handleInputChange('confirmPassword', e.target.value)} required minLength={8} className="bg-background text-foreground" />
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-sm text-destructive mt-1">Les mots de passe ne correspondent pas</p>}
                 </div>
               </div>}
 
             {/* Étape 2: Informations entreprise */}
             {currentStep === 2 && <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-center mb-4">
+                <h3 className="text-lg font-semibold text-center mb-4 text-foreground">
                   Informations sur votre entreprise
                 </h3>
                 
                 <div>
-                  <Label htmlFor="companyName">Nom de l'entreprise *</Label>
-                  <Input id="companyName" type="text" value={formData.companyName} onChange={e => handleInputChange('companyName', e.target.value)} required />
+                  <Label htmlFor="companyName" className="text-card-foreground">Nom de l'entreprise *</Label>
+                  <Input id="companyName" type="text" value={formData.companyName} onChange={e => handleInputChange('companyName', e.target.value)} required className="bg-background text-foreground" />
                 </div>
 
                 <div>
-                  <Label htmlFor="sector">Secteur d'activité *</Label>
+                  <Label htmlFor="sector" className="text-card-foreground">Secteur d'activité *</Label>
                   <Select value={formData.sector} onValueChange={value => handleInputChange('sector', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background text-foreground">
                       <SelectValue placeholder="Sélectionnez votre secteur" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sectorOptions.map(sector => <SelectItem key={sector} value={sector.toLowerCase().replace(/\s+/g, '-')} className="text-zinc-700">
+                      {sectorOptions.map(sector => <SelectItem key={sector} value={sector.toLowerCase().replace(/\s+/g, '-')}>
                           {sector}
                         </SelectItem>)}
                     </SelectContent>
@@ -274,19 +275,19 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="location">Localisation *</Label>
-                  <Input id="location" type="text" placeholder="Ville, Région, Pays" value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required />
+                  <Label htmlFor="location" className="text-card-foreground">Localisation *</Label>
+                  <Input id="location" type="text" placeholder="Ville, Région, Pays" value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required className="bg-background text-foreground" />
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Téléphone *</Label>
-                  <Input id="phone" type="tel" placeholder="+228 XX XX XX XX" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} required />
+                  <Label htmlFor="phone" className="text-card-foreground">Téléphone *</Label>
+                  <Input id="phone" type="tel" placeholder="+228 XX XX XX XX" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} required className="bg-background text-foreground" />
                 </div>
 
                 <div>
-                  <Label htmlFor="employeeCount">Nombre d'employés *</Label>
+                  <Label htmlFor="employeeCount" className="text-card-foreground">Nombre d'employés *</Label>
                   <Select value={formData.employeeCount} onValueChange={value => handleInputChange('employeeCount', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background text-foreground">
                       <SelectValue placeholder="Nombre d'employés" />
                     </SelectTrigger>
                     <SelectContent>
@@ -303,16 +304,16 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
             {/* Étape 3: Unités de production */}
             {currentStep === 3 && <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-center mb-4">
+                <h3 className="text-lg font-semibold text-center mb-4 text-foreground">
                   Unités de production et activités
                 </h3>
                 
                 <div>
-                  <Label className="text-base font-medium">Types d'unités de production * (plusieurs choix possibles)</Label>
+                  <Label className="text-base font-medium text-card-foreground">Types d'unités de production * (plusieurs choix possibles)</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     {productionUnitOptions.map(unit => <div key={unit} className="flex items-center space-x-2">
                         <Checkbox id={unit} checked={formData.productionUnits.includes(unit)} onCheckedChange={checked => handleProductionUnitChange(unit, checked === true)} />
-                        <Label htmlFor={unit} className="text-sm cursor-pointer">
+                        <Label htmlFor={unit} className="text-sm cursor-pointer text-card-foreground">
                           {unit}
                         </Label>
                       </div>)}
@@ -320,33 +321,33 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-base font-medium">Activités complémentaires</Label>
+                  <Label className="text-base font-medium text-card-foreground">Activités complémentaires</Label>
                   
                   <div className="flex items-center space-x-2">
                     <Checkbox id="processing" checked={formData.hasProcessing} onCheckedChange={checked => handleInputChange('hasProcessing', checked === true)} />
-                    <Label htmlFor="processing" className="cursor-pointer">
+                    <Label htmlFor="processing" className="cursor-pointer text-card-foreground">
                       Transformation des produits
                     </Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <Checkbox id="marketing" checked={formData.hasMarketing} onCheckedChange={checked => handleInputChange('hasMarketing', checked === true)} />
-                    <Label htmlFor="marketing" className="cursor-pointer">
+                    <Label htmlFor="marketing" className="cursor-pointer text-card-foreground">
                       Commercialisation directe
                     </Label>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <Checkbox id="algae" checked={formData.hasAlgaeCulture} onCheckedChange={checked => handleInputChange('hasAlgaeCulture', checked === true)} />
-                    <Label htmlFor="algae" className="cursor-pointer">
+                    <Label htmlFor="algae" className="cursor-pointer text-card-foreground">
                       Culture d'algues
                     </Label>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="otherActivities">Autres activités</Label>
-                  <Textarea id="otherActivities" placeholder="Décrivez vos autres activités..." value={formData.otherActivities} onChange={e => handleInputChange('otherActivities', e.target.value)} rows={3} />
+                  <Label htmlFor="otherActivities" className="text-card-foreground">Autres activités</Label>
+                  <Textarea id="otherActivities" placeholder="Décrivez vos autres activités..." value={formData.otherActivities} onChange={e => handleInputChange('otherActivities', e.target.value)} rows={3} className="bg-background text-foreground" />
                 </div>
               </div>}
 
@@ -359,10 +360,10 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
             <div className="flex-1" />
 
-            {currentStep < 3 ? <Button type="button" onClick={() => setCurrentStep(prev => prev + 1)} disabled={!canProceedToNextStep()} className="bg-gradient-aqua text-zinc-700">
+            {currentStep < 3 ? <Button type="button" onClick={() => setCurrentStep(prev => prev + 1)} disabled={!canProceedToNextStep()} className="bg-gradient-aqua text-primary-foreground">
                 Suivant
                 <ChevronRight className="w-4 h-4 ml-2" />
-              </Button> : <Button type="submit" disabled={isLoading || !canProceedToNextStep()} className="bg-gradient-aqua text-white">
+              </Button> : <Button type="submit" disabled={isLoading || !canProceedToNextStep()} className="bg-gradient-aqua text-primary-foreground">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Création en cours...
@@ -374,7 +375,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           </div>
 
           <div className="text-center pt-4">
-            <button type="button" onClick={onSwitchToLogin} className="text-sm text-aqua-600 dark:text-aqua-400 hover:text-aqua-700 dark:hover:text-aqua-300 underline">
+            <button type="button" onClick={onSwitchToLogin} className="text-sm text-primary hover:text-primary/80 underline">
               Déjà un compte ? Se connecter
             </button>
           </div>

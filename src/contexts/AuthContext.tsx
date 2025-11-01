@@ -141,13 +141,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
+    // Validation basique
+    if (!email || !password) {
+      setIsLoading(false);
+      return false;
+    }
+
+    // Validation format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setIsLoading(false);
+      return false;
+    }
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
+        if (import.meta.env.DEV) console.error('Login error:', error.message);
         setIsLoading(false);
         return false;
       }
@@ -170,23 +184,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<boolean> => {
     setIsLoading(true);
     
+    // Validation basique
+    if (!name || !email || !password) {
+      setIsLoading(false);
+      return false;
+    }
+
+    // Validation format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setIsLoading(false);
+      return false;
+    }
+
+    // Validation longueur mot de passe
+    if (password.length < 8) {
+      setIsLoading(false);
+      return false;
+    }
+    
     try {
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: name,
+            full_name: name.trim(),
             subscription_plan: subscriptionPlan
           }
         }
       });
 
       if (error) {
-        if (import.meta.env.DEV) console.error('Registration error:', error);
+        if (import.meta.env.DEV) console.error('Registration error:', error.message);
         setIsLoading(false);
         return false;
       }
