@@ -19,8 +19,8 @@ import NotFound from '@/pages/NotFound';
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <SettingsProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <SettingsProvider>
           <AuthProvider>
             <ProductionUnitsProvider>
               <IoTProvider>
@@ -56,8 +56,8 @@ const App: React.FC = () => {
               </IoTProvider>
             </ProductionUnitsProvider>
           </AuthProvider>
-        </BrowserRouter>
-      </SettingsProvider>
+        </SettingsProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 };
