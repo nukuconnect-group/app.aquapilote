@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface User {
@@ -60,26 +60,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserData = async (supabaseUser: SupabaseUser) => {
     try {
       // Get profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        if (import.meta.env.DEV) console.error('Error fetching profile:', profileError);
+      }
 
       // Get roles
-      const { data: userRoles } = await supabase
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', supabaseUser.id);
 
-      const role = userRoles?.[0]?.role || 'user';
+      if (rolesError) {
+        if (import.meta.env.DEV) console.error('Error fetching roles:', rolesError);
+      }
+
+      const role = userRoles && userRoles.length > 0 ? userRoles[0].role : 'user';
 
       const userData: User = {
         id: supabaseUser.id,
         name: profile?.full_name || supabaseUser.email || '',
         email: supabaseUser.email || '',
         role: role as 'admin' | 'manager' | 'operator' | 'user',
-        avatar: profile?.avatar_url,
+        avatar: profile?.avatar_url || undefined,
         lastLogin: new Date().toISOString(),
         notifications: {
           email: true,

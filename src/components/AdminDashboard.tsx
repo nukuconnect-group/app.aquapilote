@@ -11,7 +11,7 @@ import { Users, UserPlus, UserCheck, TrendingUp, Activity, Search, Key, Trash2 }
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import { userCreationSchema } from '@/lib/validation';
 
 interface UserProfile {
