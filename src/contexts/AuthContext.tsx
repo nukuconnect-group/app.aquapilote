@@ -235,20 +235,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      // Vérifier si l'email existe déjà
-      const { data: existingUsers } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-
-      if (existingUsers) {
-        setIsLoading(false);
-        return { success: false, error: 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez un autre email.' };
-      }
-
       const redirectUrl = `${window.location.origin}/`;
       
+      // Inscription directe sans vérification préalable de l'email
+      // Supabase gère déjà la vérification des emails en double
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
@@ -262,15 +252,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        if (import.meta.env.DEV) console.error('Registration error:', error.message, error);
         setIsLoading(false);
         
-        // Gestion des erreurs spécifiques
-        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+        // Gestion des erreurs spécifiques de Supabase
+        if (error.message.includes('User already registered')) {
           return { success: false, error: 'Cet email est déjà utilisé. Essayez de vous connecter.' };
         }
         
-        return { success: false, error: `Erreur d'inscription: ${error.message}` };
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+          return { success: false, error: 'Cet email est déjà associé à un compte existant.' };
+        }
+
+        if (error.message.includes('rate limit')) {
+          return { success: false, error: 'Trop de tentatives. Veuillez attendre quelques instants.' };
+        }
+
+        if (error.message.includes('invalid')) {
+          return { success: false, error: 'Les informations fournies sont invalides.' };
+        }
+        
+        // Message générique pour les autres erreurs
+        return { success: false, error: 'Impossible de créer le compte. Vérifiez vos informations et réessayez.' };
       }
 
       if (data.user) {
@@ -280,10 +282,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setIsLoading(false);
       return { success: false, error: 'Une erreur est survenue lors de l\'inscription' };
-    } catch (error) {
-      if (import.meta.env.DEV) console.error('Registration error:', error);
+    } catch (error: any) {
       setIsLoading(false);
-      return { success: false, error: 'Une erreur technique est survenue. Veuillez réessayer.' };
+      
+      // Gestion de l'erreur LockManager spécifique
+      if (error?.message?.includes('LockManager')) {
+        return { success: false, error: 'Erreur de connexion. Veuillez rafraîchir la page et réessayer.' };
+      }
+      
+      return { success: false, error: 'Une erreur technique est survenue. Veuillez réessayer dans quelques instants.' };
     }
   };
 
