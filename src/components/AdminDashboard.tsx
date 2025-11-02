@@ -157,8 +157,8 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Update role if not operator (default)
-      if (authData.user && validation.data.role !== 'operator') {
+      // Always update role explicitly
+      if (authData.user) {
         const { error: roleError } = await supabase
           .from('user_roles')
           .update({ role: validation.data.role as any })
