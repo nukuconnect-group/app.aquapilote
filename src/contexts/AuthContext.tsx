@@ -169,6 +169,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         await fetchUserData(data.user);
         setIsLoading(false);
+        
+        // Redirection automatique vers le dashboard après connexion réussie
+        if (typeof window !== 'undefined') {
+          window.location.href = '/dashboard';
+        }
+        
         return true;
       }
       
