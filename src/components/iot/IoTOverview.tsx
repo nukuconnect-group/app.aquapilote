@@ -320,8 +320,8 @@ const IoTOverview = () => {
         </Card>
       </div>
 
-      {/* Modules IoT individuels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Graphiques des paramètres zootechniques - Vue en courbes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {iotModules.map((module) => {
           const IconComponent = getModuleIcon(module.type);
           
@@ -331,65 +331,83 @@ const IoTOverview = () => {
               module.status === 'warning' ? 'border-l-orange-500' :
               'border-l-green-500'
             }`}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <IconComponent className="w-5 h-5 text-gray-600" />
-                    <CardTitle className="text-sm font-medium">{module.name}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{module.name}</CardTitle>
                   </div>
                   <Badge className={getStatusColor(module.status)}>
                     {getStatusText(module.status)}
                   </Badge>
                 </div>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-4xl font-bold text-primary">{module.value}</div>
+                  <div className="text-lg text-muted-foreground">{module.unit}</div>
+                  {getTrendIcon(module.trend)}
+                </div>
               </CardHeader>
               
-              <CardContent className="space-y-3">
-                {/* Valeur actuelle */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold">{module.value}</div>
-                    <div className="text-sm text-muted-foreground">{module.unit}</div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    {getTrendIcon(module.trend)}
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {getTrendText(module.trend)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Graphique miniature */}
-                <div className="h-24">
+              <CardContent className="pt-0">
+                {/* Graphique en courbe - Format large */}
+                <div className="h-40 mt-2">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={module.history}>
+                    <LineChart data={module.history}>
                       <defs>
                         <linearGradient id={`gradient-${module.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={getChartColor(module.type)} stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor={getChartColor(module.type)} stopOpacity={0}/>
+                          <stop offset="5%" stopColor={getChartColor(module.type)} stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor={getChartColor(module.type)} stopOpacity={0.05}/>
                         </linearGradient>
                       </defs>
-                      <Area 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke={getChartColor(module.type)} 
-                        strokeWidth={2}
-                        fill={`url(#gradient-${module.id})`}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis 
+                        dataKey="time" 
+                        tick={{ fontSize: 11 }}
+                        stroke="#9ca3af"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 11 }}
+                        stroke="#9ca3af"
+                        domain={['dataMin - 1', 'dataMax + 1']}
                       />
                       <Tooltip 
                         contentStyle={{ 
                           background: 'white', 
                           border: '1px solid #e5e7eb', 
-                          borderRadius: '6px',
-                          fontSize: '12px'
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
-                        formatter={(value: number) => [`${value} ${module.unit}`, module.name]}
+                        formatter={(value: number) => [`${value} ${module.unit}`, 'Valeur']}
+                        labelFormatter={(label) => `Heure: ${label}`}
                       />
-                    </AreaChart>
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke={getChartColor(module.type)} 
+                        strokeWidth={3}
+                        dot={{ fill: getChartColor(module.type), r: 4 }}
+                        activeDot={{ r: 6 }}
+                        fill={`url(#gradient-${module.id})`}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
 
-                <div className="text-xs text-muted-foreground text-center">
-                  {t('last_update')} : {new Date().toLocaleTimeString()}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                  <div className="text-xs text-muted-foreground">
+                    {t('last_update')} : {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs">
+                    {getTrendIcon(module.trend)}
+                    <span className={
+                      module.trend === 'up' ? 'text-orange-600' :
+                      module.trend === 'down' ? 'text-blue-600' :
+                      'text-gray-600'
+                    }>
+                      {getTrendText(module.trend)}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -397,39 +415,55 @@ const IoTOverview = () => {
         })}
       </div>
 
-      {/* Graphiques détaillés */}
+      {/* Graphique comparatif global - Tous les paramètres */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('evolution')} des {t('parameters').toLowerCase()} (24h)</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Évolution Comparative des Paramètres Zootechniques</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Surveillance en temps réel sur 24 heures</p>
+            </div>
+            <Fish className="w-8 h-8 text-primary" />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-96">
+          <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart>
-                <CartesianGrid strokeDasharray="3 3" />
+              <LineChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="time" 
                   type="category" 
                   allowDuplicatedCategory={false}
+                  tick={{ fontSize: 12 }}
+                  stroke="#6b7280"
                 />
-                <YAxis />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  stroke="#6b7280"
+                />
                 <Tooltip 
                   contentStyle={{ 
                     background: 'white', 
                     border: '1px solid #e5e7eb', 
-                    borderRadius: '6px'
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="line"
+                />
                 {iotModules.map((module) => (
                   <Line 
                     key={module.id}
                     data={module.history}
                     dataKey="value" 
-                    name={module.name}
+                    name={`${module.name} (${module.unit})`}
                     stroke={getChartColor(module.type)}
-                    strokeWidth={2}
-                    dot={false}
+                    strokeWidth={3}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
                   />
                 ))}
               </LineChart>
