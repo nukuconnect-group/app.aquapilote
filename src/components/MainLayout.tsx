@@ -182,19 +182,19 @@ const MainLayout = () => {
         </div>
 
         {/* Conteneur principal avec header et contenu */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 mt-0 pt-0">
           {/* Header fixe en haut sans marges */}
-          <div className="fixed top-0 left-0 right-0 z-40 flex items-center border-b border-border bg-background w-full">
+          <div className="fixed top-0 left-0 right-0 z-[1000] flex items-center border-b border-border bg-background w-full m-0 p-0 md:left-auto">
             <div className="hidden md:block">
               <SidebarTrigger className="ml-2" />
             </div>
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full m-0 p-0">
               <Header />
             </div>
           </div>
           
           {/* Main Content avec padding-top pour compenser le header fixe */}
-          <main className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-12 lg:pt-14">
+          <main className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[3rem] md:pt-14 lg:pt-16">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
