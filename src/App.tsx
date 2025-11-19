@@ -33,10 +33,14 @@ const App: React.FC = () => {
                       {/* Page d'authentification */}
                       <Route path="/auth" element={<Auth />} />
                       
-                      {/* Dashboard accessible sans authentification */}
+                      {/* Dashboard protégé par authentification */}
                       <Route 
                         path="/dashboard" 
-                        element={<Dashboard />} 
+                        element={
+                          <ProtectedRoute>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        } 
                       />
                       
                       {/* Page 404 */}
