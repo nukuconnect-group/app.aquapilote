@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useIoT } from '@/contexts/IoTContext';
-import { generateComprehensiveAnalysis } from '@/utils/waterQualityAnalysis';
+import { analyzeWaterQuality } from '@/utils/waterQualityAnalysis';
 
 interface IoTModeAnalysisProps {
   showDialog: boolean;
@@ -48,10 +48,11 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
   const dailyMortality = 0.1; // % de mortalité quotidienne estimée
 
   // Générer les recommandations
-  const recommendations = generateComprehensiveAnalysis(
-    waterParams,
-    { fishCount, averageWeight, basinVolume }
-  );
+  const temp = waterParams.temperature;
+  const ph = waterParams.pH;
+  const oxygen = waterParams.oxygen;
+  const ammonia = waterParams.ammonia;
+  const pondVolume = basinVolume;
 
   // Calculer le score de santé
   const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
