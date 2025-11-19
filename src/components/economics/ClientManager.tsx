@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Plus, Edit, Phone, Mail, MapPin, ShoppingCart } from 'lucide-react';
+import { Users, Plus, Edit, Phone, Mail, MapPin, ShoppingCart, AlertCircle } from 'lucide-react';
+import { clientSchema, ClientInput } from '@/lib/validationSchemas';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Client {
   id: string;
@@ -36,6 +39,7 @@ interface Order {
 }
 
 const ClientManager = () => {
+  const { toast } = useToast();
   const [clients, setClients] = useState<Client[]>([
     {
       id: '1',
@@ -95,18 +99,52 @@ const ClientManager = () => {
     address: '',
     status: 'potential' as 'potential' | 'active' | 'inactive'
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleAddClient = () => {
-    const client: Client = {
-      id: Date.now().toString(),
-      ...newClient,
-      totalOrders: 0,
-      totalRevenue: 0,
-      lastOrder: ''
-    };
-    setClients([...clients, client]);
-    setNewClient({ name: '', email: '', phone: '', address: '', status: 'potential' });
-    setShowAddClient(false);
+    setValidationErrors({});
+    
+    try {
+      // Validation des données avec Zod
+      const validatedData: ClientInput = clientSchema.parse(newClient);
+      
+      const client: Client = {
+        id: Date.now().toString(),
+        name: validatedData.name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        address: validatedData.address,
+        status: validatedData.status,
+        totalOrders: 0,
+        totalRevenue: 0,
+        lastOrder: ''
+      };
+      
+      setClients([...clients, client]);
+      setNewClient({ name: '', email: '', phone: '', address: '', status: 'potential' });
+      setShowAddClient(false);
+      
+      toast({
+        title: "Client ajouté",
+        description: "Le client a été ajouté avec succès.",
+      });
+    } catch (error: any) {
+      if (error.errors) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path) {
+            errors[err.path[0]] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        
+        toast({
+          title: "Erreur de validation",
+          description: "Veuillez corriger les erreurs dans le formulaire.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -154,6 +192,14 @@ const ClientManager = () => {
             <CardTitle>Ajouter un nouveau client</CardTitle>
           </CardHeader>
           <CardContent>
+            {Object.keys(validationErrors).length > 0 && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Veuillez corriger les erreurs dans le formulaire avant de soumettre.
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientName">Nom du client</Label>
@@ -162,7 +208,11 @@ const ClientManager = () => {
                   value={newClient.name}
                   onChange={(e) => setNewClient({...newClient, name: e.target.value})}
                   placeholder="Nom du client"
+                  className={validationErrors.name ? 'border-destructive' : ''}
                 />
+                {validationErrors.name && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.name}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="clientStatus">Statut</Label>
@@ -188,7 +238,11 @@ const ClientManager = () => {
                   value={newClient.email}
                   onChange={(e) => setNewClient({...newClient, email: e.target.value})}
                   placeholder="email@example.com"
+                  className={validationErrors.email ? 'border-destructive' : ''}
                 />
+                {validationErrors.email && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.email}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="clientPhone">Téléphone</Label>
@@ -197,7 +251,11 @@ const ClientManager = () => {
                   value={newClient.phone}
                   onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
                   placeholder="01 23 45 67 89"
+                  className={validationErrors.phone ? 'border-destructive' : ''}
                 />
+                {validationErrors.phone && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.phone}</p>
+                )}
               </div>
               <div className="md:col-span-2">
                 <Label htmlFor="clientAddress">Adresse</Label>
@@ -206,7 +264,11 @@ const ClientManager = () => {
                   value={newClient.address}
                   onChange={(e) => setNewClient({...newClient, address: e.target.value})}
                   placeholder="Adresse complète"
+                  className={validationErrors.address ? 'border-destructive' : ''}
                 />
+                {validationErrors.address && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.address}</p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 mt-4">

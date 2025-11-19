@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Save, X } from 'lucide-react';
+import { Plus, Save, X, AlertCircle } from 'lucide-react';
+import { transactionSchema, TransactionInput } from '@/lib/validationSchemas';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Transaction {
   id: string;
@@ -29,6 +32,7 @@ interface TransactionFormProps {
 }
 
 const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     type: 'sale' as 'purchase' | 'sale',
     productName: '',
@@ -40,16 +44,54 @@ const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) =>
     notes: '',
     status: 'pending' as 'pending' | 'completed' | 'cancelled'
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const totalAmount = formData.quantity * formData.unitPrice;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddTransaction({
-      ...formData,
-      totalAmount
-    });
-    onClose();
+    setValidationErrors({});
+
+    try {
+      // Validation des données avec Zod
+      const validatedData: TransactionInput = transactionSchema.parse(formData);
+      
+      onAddTransaction({
+        type: validatedData.type,
+        productName: validatedData.productName,
+        quantity: validatedData.quantity,
+        unitPrice: validatedData.unitPrice,
+        clientName: validatedData.clientName || '',
+        supplierName: validatedData.supplierName || '',
+        date: validatedData.date,
+        notes: validatedData.notes || '',
+        status: validatedData.status,
+        totalAmount
+      });
+      
+      toast({
+        title: "Transaction créée",
+        description: "La transaction a été créée avec succès.",
+      });
+      
+      onClose();
+    } catch (error: any) {
+      if (error.errors) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path) {
+            errors[err.path[0]] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        
+        toast({
+          title: "Erreur de validation",
+          description: "Veuillez corriger les erreurs dans le formulaire.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -68,6 +110,14 @@ const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) =>
         </Button>
       </CardHeader>
       <CardContent>
+        {Object.keys(validationErrors).length > 0 && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Veuillez corriger les erreurs dans le formulaire avant de soumettre.
+            </AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -112,7 +162,11 @@ const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) =>
               onChange={(e) => handleInputChange('productName', e.target.value)}
               placeholder="Ex: Alevins carpe, Poissons matures..."
               required
+              className={validationErrors.productName ? 'border-destructive' : ''}
             />
+            {validationErrors.productName && (
+              <p className="text-sm text-destructive mt-1">{validationErrors.productName}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -124,9 +178,14 @@ const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) =>
                 value={formData.quantity}
                 onChange={(e) => handleInputChange('quantity', parseFloat(e.target.value) || 0)}
                 min="0"
+                max="1000000"
                 step="0.01"
                 required
+                className={validationErrors.quantity ? 'border-destructive' : ''}
               />
+              {validationErrors.quantity && (
+                <p className="text-sm text-destructive mt-1">{validationErrors.quantity}</p>
+              )}
             </div>
 
             <div>
@@ -137,9 +196,14 @@ const TransactionForm = ({ onAddTransaction, onClose }: TransactionFormProps) =>
                 value={formData.unitPrice}
                 onChange={(e) => handleInputChange('unitPrice', parseFloat(e.target.value) || 0)}
                 min="0"
+                max="100000"
                 step="0.01"
                 required
+                className={validationErrors.unitPrice ? 'border-destructive' : ''}
               />
+              {validationErrors.unitPrice && (
+                <p className="text-sm text-destructive mt-1">{validationErrors.unitPrice}</p>
+              )}
             </div>
 
             <div>
