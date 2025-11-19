@@ -18,7 +18,7 @@ import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIoT } from '@/contexts/IoTContext';
-import { generateComprehensiveAnalysis, type WaterQualityRecommendation } from '@/utils/waterQualityAnalysis';
+import { analyzeWaterQuality, WaterQualityAnalysis, WaterQualityRecommendation } from '@/utils/waterQualityAnalysis';
 
 interface AIAnalysisData {
   unitId: string;
@@ -61,18 +61,22 @@ const IoTAIAnalysis = () => {
       };
 
       // Générer les recommandations basées sur l'analyse
-      const recommendations = generateComprehensiveAnalysis(
-        latestReadings,
-        { fishCount, averageWeight, basinVolume }
+      const temp = latestReadings.temperature;
+      const ph = latestReadings.pH;
+      const oxygen = latestReadings.oxygen;
+      const ammonia = latestReadings.ammonia || 0;
+
+      const analysis = analyzeWaterQuality(
+        temp, ph, oxygen, ammonia, fishCount, basinVolume, averageWeight, unit.type
       );
+      const recommendations = analysis.recommendations;
 
       // Calculer le score de santé basé sur les recommandations
-      const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
+      const criticalCount = recommendations.filter(r => r.priority === 'high' && r.status === 'critical').length;
       const highCount = recommendations.filter(r => r.priority === 'high').length;
       const mediumCount = recommendations.filter(r => r.priority === 'medium').length;
       
-      let healthScore = 100 - (criticalCount * 30) - (highCount * 15) - (mediumCount * 5);
-      healthScore = Math.max(0, Math.min(100, healthScore));
+      let healthScore = analysis.healthScore;
 
       return {
         unitId: unit.id,
@@ -272,7 +276,7 @@ const IoTAIAnalysis = () => {
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">
-                    {getRecommendationIcon(rec.type)}
+                    {getRecommendationIcon(rec.parameter)}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -280,7 +284,7 @@ const IoTAIAnalysis = () => {
                         {getPriorityText(rec.priority)}
                       </Badge>
                     </div>
-                    <p className="text-sm font-medium">{rec.message}</p>
+                    <p className="text-sm font-medium">{rec.parameter}: {rec.action}</p>
                   </div>
                   <Button size="sm" variant="outline">
                     {t('add')}

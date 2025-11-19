@@ -18,7 +18,7 @@ interface InfrastructureFormProps {
 }
 
 const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: InfrastructureFormProps) => {
-  const { units, infrastructures, setInfrastructures } = useProductionUnits();
+  const { units, infrastructures, setInfrastructures, addUnit, updateInfrastructure, addInfrastructure } = useProductionUnits();
   const { addLog } = useLogs();
   
   const [showDialog, setShowDialog] = useState(false);
@@ -26,6 +26,13 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
   const [showCustomTypeInput, setShowCustomTypeInput] = useState(false);
   const [customTypeName, setCustomTypeName] = useState('');
   
+  const [showUnitCreation, setShowUnitCreation] = useState(false);
+  const [newUnit, setNewUnit] = useState({
+    name: '',
+    type: 'grossissement' as any,
+    description: ''
+  });
+
   const [newInfrastructure, setNewInfrastructure] = useState({
     name: '',
     unitId: units.length > 0 ? units[0].id : '',
