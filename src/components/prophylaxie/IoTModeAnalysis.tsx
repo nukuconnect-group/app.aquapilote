@@ -10,9 +10,14 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  Brain
+  Brain,
+  Droplets,
+  Wind,
+  ThermometerSun
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useIoT } from '@/contexts/IoTContext';
+import { generateComprehensiveAnalysis } from '@/utils/waterQualityAnalysis';
 
 interface IoTModeAnalysisProps {
   showDialog: boolean;
@@ -21,25 +26,67 @@ interface IoTModeAnalysisProps {
 
 const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }) => {
   const { activeUnit } = useProductionUnits();
+  const { getBasinReadings, getUnitBasins } = useIoT();
 
-  // Données simulées provenant du module IoT
-  const iotData = {
-    fishCount: 12450,
-    averageWeight: 285,
-    dailyGrowth: 3.2,
-    dailyMortality: 0.8,
-    healthScore: 87,
-    waterQuality: {
-      pH: 7.2,
-      oxygen: 6.8,
-      temperature: 24.5,
-      ammonia: 0.02
-    },
-    recommendations: [
-      { type: 'prevention', message: 'Maintenir le niveau d\'oxygène actuel', priority: 'low' },
-      { type: 'feeding', message: 'Ajuster la ration de 5% pour optimiser la croissance', priority: 'medium' },
-      { type: 'monitoring', message: 'Surveiller la température en après-midi', priority: 'medium' }
-    ]
+  // Récupérer les données réelles des capteurs IoT
+  const basins = activeUnit ? getUnitBasins(activeUnit.id) : [];
+  const firstBasin = basins[0];
+  const readings = firstBasin ? getBasinReadings(firstBasin.id) : [];
+  
+  const waterParams = {
+    temperature: readings.find(r => r.sensorType === 'temperature')?.value || 25,
+    pH: readings.find(r => r.sensorType === 'ph')?.value || 7.5,
+    oxygen: readings.find(r => r.sensorType === 'oxygen')?.value || 6.5,
+    ammonia: 0.03,
+  };
+
+  // Données simulées pour le poisson (à remplacer par de vraies données)
+  const fishCount = 12450;
+  const averageWeight = 285;
+  const basinVolume = 50;
+
+  // Générer les recommandations
+  const recommendations = generateComprehensiveAnalysis(
+    waterParams,
+    { fishCount, averageWeight, basinVolume }
+  );
+
+  // Calculer le score de santé
+  const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
+  const highCount = recommendations.filter(r => r.priority === 'high').length;
+  const mediumCount = recommendations.filter(r => r.priority === 'medium').length;
+  
+  let healthScore = 100 - (criticalCount * 30) - (highCount * 15) - (mediumCount * 5);
+  healthScore = Math.max(0, Math.min(100, healthScore));
+
+  const getHealthStatus = (score: number) => {
+    if (score >= 85) return { label: 'Excellent état', color: 'text-green-600', bg: 'bg-green-100', border: 'border-l-green-500' };
+    if (score >= 70) return { label: 'Bon état', color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-l-blue-500' };
+    if (score >= 50) return { label: 'État moyen', color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-l-orange-500' };
+    return { label: 'État critique', color: 'text-red-600', bg: 'bg-red-100', border: 'border-l-red-500' };
+  };
+
+  const status = getHealthStatus(healthScore);
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'bg-red-500 text-white border-red-600';
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'medium': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'low': return 'bg-blue-100 text-blue-800 border-blue-300';
+      default: return 'bg-muted text-muted-foreground border-border';
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'oxygenation': return <Wind className="w-4 h-4" />;
+      case 'water_renewal': return <Droplets className="w-4 h-4" />;
+      case 'temperature': return <ThermometerSun className="w-4 h-4" />;
+      case 'ph_adjustment': return <Activity className="w-4 h-4" />;
+      case 'density': return <Fish className="w-4 h-4" />;
+      default: return <AlertTriangle className="w-4 h-4" />;
+    }
   };
 
   return (
