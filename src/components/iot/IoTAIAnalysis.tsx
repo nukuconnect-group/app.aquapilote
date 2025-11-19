@@ -17,6 +17,8 @@ import {
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useIoT } from '@/contexts/IoTContext';
+import { generateComprehensiveAnalysis, type WaterQualityRecommendation } from '@/utils/waterQualityAnalysis';
 
 interface AIAnalysisData {
   unitId: string;
@@ -25,11 +27,7 @@ interface AIAnalysisData {
   dailyGrowth: number;
   dailyMortality: number;
   healthScore: number;
-  recommendations: Array<{
-    type: 'feeding' | 'oxygenation' | 'water_renewal' | 'treatment';
-    priority: 'high' | 'medium' | 'low';
-    message: string;
-  }>;
+  recommendations: WaterQualityRecommendation[];
   lastUpdate: string;
 }
 
@@ -37,49 +35,79 @@ const IoTAIAnalysis = () => {
   const { units, activeUnit } = useProductionUnits();
   const { toast } = useToast();
   const { t, formatCurrency } = useSettings();
+  const { getBasinReadings, getUnitBasins } = useIoT();
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisData, setAnalysisData] = useState<AIAnalysisData[]>([
-    {
-      unitId: 'GROSS001',
-      fishCount: 12450,
-      averageWeight: 285,
-      dailyGrowth: 3.2,
-      dailyMortality: 0.8,
-      healthScore: 87,
-      recommendations: [
-        { type: 'feeding', priority: 'medium', message: 'Augmenter la ration alimentaire de 5% pour optimiser la croissance' },
-        { type: 'oxygenation', priority: 'high', message: 'Améliorer l\'oxygénation durant les heures chaudes (14h-18h)' }
-      ],
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      unitId: 'TRANS001',
-      fishCount: 8920,
-      averageWeight: 145,
-      dailyGrowth: 4.1,
-      dailyMortality: 1.2,
-      healthScore: 82,
-      recommendations: [
-        { type: 'water_renewal', priority: 'medium', message: 'Renouvellement d\'eau recommandé (20% du volume)' },
-        { type: 'treatment', priority: 'low', message: 'Traitement préventif anti-parasitaire suggéré' }
-      ],
-      lastUpdate: new Date().toISOString()
-    }
-  ]);
+  const [analysisData, setAnalysisData] = useState<AIAnalysisData[]>([]);
+
+  // Générer l'analyse basée sur les données IoT réelles
+  const generateAnalysis = () => {
+    const analyses: AIAnalysisData[] = units.map(unit => {
+      const basins = getUnitBasins(unit.id);
+      
+      // Données simulées pour le poisson (à remplacer par de vraies données)
+      const fishCount = Math.floor(Math.random() * 5000) + 8000;
+      const averageWeight = Math.floor(Math.random() * 150) + 150;
+      const basinVolume = 50; // Volume en m³ (à adapter selon vos données)
+      
+      // Récupérer les paramètres d'eau du premier bassin
+      const firstBasin = basins[0];
+      const readings = firstBasin ? getBasinReadings(firstBasin.id) : [];
+      
+      const latestReadings = {
+        temperature: readings.find(r => r.sensorType === 'temperature')?.value || 25,
+        pH: readings.find(r => r.sensorType === 'ph')?.value || 7.5,
+        oxygen: readings.find(r => r.sensorType === 'oxygen')?.value || 6.5,
+        ammonia: 0.03, // Pas encore disponible dans les capteurs IoT
+      };
+
+      // Générer les recommandations basées sur l'analyse
+      const recommendations = generateComprehensiveAnalysis(
+        latestReadings,
+        { fishCount, averageWeight, basinVolume }
+      );
+
+      // Calculer le score de santé basé sur les recommandations
+      const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
+      const highCount = recommendations.filter(r => r.priority === 'high').length;
+      const mediumCount = recommendations.filter(r => r.priority === 'medium').length;
+      
+      let healthScore = 100 - (criticalCount * 30) - (highCount * 15) - (mediumCount * 5);
+      healthScore = Math.max(0, Math.min(100, healthScore));
+
+      return {
+        unitId: unit.id,
+        fishCount,
+        averageWeight,
+        dailyGrowth: Math.random() * 2 + 2.5,
+        dailyMortality: Math.random() * 1 + 0.5,
+        healthScore,
+        recommendations,
+        lastUpdate: new Date().toISOString()
+      };
+    });
+
+    setAnalysisData(analyses);
+  };
 
   const runAIAnalysis = async (unitId?: string) => {
     setAnalyzing(true);
     
-    // Simulation de l'analyse IA
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Générer l'analyse
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    generateAnalysis();
     
     toast({
       title: t('success'),
-      description: `${t('last_update')} : ${unitId ? units.find(u => u.id === unitId)?.name : t('overview')}`,
+      description: `Analyse complète générée pour ${unitId ? units.find(u => u.id === unitId)?.name : 'toutes les unités'}`,
     });
     
     setAnalyzing(false);
   };
+
+  // Générer l'analyse initiale
+  React.useEffect(() => {
+    generateAnalysis();
+  }, [units]);
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -95,6 +123,7 @@ const IoTAIAnalysis = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case 'critical': return 'bg-red-500 text-white border-red-600';
       case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'medium': return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'low': return 'bg-blue-100 text-blue-800 border-blue-300';
@@ -104,6 +133,7 @@ const IoTAIAnalysis = () => {
 
   const getPriorityText = (priority: string) => {
     const priorities = {
+      critical: 'CRITIQUE',
       high: t('critical'),
       medium: t('warning'),
       low: t('info')
@@ -117,6 +147,9 @@ const IoTAIAnalysis = () => {
       case 'oxygenation': return <Wind className="w-4 h-4" />;
       case 'water_renewal': return <Droplets className="w-4 h-4" />;
       case 'treatment': return <Activity className="w-4 h-4" />;
+      case 'temperature': return <ThermometerSun className="w-4 h-4" />;
+      case 'ph_adjustment': return <Activity className="w-4 h-4" />;
+      case 'density': return <Fish className="w-4 h-4" />;
       default: return <AlertTriangle className="w-4 h-4" />;
     }
   };
