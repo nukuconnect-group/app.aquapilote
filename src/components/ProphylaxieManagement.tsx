@@ -21,7 +21,9 @@ import {
   XCircle,
   Clock,
   Filter,
-  Wifi
+  Wifi,
+  Brain,
+  Activity
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
@@ -341,6 +343,70 @@ const ProphylaxieManagement = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recommandations IA */}
+      <Card className="border-l-4 border-l-primary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5 text-primary" />
+            Recommandations de l'IA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3">
+            <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">Priorité Moyenne</span>
+                  <Badge variant="outline" className="text-xs">Alimentation</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Ajuster la ration de 5% pour optimiser la croissance basé sur les données IoT actuelles
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">Priorité Basse</span>
+                  <Badge variant="outline" className="text-xs">Prévention</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Maintenir le niveau d'oxygène actuel - Conditions optimales détectées
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Activity className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">Priorité Moyenne</span>
+                  <Badge variant="outline" className="text-xs">Surveillance</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Surveiller la température en après-midi - Légère variation détectée
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button 
+              onClick={() => setShowIoTDialog(true)}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Wifi className="w-4 h-4 mr-2" />
+              Voir l'analyse complète
+            </Button>
           </div>
         </CardContent>
       </Card>
