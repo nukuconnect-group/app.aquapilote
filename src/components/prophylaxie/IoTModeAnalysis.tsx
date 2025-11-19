@@ -44,6 +44,8 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
   const fishCount = 12450;
   const averageWeight = 285;
   const basinVolume = 50;
+  const dailyGrowth = 2.5; // % de croissance quotidienne estimée
+  const dailyMortality = 0.1; // % de mortalité quotidienne estimée
 
   // Générer les recommandations
   const recommendations = generateComprehensiveAnalysis(
@@ -115,9 +117,9 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Score de Santé Global</div>
-                    <div className="text-4xl font-bold text-green-600">{iotData.healthScore}/100</div>
-                    <Badge className="mt-2 bg-green-100 text-green-800">Excellent état</Badge>
+                  <div className="text-sm text-muted-foreground mb-1">Score de Santé Global</div>
+                    <div className="text-4xl font-bold text-green-600">{healthScore}/100</div>
+                    <Badge className={`mt-2 ${status.bg} ${status.color}`}>{status.label}</Badge>
                   </div>
                   <Brain className="w-16 h-16 text-green-600 opacity-20" />
                 </div>
@@ -129,7 +131,7 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               <Card>
                 <CardContent className="p-4">
                   <Fish className="w-5 h-5 text-blue-600 mb-2" />
-                  <div className="text-2xl font-bold">{iotData.fishCount.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">{fishCount.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">Poissons</div>
                 </CardContent>
               </Card>
@@ -137,7 +139,7 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               <Card>
                 <CardContent className="p-4">
                   <Activity className="w-5 h-5 text-purple-600 mb-2" />
-                  <div className="text-2xl font-bold">{iotData.averageWeight}g</div>
+                  <div className="text-2xl font-bold">{averageWeight}g</div>
                   <div className="text-xs text-muted-foreground">Poids moyen</div>
                 </CardContent>
               </Card>
@@ -145,7 +147,7 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               <Card>
                 <CardContent className="p-4">
                   <TrendingUp className="w-5 h-5 text-green-600 mb-2" />
-                  <div className="text-2xl font-bold">{iotData.dailyGrowth}%</div>
+                  <div className="text-2xl font-bold">{dailyGrowth}%</div>
                   <div className="text-xs text-muted-foreground">Croissance/j</div>
                 </CardContent>
               </Card>
@@ -153,7 +155,7 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               <Card>
                 <CardContent className="p-4">
                   <AlertTriangle className="w-5 h-5 text-orange-600 mb-2" />
-                  <div className="text-2xl font-bold">{iotData.dailyMortality}%</div>
+                  <div className="text-2xl font-bold">{dailyMortality}%</div>
                   <div className="text-xs text-muted-foreground">Mortalité/j</div>
                 </CardContent>
               </Card>
@@ -168,22 +170,22 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">pH</div>
-                    <div className="text-xl font-bold text-blue-600">{iotData.waterQuality.pH}</div>
+                    <div className="text-xl font-bold text-blue-600">{waterParams.pH}</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
                   <div className="text-center p-3 bg-cyan-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Oxygène</div>
-                    <div className="text-xl font-bold text-cyan-600">{iotData.waterQuality.oxygen} mg/L</div>
+                    <div className="text-xl font-bold text-cyan-600">{waterParams.oxygen} mg/L</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
                   <div className="text-center p-3 bg-orange-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Température</div>
-                    <div className="text-xl font-bold text-orange-600">{iotData.waterQuality.temperature}°C</div>
+                    <div className="text-xl font-bold text-orange-600">{waterParams.temperature}°C</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
                   <div className="text-center p-3 bg-yellow-50 rounded-lg">
                     <div className="text-sm text-muted-foreground mb-1">Ammoniaque</div>
-                    <div className="text-xl font-bold text-yellow-600">{iotData.waterQuality.ammonia} ppm</div>
+                    <div className="text-xl font-bold text-yellow-600">{waterParams.ammonia} ppm</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
                 </div>
@@ -200,25 +202,20 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {iotData.recommendations.map((rec, idx) => (
+                  {recommendations.map((rec, idx) => (
                     <div 
                       key={idx}
-                      className={`p-3 border rounded-lg ${
-                        rec.priority === 'high' ? 'border-red-300 bg-red-50' :
-                        rec.priority === 'medium' ? 'border-orange-300 bg-orange-50' :
-                        'border-blue-300 bg-blue-50'
-                      }`}
+                      className={`p-3 border rounded-lg border-l-4 ${getPriorityColor(rec.priority)}`}
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        {getIcon(rec.type)}
                         <div className="flex-1">
-                          <Badge className={
-                            rec.priority === 'high' ? 'bg-red-100 text-red-800' :
-                            rec.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
-                            'bg-blue-100 text-blue-800'
-                          }>
-                            {rec.type}
+                          <Badge className={getPriorityColor(rec.priority)}>
+                            {rec.priority.toUpperCase()}
                           </Badge>
-                          <p className="text-sm mt-2">{rec.message}</p>
+                          <p className="text-sm mt-2 font-medium">{rec.message}</p>
+                          <p className="text-xs text-muted-foreground mt-1"><strong>Action:</strong> {rec.action}</p>
+                          <p className="text-xs text-muted-foreground mt-1"><strong>Impact santé:</strong> {rec.healthImpact}</p>
                         </div>
                       </div>
                     </div>
