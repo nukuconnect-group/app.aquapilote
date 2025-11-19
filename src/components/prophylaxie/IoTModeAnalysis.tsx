@@ -54,13 +54,20 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
   const ammonia = waterParams.ammonia;
   const pondVolume = basinVolume;
 
-  // Calculer le score de santé
-  const criticalCount = recommendations.filter(r => r.priority === 'critical').length;
-  const highCount = recommendations.filter(r => r.priority === 'high').length;
-  const mediumCount = recommendations.filter(r => r.priority === 'medium').length;
+  // Analyser la qualité de l'eau et générer les recommandations
+  const analysis = analyzeWaterQuality(
+    temp, 
+    ph, 
+    oxygen, 
+    ammonia, 
+    fishCount, 
+    pondVolume, 
+    averageWeight,
+    'grossissement'
+  );
   
-  let healthScore = 100 - (criticalCount * 30) - (highCount * 15) - (mediumCount * 5);
-  healthScore = Math.max(0, Math.min(100, healthScore));
+  const recommendations = analysis.recommendations;
+  const healthScore = analysis.healthScore;
 
   const getHealthStatus = (score: number) => {
     if (score >= 85) return { label: 'Excellent état', color: 'text-green-600', bg: 'bg-green-100', border: 'border-l-green-500' };
@@ -81,15 +88,14 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
     }
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'oxygenation': return <Wind className="w-4 h-4" />;
-      case 'water_renewal': return <Droplets className="w-4 h-4" />;
-      case 'temperature': return <ThermometerSun className="w-4 h-4" />;
-      case 'ph_adjustment': return <Activity className="w-4 h-4" />;
-      case 'density': return <Fish className="w-4 h-4" />;
-      default: return <AlertTriangle className="w-4 h-4" />;
-    }
+  const getIcon = (parameter: string) => {
+    const param = parameter.toLowerCase();
+    if (param.includes('oxygène')) return <Wind className="w-4 h-4" />;
+    if (param.includes('température')) return <ThermometerSun className="w-4 h-4" />;
+    if (param.includes('ph')) return <Activity className="w-4 h-4" />;
+    if (param.includes('densité')) return <Fish className="w-4 h-4" />;
+    if (param.includes('ammoniac')) return <Droplets className="w-4 h-4" />;
+    return <AlertTriangle className="w-4 h-4" />;
   };
 
   return (
@@ -209,14 +215,14 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
                       className={`p-3 border rounded-lg border-l-4 ${getPriorityColor(rec.priority)}`}
                     >
                       <div className="flex items-start gap-3">
-                        {getIcon(rec.type)}
+                        {getIcon(rec.parameter)}
                         <div className="flex-1">
                           <Badge className={getPriorityColor(rec.priority)}>
                             {rec.priority.toUpperCase()}
                           </Badge>
-                          <p className="text-sm mt-2 font-medium">{rec.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1"><strong>Action:</strong> {rec.action}</p>
+                          <p className="text-sm mt-2 font-medium">{rec.parameter}: {rec.action}</p>
                           <p className="text-xs text-muted-foreground mt-1"><strong>Impact santé:</strong> {rec.healthImpact}</p>
+                          <p className="text-xs text-muted-foreground mt-1"><strong>Délai:</strong> {rec.timeline}</p>
                         </div>
                       </div>
                     </div>
