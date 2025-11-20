@@ -1,51 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Onboarding from '@/components/Onboarding';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
 
 /**
- * Page d'accueil - Affiche l'onboarding pour les nouveaux utilisateurs
+ * Page d'accueil - Affiche le logo et redirige vers l'authentification
  * Redirige vers le dashboard si déjà connecté
  */
 const Welcome: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isLoading, hasSeenOnboarding, completeOnboarding } = useAuth();
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
-        navigate('/dashboard', { replace: true });
-      } else if (!hasSeenOnboarding) {
-        // Afficher l'onboarding pour les nouveaux visiteurs
-        setShowOnboarding(true);
-      } else {
-        // Si l'onboarding a déjà été vu, aller directement à l'auth
-        navigate('/auth', { replace: true });
-      }
+    if (!isLoading && user) {
+      // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, isLoading, hasSeenOnboarding, navigate]);
+  }, [user, isLoading, navigate]);
 
-  const handleOnboardingComplete = () => {
-    completeOnboarding();
-    setShowOnboarding(false);
-  };
-
-  const handleLogin = () => {
-    completeOnboarding();
-    navigate('/auth', { replace: true });
-  };
-
-  const handleRegister = () => {
-    completeOnboarding();
+  const handleGetStarted = () => {
     navigate('/auth', { replace: true });
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
           <p className="text-muted-foreground">Chargement...</p>
@@ -54,17 +35,41 @@ const Welcome: React.FC = () => {
     );
   }
 
-  if (showOnboarding) {
-    return (
-      <Onboarding
-        onComplete={handleOnboardingComplete}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-      />
-    );
-  }
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+      <div className="text-center space-y-8 max-w-2xl">
+        {/* Logo AQUA PILOT */}
+        <div className="flex justify-center mb-8">
+          <img 
+            src={aquaPilotLogo} 
+            alt="AQUA PILOT Logo" 
+            className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto object-contain"
+          />
+        </div>
 
-  return null;
+        {/* Titre et description */}
+        <div className="space-y-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
+            Bienvenue sur AQUA PILOT
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-xl mx-auto">
+            Votre solution professionnelle de gestion aquacole intelligente
+          </p>
+        </div>
+
+        {/* Bouton de connexion */}
+        <div className="pt-8">
+          <Button 
+            onClick={handleGetStarted}
+            size="lg"
+            className="px-8 py-6 text-lg font-semibold"
+          >
+            Commencer
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Welcome;
