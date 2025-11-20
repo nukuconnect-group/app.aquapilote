@@ -148,8 +148,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({ isOpen, onClose }) => {
         description: t('profile_updated')
       });
 
-      // Recharger la page pour mettre à jour le profil
-      window.location.reload();
+      // Fermer le dialogue - la mise à jour se fera automatiquement via realtime
+      handleClose();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
