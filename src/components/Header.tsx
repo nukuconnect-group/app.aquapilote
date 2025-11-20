@@ -21,7 +21,6 @@ import { useTheme } from '@/components/ThemeProvider';
 const Header = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const {
     user,
@@ -98,7 +97,7 @@ const Header = () => {
               variant="ghost" 
               size="sm" 
               className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9"
-              onClick={() => setShowSettings(true)}
+              onClick={() => setShowSettings(!showSettings)}
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -124,7 +123,7 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => setShowProfile(true)}>
+                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => window.location.href = '/dashboard?tab=settings'}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
@@ -300,7 +299,7 @@ const Header = () => {
                 className="w-full justify-start"
                 onClick={() => {
                   setShowSettings(false);
-                  setShowProfile(true);
+                  window.location.href = '/dashboard?tab=settings';
                 }}
               >
                 <UserCircle className="w-4 h-4 mr-2" />
@@ -325,12 +324,6 @@ const Header = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Profile Dialog (pour tous les paramètres) */}
-      <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <SettingsManagement />
-        </DialogContent>
-      </Dialog>
 
       {/* Login Dialog */}
       <LoginDialog 

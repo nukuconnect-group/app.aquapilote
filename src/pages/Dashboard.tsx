@@ -36,12 +36,17 @@ const Dashboard: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleTabChange = (tab: string) => {
-    if (tab === 'settings') {
-      setShowMobileMenu(true);
-    } else {
+    setActiveTab(tab);
+    setShowMobileMenu(false);
+  };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) {
       setActiveTab(tab);
     }
-  };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
