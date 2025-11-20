@@ -62,29 +62,27 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
       <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0">
         <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
           {/* Logo et titre à gauche */}
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold truncate">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div>
+              <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold">
                 {t('app_title')}
               </h1>
-              <p className="text-primary-foreground/80 text-[10px] sm:text-xs leading-tight hidden sm:block truncate">
-                {t('app_subtitle')}
-              </p>
+              <p className="text-primary-foreground/80 text-[10px] sm:text-xs leading-tight hidden sm:block">{t('app_subtitle')}</p>
             </div>
           </div>
 
           {/* Navigation actions à droite */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Notifications */}
             <NotificationsPanel />
             
             {/* Langue */}
             <Select value={language} onValueChange={(value) => setLanguage(value as 'fr' | 'en')}>
-              <SelectTrigger className="w-[60px] sm:w-[70px] h-7 sm:h-8 lg:h-9 text-primary-foreground border-primary-foreground/20 bg-transparent hover:bg-primary-foreground/10 text-xs sm:text-sm">
+              <SelectTrigger className="w-[70px] h-8 sm:h-9 text-primary-foreground border-primary-foreground/20 bg-transparent hover:bg-primary-foreground/10">
                 <SelectValue>
                   <div className="flex items-center gap-1">
-                    <Globe className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                    <span className="uppercase hidden sm:inline">{language}</span>
+                    <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="text-xs sm:text-sm uppercase">{language}</span>
                   </div>
                 </SelectValue>
               </SelectTrigger>

@@ -15,25 +15,25 @@ const FishManagement = () => {
   
   if (!activeUnit) {
     return (
-      <div className="space-y-4 w-full">
-        <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6">
-          <div className="flex flex-col gap-4">
+      <div className="space-y-responsive">
+        <div className="bg-gradient-aqua p-responsive rounded-xl text-primary-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-responsive">
             <div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">Gestion du Cheptel</h2>
-              <p className="text-primary-foreground/90 text-sm sm:text-base">Suivi des poissons et performances zootechniques</p>
+              <h2 className="text-responsive-title font-bold mb-2">Gestion du Cheptel</h2>
+              <p className="text-primary-foreground/80 text-responsive">Suivi des poissons et performances zootechniques</p>
             </div>
-            <div className="w-full">
-              <ProductionUnitSelector />
-            </div>
+          </div>
+          <div className="mt-4">
+            <ProductionUnitSelector />
           </div>
         </div>
         
-        <div className="text-center py-12 px-4">
-          <Fish className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
+        <div className="text-center py-12">
+          <Fish className="icon-responsive-lg mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-responsive-subtitle font-semibold text-foreground mb-2">
             Aucune unité sélectionnée
           </h3>
-          <p className="text-muted-foreground text-sm sm:text-base">
+          <p className="text-muted-foreground text-responsive">
             Sélectionnez une unité de production pour gérer son cheptel
           </p>
         </div>
@@ -108,74 +108,68 @@ const FishManagement = () => {
   const unitContent = getUnitSpecificContent();
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full">
-      {/* En-tête spécifique à l'unité - Pleine largeur sur mobile */}
-      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6">
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 break-words">{unitContent.title}</h2>
-              <p className="text-aqua-100 text-xs sm:text-sm md:text-base">{unitContent.subtitle}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="truncate">Unité: {activeUnit.name}</span>
-                <Badge variant="secondary" className="bg-white/20 text-white text-xs shrink-0">
-                  {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}
-                </Badge>
-              </div>
+    <div className="space-y-6">
+      {/* En-tête spécifique à l'unité */}
+      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6 sm:rounded-b-xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">{unitContent.title}</h2>
+            <p className="text-aqua-100 text-sm sm:text-base">{unitContent.subtitle}</p>
+            <div className="mt-2 flex flex-wrap items-center space-x-4 text-xs sm:text-sm">
+              <span>Unité: {activeUnit.name}</span>
+              <Badge variant="secondary" className="bg-white/20 text-white">
+                {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}
+              </Badge>
             </div>
-            <Button 
-              variant="outline" 
-              className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto shrink-0" 
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau suivi
-            </Button>
           </div>
-          
-          <div className="w-full">
-            <ProductionUnitSelector />
-          </div>
+          <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau suivi
+          </Button>
+        </div>
+        
+        <div className="mt-4">
+          <ProductionUnitSelector />
         </div>
       </div>
 
       {/* Métriques spécifiques à l'unité */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {activeUnit.type === 'ecloserie' && <>
-            <Card className="overflow-hidden">
-              <CardContent className="p-3 sm:p-4">
+            <Card>
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Fish className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 shrink-0" />
+                  <Fish className="h-5 w-5 text-blue-600" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold truncate">{unitContent.data.geniteurs_males}</p>
-                <p className="text-xs sm:text-sm text-gray-600">Géniteurs ♂</p>
+                <p className="text-2xl font-bold">{unitContent.data.geniteurs_males}</p>
+                <p className="text-sm text-gray-600">Géniteurs ♂</p>
               </CardContent>
             </Card>
-            <Card className="overflow-hidden">
-              <CardContent className="p-3 sm:p-4">
+            <Card>
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Fish className="h-4 w-4 sm:h-5 sm:w-5 text-pink-600 shrink-0" />
+                  <Fish className="h-5 w-5 text-pink-600" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold truncate">{unitContent.data.geniteurs_femelles}</p>
-                <p className="text-xs sm:text-sm text-gray-600">Géniteurs ♀</p>
+                <p className="text-2xl font-bold">{unitContent.data.geniteurs_femelles}</p>
+                <p className="text-sm text-gray-600">Géniteurs ♀</p>
               </CardContent>
             </Card>
-            <Card className="overflow-hidden">
-              <CardContent className="p-3 sm:p-4">
+            <Card>
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
+                  <TrendingUp className="h-5 w-5 text-green-600" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold">{unitContent.data.taux_fecondite}%</p>
-                <p className="text-xs sm:text-sm text-gray-600">Taux fécondité</p>
+                <p className="text-2xl font-bold">{unitContent.data.taux_fecondite}%</p>
+                <p className="text-sm text-gray-600">Taux fécondité</p>
               </CardContent>
             </Card>
-            <Card className="overflow-hidden">
-              <CardContent className="p-3 sm:p-4">
+            <Card>
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-aqua-600 shrink-0" />
+                  <Eye className="h-5 w-5 text-aqua-600" />
                 </div>
-                <p className="text-xl sm:text-2xl font-bold truncate">{unitContent.data.alevins_produits.toLocaleString()}</p>
-                <p className="text-xs sm:text-sm text-gray-600">Alevins produits</p>
+                <p className="text-2xl font-bold">{unitContent.data.alevins_produits.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Alevins produits</p>
               </CardContent>
             </Card>
           </>}
