@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText, Download, Eye, Plus, Printer } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Invoice {
   id: string;
@@ -29,6 +30,7 @@ interface InvoiceItem {
 }
 
 const InvoiceManager = () => {
+  const { formatCurrency, t } = useSettings();
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
       id: '1',
@@ -87,10 +89,10 @@ const InvoiceManager = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Brouillon';
-      case 'sent': return 'Envoyée';
-      case 'paid': return 'Payée';
-      case 'overdue': return 'En retard';
+      case 'draft': return t('draft');
+      case 'sent': return t('sent');
+      case 'paid': return t('paid');
+      case 'overdue': return t('overdue');
       default: return status;
     }
   };
@@ -165,17 +167,17 @@ const InvoiceManager = () => {
                 <tr>
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
-                  <td>€${item.unitPrice.toFixed(2)}</td>
-                  <td>€${item.total.toFixed(2)}</td>
+                  <td>${formatCurrency(item.unitPrice)}</td>
+                  <td>${formatCurrency(item.total)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
           
           <div class="totals">
-            <p>Sous-total: €${invoice.subtotal.toFixed(2)}</p>
-            <p>TVA (20%): €${invoice.tax.toFixed(2)}</p>
-            <p class="total-row">Total: €${invoice.total.toFixed(2)}</p>
+            <p>Sous-total: ${formatCurrency(invoice.subtotal)}</p>
+            <p>TVA (20%): ${formatCurrency(invoice.tax)}</p>
+            <p class="total-row">Total: ${formatCurrency(invoice.total)}</p>
           </div>
         </body>
       </html>
@@ -187,11 +189,11 @@ const InvoiceManager = () => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <FileText className="w-5 h-5 text-blue-600" />
-          Gestion des Factures
+          {t('invoiceManagement')}
         </h3>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
-          Nouvelle Facture
+          {t('newInvoice')}
         </Button>
       </div>
 
@@ -202,7 +204,7 @@ const InvoiceManager = () => {
               <p className="text-2xl font-bold text-blue-600">
                 {invoices.filter(i => i.status === 'draft').length}
               </p>
-              <p className="text-sm text-gray-600">Brouillons</p>
+              <p className="text-sm text-gray-600">{t('drafts')}</p>
             </div>
           </CardContent>
         </Card>
@@ -213,7 +215,7 @@ const InvoiceManager = () => {
               <p className="text-2xl font-bold text-orange-600">
                 {invoices.filter(i => i.status === 'sent').length}
               </p>
-              <p className="text-sm text-gray-600">En attente</p>
+              <p className="text-sm text-gray-600">{t('pending')}</p>
             </div>
           </CardContent>
         </Card>
@@ -224,7 +226,7 @@ const InvoiceManager = () => {
               <p className="text-2xl font-bold text-green-600">
                 {invoices.filter(i => i.status === 'paid').length}
               </p>
-              <p className="text-sm text-gray-600">Payées</p>
+              <p className="text-sm text-gray-600">{t('paidInvoices')}</p>
             </div>
           </CardContent>
         </Card>
@@ -235,7 +237,7 @@ const InvoiceManager = () => {
               <p className="text-2xl font-bold text-red-600">
                 {invoices.filter(i => i.status === 'overdue').length}
               </p>
-              <p className="text-sm text-gray-600">En retard</p>
+              <p className="text-sm text-gray-600">{t('overdueInvoices')}</p>
             </div>
           </CardContent>
         </Card>
@@ -243,19 +245,19 @@ const InvoiceManager = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des Factures</CardTitle>
+          <CardTitle>{t('invoiceList')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>N° Facture</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Échéance</TableHead>
-                <TableHead>Montant</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('invoiceNumber')}</TableHead>
+                <TableHead>{t('client')}</TableHead>
+                <TableHead>{t('date')}</TableHead>
+                <TableHead>{t('dueDate')}</TableHead>
+                <TableHead>{t('amount')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead>{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -265,7 +267,7 @@ const InvoiceManager = () => {
                   <TableCell>{invoice.clientName}</TableCell>
                   <TableCell>{invoice.date}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>€{invoice.total.toLocaleString()}</TableCell>
+                  <TableCell>{formatCurrency(invoice.total)}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(invoice.status)}>
                       {getStatusLabel(invoice.status)}
@@ -307,9 +309,9 @@ const InvoiceManager = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Aperçu de la facture {selectedInvoice.invoiceNumber}
+              {t('invoicePreview')} {selectedInvoice.invoiceNumber}
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
-                Fermer
+                {t('close')}
               </Button>
             </CardTitle>
           </CardHeader>
@@ -317,12 +319,12 @@ const InvoiceManager = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p><strong>Client:</strong> {selectedInvoice.clientName}</p>
-                  <p><strong>Date:</strong> {selectedInvoice.date}</p>
+                  <p><strong>{t('client')}:</strong> {selectedInvoice.clientName}</p>
+                  <p><strong>{t('date')}:</strong> {selectedInvoice.date}</p>
                 </div>
                 <div>
-                  <p><strong>Échéance:</strong> {selectedInvoice.dueDate}</p>
-                  <p><strong>Statut:</strong> 
+                  <p><strong>{t('dueDate')}:</strong> {selectedInvoice.dueDate}</p>
+                  <p><strong>{t('status')}:</strong> 
                     <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>
                       {getStatusLabel(selectedInvoice.status)}
                     </Badge>
@@ -333,10 +335,10 @@ const InvoiceManager = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Quantité</TableHead>
-                    <TableHead>Prix unitaire</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead>{t('description')}</TableHead>
+                    <TableHead>{t('quantity')}</TableHead>
+                    <TableHead>{t('unitPrice')}</TableHead>
+                    <TableHead>{t('total')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -344,17 +346,17 @@ const InvoiceManager = () => {
                     <TableRow key={item.id}>
                       <TableCell>{item.description}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
-                      <TableCell>€{item.unitPrice.toFixed(2)}</TableCell>
-                      <TableCell>€{item.total.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                      <TableCell>{formatCurrency(item.total)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               
               <div className="text-right space-y-1">
-                <p>Sous-total: €{selectedInvoice.subtotal.toFixed(2)}</p>
-                <p>TVA (20%): €{selectedInvoice.tax.toFixed(2)}</p>
-                <p className="text-lg font-bold">Total: €{selectedInvoice.total.toFixed(2)}</p>
+                <p>{t('subtotal')}: {formatCurrency(selectedInvoice.subtotal)}</p>
+                <p>{t('vat')} (20%): {formatCurrency(selectedInvoice.tax)}</p>
+                <p className="text-lg font-bold">{t('total')}: {formatCurrency(selectedInvoice.total)}</p>
               </div>
             </div>
           </CardContent>

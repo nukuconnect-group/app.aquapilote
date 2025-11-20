@@ -12,6 +12,7 @@ import ProductionUnitSelector from './ProductionUnitSelector';
 import TransactionForm from './economics/TransactionForm';
 import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const EconomicsManagement = () => {
   const {
@@ -19,6 +20,7 @@ const EconomicsManagement = () => {
     getUnitFinancialData,
     getGlobalFinancialData
   } = useProductionUnits();
+  const { formatCurrency, t } = useSettings();
 
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [transactions, setTransactions] = useState([
@@ -121,8 +123,8 @@ const EconomicsManagement = () => {
             <div className="flex items-center justify-between mb-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
             </div>
-            <p className="text-2xl font-bold">€{currentData.revenue.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Chiffre d'affaires</p>
+            <p className="text-2xl font-bold">{formatCurrency(currentData.revenue)}</p>
+            <p className="text-sm text-gray-600">{t('revenue')}</p>
           </CardContent>
         </Card>
         
@@ -131,8 +133,8 @@ const EconomicsManagement = () => {
             <div className="flex items-center justify-between mb-2">
               <TrendingDown className="h-5 w-5 text-red-600" />
             </div>
-            <p className="text-2xl font-bold">€{currentData.expenses.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Charges</p>
+            <p className="text-2xl font-bold">{formatCurrency(currentData.expenses)}</p>
+            <p className="text-sm text-gray-600">{t('expenses')}</p>
           </CardContent>
         </Card>
         
@@ -141,8 +143,8 @@ const EconomicsManagement = () => {
             <div className="flex items-center justify-between mb-2">
               <DollarSign className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-2xl font-bold">€{currentData.profit.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Bénéfice net</p>
+            <p className="text-2xl font-bold">{formatCurrency(currentData.profit)}</p>
+            <p className="text-sm text-gray-600">{t('netProfit')}</p>
           </CardContent>
         </Card>
         
@@ -152,7 +154,7 @@ const EconomicsManagement = () => {
               <BarChart3 className="h-5 w-5 text-purple-600" />
             </div>
             <p className="text-2xl font-bold">{profitMargin}%</p>
-            <p className="text-sm text-gray-600">Marge bénéficiaire</p>
+            <p className="text-sm text-gray-600">{t('profitMargin')}</p>
           </CardContent>
         </Card>
       </div>
@@ -197,12 +199,12 @@ const EconomicsManagement = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span>Ventes principales</span>
-                    <span className="font-bold">€{(currentData.revenue * 0.8).toLocaleString()}</span>
+                    <span>{t('primarySales')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.revenue * 0.8)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Ventes secondaires</span>
-                    <span className="font-bold">€{(currentData.revenue * 0.2).toLocaleString()}</span>
+                    <span>{t('secondarySales')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.revenue * 0.2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -215,20 +217,20 @@ const EconomicsManagement = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span>Alimentation</span>
-                    <span className="font-bold">€{(currentData.expenses * 0.4).toLocaleString()}</span>
+                    <span>{t('feed_consumption')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.expenses * 0.4)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Personnel</span>
-                    <span className="font-bold">€{(currentData.expenses * 0.3).toLocaleString()}</span>
+                    <span>{t('staff')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.expenses * 0.3)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Maintenance</span>
-                    <span className="font-bold">€{(currentData.expenses * 0.2).toLocaleString()}</span>
+                    <span>{t('maintenance')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.expenses * 0.2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Autres</span>
-                    <span className="font-bold">€{(currentData.expenses * 0.1).toLocaleString()}</span>
+                    <span>{t('others')}</span>
+                    <span className="font-bold">{formatCurrency(currentData.expenses * 0.1)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -255,7 +257,7 @@ const EconomicsManagement = () => {
                     <span className={`text-sm font-bold ${
                       transaction.type === 'revenue' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.type === 'revenue' ? '+' : ''}{transaction.amount}€
+                      {transaction.type === 'revenue' ? '+' : ''}{formatCurrency(Math.abs(transaction.amount))}
                     </span>
                   </div>
                 ))}
@@ -280,9 +282,9 @@ const EconomicsManagement = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center p-4 bg-blue-50 rounded">
-                  <h4 className="font-semibold text-blue-800">Performance globale</h4>
-                  <p className="text-2xl font-bold text-blue-600">€{globalFinancialData.profit.toLocaleString()}</p>
-                  <p className="text-sm text-blue-600">Bénéfice total toutes unités</p>
+                  <h4 className="font-semibold text-blue-800">{t('globalPerformance')}</h4>
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(globalFinancialData.profit)}</p>
+                  <p className="text-sm text-blue-600">{t('totalProfit')}</p>
                 </div>
                 
                 <div className="text-sm text-gray-600">
