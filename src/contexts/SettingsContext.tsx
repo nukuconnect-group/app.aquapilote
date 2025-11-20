@@ -844,7 +844,7 @@ const translations = {
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [language, setLanguage] = useState<'fr' | 'en'>('fr');
-  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF');
+  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF'); // F CFA par défaut
   const [timezone, setTimezoneState] = useState<string>('');
   const [country, setCountryState] = useState<string>('');
   const [offlineMode, setOfflineModeState] = useState<boolean>(true);
@@ -894,7 +894,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem('app-language', detectedLanguage);
       }
       
-      if (savedCurrency) setCurrency(savedCurrency);
+      // Mettre F CFA par défaut si aucune devise n'est sauvegardée
+      if (savedCurrency) {
+        setCurrency(savedCurrency);
+      } else {
+        setCurrency('XOF'); // F CFA par défaut
+        localStorage.setItem('app-currency', 'XOF');
+      }
+      
       if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
       if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
     } catch (error) {
