@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   
   const { login, register, resetPassword, isLoading, enterDemoMode } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     try {
@@ -389,7 +391,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 className="w-full h-10 sm:h-11 md:h-12 mt-2"
                 onClick={() => {
                   enterDemoMode();
-                  window.location.href = '/dashboard';
+                  navigate('/dashboard');
                 }}
               >
                 Voir la démonstration
