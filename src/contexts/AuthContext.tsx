@@ -178,20 +178,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
+        // La session est automatiquement persistée par Supabase
         await fetchUserData(data.user);
-        setIsLoading(false);
         
         // Marquer le splash screen et l'onboarding comme vus lors de la connexion
         localStorage.setItem('aqua_pilot_splash', 'true');
         localStorage.setItem('privacy_accepted', 'true');
         localStorage.setItem('onboarding_complete', 'true');
         
-        // Redirection automatique vers le dashboard après connexion réussie
-        if (typeof window !== 'undefined') {
-          window.location.href = '/dashboard';
-        }
-        
+        setIsLoading(false);
         return true;
       }
       
