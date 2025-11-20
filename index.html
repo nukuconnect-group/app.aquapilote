@@ -31,49 +31,130 @@
     <meta name="author" content="AQUA PILOT Team" />
     
     <script>
-      // Service Worker avec gestion d'erreur pour iOS
+      // Service Worker avec gestion robuste pour iOS Safari
       if ('serviceWorker' in navigator) {
+        // Attendre que la page soit complètement chargée
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered:', registration);
+          let registration = null;
+          
+          // Fonction pour enregistrer ou mettre à jour le SW
+          const registerSW = () => {
+            navigator.serviceWorker.register('/sw.js', { 
+              scope: '/',
+              updateViaCache: 'none' // Toujours vérifier les mises à jour
+            })
+            .then((reg) => {
+              registration = reg;
+              console.log('✅ SW registered successfully');
               
-              // Forcer la mise à jour sur iOS
-              registration.update();
-              
-              // Écouter les mises à jour
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      // Nouvelle version disponible
-                      if (confirm('Nouvelle version disponible. Recharger ?')) {
-                        window.location.reload();
-                      }
-                    }
+              // Vérifier les mises à jour toutes les 60 secondes
+              setInterval(() => {
+                if (registration) {
+                  registration.update().catch((err) => {
+                    console.warn('SW update check failed:', err);
                   });
                 }
+              }, 60000);
+              
+              // Gérer les nouvelles versions
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (!newWorker) return;
+                
+                let hasShownPrompt = false;
+                
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && 
+                      navigator.serviceWorker.controller && 
+                      !hasShownPrompt) {
+                    hasShownPrompt = true;
+                    
+                    // Demander à l'utilisateur s'il veut mettre à jour
+                    const updateConfirmed = confirm(
+                      'Une nouvelle version est disponible. Voulez-vous mettre à jour maintenant ?'
+                    );
+                    
+                    if (updateConfirmed) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    }
+                  }
+                });
               });
             })
             .catch((err) => {
-              console.warn('SW registration failed:', err);
-              // Continue sans SW sur iOS si échec
+              console.warn('⚠️ SW registration failed (non-critical):', err.message);
+              // L'application fonctionne sans SW, pas d'erreur bloquante
             });
-        });
-        
-        // Gestion des messages du SW
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'CACHE_CLEARED') {
-            console.log('Cache cleared by SW');
+          };
+          
+          // Sur iOS, attendre un peu avant d'enregistrer le SW
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          if (isIOS) {
+            setTimeout(registerSW, 500);
+          } else {
+            registerSW();
           }
+          
+          // Écouter les messages du SW
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data) {
+              switch (event.data.type) {
+                case 'CACHE_CLEARED':
+                  console.log('✅ Cache cleared by SW');
+                  break;
+                case 'SW_UPDATED':
+                  console.log('✅ SW updated successfully');
+                  break;
+              }
+            }
+          });
+          
+          // Recharger si un nouveau SW prend le contrôle
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+              refreshing = true;
+              console.log('🔄 New SW taking control, reloading...');
+              window.location.reload();
+            }
+          });
         });
       }
       
-      // Détecter iOS et ajouter une classe pour les styles spécifiques
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+      // Détecter iOS et ajouter des classes pour les styles spécifiques
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
         document.documentElement.classList.add('ios-device');
+        console.log('📱 iOS Safari detected - Optimizations active');
       }
+      
+      // Prévenir les erreurs de console sur iOS
+      window.addEventListener('error', (event) => {
+        // Log pour débogage mais ne pas bloquer l'app
+        console.warn('Non-critical error caught:', event.message);
+      });
+      
+      window.addEventListener('unhandledrejection', (event) => {
+        // Ignorer les erreurs LockManager sur iOS (non-bloquantes)
+        if (event.reason && event.reason.message && 
+            event.reason.message.includes('LockManager')) {
+          console.warn('LockManager error suppressed (iOS compatibility)');
+          event.preventDefault();
+          return;
+        }
+        
+        // Ignorer les erreurs SW de mise à jour (non-bloquantes)
+        if (event.reason && event.reason.message && 
+            (event.reason.message.includes('ServiceWorker') || 
+             event.reason.message.includes('registration'))) {
+          console.warn('SW update error suppressed (non-critical)');
+          event.preventDefault();
+          return;
+        }
+        
+        console.warn('Unhandled promise rejection:', event.reason);
+      });
     </script>
 
     
