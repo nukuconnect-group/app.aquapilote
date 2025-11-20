@@ -18,7 +18,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/components/ThemeProvider';
-const Header = () => {
+const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -123,7 +123,10 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => window.location.href = '/dashboard?tab=settings'}>
+                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => {
+                    setShowSettings(false);
+                    onNavigate?.('settings');
+                  }}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
@@ -299,7 +302,7 @@ const Header = () => {
                 className="w-full justify-start"
                 onClick={() => {
                   setShowSettings(false);
-                  window.location.href = '/dashboard?tab=settings';
+                  onNavigate?.('settings');
                 }}
               >
                 <UserCircle className="w-4 h-4 mr-2" />
