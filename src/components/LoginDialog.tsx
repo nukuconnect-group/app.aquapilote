@@ -255,7 +255,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               <img 
                 src={aquaPilotLogo} 
                 alt="AQUA PILOT Logo" 
-                className="h-24 sm:h-28 md:h-32 w-auto object-contain"
+                className="h-32 sm:h-36 md:h-40 w-auto object-contain"
               />
             </div>
             <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
