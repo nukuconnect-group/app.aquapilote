@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Thermometer, Building2, Wrench, Fish, Utensils, Heart, Package, DollarSign, Calendar, Cloud, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Shield, Truck, UserCog } from 'lucide-react';
+import { Home, Building2, Wrench, Fish, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -21,66 +21,99 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const { open } = useSidebar();
-  const { t } = useSettings();
+  const { t, language } = useSettings();
   const { user } = useAuth();
 
-  const navigationItems = [
-    { id: 'dashboard', label: t('dashboard'), icon: Home },
-    { id: 'iot-control', label: t('iot-control'), icon: Wifi },
-    { id: 'units', label: t('units'), icon: Building2 },
-    { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
-    { id: 'fish', label: t('fish'), icon: Fish },
-    { id: 'livestock', label: t('livestock'), icon: Beef },
-    { id: 'feeding', label: t('feeding'), icon: Utensils },
-    { id: 'health', label: t('health'), icon: Heart },
-    { id: 'production', label: t('production'), icon: Package },
-    { id: 'accounting', label: t('accounting'), icon: Calculator },
-    { id: 'purchases', label: t('purchases'), icon: ShoppingCart },
-    { id: 'sales', label: t('sales'), icon: ShoppingBag },
-    { id: 'suppliers', label: t('suppliers'), icon: Truck },
-    { id: 'hr', label: t('hr'), icon: UserCheck },
-    { id: 'planning', label: t('planning'), icon: Calendar },
-    { id: 'team', label: t('team'), icon: Users },
-    { id: 'reports', label: t('reports'), icon: FileText },
-    { id: 'settings', label: t('settings'), icon: Settings },
+  const navigationGroups = [
+    {
+      label: language === 'fr' ? 'Tableau de bord' : 'Dashboard',
+      items: [
+        { id: 'dashboard', label: t('dashboard'), icon: Home },
+        { id: 'iot-control', label: t('iot-control'), icon: Wifi },
+        { id: 'units', label: t('units'), icon: Building2 },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Production & Élevage' : 'Production & Livestock',
+      items: [
+        { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
+        { id: 'fish', label: t('fish'), icon: Fish },
+        { id: 'livestock', label: t('livestock'), icon: Beef },
+        { id: 'feeding', label: t('feeding'), icon: Utensils },
+        { id: 'health', label: t('health'), icon: Heart },
+        { id: 'production', label: t('production'), icon: Package },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Gestion Financière' : 'Financial Management',
+      items: [
+        { id: 'accounting', label: t('accounting'), icon: Calculator },
+        { id: 'purchases', label: t('purchases'), icon: ShoppingCart },
+        { id: 'sales', label: t('sales'), icon: ShoppingBag },
+        { id: 'suppliers', label: t('suppliers'), icon: Truck },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Ressources Humaines' : 'Human Resources',
+      items: [
+        { id: 'hr', label: t('hr'), icon: UserCheck },
+        { id: 'team', label: t('team'), icon: Users },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
+      items: [
+        { id: 'planning', label: t('planning'), icon: Calendar },
+        { id: 'reports', label: t('reports'), icon: FileText },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Configuration' : 'Configuration',
+      items: [
+        { id: 'settings', label: t('settings'), icon: Settings },
+      ]
+    }
   ];
 
   // Ajouter l'option admin si l'utilisateur est admin
   if (user?.role === 'admin') {
-    navigationItems.push({
-      id: 'admin',
-      label: t('admin'),
-      icon: UserCog,
+    navigationGroups.push({
+      label: language === 'fr' ? 'Administration' : 'Administration',
+      items: [
+        { id: 'admin', label: t('admin'), icon: UserCog }
+      ]
     });
   }
 
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent className="overflow-y-auto">
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      onClick={() => onTabChange(item.id)}
-                      isActive={isActive}
-                      tooltip={open ? undefined : item.label}
-                    >
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navigationGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        onClick={() => onTabChange(item.id)}
+                        isActive={isActive}
+                        tooltip={open ? undefined : item.label}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );

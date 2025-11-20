@@ -5,13 +5,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Utensils, 
   Heart, 
-  BarChart3, 
   Building, 
   Calendar, 
-  CloudRain, 
   Users, 
   FileText,
-  Wrench,
   Beef,
   Package,
   Calculator,
@@ -19,7 +16,6 @@ import {
   ShoppingCart,
   ShoppingBag,
   Settings,
-  Shield,
   Truck,
   UserCog
 } from 'lucide-react';
@@ -38,21 +34,14 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   const { user } = useAuth();
   
   const menuItems = [
-    // Modules essentiels
+    // Production & Élevage
     { 
-      category: language === 'fr' ? 'Modules Essentiels' : 'Essential Modules',
+      category: language === 'fr' ? 'Production & Élevage' : 'Production & Livestock',
       items: [
         { id: 'infrastructures', label: t('infrastructures'), icon: Building },
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
         { id: 'health', label: t('health'), icon: Heart },
-      ]
-    },
-    // Transformation et production
-    {
-      category: language === 'fr' ? 'Transformation & Production' : 'Transformation & Production',
-      items: [
-        { id: 'transformation', label: t('transformation'), icon: Shield },
         { id: 'production', label: t('production'), icon: Package },
       ]
     },
@@ -79,7 +68,6 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       category: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
       items: [
         { id: 'planning', label: t('planning'), icon: Calendar },
-        { id: 'weather', label: t('weather'), icon: CloudRain },
         { id: 'reports', label: t('reports'), icon: FileText }
       ]
     },
