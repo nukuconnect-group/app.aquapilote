@@ -10,18 +10,18 @@ import EnhancedRegistration from '@/components/EnhancedRegistration';
  */
 const Auth: React.FC = () => {
   const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemoMode } = useAuth();
   const navigate = useNavigate();
 
-  // Redirection automatique si déjà connecté
+  // Redirection automatique si déjà connecté ou en mode démo
   useEffect(() => {
-    if (!isLoading && user) {
+    if (!isLoading && (user || isDemoMode)) {
       navigate('/dashboard', { replace: true });
-    } else if (!isLoading && !user) {
+    } else if (!isLoading && !user && !isDemoMode) {
       // S'assurer que la page reste sur /auth si pas connecté
       setShowEnhancedRegister(false);
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, isDemoMode, navigate]);
 
   const handleLogin = () => {
     setShowEnhancedRegister(false);
@@ -32,7 +32,7 @@ const Auth: React.FC = () => {
   };
 
   // Afficher rien si en cours de redirection
-  if (user && !isLoading) {
+  if ((user || isDemoMode) && !isLoading) {
     return null;
   }
 
