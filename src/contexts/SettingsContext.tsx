@@ -5,11 +5,15 @@ interface SettingsContextType {
   theme: 'light' | 'dark' | 'auto';
   language: 'fr' | 'en';
   currency: 'EUR' | 'USD' | 'XOF' | 'MAD';
+  timezone: string;
+  country: string;
   offlineMode: boolean;
   showOfflineIndicator: boolean;
   setTheme: (theme: 'light' | 'dark' | 'auto') => void;
   setLanguage: (language: 'fr' | 'en') => void;
   setCurrency: (currency: 'EUR' | 'USD' | 'XOF' | 'MAD') => void;
+  setTimezone: (timezone: string) => void;
+  setCountry: (country: string) => void;
   setOfflineMode: (enabled: boolean) => void;
   setShowOfflineIndicator: (show: boolean) => void;
   t: (key: string) => string;
@@ -871,6 +875,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setShowOfflineIndicatorState(show);
   };
 
+  const handleSetTimezone = (tz: string) => {
+    setTimezoneState(tz);
+  };
+
+  const handleSetCountry = (c: string) => {
+    setCountryState(c);
+  };
+
   const t = (key: string): string => {
     return translations[language]?.[key] || key;
   };
@@ -912,11 +924,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         theme,
         language,
         currency,
+        timezone,
+        country,
         offlineMode,
         showOfflineIndicator,
         setTheme: handleSetTheme,
         setLanguage: handleSetLanguage,
         setCurrency: handleSetCurrency,
+        setTimezone: handleSetTimezone,
+        setCountry: handleSetCountry,
         setOfflineMode: handleSetOfflineMode,
         setShowOfflineIndicator: handleSetShowOfflineIndicator,
         t,
