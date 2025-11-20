@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
  * Affiche un loader pendant la vérification de la session
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemoMode } = useAuth();
 
   // Afficher un loader pendant la vérification de la session
   if (isLoading) {
@@ -27,8 +27,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Rediriger vers /auth si non connecté
-  if (!user) {
+  // Rediriger vers /auth si non connecté et pas en mode démo
+  if (!user && !isDemoMode) {
     return <Navigate to="/auth" replace />;
   }
 
