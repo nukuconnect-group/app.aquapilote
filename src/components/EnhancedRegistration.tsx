@@ -10,7 +10,6 @@ import { Eye, EyeOff, Building, Users, Fish, Loader2, UserPlus, ChevronLeft, Che
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 interface EnhancedRegistrationProps {
@@ -239,9 +238,13 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
-                <div className="bg-white rounded-full p-3 shadow-xl">
-                  <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
-                </div>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-br from-aqua-600 via-ocean-500 to-aqua-700 bg-clip-text text-transparent drop-shadow-lg" 
+                    style={{
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.1), 4px 4px 8px rgba(0,0,0,0.05)',
+                      WebkitTextStroke: '1px rgba(59, 130, 246, 0.1)'
+                    }}>
+                  AQUAPILOTE
+                </h1>
               </div>
               <DialogTitle className="text-2xl font-bold mb-2 text-foreground">
                 Créer votre compte AQUA PILOT
