@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -91,16 +92,21 @@ const Header = () => {
             </Select>
 
             {/* Paramètres */}
-            <Dialog open={showSettings} onOpenChange={setShowSettings}>
-              <DialogTrigger asChild>
+            <Drawer open={showSettings} onOpenChange={setShowSettings}>
+              <DrawerTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9">
                   <Settings className="w-4 h-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                <SettingsManagement />
-              </DialogContent>
-            </Dialog>
+              </DrawerTrigger>
+              <DrawerContent className="max-h-[96vh] overflow-y-auto">
+                <DrawerHeader>
+                  <DrawerTitle>{language === 'fr' ? 'Paramètres' : 'Settings'}</DrawerTitle>
+                </DrawerHeader>
+                <div className="px-4 pb-4">
+                  <SettingsManagement />
+                </div>
+              </DrawerContent>
+            </Drawer>
             
             {/* Profil utilisateur */}
             {isAuthenticated ? (
@@ -153,12 +159,17 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Profile Dialog */}
-      <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <SettingsManagement />
-        </DialogContent>
-      </Dialog>
+      {/* Profile Drawer */}
+      <Drawer open={showProfile} onOpenChange={setShowProfile}>
+        <DrawerContent className="max-h-[96vh] overflow-y-auto">
+          <DrawerHeader>
+            <DrawerTitle>{language === 'fr' ? 'Profil & Paramètres' : 'Profile & Settings'}</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4">
+            <SettingsManagement />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Login Dialog */}
       <LoginDialog 
