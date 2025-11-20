@@ -1,6 +1,6 @@
 
 // React core imports
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProductionUnitsProvider } from '@/contexts/ProductionUnitsContext';
@@ -16,6 +16,50 @@ import Welcome from '@/pages/Welcome';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
+import { useIOSDetection } from '@/hooks/useIOSDetection';
+
+const AppContent: React.FC = () => {
+  const { isIOSSafari } = useIOSDetection();
+
+  useEffect(() => {
+    // Log pour le débogage iOS
+    if (isIOSSafari) {
+      console.log('Running on iOS Safari - Optimizations active');
+    }
+  }, [isIOSSafari]);
+
+  return (
+    <div style={{ minHeight: '100vh' }}>
+      <Routes>
+        {/* Page d'accueil - Compatible iOS */}
+        <Route path="/" element={<Welcome />} />
+        <Route path="/index.html" element={<Navigate to="/" replace />} />
+        
+        {/* Page d'authentification */}
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        
+        {/* Dashboard protégé par authentification */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Page 404 */}
+        <Route path="/404" element={<NotFound />} />
+        
+        {/* Redirection des routes inconnues vers la page d'accueil */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster />
+      <OfflineIndicator />
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   return (
@@ -27,33 +71,7 @@ const App: React.FC = () => {
               <ProductionUnitsProvider>
                 <IoTProvider>
                   <LogsProvider>
-                    <div style={{ minHeight: '100vh' }}>
-                      <Routes>
-                        {/* Page d'accueil avec splash screen et onboarding */}
-                        <Route path="/" element={<Welcome />} />
-                        
-                        {/* Page d'authentification */}
-                        <Route path="/auth" element={<Auth />} />
-                        
-                        {/* Dashboard protégé par authentification */}
-                        <Route 
-                          path="/dashboard" 
-                          element={
-                            <ProtectedRoute>
-                              <Dashboard />
-                            </ProtectedRoute>
-                          } 
-                        />
-                        
-                        {/* Page 404 */}
-                        <Route path="/404" element={<NotFound />} />
-                        
-                        {/* Redirection des routes inconnues vers 404 */}
-                        <Route path="*" element={<Navigate to="/404" replace />} />
-                      </Routes>
-                      <Toaster />
-                      <OfflineIndicator />
-                    </div>
+                    <AppContent />
                   </LogsProvider>
                 </IoTProvider>
               </ProductionUnitsProvider>
