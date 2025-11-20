@@ -17,6 +17,9 @@ const Auth: React.FC = () => {
   useEffect(() => {
     if (!isLoading && user) {
       navigate('/dashboard', { replace: true });
+    } else if (!isLoading && !user) {
+      // S'assurer que la page reste sur /auth si pas connecté
+      setShowEnhancedRegister(false);
     }
   }, [user, isLoading, navigate]);
 
