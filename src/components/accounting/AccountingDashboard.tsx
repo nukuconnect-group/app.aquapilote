@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calculator, BarChart3, DollarSign, CreditCard, AlertTriangle, Calendar } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AccountingDashboardProps {
   unitData: {
@@ -22,6 +23,7 @@ interface AccountingDashboardProps {
 }
 
 const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) => {
+  const { formatCurrency } = useSettings();
   const profitMargin = unitData.revenue > 0 ? (unitData.profit / unitData.revenue * 100).toFixed(1) : '0';
   
   const expenseCategories = [
@@ -41,7 +43,7 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
               <TrendingUp className="h-5 w-5 text-green-600" />
               <Badge className="bg-green-100 text-green-800">+12%</Badge>
             </div>
-            <p className="text-2xl font-bold">€{unitData.revenue.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formatCurrency(unitData.revenue)}</p>
             <p className="text-sm text-gray-600">Chiffre d'affaires</p>
           </CardContent>
         </Card>
@@ -52,7 +54,7 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
               <TrendingDown className="h-5 w-5 text-red-600" />
               <Badge className="bg-red-100 text-red-800">-5%</Badge>
             </div>
-            <p className="text-2xl font-bold">€{unitData.expenses.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formatCurrency(unitData.expenses)}</p>
             <p className="text-sm text-gray-600">Charges totales</p>
           </CardContent>
         </Card>
@@ -65,7 +67,7 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
                 {profitMargin}%
               </Badge>
             </div>
-            <p className="text-2xl font-bold">€{unitData.profit.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formatCurrency(unitData.profit)}</p>
             <p className="text-sm text-gray-600">Résultat net</p>
           </CardContent>
         </Card>
@@ -78,7 +80,7 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
                 Trésorerie
               </Badge>
             </div>
-            <p className="text-2xl font-bold">€{cashFlow.currentBalance.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formatCurrency(cashFlow.currentBalance)}</p>
             <p className="text-sm text-gray-600">Solde actuel</p>
           </CardContent>
         </Card>
@@ -97,17 +99,17 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-green-600">Entrées</span>
-                <span className="font-bold text-green-600">+€{cashFlow.totalInflow.toLocaleString()}</span>
+                <span className="font-bold text-green-600">+{formatCurrency(cashFlow.totalInflow)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-red-600">Sorties</span>
-                <span className="font-bold text-red-600">-€{cashFlow.totalOutflow.toLocaleString()}</span>
+                <span className="font-bold text-red-600">-{formatCurrency(cashFlow.totalOutflow)}</span>
               </div>
               <hr />
               <div className="flex justify-between items-center">
                 <span className="font-semibold">Solde net</span>
                 <span className={`font-bold ${(cashFlow.totalInflow - cashFlow.totalOutflow) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  €{(cashFlow.totalInflow - cashFlow.totalOutflow).toLocaleString()}
+                  {formatCurrency(cashFlow.totalInflow - cashFlow.totalOutflow)}
                 </span>
               </div>
             </div>
