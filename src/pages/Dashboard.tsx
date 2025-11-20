@@ -40,14 +40,6 @@ const Dashboard: React.FC = () => {
     setShowMobileMenu(false);
   };
 
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab) {
-      setActiveTab(tab);
-    }
-  }, []);
-
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -113,7 +105,7 @@ const Dashboard: React.FC = () => {
               <SidebarTrigger className="ml-2" />
             </div>
             <div className="flex-1 w-full">
-              <Header />
+              <Header onNavigate={setActiveTab} />
             </div>
           </div>
           

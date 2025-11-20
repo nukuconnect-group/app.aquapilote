@@ -110,7 +110,7 @@ const FishManagement = () => {
   return (
     <div className="space-y-6">
       {/* En-tête spécifique à l'unité */}
-      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6">
+      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6 sm:rounded-b-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold mb-2">{unitContent.title}</h2>
