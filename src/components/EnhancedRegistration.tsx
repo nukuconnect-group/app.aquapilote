@@ -169,10 +169,19 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
         const result = await register(fullName, email, password, selectedPlan || 'trial');
         if (result.success) {
-          toast({
-            title: "✅ Inscription réussie",
-            description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
-          });
+          // Vérifier si c'est un message de vérification d'email
+          if (result.error === 'VERIFICATION_EMAIL_SENT') {
+            toast({
+              title: "✅ Inscription réussie ! 📧",
+              description: "Un email de vérification a été envoyé à votre adresse. Veuillez consulter votre boîte de réception et cliquer sur le lien pour activer votre compte avant de vous connecter.",
+              duration: 10000,
+            });
+          } else {
+            toast({
+              title: "✅ Inscription réussie",
+              description: "Vérifiez votre email pour confirmer votre compte. Bienvenue dans AQUA PILOT !"
+            });
+          }
           onSwitchToLogin();
         } else {
           toast({

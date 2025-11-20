@@ -175,10 +175,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         if (import.meta.env.DEV) console.error('Login error:', error.message);
         setIsLoading(false);
+        
+        // Message spécifique si l'email n'est pas vérifié
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.');
+        }
+        
         return false;
       }
 
       if (data.user) {
+        // Vérifier si l'email est confirmé
+        if (!data.user.email_confirmed_at) {
+          setIsLoading(false);
+          throw new Error('Veuillez confirmer votre email avant de vous connecter. Consultez votre boîte de réception.');
+        }
+        
         await fetchUserData(data.user);
         setIsLoading(false);
         
@@ -200,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       if (import.meta.env.DEV) console.error('Login error:', error);
       setIsLoading(false);
-      return false;
+      throw error;
     }
   };
 
@@ -289,7 +301,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         setIsLoading(false);
-        return { success: true };
+        
+        // Message de confirmation pour vérifier l'email
+        return { 
+          success: true, 
+          error: 'VERIFICATION_EMAIL_SENT' // Code spécial pour afficher un message de confirmation
+        };
       }
       
       setIsLoading(false);
