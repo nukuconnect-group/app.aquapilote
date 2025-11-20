@@ -62,8 +62,8 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
       <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0">
         <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
           {/* Logo et titre à gauche */}
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            <div className="min-w-0 flex-1">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <div className="min-w-0">
               <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold truncate">
                 {t('app_title')}
               </h1>
@@ -74,7 +74,85 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
           </div>
 
           {/* Navigation actions à droite */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2">{/* Notifications */}
+            <NotificationsPanel />
+            
+            {/* Langue */}
+            <Select value={language} onValueChange={(value) => setLanguage(value as 'fr' | 'en')}>
+              <SelectTrigger className="w-[60px] sm:w-[70px] lg:w-[80px] h-7 sm:h-8 lg:h-9 text-primary-foreground border-primary-foreground/20 bg-transparent hover:bg-primary-foreground/10 text-xs sm:text-sm">
+                <SelectValue>
+                  <div className="flex items-center gap-1">
+                    <Globe className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                    <span className="uppercase hidden sm:inline">{language}</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                <SelectItem value="en">🇬🇧 English</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Paramètres */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary-foreground hover:bg-primary-foreground/20 h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 p-0"
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+            </Button>
+            
+            {/* Profil utilisateur */}
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 rounded-full p-0">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9">
+                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                        {user?.name ? getInitials(user.name) : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 mobile-dropdown bg-background z-50" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => {
+                    setShowSettings(false);
+                    onNavigate?.('settings');
+                  }}>
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>{t('profile')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => setShowSettings(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>{t('settings')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer touch-action-none text-destructive" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t('logout')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary-foreground hover:bg-primary-foreground/20 h-7 sm:h-8 lg:h-9 px-2 sm:px-3 lg:px-4 text-xs sm:text-sm"
+                onClick={handleLogin}
+              >
+                <User className="w-4 h-4 mr-0 sm:mr-2" />
+                <span className="hidden sm:inline">{language === 'fr' ? 'Connexion' : 'Login'}</span>
+              </Button>
+            )}
             {/* Notifications */}
             <NotificationsPanel />
             
