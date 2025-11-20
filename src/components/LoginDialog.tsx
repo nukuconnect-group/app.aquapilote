@@ -192,6 +192,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onClose();
+          // Redirection vers le dashboard
+          navigate('/dashboard', { replace: true });
         } else {
           toast({
             title: "❌ Erreur de connexion",
