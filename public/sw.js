@@ -1,152 +1,141 @@
-// Service Worker AQUA PILOT - PWA Complète
-const CACHE_NAME = 'aqua-pilot-v2';
-const STATIC_CACHE = 'aqua-pilot-static-v2';
-const DYNAMIC_CACHE = 'aqua-pilot-dynamic-v2';
+// Service Worker AQUA PILOT - Optimisé pour iOS Safari
+const CACHE_VERSION = 'aqua-pilot-v3';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
-// Ressources essentielles à mettre en cache
+// Ressources essentielles (chemins absolus pour iOS)
 const STATIC_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/src/assets/aqua-pilot-logo.png',
-  'https://storage.googleapis.com/gpt-engineer-file-uploads/C3YioAkra3hJ4npw1XZX0HbG8E32/uploads/1758369338751-LOGO AQUA PILOT.png'
+  '/favicon.png'
 ];
 
-// Installation du Service Worker
+// Installation - Simplifiée pour iOS
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+  console.log('[SW] Installing...');
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('[SW] Precaching static files');
-        return cache.addAll(STATIC_FILES).catch(err => {
-          console.error('[SW] Error caching files:', err);
+        // Ne pas bloquer l'installation si le cache échoue (iOS)
+        return cache.addAll(STATIC_FILES).catch((err) => {
+          console.warn('[SW] Cache failed, continuing anyway:', err);
+          return Promise.resolve();
         });
       })
-      .then(() => {
-        console.log('[SW] Installation completed');
-        return self.skipWaiting();
-      })
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activation du Service Worker
+// Activation - Nettoyage des anciens caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker...');
+  console.log('[SW] Activating...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-              console.log('[SW] Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
+          cacheNames
+            .filter((name) => name.startsWith('aqua-pilot-') && name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
         );
       })
-      .then(() => {
-        console.log('[SW] Activation completed');
-        return self.clients.claim();
-      })
+      .then(() => self.clients.claim())
   );
 });
 
-// Stratégie de cache - Cache-first pour fonctionner hors ligne
+// Stratégie Network-First pour iOS (évite le cache agressif)
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
-  // Skip non-GET requests
+  // Ignorer les requêtes non-GET
   if (request.method !== 'GET') return;
   
-  // Ignorer les requêtes non-HTTP
+  // Ignorer les URLs non-HTTP/HTTPS
   if (!request.url.startsWith('http')) return;
+  
+  // Ignorer les requêtes vers Supabase (toujours fraîches)
+  if (request.url.includes('supabase.co')) {
+    return;
+  }
 
-  // Stratégie cache-first agressive pour toutes les ressources
+  // Stratégie Network-First pour iOS Safari
   event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        // Retourner le cache immédiatement si disponible
-        if (cachedResponse) {
-          // Mettre à jour le cache en arrière-plan
-          fetch(request)
-            .then((response) => {
-              if (response && response.status === 200) {
-                const responseToCache = response.clone();
-                caches.open(DYNAMIC_CACHE)
-                  .then((cache) => {
-                    cache.put(request, responseToCache);
-                  });
-              }
-            })
-            .catch(() => {
-              // Ignorer les erreurs réseau en mode hors ligne
-            });
+    fetch(request)
+      .then((response) => {
+        // Si succès, mettre en cache
+        if (response && response.status === 200 && response.type !== 'error') {
+          const responseToCache = response.clone();
           
-          return cachedResponse;
+          // Ne pas bloquer la réponse avec le cache
+          caches.open(DYNAMIC_CACHE)
+            .then((cache) => cache.put(request, responseToCache))
+            .catch((err) => console.warn('[SW] Cache put failed:', err));
         }
-
-        // Si pas en cache, essayer de récupérer
-        return fetch(request)
-          .then((response) => {
-            if (!response || response.status !== 200 || response.type === 'error') {
-              return response;
+        
+        return response;
+      })
+      .catch((error) => {
+        console.log('[SW] Fetch failed, trying cache:', request.url);
+        
+        // Fallback sur le cache
+        return caches.match(request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
             }
-
-            const responseToCache = response.clone();
-            caches.open(DYNAMIC_CACHE)
-              .then((cache) => {
-                cache.put(request, responseToCache);
-              });
-
-            return response;
-          })
-          .catch(() => {
-            // En cas d'échec, retourner la page principale pour les navigations
-            if (request.mode === 'navigate') {
-              return caches.match('/').then(response => {
-                return response || new Response('<!DOCTYPE html><html><head><title>AQUA PILOT</title></head><body><div id="root"></div></body></html>', {
-                  headers: { 'Content-Type': 'text/html' }
+            
+            // Pour les navigations, retourner la page d'index
+            if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+              return caches.match('/index.html')
+                .then((indexResponse) => {
+                  if (indexResponse) return indexResponse;
+                  
+                  // Fallback HTML minimal
+                  return new Response(
+                    '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AQUA PILOT</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>',
+                    {
+                      status: 200,
+                      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                    }
+                  );
                 });
-              });
             }
-
-            // Pour les autres ressources, retourner une réponse vide
-            return new Response('', {
-              status: 200,
-              statusText: 'OK'
+            
+            // Pour les autres ressources, retourner une erreur propre
+            return new Response('Resource not available offline', {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
             });
           });
       })
   );
 });
 
-// Gestion des notifications Push (optionnel)
+// Gestion des notifications Push
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push received');
-  if (event.data) {
+  if (!event.data) return;
+  
+  try {
     const data = event.data.json();
     const options = {
       body: data.body || 'Nouvelle notification AQUA PILOT',
-      icon: '/src/assets/aqua-pilot-logo.png',
-      badge: '/src/assets/aqua-pilot-logo.png',
+      icon: '/favicon.png',
+      badge: '/favicon.png',
       vibrate: [200, 100, 200],
       data: data.data || {},
-      actions: [
-        {
-          action: 'open',
-          title: 'Ouvrir l\'app'
-        },
-        {
-          action: 'close',
-          title: 'Fermer'
-        }
-      ]
+      tag: 'aqua-pilot-notification',
+      renotify: true
     };
     
     event.waitUntil(
       self.registration.showNotification(data.title || 'AQUA PILOT', options)
     );
+  } catch (err) {
+    console.error('[SW] Push notification error:', err);
   }
 });
 
@@ -154,16 +143,45 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
-  if (event.action === 'open' || !event.action) {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Si une fenêtre est déjà ouverte, la focus
+        for (const client of clientList) {
+          if (client.url === '/' && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Sinon ouvrir une nouvelle fenêtre
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
+  );
 });
 
-// Message du SW vers l'app
+// Messages du SW
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys()
+        .then((cacheNames) => {
+          return Promise.all(
+            cacheNames.map((name) => caches.delete(name))
+          );
+        })
+        .then(() => {
+          return self.clients.matchAll();
+        })
+        .then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'CACHE_CLEARED' });
+          });
+        })
+    );
   }
 });

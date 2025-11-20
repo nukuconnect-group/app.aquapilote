@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Waves } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
 
 /**
@@ -12,6 +12,14 @@ import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
 const Welcome: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const [imageError, setImageError] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Marquer comme prêt après un court délai pour iOS
+    const timer = setTimeout(() => setIsReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -24,9 +32,9 @@ const Welcome: React.FC = () => {
     navigate('/auth', { replace: true });
   };
 
-  if (isLoading) {
+  if (isLoading || !isReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
           <p className="text-muted-foreground">Chargement...</p>
@@ -36,15 +44,23 @@ const Welcome: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      <div className="text-center space-y-8 max-w-2xl">
-        {/* Logo AQUA PILOT */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-4">
+      <div className="text-center space-y-8 max-w-2xl w-full">
+        {/* Logo AQUA PILOT avec fallback pour iOS */}
         <div className="flex justify-center mb-8">
-          <img 
-            src={aquaPilotLogo} 
-            alt="AQUA PILOT Logo" 
-            className="h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 w-auto object-contain"
-          />
+          {!imageError ? (
+            <img 
+              src={aquaPilotLogo} 
+              alt="AQUA PILOT Logo" 
+              className="h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 w-auto object-contain transition-opacity duration-300"
+              onError={() => setImageError(true)}
+              loading="eager"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-48 sm:h-56 md:h-64">
+              <Waves className="h-32 w-32 text-primary" />
+            </div>
+          )}
         </div>
 
         {/* Titre et description */}
