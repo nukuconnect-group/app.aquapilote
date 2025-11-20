@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileMenuModal from '@/components/MobileMenuModal';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import OfflineSyncIndicator from '@/components/OfflineSyncIndicator';
 import IntelligentDashboard from '@/components/IntelligentDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
 import IoTControlCenter from '@/components/IoTControlCenter';
@@ -130,6 +131,9 @@ const Dashboard: React.FC = () => {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
+        
+        {/* Offline Sync Indicator */}
+        <OfflineSyncIndicator />
       </div>
     </SidebarProvider>
   );
