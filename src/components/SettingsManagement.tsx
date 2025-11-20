@@ -47,30 +47,42 @@ const SettingsManagement = () => {
   }, [user]);
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 rounded-xl text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('settings')}</h2>
-            <p className="text-aqua-100 text-sm sm:text-base">
+    <div className="space-y-4 sm:space-y-6 w-full">
+      {/* En-tête - Pleine largeur sur mobile */}
+      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">{t('settings')}</h2>
+            <p className="text-aqua-100 text-xs sm:text-sm md:text-base">
               {language === 'fr' ? 'Configuration et préférences du système' : 'System configuration and preferences'}
             </p>
           </div>
-          <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-aqua-100" />
+          <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-aqua-100 shrink-0" />
         </div>
       </div>
 
       {/* Tabs responsives */}
-      <Tabs defaultValue="profile" className="space-y-4">
-        <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 min-w-[600px] sm:min-w-0">
-            <TabsTrigger value="profile" className="text-xs px-2">{t('profile')}</TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs px-2">{t('notifications')}</TabsTrigger>
-            <TabsTrigger value="appearance" className="text-xs px-2">{t('appearance')}</TabsTrigger>
-            <TabsTrigger value="security" className="text-xs px-2">{language === 'fr' ? 'Sécurité' : 'Security'}</TabsTrigger>
-            <TabsTrigger value="system" className="text-xs px-2">{language === 'fr' ? 'Système' : 'System'}</TabsTrigger>
-            <TabsTrigger value="backup" className="text-xs px-2">{t('backup_restore')}</TabsTrigger>
+      <Tabs defaultValue="profile" className="space-y-4 w-full">
+        <div className="overflow-x-auto -mx-4 sm:-mx-0 px-4 sm:px-0">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 min-w-max sm:min-w-0">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {t('profile')}
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {t('notifications')}
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {t('appearance')}
+            </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {language === 'fr' ? 'Sécurité' : 'Security'}
+            </TabsTrigger>
+            <TabsTrigger value="system" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {language === 'fr' ? 'Système' : 'System'}
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+              {t('backup_restore')}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -85,19 +97,21 @@ const SettingsManagement = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nom">{t('full_name')}</Label>
+                <div className="w-full">
+                  <Label htmlFor="nom" className="text-xs sm:text-sm">{t('full_name')}</Label>
                   <Input 
                     id="nom" 
                     value={userProfile.nom} 
-                    onChange={e => setUserProfile({...userProfile, nom: e.target.value})} 
+                    onChange={e => setUserProfile({...userProfile, nom: e.target.value})}
+                    className="mt-1 h-9 sm:h-10 text-sm"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="email">{t('email')}</Label>
+                <div className="w-full">
+                  <Label htmlFor="email" className="text-xs sm:text-sm">{t('email')}</Label>
                   <Input 
                     id="email" 
-                    type="email" 
+                    type="email"
+                    className="mt-1 h-9 sm:h-10 text-sm"
                     value={userProfile.email} 
                     onChange={e => setUserProfile({...userProfile, email: e.target.value})} 
                   />
