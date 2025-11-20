@@ -894,13 +894,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem('app-language', detectedLanguage);
       }
       
-      // Mettre F CFA par défaut si aucune devise n'est sauvegardée
-      if (savedCurrency) {
-        setCurrency(savedCurrency);
-      } else {
-        setCurrency('XOF'); // F CFA par défaut
-        localStorage.setItem('app-currency', 'XOF');
-      }
+      // FORCER F CFA par défaut - toujours initialiser à XOF
+      setCurrency('XOF'); // F CFA forcé par défaut
+      localStorage.setItem('app-currency', 'XOF');
       
       if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
       if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
