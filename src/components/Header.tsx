@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import SettingsManagement from '@/components/SettingsManagement';
+import ProfileDialog from '@/components/ProfileDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
@@ -21,6 +22,7 @@ import { useTheme } from '@/components/ThemeProvider';
 const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const {
     user,
@@ -124,10 +126,7 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => {
-                    setShowSettings(false);
-                    onNavigate?.('settings');
-                  }}>
+                  <DropdownMenuItem className="cursor-pointer touch-action-none" onClick={() => setShowProfile(true)}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
@@ -328,6 +327,12 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
         </SheetContent>
       </Sheet>
 
+
+      {/* Profile Dialog */}
+      <ProfileDialog 
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
+      />
 
       {/* Login Dialog */}
       <LoginDialog 
