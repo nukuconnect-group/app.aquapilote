@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 console.log('🚀 AQUA PILOT - Application complète restaurée');
 
@@ -39,6 +40,8 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider defaultTheme="light" storageKey="aqua-pilot-theme">
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );

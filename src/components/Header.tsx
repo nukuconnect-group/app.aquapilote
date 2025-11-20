@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/components/ThemeProvider';
 const Header = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -28,6 +31,7 @@ const Header = () => {
   const {
     toast
   } = useToast();
+  const { theme, setTheme } = useTheme();
   const handleLogin = () => {
     if (!isAuthenticated) {
       setIsRegistering(false);
@@ -93,6 +97,26 @@ const Header = () => {
                       </div>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-responsive">Apparence</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="theme-toggle" className="text-sm cursor-pointer">
+                          Mode sombre
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4 text-muted-foreground" />
+                          <Switch
+                            id="theme-toggle"
+                            checked={theme === "dark"}
+                            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                          />
+                          <Moon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="space-y-2">
                     <h3 className="font-medium text-responsive">Préférences</h3>
@@ -140,33 +164,41 @@ const Header = () => {
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 z-50" align="end" forceMount>
+                <DropdownMenuContent className="w-64 z-50 bg-popover" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                      {user.entreprise && <p className="text-xs leading-none text-muted-foreground">
-                          {user.entreprise}
-                        </p>}
+                    <div className="flex items-center space-x-3 py-2">
+                      <Avatar className="w-12 h-12 border-2 border-primary/30">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                          {getInitials(user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-semibold leading-none">
+                          {user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.name}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                        {user.entreprise && <p className="text-xs leading-none text-muted-foreground font-medium">
+                            {user.entreprise}
+                          </p>}
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    <span>{t('profile')}</span>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mon Profil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                  <DropdownMenuItem onClick={() => setShowSettings(true)} className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>{t('settings')}</span>
+                    <span>Paramètres</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>{t('logout')}</span>
+                    <span>Déconnexion</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu> : <Button variant="ghost" size="sm" onClick={handleLogin} className="text-primary-foreground hover:bg-primary-foreground/20 h-9 px-3 text-xs sm:text-sm font-medium">
