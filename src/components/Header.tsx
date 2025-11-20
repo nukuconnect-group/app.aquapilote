@@ -3,8 +3,10 @@ import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -92,21 +94,14 @@ const Header = () => {
             </Select>
 
             {/* Paramètres */}
-            <Drawer open={showSettings} onOpenChange={setShowSettings}>
-              <DrawerTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="max-h-[96vh] overflow-y-auto">
-                <DrawerHeader>
-                  <DrawerTitle>{language === 'fr' ? 'Paramètres' : 'Settings'}</DrawerTitle>
-                </DrawerHeader>
-                <div className="px-4 pb-4">
-                  <SettingsManagement />
-                </div>
-              </DrawerContent>
-            </Drawer>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 sm:h-9 sm:w-9"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
             
             {/* Profil utilisateur */}
             {isAuthenticated ? (
@@ -159,17 +154,183 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Profile Drawer */}
-      <Drawer open={showProfile} onOpenChange={setShowProfile}>
-        <DrawerContent className="max-h-[96vh] overflow-y-auto">
-          <DrawerHeader>
-            <DrawerTitle>{language === 'fr' ? 'Profil & Paramètres' : 'Profile & Settings'}</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-4 pb-4">
-            <SettingsManagement />
+      {/* Settings Sidebar */}
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent side="right" className="w-full sm:w-[440px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{language === 'fr' ? 'Paramètres & Profil' : 'Settings & Profile'}</SheetTitle>
+          </SheetHeader>
+          
+          <div className="space-y-6 mt-6">
+            {/* Profil utilisateur */}
+            {isAuthenticated && user && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm">{language === 'fr' ? 'Profil' : 'Profile'}</h3>
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                      {user.name ? getInitials(user.name) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-semibold">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    {user.role && (
+                      <Badge variant="secondary" className="mt-1 text-xs">
+                        {user.role}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Localisation */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm">{language === 'fr' ? 'Localisation' : 'Location'}</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{language === 'fr' ? 'Pays' : 'Country'}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{timezone.split('/')[1]?.replace('_', ' ') || 'Auto'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{language === 'fr' ? 'Fuseau horaire' : 'Timezone'}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{timezone || 'Auto'}</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Langue */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm">{language === 'fr' ? 'Préférences' : 'Preferences'}</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="language-select" className="text-sm">
+                    {language === 'fr' ? 'Langue' : 'Language'}
+                  </Label>
+                  <Select value={language} onValueChange={(value) => setLanguage(value as 'fr' | 'en')}>
+                    <SelectTrigger id="language-select" className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="theme-select" className="text-sm">
+                    {language === 'fr' ? 'Thème' : 'Theme'}
+                  </Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={theme === 'light' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTheme('light')}
+                      className="w-20"
+                    >
+                      <Sun className="w-4 h-4 mr-1" />
+                      {language === 'fr' ? 'Clair' : 'Light'}
+                    </Button>
+                    <Button
+                      variant={theme === 'dark' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTheme('dark')}
+                      className="w-20"
+                    >
+                      <Moon className="w-4 h-4 mr-1" />
+                      {language === 'fr' ? 'Sombre' : 'Dark'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Notifications */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm">{language === 'fr' ? 'Notifications' : 'Notifications'}</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <Label htmlFor="email-notif" className="text-sm cursor-pointer">
+                    {language === 'fr' ? 'Notifications email' : 'Email notifications'}
+                  </Label>
+                  <Switch id="email-notif" defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <Label htmlFor="push-notif" className="text-sm cursor-pointer">
+                    {language === 'fr' ? 'Notifications push' : 'Push notifications'}
+                  </Label>
+                  <Switch id="push-notif" defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <Label htmlFor="alerts-notif" className="text-sm cursor-pointer">
+                    {language === 'fr' ? 'Alertes système' : 'System alerts'}
+                  </Label>
+                  <Switch id="alerts-notif" defaultChecked />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => {
+                  setShowSettings(false);
+                  setShowProfile(true);
+                }}
+              >
+                <UserCircle className="w-4 h-4 mr-2" />
+                {language === 'fr' ? 'Voir tous les paramètres' : 'View all settings'}
+              </Button>
+              
+              {isAuthenticated && (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setShowSettings(false);
+                    handleLogout();
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {language === 'fr' ? 'Déconnexion' : 'Logout'}
+                </Button>
+              )}
+            </div>
           </div>
-        </DrawerContent>
-      </Drawer>
+        </SheetContent>
+      </Sheet>
+
+      {/* Profile Dialog (pour tous les paramètres) */}
+      <Dialog open={showProfile} onOpenChange={setShowProfile}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <SettingsManagement />
+        </DialogContent>
+      </Dialog>
 
       {/* Login Dialog */}
       <LoginDialog 
