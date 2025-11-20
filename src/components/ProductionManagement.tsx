@@ -22,7 +22,7 @@ const ProductionManagement = () => {
         <div className="bg-gradient-ocean p-responsive rounded-xl text-primary-foreground">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-responsive">
             <div>
-              <h2 className="text-responsive-title font-bold mb-2">Gestion de Production</h2>
+              <h2 className="text-responsive-title font-bold mb-2">Gestion des Cycles</h2>
               <p className="text-primary-foreground/80 text-responsive">Suivi des cycles et performances</p>
             </div>
           </div>
@@ -66,7 +66,7 @@ const ProductionManagement = () => {
       <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Production - {activeUnit.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Cycles - {activeUnit.name}</h2>
             <p className="text-green-100 text-sm sm:text-base">Suivi des cycles et performances</p>
             <div className="mt-2 flex flex-wrap items-center space-x-4 text-xs sm:text-sm">
               <span>Type: {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}</span>
