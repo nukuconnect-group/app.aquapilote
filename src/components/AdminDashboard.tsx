@@ -17,6 +17,7 @@ import { userCreationSchema } from '@/lib/validation';
 import { useLogs } from '@/contexts/LogsContext';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import AdminAlertNotification from './AdminAlertNotification';
 
 interface UserProfile {
   id: string;
@@ -408,12 +409,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Notifications en temps réel */}
+      <AdminAlertNotification />
+      
       <div className="bg-gradient-to-r from-primary/90 to-aqua-primary/80 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold mb-2">Tableau de bord administrateur</h2>
             <p className="text-primary-foreground/80 text-sm sm:text-base">
-              Supervision complète de l'application
+              Supervision complète de l'application avec alertes en temps réel
             </p>
           </div>
           <BarChart3 className="w-8 h-8 text-primary-foreground/80" />
