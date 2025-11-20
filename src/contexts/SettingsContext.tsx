@@ -765,9 +765,33 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [language, setLanguage] = useState<'fr' | 'en'>('fr');
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF' | 'MAD'>('XOF');
+  const [timezone, setTimezoneState] = useState<string>('');
+  const [country, setCountryState] = useState<string>('');
   const [offlineMode, setOfflineModeState] = useState<boolean>(true);
   const [showOfflineIndicator, setShowOfflineIndicatorState] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Détecter automatiquement le fuseau horaire et le pays
+  useEffect(() => {
+    const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setTimezoneState(detectedTimezone);
+    
+    // Détecter le pays basé sur le fuseau horaire
+    const timezoneToCountry: { [key: string]: string } = {
+      'Europe/Paris': 'France',
+      'Europe/London': 'United Kingdom',
+      'America/New_York': 'United States',
+      'Africa/Abidjan': 'Côte d\'Ivoire',
+      'Africa/Casablanca': 'Maroc',
+      'Africa/Dakar': 'Sénégal',
+      'Africa/Lagos': 'Nigeria',
+      'Asia/Dubai': 'UAE',
+      'Asia/Tokyo': 'Japan'
+    };
+    
+    const detectedCountry = timezoneToCountry[detectedTimezone] || detectedTimezone.split('/')[1]?.replace(/_/g, ' ') || 'Unknown';
+    setCountryState(detectedCountry);
+  }, []);
 
   // Initialisation sûre après le montage du composant
   useEffect(() => {
