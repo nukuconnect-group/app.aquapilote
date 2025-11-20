@@ -43,7 +43,7 @@ const Welcome: React.FC = () => {
           <img 
             src={aquaPilotLogo} 
             alt="AQUA PILOT Logo" 
-            className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto object-contain"
+            className="h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 w-auto object-contain"
           />
         </div>
 
