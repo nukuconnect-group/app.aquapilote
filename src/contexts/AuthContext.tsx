@@ -36,6 +36,9 @@ interface AuthContextType {
   setSelectedSubscriptionPlan: (plan: string | null) => void;
   hasSelectedPlan: boolean;
   completeSubscriptionSelection: () => void;
+  isDemoMode: boolean;
+  enterDemoMode: () => void;
+  exitDemoMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<string | null>(null);
   const [hasSelectedPlan, setHasSelectedPlan] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Fetch user profile and roles from Supabase
   const fetchUserData = async (supabaseUser: SupabaseUser) => {
@@ -330,6 +334,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSession(null);
     setHasSeenOnboarding(false);
+    setIsDemoMode(false);
+  };
+
+  const enterDemoMode = () => {
+    setIsDemoMode(true);
+    setIsLoading(false);
+  };
+
+  const exitDemoMode = () => {
+    setIsDemoMode(false);
   };
 
   return (
@@ -347,7 +361,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       selectedSubscriptionPlan,
       setSelectedSubscriptionPlan,
       hasSelectedPlan,
-      completeSubscriptionSelection
+      completeSubscriptionSelection,
+      isDemoMode,
+      enterDemoMode,
+      exitDemoMode
     }}>
       {children}
     </AuthContext.Provider>
