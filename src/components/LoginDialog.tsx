@@ -140,19 +140,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       try {
         const result = await register(name, email, password, selectedPlan || 'trial');
         if (result.success) {
-          // Vérifier si c'est un message de vérification d'email
-          if (result.error === 'VERIFICATION_EMAIL_SENT') {
-            toast({
-              title: "✅ Inscription réussie ! 📧",
-              description: "Un email de vérification a été envoyé à votre adresse. Veuillez consulter votre boîte de réception et cliquer sur le lien pour activer votre compte.",
-              duration: 8000,
-            });
-          } else {
-            toast({
-              title: "✅ Inscription réussie",
-              description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
-            });
-          }
+          toast({
+            title: "✅ Inscription réussie",
+            description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
+          });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onToggleMode();
         } else {
@@ -201,11 +192,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onClose();
+        } else {
+          toast({
+            title: "❌ Erreur de connexion",
+            description: "Email ou mot de passe incorrect. Vérifiez vos identifiants.",
+            variant: "destructive",
+          });
         }
-      } catch (error: any) {
+      } catch (error) {
         toast({
-          title: "❌ Erreur de connexion",
-          description: error?.message || "Email ou mot de passe incorrect. Vérifiez vos identifiants.",
+          title: "❌ Erreur technique",
+          description: "Problème de connexion. Vérifiez votre connexion internet.",
           variant: "destructive",
         });
       }
