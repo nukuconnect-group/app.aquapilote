@@ -8,7 +8,6 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/clientConfig';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
@@ -252,13 +251,13 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-white rounded-full p-3 shadow-xl">
-                <img 
-                  src={aquaPilotLogo} 
-                  alt="AQUA PILOT" 
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-                />
-              </div>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-br from-aqua-600 via-ocean-500 to-aqua-700 bg-clip-text text-transparent drop-shadow-lg" 
+                  style={{
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.1), 4px 4px 8px rgba(0,0,0,0.05)',
+                    WebkitTextStroke: '1px rgba(59, 130, 246, 0.1)'
+                  }}>
+                AQUAPILOTE
+              </h1>
             </div>
             <DialogTitle className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               {showResetPassword ? 'Réinitialiser le mot de passe' : isRegistering ? 'Créer un compte' : 'Se connecter'}
