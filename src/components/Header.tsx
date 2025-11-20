@@ -59,8 +59,8 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
   return <>
-      <header className="bg-emerald-800 h-12 lg:h-14 w-screen shadow-md m-0 p-0 left-0 right-0">
-        <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 md:px-5 lg:px-6 m-0">
+      <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0">
+        <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
           {/* Logo et titre à gauche */}
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             <div className="min-w-0 flex-1">
