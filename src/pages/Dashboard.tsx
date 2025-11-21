@@ -11,7 +11,6 @@ import AdminDashboard from '@/components/AdminDashboard';
 import IoTControlCenter from '@/components/IoTControlCenter';
 import ProductionUnitsManagement from '@/components/ProductionUnitsManagement';
 import InfrastructureManagement from '@/components/InfrastructureManagement';
-import FishManagement from '@/components/FishManagement';
 import LivestockManagement from '@/components/LivestockManagement';
 import FeedingManagement from '@/components/FeedingManagement';
 import ProphylaxieManagement from '@/components/ProphylaxieManagement';
@@ -51,8 +50,6 @@ const Dashboard: React.FC = () => {
         return <ProductionUnitsManagement />;
       case 'infrastructures':
         return <InfrastructureManagement />;
-      case 'fish':
-        return <FishManagement />;
       case 'livestock':
         return <LivestockManagement />;
       case 'feeding':
