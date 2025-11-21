@@ -10,7 +10,7 @@ import PWAInstallPrompt from './PWAInstallPrompt';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
 import InfrastructureManagement from './InfrastructureManagement';
-import FishManagement from './FishManagement';
+import LivestockManagement from './LivestockManagement';
 import FeedingManagement from './FeedingManagement';
 import ProphylaxieManagement from './ProphylaxieManagement';
 import TransformationManagement from './TransformationManagement';
@@ -48,10 +48,8 @@ const MainLayout = () => {
         return <ProductionUnitsManagement />;
       case 'infrastructures':
         return <InfrastructureManagement />;
-      case 'fish':
-        return <FishManagement />;
       case 'livestock':
-        return <FishManagement />;
+        return <LivestockManagement />;
       case 'feeding':
         return <FeedingManagement />;
       case 'health':
