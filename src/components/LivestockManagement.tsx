@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Activity, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import SmartAlerts from './alerts/SmartAlerts';
 
 interface LivestockBatch {
   id: string;
@@ -191,6 +192,51 @@ const LivestockManagement = () => {
   const totalWeight = filteredBatches.reduce((sum, batch) => sum + batch.totalWeight, 0);
   const healthyBatches = filteredBatches.filter(batch => batch.status === 'healthy').length;
 
+  // Calcul des métriques pour les alertes
+  const [alertsData, setAlertsData] = useState<any>(null);
+
+  useEffect(() => {
+    if (filteredBatches.length > 0) {
+      // Calcul des métriques moyennes
+      const totalMortality = filteredBatches.reduce((sum, batch) => {
+        const mortality = batch.controlRecords?.reduce((s, r) => s + r.mortality, 0) || 0;
+        return sum + mortality;
+      }, 0);
+
+      const avgGrowthRate = filteredBatches.reduce((sum, batch) => {
+        if (batch.controlRecords && batch.controlRecords.length > 1) {
+          const records = batch.controlRecords.sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          const lastRecord = records[records.length - 1];
+          const firstRecord = records[0];
+          const days = Math.max(1, Math.floor(
+            (new Date(lastRecord.date).getTime() - new Date(firstRecord.date).getTime()) / (1000 * 60 * 60 * 24)
+          ));
+          const growth = (lastRecord.averageWeight - firstRecord.averageWeight) / days;
+          return sum + growth;
+        }
+        return sum;
+      }, 0) / Math.max(1, filteredBatches.filter(b => b.controlRecords && b.controlRecords.length > 1).length);
+
+      // Paramètres eau moyens (simulation - à remplacer par vraies données)
+      const avgTemp = 26.5;
+      const avgPh = 7.2;
+      const avgOxygen = 6.5;
+
+      setAlertsData({
+        quantity: totalQuantity,
+        mortality: totalMortality,
+        growthRate: avgGrowthRate,
+        temperature: avgTemp,
+        ph: avgPh,
+        oxygen: avgOxygen,
+        feedingEfficiency: 1.52,
+        unitName: selectedUnit === 'all' ? 'Toutes les unités' : units.find(u => u.id === selectedUnit)?.name
+      });
+    }
+  }, [filteredBatches, selectedUnit, units]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* En-tête */}
@@ -364,6 +410,22 @@ const LivestockManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Alertes intelligentes */}
+      {alertsData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Alertes intelligentes
+            </CardTitle>
+            <CardDescription>Surveillance automatique des performances</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Statistiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle } from 'lucide-react';
+import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import ProductionCycleForm from './production/ProductionCycleForm';
@@ -45,6 +46,44 @@ const ProductionManagement = () => {
   }
 
   const unitCycles = [...getUnitCycles(activeUnit.id), ...customCycles.filter(c => c.unitId === activeUnit.id)];
+
+  const [cycleAlertsData, setCycleAlertsData] = useState<any>(null);
+
+  useEffect(() => {
+    if (unitCycles.length > 0) {
+      const activeCycles = unitCycles.filter(c => c.status === 'active');
+      const totalCurrent = activeCycles.reduce((sum, c) => sum + c.currentQuantity, 0);
+      const totalTarget = activeCycles.reduce((sum, c) => sum + c.targetQuantity, 0);
+      const avgProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+
+      // Calcul d'un indice de performance basé sur les cycles actifs
+      const performanceIndex = activeCycles.reduce((sum, c) => {
+        const progress = (c.currentQuantity / c.targetQuantity) * 100;
+        const daysElapsed = Math.floor(
+          (new Date().getTime() - new Date(c.startDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const expectedProgress = Math.min(100, (daysElapsed / 150) * 100); // 150 jours cycle moyen
+        return sum + (progress / Math.max(1, expectedProgress));
+      }, 0) / Math.max(1, activeCycles.length);
+
+      setCycleAlertsData({
+        quantity: totalCurrent,
+        mortality: totalCurrent * 0.018, // 1.8% mortalité simulée
+        growthRate: 2.5,
+        temperature: 25,
+        ph: 7.5,
+        oxygen: 6.8,
+        feedingEfficiency: 1.45,
+        unitName: activeUnit.name,
+        production: {
+          current: totalCurrent,
+          target: totalTarget,
+          progress: avgProgress,
+          performance: performanceIndex
+        }
+      });
+    }
+  }, [unitCycles, activeUnit]);
 
   const handleSaveCycle = (cycle) => {
     setCustomCycles([...customCycles, cycle]);
@@ -87,6 +126,22 @@ const ProductionManagement = () => {
         
         <ProductionUnitSelector />
       </div>
+
+      {/* Alertes intelligentes pour les cycles */}
+      {cycleAlertsData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Surveillance des cycles
+            </CardTitle>
+            <CardDescription>Alertes automatiques sur les performances des cycles</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SmartAlerts data={cycleAlertsData} unitId={activeUnit.id} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Métriques de production */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
