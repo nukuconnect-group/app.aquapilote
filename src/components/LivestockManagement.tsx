@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Activity, BarChart3 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,6 @@ import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import SmartAlerts from './alerts/SmartAlerts';
 
 interface LivestockBatch {
   id: string;
@@ -33,24 +31,6 @@ interface LivestockBatch {
   currentAge: number; // en jours
   feedingPlan: string;
   lastHealthCheck: string;
-  controlRecords?: ControlFishing[];
-}
-
-interface ControlFishing {
-  id: string;
-  date: string;
-  sampleSize: number;
-  averageWeight: number;
-  minWeight: number;
-  maxWeight: number;
-  mortality: number;
-  mortalityCause?: string;
-  waterTemp: number;
-  ph: number;
-  oxygen: number;
-  rendementM2?: number;
-  feedingAdjustment?: string;
-  notes: string;
 }
 
 const LivestockManagement = () => {
@@ -191,51 +171,6 @@ const LivestockManagement = () => {
   const totalQuantity = filteredBatches.reduce((sum, batch) => sum + batch.quantity, 0);
   const totalWeight = filteredBatches.reduce((sum, batch) => sum + batch.totalWeight, 0);
   const healthyBatches = filteredBatches.filter(batch => batch.status === 'healthy').length;
-
-  // Calcul des métriques pour les alertes
-  const [alertsData, setAlertsData] = useState<any>(null);
-
-  useEffect(() => {
-    if (filteredBatches.length > 0) {
-      // Calcul des métriques moyennes
-      const totalMortality = filteredBatches.reduce((sum, batch) => {
-        const mortality = batch.controlRecords?.reduce((s, r) => s + r.mortality, 0) || 0;
-        return sum + mortality;
-      }, 0);
-
-      const avgGrowthRate = filteredBatches.reduce((sum, batch) => {
-        if (batch.controlRecords && batch.controlRecords.length > 1) {
-          const records = batch.controlRecords.sort((a, b) => 
-            new Date(a.date).getTime() - new Date(b.date).getTime()
-          );
-          const lastRecord = records[records.length - 1];
-          const firstRecord = records[0];
-          const days = Math.max(1, Math.floor(
-            (new Date(lastRecord.date).getTime() - new Date(firstRecord.date).getTime()) / (1000 * 60 * 60 * 24)
-          ));
-          const growth = (lastRecord.averageWeight - firstRecord.averageWeight) / days;
-          return sum + growth;
-        }
-        return sum;
-      }, 0) / Math.max(1, filteredBatches.filter(b => b.controlRecords && b.controlRecords.length > 1).length);
-
-      // Paramètres eau moyens (simulation - à remplacer par vraies données)
-      const avgTemp = 26.5;
-      const avgPh = 7.2;
-      const avgOxygen = 6.5;
-
-      setAlertsData({
-        quantity: totalQuantity,
-        mortality: totalMortality,
-        growthRate: avgGrowthRate,
-        temperature: avgTemp,
-        ph: avgPh,
-        oxygen: avgOxygen,
-        feedingEfficiency: 1.52,
-        unitName: selectedUnit === 'all' ? 'Toutes les unités' : units.find(u => u.id === selectedUnit)?.name
-      });
-    }
-  }, [filteredBatches, selectedUnit, units]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -411,22 +346,6 @@ const LivestockManagement = () => {
         </div>
       </div>
 
-      {/* Alertes intelligentes */}
-      {alertsData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Alertes intelligentes
-            </CardTitle>
-            <CardDescription>Surveillance automatique des performances</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
-          </CardContent>
-        </Card>
-      )}
-
       {/* Statistiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -480,304 +399,93 @@ const LivestockManagement = () => {
         </Card>
       </div>
 
-      {/* Onglets de gestion */}
-      <Tabs defaultValue="lots" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lots">Lots de poissons</TabsTrigger>
-          <TabsTrigger value="control">Pêche de contrôle</TabsTrigger>
-          <TabsTrigger value="charts">Graphiques & Évolution</TabsTrigger>
-        </TabsList>
-
-        {/* Onglet Liste des lots */}
-        <TabsContent value="lots">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lots de poissons</CardTitle>
-              <CardDescription>
-                Gestion et suivi de tous les lots par unité de production
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredBatches.map((batch) => (
-                  <div key={batch.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{batch.species}</h3>
-                          {batch.variety && (
-                            <Badge variant="secondary">{batch.variety}</Badge>
-                          )}
-                          <Badge className={getStatusColor(batch.status)}>
-                            {batch.status === 'healthy' ? 'Sain' : 
-                             batch.status === 'sick' ? 'Malade' :
-                             batch.status === 'quarantine' ? 'Quarantaine' : 'Vendu'}
-                          </Badge>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            {batch.unitName}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Quantité</p>
-                            <p className="font-medium">{batch.quantity.toLocaleString()} individus</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Poids total</p>
-                            <p className="font-medium">{batch.totalWeight.toFixed(1)} kg</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Âge</p>
-                            <p className="font-medium">{batch.currentAge} jours</p>
-                          </div>
-                          {batch.feedingPlan && (
-                            <div>
-                              <p className="text-gray-600">Plan alimentation</p>
-                              <p className="font-medium">{batch.feedingPlan}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Acquisition</p>
-                            <p className="font-medium">{new Date(batch.acquisitionDate).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Récolte prévue</p>
-                            <p className="font-medium">{new Date(batch.expectedHarvestDate).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Source</p>
-                            <p className="font-medium">{batch.source}</p>
-                          </div>
-                        </div>
-
-                        {batch.notes && (
-                          <div className="mt-3">
-                            <p className="text-gray-600 text-sm">Notes</p>
-                            <p className="text-sm">{batch.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 ml-4">
-                        <Button size="sm" variant="outline" onClick={() => setEditingBatch(batch)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteBatch(batch.id)}>
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
+      {/* Liste des lots */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Lots de poissons</CardTitle>
+          <CardDescription>
+            Gestion et suivi de tous les lots par unité de production
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredBatches.map((batch) => (
+              <div key={batch.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg">{batch.species}</h3>
+                      {batch.variety && (
+                        <Badge variant="secondary">{batch.variety}</Badge>
+                      )}
+                      <Badge className={getStatusColor(batch.status)}>
+                        {batch.status === 'healthy' ? 'Sain' : 
+                         batch.status === 'sick' ? 'Malade' :
+                         batch.status === 'quarantine' ? 'Quarantaine' : 'Vendu'}
+                      </Badge>
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        {batch.unitName}
+                      </Badge>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet Pêche de contrôle */}
-        <TabsContent value="control">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pêche de contrôle</CardTitle>
-              <CardDescription>
-                Suivi détaillé des prélèvements et contrôles de qualité
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Graphique croissance poids */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-semibold mb-4">Évolution du poids moyen</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={[
-                    { date: '01/12', poids: 120, rendement: 15 },
-                    { date: '15/12', poids: 135, rendement: 18 },
-                    { date: '01/01', poids: 150, rendement: 21 },
-                    { date: '15/01', poids: 168, rendement: 24 },
-                    { date: '01/02', poids: 185, rendement: 27 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="poids" stroke="#3b82f6" name="Poids (g)" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="rendement" stroke="#10b981" name="Rendement (kg/m²)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Graphique mortalité */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-semibold mb-4">Suivi de la mortalité</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={[
-                    { date: '01/12', mortalite: 12 },
-                    { date: '15/12', mortalite: 8 },
-                    { date: '01/01', mortalite: 15 },
-                    { date: '15/01', mortalite: 5 },
-                    { date: '01/02', mortalite: 7 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité (nb)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Statistiques de contrôle */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-8 h-8 text-blue-600" />
+                    
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-2xl font-bold">162g</p>
-                        <p className="text-sm text-gray-600">Poids moyen actuel</p>
+                        <p className="text-gray-600">Quantité</p>
+                        <p className="font-medium">{batch.quantity.toLocaleString()} individus</p>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="w-8 h-8 text-green-600" />
                       <div>
-                        <p className="text-2xl font-bold">+2.8g/j</p>
-                        <p className="text-sm text-gray-600">Croissance quotidienne</p>
+                        <p className="text-gray-600">Poids total</p>
+                        <p className="font-medium">{batch.totalWeight.toFixed(1)} kg</p>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-8 h-8 text-orange-600" />
                       <div>
-                        <p className="text-2xl font-bold">1.2%</p>
-                        <p className="text-sm text-gray-600">Taux mortalité</p>
+                        <p className="text-gray-600">Âge</p>
+                        <p className="font-medium">{batch.currentAge} jours</p>
+                      </div>
+                      {batch.feedingPlan && (
+                        <div>
+                          <p className="text-gray-600">Plan alimentation</p>
+                          <p className="font-medium">{batch.feedingPlan}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Acquisition</p>
+                        <p className="font-medium">{new Date(batch.acquisitionDate).toLocaleDateString('fr-FR')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Récolte prévue</p>
+                        <p className="font-medium">{new Date(batch.expectedHarvestDate).toLocaleDateString('fr-FR')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Source</p>
+                        <p className="font-medium">{batch.source}</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {batch.notes && (
+                      <div className="mt-3">
+                        <p className="text-gray-600 text-sm">Notes</p>
+                        <p className="text-sm">{batch.notes}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 ml-4">
+                    <Button size="sm" variant="outline" onClick={() => setEditingBatch(batch)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDeleteBatch(batch.id)}>
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet Graphiques & Évolution */}
-        <TabsContent value="charts">
-          <div className="grid gap-4">
-            {/* Graphique performance par espèce */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance par espèce</CardTitle>
-                <CardDescription>Comparaison des performances des différentes espèces</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={[
-                    { espece: 'Tilapia', quantite: 1500, poids: 225, rendement: 28 },
-                    { espece: 'Carpe', quantite: 800, poids: 160, rendement: 22 },
-                    { espece: 'Truite', quantite: 600, poids: 120, rendement: 18 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="espece" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="quantite" fill="#3b82f6" name="Quantité" />
-                    <Bar dataKey="poids" fill="#10b981" name="Poids total (kg)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Graphique tendances temporelles */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendances de croissance globale</CardTitle>
-                <CardDescription>Évolution globale du cheptel</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={[
-                    { mois: 'Sept', individus: 2100, biomasse: 315 },
-                    { mois: 'Oct', individus: 2450, biomasse: 380 },
-                    { mois: 'Nov', individus: 2900, biomasse: 465 },
-                    { mois: 'Dec', individus: 3200, biomasse: 535 },
-                    { mois: 'Jan', individus: 3600, biomasse: 612 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mois" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="individus" stroke="#8b5cf6" name="Individus" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="biomasse" stroke="#f59e0b" name="Biomasse (kg)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* KPIs additionnels */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <BarChart3 className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <p className="text-2xl font-bold">94.2%</p>
-                      <p className="text-sm text-gray-600">Taux de survie</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="text-2xl font-bold">1.52</p>
-                      <p className="text-sm text-gray-600">Indice de conversion</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <p className="text-2xl font-bold">26.5 kg/m²</p>
-                      <p className="text-sm text-gray-600">Densité moyenne</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-8 h-8 text-orange-600" />
-                    <div>
-                      <p className="text-2xl font-bold">145j</p>
-                      <p className="text-sm text-gray-600">Durée cycle moyenne</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            ))}
           </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

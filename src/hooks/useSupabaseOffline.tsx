@@ -1,6 +1,6 @@
 // Hook personnalisé pour gérer les requêtes Supabase avec support hors ligne
 import { useOffline } from './useOffline';
-import { supabase } from '@/integrations/supabase/clientConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSupabaseOffline = () => {
   const { isOnline, addOfflineAction, saveOfflineData, getOfflineData } = useOffline();
