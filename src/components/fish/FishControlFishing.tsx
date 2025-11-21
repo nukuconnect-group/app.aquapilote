@@ -196,13 +196,14 @@ const FishControlFishing = ({ unitId, unitName }: FishControlFishingProps) => {
           </h3>
           <p className="text-sm text-gray-600">Suivi technique et évaluation des performances</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="text-sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle pêche de contrôle
-        </Button>
-
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogTrigger asChild>
+            <Button className="text-sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle pêche de contrôle
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Enregistrer une Pêche de Contrôle</DialogTitle>
             </DialogHeader>

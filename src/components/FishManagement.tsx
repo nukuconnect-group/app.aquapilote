@@ -3,147 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Fish, Plus, TrendingUp, AlertTriangle, Eye, Scale, Trash2, Calendar } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Fish, Plus, TrendingUp, AlertTriangle, Eye, Scale } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import FishControlFishing from './fish/FishControlFishing';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useLogs } from '@/contexts/LogsContext';
-import { useToast } from '@/hooks/use-toast';
-
-interface FishBatch {
-  id: string;
-  species: string;
-  variety: string;
-  quantity: number;
-  averageWeight: number;
-  totalWeight: number;
-  acquisitionDate: string;
-  source: string;
-  status: 'healthy' | 'sick' | 'quarantine' | 'sold';
-  notes: string;
-  expectedHarvestDate: string;
-  currentAge: number;
-  feedingPlan: string;
-  lastHealthCheck: string;
-}
 
 const FishManagement = () => {
   const { activeUnit } = useProductionUnits();
   const { t } = useSettings();
-  const { addLog } = useLogs();
-  const { toast } = useToast();
-  
-  const [showAddBatch, setShowAddBatch] = useState(false);
-  const [batches, setBatches] = useState<FishBatch[]>([
-    {
-      id: '1',
-      species: 'Tilapia',
-      variety: 'Tilapia du Nil',
-      quantity: 1500,
-      averageWeight: 150,
-      totalWeight: 225,
-      acquisitionDate: '2024-01-15',
-      source: 'Écloserie Aqua Plus',
-      status: 'healthy',
-      notes: 'Lot en bonne santé, croissance normale',
-      expectedHarvestDate: '2024-06-15',
-      currentAge: 120,
-      feedingPlan: 'Standard croissance',
-      lastHealthCheck: '2024-03-01'
-    }
-  ]);
-  
-  const [formData, setFormData] = useState({
-    species: '',
-    variety: '',
-    quantity: 0,
-    averageWeight: 0,
-    acquisitionDate: '',
-    source: '',
-    notes: '',
-    expectedHarvestDate: '',
-    feedingPlan: '',
-    status: 'healthy' as const
-  });
-
-  const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade'];
-
-  const handleAddBatch = () => {
-    if (!formData.species || !formData.quantity || !activeUnit) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newBatch: FishBatch = {
-      id: Date.now().toString(),
-      ...formData,
-      totalWeight: formData.quantity * formData.averageWeight / 1000,
-      currentAge: Math.floor((Date.now() - new Date(formData.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24)),
-      lastHealthCheck: new Date().toISOString().split('T')[0]
-    };
-
-    setBatches(prev => [...prev, newBatch]);
-    addLog('Ajout lot', 'Poisson', `Nouveau lot: ${formData.species} - ${formData.quantity} individus`, 'success');
-    
-    toast({
-      title: "Lot ajouté",
-      description: `${formData.quantity} ${formData.species} ajoutés avec succès`
-    });
-
-    setFormData({
-      species: '',
-      variety: '',
-      quantity: 0,
-      averageWeight: 0,
-      acquisitionDate: '',
-      source: '',
-      notes: '',
-      expectedHarvestDate: '',
-      feedingPlan: '',
-      status: 'healthy'
-    });
-    setShowAddBatch(false);
-  };
-
-  const handleDeleteBatch = (id: string) => {
-    const batch = batches.find(b => b.id === id);
-    setBatches(prev => prev.filter(b => b.id !== id));
-    addLog('Suppression lot', 'Poisson', `Lot supprimé: ${batch?.species} - ${batch?.quantity} individus`, 'warning');
-    
-    toast({
-      title: "Lot supprimé",
-      description: "Le lot a été supprimé avec succès"
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'bg-green-100 text-green-800';
-      case 'sick': return 'bg-red-100 text-red-800';
-      case 'quarantine': return 'bg-yellow-100 text-yellow-800';
-      case 'sold': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
   
   if (!activeUnit) {
     return (
       <div className="space-y-4 w-full">
         <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">Gestion des Poissons</h2>
-              <p className="text-primary-foreground/90 text-sm sm:text-base">Suivi des lots et performances zootechniques</p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">Gestion du Cheptel</h2>
+              <p className="text-primary-foreground/90 text-sm sm:text-base">Suivi des poissons et performances zootechniques</p>
             </div>
             <div className="w-full">
               <ProductionUnitSelector />
@@ -234,10 +111,10 @@ const FishManagement = () => {
     <div className="space-y-4 sm:space-y-6 w-full">
       {/* En-tête spécifique à l'unité - Pleine largeur sur mobile */}
       <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 text-white -mx-0 sm:-mx-4 lg:-mx-6 -mt-0 sm:-mt-4 lg:-mt-6">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 break-words">{unitContent.title}</h2>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 break-words">{unitContent.title}</h2>
               <p className="text-aqua-100 text-xs sm:text-sm md:text-base">{unitContent.subtitle}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <span className="truncate">Unité: {activeUnit.name}</span>
@@ -246,134 +123,14 @@ const FishManagement = () => {
                 </Badge>
               </div>
             </div>
-            <Dialog open={showAddBatch} onOpenChange={setShowAddBatch}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto shrink-0" 
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter un lot
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Ajouter un nouveau lot</DialogTitle>
-                  <DialogDescription>
-                    Enregistrez un nouveau lot de poissons pour {activeUnit.name}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Espèce *</Label>
-                      <Select value={formData.species} onValueChange={(value) => setFormData({...formData, species: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {species.map(s => (
-                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Variété</Label>
-                      <Input
-                        value={formData.variety}
-                        onChange={(e) => setFormData({...formData, variety: e.target.value})}
-                        placeholder="Variété"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Quantité *</Label>
-                      <Input
-                        type="number"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
-                        placeholder="Nombre d'individus"
-                      />
-                    </div>
-                    <div>
-                      <Label>Poids moyen (g)</Label>
-                      <Input
-                        type="number"
-                        value={formData.averageWeight}
-                        onChange={(e) => setFormData({...formData, averageWeight: parseInt(e.target.value) || 0})}
-                        placeholder="Poids en grammes"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Date d'acquisition</Label>
-                    <Input
-                      type="date"
-                      value={formData.acquisitionDate}
-                      onChange={(e) => setFormData({...formData, acquisitionDate: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Source/Fournisseur</Label>
-                    <Input
-                      value={formData.source}
-                      onChange={(e) => setFormData({...formData, source: e.target.value})}
-                      placeholder="Nom du fournisseur"
-                    />
-                  </div>
-
-                  {activeUnit.type !== 'transformation' && activeUnit.type !== 'conservation' && (
-                    <div>
-                      <Label>Plan d'alimentation</Label>
-                      <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Standard croissance">Standard croissance</SelectItem>
-                          <SelectItem value="Intensif">Intensif</SelectItem>
-                          <SelectItem value="Extensif">Extensif</SelectItem>
-                          <SelectItem value="Finition">Finition</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <div>
-                    <Label>Date de récolte prévue</Label>
-                    <Input
-                      type="date"
-                      value={formData.expectedHarvestDate}
-                      onChange={(e) => setFormData({...formData, expectedHarvestDate: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Notes</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                      placeholder="Observations, remarques..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowAddBatch(false)}>
-                    Annuler
-                  </Button>
-                  <Button onClick={handleAddBatch}>
-                    Ajouter le lot
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              variant="outline" 
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto shrink-0" 
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau suivi
+            </Button>
           </div>
           
           <div className="w-full">
@@ -640,84 +397,10 @@ const FishManagement = () => {
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle>Historique des lots</CardTitle>
+              <CardTitle>Historique des évolutions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {batches.filter(b => b.status !== 'sold').length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Aucun lot actif</p>
-                ) : (
-                  batches.filter(b => b.status !== 'sold').map((batch) => (
-                    <div key={batch.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">{batch.species}</h3>
-                            {batch.variety && (
-                              <Badge variant="secondary">{batch.variety}</Badge>
-                            )}
-                            <Badge className={getStatusColor(batch.status)}>
-                              {batch.status === 'healthy' ? 'Sain' : 
-                               batch.status === 'sick' ? 'Malade' :
-                               batch.status === 'quarantine' ? 'Quarantaine' : 'Vendu'}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Quantité</p>
-                              <p className="font-medium">{batch.quantity.toLocaleString()} individus</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Poids total</p>
-                              <p className="font-medium">{batch.totalWeight.toFixed(1)} kg</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Âge</p>
-                              <p className="font-medium">{batch.currentAge} jours</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Source</p>
-                              <p className="font-medium">{batch.source || 'N/A'}</p>
-                            </div>
-                          </div>
-
-                          {batch.notes && (
-                            <div className="mt-3 text-sm">
-                              <p className="text-muted-foreground">Notes:</p>
-                              <p className="text-foreground">{batch.notes}</p>
-                            </div>
-                          )}
-
-                          <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                            {batch.feedingPlan && (
-                              <div>
-                                <p className="text-muted-foreground">Plan alimentation</p>
-                                <p className="font-medium">{batch.feedingPlan}</p>
-                              </div>
-                            )}
-                            {batch.expectedHarvestDate && (
-                              <div>
-                                <p className="text-muted-foreground">Récolte prévue</p>
-                                <p className="font-medium">{new Date(batch.expectedHarvestDate).toLocaleDateString('fr-FR')}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteBatch(batch.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <p className="text-gray-500">Historique des données pour l'unité {activeUnit.name}</p>
             </CardContent>
           </Card>
         </TabsContent>

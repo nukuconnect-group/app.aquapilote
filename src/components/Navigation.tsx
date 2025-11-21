@@ -22,6 +22,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: 'units', label: t('units'), icon: Building2 },
     { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
     { id: 'fish', label: t('fish'), icon: Fish },
+    { id: 'livestock', label: t('livestock'), icon: Beef },
     { id: 'feeding', label: t('feeding'), icon: Utensils },
     { id: 'health', label: t('health'), icon: Heart },
     { id: 'production', label: t('production'), icon: Package },
