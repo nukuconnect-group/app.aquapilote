@@ -63,8 +63,8 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="light" storageKey="aqua-pilot-theme">
+    <ThemeProvider defaultTheme="light" storageKey="aqua-pilot-theme">
+      <ErrorBoundary>
         <BrowserRouter>
           <SettingsProvider>
             <AuthProvider>
@@ -78,8 +78,8 @@ const App: React.FC = () => {
             </AuthProvider>
           </SettingsProvider>
         </BrowserRouter>
-      </ThemeProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 };
 
