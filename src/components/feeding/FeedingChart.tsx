@@ -51,43 +51,46 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              Évolution du nourrissage
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+              <span className="break-words">Évolution du nourrissage</span>
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Cycle: {cycleName}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">Cycle: {cycleName}</p>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <div className="flex items-center gap-2 mb-1">
-              <Badge variant={missedFeedings > 0 ? "destructive" : "secondary"}>
+              <Badge variant={missedFeedings > 0 ? "destructive" : "secondary"} className="text-xs sm:text-sm">
                 {complianceRate}% de conformité
               </Badge>
             </div>
             {missedFeedings > 0 && (
               <div className="flex items-center gap-1 text-xs text-red-600">
-                <AlertTriangle className="w-3 h-3" />
+                <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                 {missedFeedings} nourrissage(s) raté(s)
               </div>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-64 w-full">
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        <div className="h-56 sm:h-64 w-full overflow-x-auto">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={feedingData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="date" 
                 tickFormatter={formatDate}
-                fontSize={12}
+                fontSize={10}
+                angle={-45}
+                textAnchor="end"
+                height={60}
               />
               <YAxis 
-                label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft' }}
-                fontSize={12}
+                label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+                fontSize={10}
               />
               <Tooltip 
                 labelFormatter={(value) => `Date: ${formatDate(value)}`}
@@ -95,6 +98,7 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
                   `${value} kg`,
                   name === 'planned' ? 'Prévu' : 'Réalisé'
                 ]}
+                contentStyle={{ fontSize: 11 }}
               />
               <Line 
                 type="monotone" 
@@ -102,7 +106,7 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
                 stroke="#8884d8" 
                 strokeDasharray="5 5"
                 name="planned"
-                dot={{ fill: '#8884d8', r: 4 }}
+                dot={{ fill: '#8884d8', r: 3 }}
               />
               <Line 
                 type="monotone" 
@@ -115,7 +119,7 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
                     <circle
                       cx={props.cx}
                       cy={props.cy}
-                      r={4}
+                      r={3}
                       fill={data?.missed ? '#ef4444' : '#82ca9d'}
                       stroke={data?.missed ? '#dc2626' : '#82ca9d'}
                       strokeWidth={2}
@@ -130,7 +134,7 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
                     x={entry.date} 
                     stroke="#ef4444" 
                     strokeDasharray="2 2"
-                    label={{ value: "Raté", position: "top" }}
+                    label={{ value: "Raté", position: "top", style: { fontSize: 10 } }}
                   />
                 )
               )}
@@ -138,22 +142,22 @@ const FeedingChart = ({ records, cycleId, cycleName }: FeedingChartProps) => {
           </ResponsiveContainer>
         </div>
         
-        <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+        <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 sm:gap-4 text-center">
           <div className="p-2 bg-blue-50 rounded">
-            <p className="text-xs text-blue-600 font-medium">Moyenne planifiée</p>
-            <p className="text-lg font-bold text-blue-800">
+            <p className="text-[10px] sm:text-xs text-blue-600 font-medium">Moyenne planifiée</p>
+            <p className="text-sm sm:text-lg font-bold text-blue-800">
               {(feedingData.reduce((sum, d) => sum + d.planned, 0) / feedingData.length).toFixed(1)} kg
             </p>
           </div>
           <div className="p-2 bg-green-50 rounded">
-            <p className="text-xs text-green-600 font-medium">Moyenne réalisée</p>
-            <p className="text-lg font-bold text-green-800">
+            <p className="text-[10px] sm:text-xs text-green-600 font-medium">Moyenne réalisée</p>
+            <p className="text-sm sm:text-lg font-bold text-green-800">
               {(feedingData.reduce((sum, d) => sum + (d.missed ? 0 : d.actual), 0) / feedingData.filter(d => !d.missed).length).toFixed(1)} kg
             </p>
           </div>
           <div className="p-2 bg-orange-50 rounded">
-            <p className="text-xs text-orange-600 font-medium">Écart moyen</p>
-            <p className="text-lg font-bold text-orange-800">
+            <p className="text-[10px] sm:text-xs text-orange-600 font-medium">Écart moyen</p>
+            <p className="text-sm sm:text-lg font-bold text-orange-800">
               {(feedingData.reduce((sum, d) => sum + Math.abs(d.planned - (d.missed ? 0 : d.actual)), 0) / feedingData.length).toFixed(1)} kg
             </p>
           </div>

@@ -71,35 +71,35 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   return (
     <>
       <Card className="hover:shadow-sm transition-shadow">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center">
-              <IconComponent className="w-5 h-5 mr-2 text-gray-600" />
-              {infrastructure.name}
+        <CardHeader className="pb-3 p-3 sm:p-4">
+          <div className="flex items-start sm:items-center justify-between gap-2">
+            <CardTitle className="text-sm sm:text-base md:text-lg flex items-start sm:items-center gap-2 min-w-0 flex-1">
+              <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <span className="truncate">{infrastructure.name}</span>
             </CardTitle>
-            <Badge className={getStatusColor(infrastructure.status)}>
+            <Badge className={`${getStatusColor(infrastructure.status)} text-xs sm:text-sm flex-shrink-0`}>
               {infrastructure.status === 'active' ? 'Actif' : 
                infrastructure.status === 'maintenance' ? 'Maintenance' : 'Inactif'}
             </Badge>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-3">
-          <div className="text-sm">
-            <p className="font-medium text-gray-700">
+        <CardContent className="space-y-3 p-3 sm:p-4">
+          <div className="text-xs sm:text-sm">
+            <p className="font-medium text-gray-700 break-words">
               {getInfrastructureTypeLabel(infrastructure.type)}
             </p>
             <p className="text-gray-500">
               Capacité: {infrastructure.capacity.toLocaleString()}
             </p>
             {infrastructure.specifications?.location && (
-              <p className="text-gray-500 flex items-center mt-1">
-                <MapPin className="w-3 h-3 mr-1" />
-                {infrastructure.specifications.location}
+              <p className="text-gray-500 flex items-start sm:items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 sm:mt-0" />
+                <span className="break-words">{infrastructure.specifications.location}</span>
               </p>
             )}
             {infrastructure.specifications?.usage && (
-              <p className="text-gray-500 mt-1">
+              <p className="text-gray-500 mt-1 break-words">
                 Usage: {infrastructure.specifications.usage}
               </p>
             )}
@@ -107,14 +107,14 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
           
           {infrastructure.specifications && (
             <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-700">Spécifications:</h4>
+              <h4 className="text-xs sm:text-sm font-medium text-gray-700">Spécifications:</h4>
               <div className="flex flex-wrap gap-1">
                 {Object.entries(infrastructure.specifications)
                   .filter(([key]) => !['location', 'usage', 'description'].includes(key))
                   .map(([key, value]) => (
                     <span 
                       key={key} 
-                      className="inline-block bg-gray-100 rounded px-2 py-1 text-xs"
+                      className="inline-block bg-gray-100 rounded px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs break-all"
                     >
                       {key}: {value}
                     </span>
@@ -123,12 +123,12 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
             </div>
           )}
           
-          <div className="pt-3 border-t flex flex-wrap gap-2">
+          <div className="pt-3 border-t flex flex-col sm:flex-row gap-2">
             <Button 
               size="sm" 
               variant="outline" 
               onClick={() => setIsEditOpen(true)}
-              className="flex-1"
+              className="w-full sm:flex-1 text-xs sm:text-sm"
             >
               <Edit className="w-3 h-3 mr-1" />
               Modifier
@@ -139,6 +139,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                 size="sm" 
                 variant="outline"
                 onClick={() => toggleStatus('inactive')}
+                className="w-full sm:w-auto text-xs sm:text-sm"
               >
                 <PowerOff className="w-3 h-3 mr-1" />
                 Désactiver
@@ -148,6 +149,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                 size="sm" 
                 variant="outline"
                 onClick={() => toggleStatus('active')}
+                className="w-full sm:w-auto text-xs sm:text-sm"
               >
                 <Power className="w-3 h-3 mr-1" />
                 Activer
@@ -156,22 +158,24 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="destructive">
+                <Button size="sm" variant="destructive" className="w-full sm:w-auto text-xs sm:text-sm">
                   <Trash2 className="w-3 h-3 mr-1" />
                   Supprimer
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-base sm:text-lg">
+                    Confirmer la suppression
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm">
                     Êtes-vous sûr de vouloir supprimer l'infrastructure "{infrastructure.name}" ? 
                     Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={deleteInfrastructure}>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteInfrastructure} className="w-full sm:w-auto">
                     Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
