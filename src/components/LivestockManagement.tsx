@@ -355,15 +355,15 @@ const LivestockManagement = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 p-4 sm:p-6 rounded-xl text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 p-3 sm:p-4 md:p-6 rounded-xl text-white">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Gestion du Cheptel</h2>
-            <p className="text-green-100 text-sm sm:text-base">Suivi et gestion des lots de poissons par unité</p>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1">Gestion du Cheptel</h2>
+            <p className="text-green-100 text-xs sm:text-sm">Suivi et gestion des lots de poissons par unité</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2">
             <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-              <SelectTrigger className="w-full sm:w-48 bg-white/20 border-white/30 text-white">
+              <SelectTrigger className="w-full bg-white/20 border-white/30 text-white text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -375,9 +375,9 @@ const LivestockManagement = () => {
             </Select>
             <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter un lot
+                <Button variant="outline" className="w-full bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm">
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                  <span className="truncate">Ajouter un lot</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -543,52 +543,52 @@ const LivestockManagement = () => {
       )}
 
       {/* Statistiques */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Fish className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{totalQuantity.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">Individus total</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Fish className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold truncate">{totalQuantity.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Individus total</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{totalWeight.toFixed(1)}</p>
-                <p className="text-sm text-gray-600">Kg total</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold truncate">{totalWeight.toFixed(1)}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Kg total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-600 rounded-full"></div>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{healthyBatches}</p>
-                <p className="text-sm text-gray-600">Lots sains</p>
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold truncate">{healthyBatches}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Lots sains</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold">{filteredBatches.length}</p>
-                <p className="text-sm text-gray-600">Lots actifs</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold truncate">{filteredBatches.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Lots actifs</p>
               </div>
             </div>
           </CardContent>
@@ -596,11 +596,11 @@ const LivestockManagement = () => {
       </div>
 
       {/* Onglets de gestion */}
-      <Tabs defaultValue="lots" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lots">Lots de poissons</TabsTrigger>
-          <TabsTrigger value="control">Pêche de contrôle</TabsTrigger>
-          <TabsTrigger value="charts">Graphiques & Évolution</TabsTrigger>
+      <Tabs defaultValue="lots" className="space-y-3 sm:space-y-4">
+        <TabsList className="w-full grid grid-cols-3 h-auto">
+          <TabsTrigger value="lots" className="text-xs sm:text-sm px-2 py-2">Lots</TabsTrigger>
+          <TabsTrigger value="control" className="text-xs sm:text-sm px-2 py-2">Pêche</TabsTrigger>
+          <TabsTrigger value="charts" className="text-xs sm:text-sm px-2 py-2">Graphiques</TabsTrigger>
         </TabsList>
 
         {/* Onglet Liste des lots */}
@@ -613,76 +613,76 @@ const LivestockManagement = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {filteredBatches.map((batch) => (
-                  <div key={batch.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{batch.species}</h3>
+                  <div key={batch.id} className="border rounded-lg p-3 sm:p-4 hover:bg-accent/50">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-base sm:text-lg">{batch.species}</h3>
                           {batch.variety && (
-                            <Badge variant="secondary">{batch.variety}</Badge>
+                            <Badge variant="secondary" className="text-xs">{batch.variety}</Badge>
                           )}
-                          <Badge className={getStatusColor(batch.status)}>
+                          <Badge className={`${getStatusColor(batch.status)} text-xs`}>
                             {batch.status === 'healthy' ? 'Sain' : 
                              batch.status === 'sick' ? 'Malade' :
                              batch.status === 'quarantine' ? 'Quarantaine' : 'Vendu'}
                           </Badge>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
                             {batch.unitName}
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm mb-3">
                           <div>
-                            <p className="text-gray-600">Quantité</p>
-                            <p className="font-medium">{batch.quantity.toLocaleString()} individus</p>
+                            <p className="text-muted-foreground">Quantité</p>
+                            <p className="font-medium truncate">{batch.quantity.toLocaleString()} individus</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Poids total</p>
+                            <p className="text-muted-foreground">Poids total</p>
                             <p className="font-medium">{batch.totalWeight.toFixed(1)} kg</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Âge</p>
+                            <p className="text-muted-foreground">Âge</p>
                             <p className="font-medium">{batch.currentAge} jours</p>
                           </div>
                           {batch.feedingPlan && (
                             <div>
-                              <p className="text-gray-600">Plan alimentation</p>
-                              <p className="font-medium">{batch.feedingPlan}</p>
+                              <p className="text-muted-foreground">Plan aliment.</p>
+                              <p className="font-medium truncate">{batch.feedingPlan}</p>
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                           <div>
-                            <p className="text-gray-600">Acquisition</p>
+                            <p className="text-muted-foreground">Acquisition</p>
                             <p className="font-medium">{new Date(batch.acquisitionDate).toLocaleDateString('fr-FR')}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Récolte prévue</p>
+                            <p className="text-muted-foreground">Récolte prévue</p>
                             <p className="font-medium">{new Date(batch.expectedHarvestDate).toLocaleDateString('fr-FR')}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Source</p>
-                            <p className="font-medium">{batch.source}</p>
+                            <p className="text-muted-foreground">Source</p>
+                            <p className="font-medium truncate">{batch.source}</p>
                           </div>
                         </div>
 
                         {batch.notes && (
-                          <div className="mt-3">
-                            <p className="text-gray-600 text-sm">Notes</p>
-                            <p className="text-sm">{batch.notes}</p>
+                          <div className="mt-2">
+                            <p className="text-muted-foreground text-xs">Notes</p>
+                            <p className="text-xs line-clamp-2">{batch.notes}</p>
                           </div>
                         )}
                       </div>
 
-                      <div className="flex gap-2 ml-4">
-                        <Button size="sm" variant="outline" onClick={() => setEditingBatch(batch)}>
-                          <Edit className="w-4 h-4" />
+                      <div className="flex sm:flex-col gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditingBatch(batch)} className="flex-1 sm:flex-none">
+                          <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteBatch(batch.id)}>
-                          <Trash2 className="w-4 h-4 text-red-600" />
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteBatch(batch.id)} className="flex-1 sm:flex-none">
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-destructive" />
                         </Button>
                       </div>
                     </div>

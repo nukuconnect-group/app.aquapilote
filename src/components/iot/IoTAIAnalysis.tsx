@@ -72,7 +72,7 @@ const IoTAIAnalysis = () => {
       const ammonia = latestReadings.ammonia || 0;
 
       const analysis = analyzeWaterQuality(
-        temp, ph, oxygen, ammonia, fishCount, basinVolume, averageWeight, unit.type
+        temp, ph, oxygen, ammonia, fishCount, basinVolume, averageWeight, unit.type, new Date()
       );
       const recommendations = analysis.recommendations;
 
@@ -224,55 +224,55 @@ const IoTAIAnalysis = () => {
       </Card>
 
       {/* Métriques principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <Fish className="w-5 h-5 text-primary" />
-              <Badge variant="secondary">IoT + IA</Badge>
+              <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <Badge variant="secondary" className="text-xs">IoT + IA</Badge>
             </div>
-            <div className="text-2xl font-bold">{currentAnalysis.fishCount.toLocaleString()}</div>
-            <div className="text-sm text-muted-foreground">{t('detected_subjects')}</div>
+            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.fishCount.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('detected_subjects')}</div>
             <div className="text-xs text-green-600 dark:text-green-400 mt-1">{t('status')}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <Activity className="w-5 h-5 text-primary" />
-              <Badge variant="secondary">{t('average_weight')}</Badge>
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{t('average_weight')}</Badge>
             </div>
-            <div className="text-2xl font-bold">{currentAnalysis.averageWeight} g</div>
-            <div className="text-sm text-muted-foreground">{t('average_weight')}</div>
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1">+{currentAnalysis.dailyGrowth}% / {t('daily_production').toLowerCase()}</div>
+            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.averageWeight} g</div>
+            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('average_weight')}</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1 truncate">+{currentAnalysis.dailyGrowth}%</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <Badge variant="secondary">IA</Badge>
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+              <Badge variant="secondary" className="text-xs">IA</Badge>
             </div>
-            <div className="text-2xl font-bold">{currentAnalysis.dailyGrowth}%</div>
-            <div className="text-sm text-muted-foreground">{t('daily_growth')}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('statistics')}</div>
+            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.dailyGrowth}%</div>
+            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('daily_growth')}</div>
+            <div className="text-xs text-muted-foreground mt-1 truncate">{t('statistics')}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              <Badge variant={currentAnalysis.dailyMortality > 1 ? 'destructive' : 'secondary'}>
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
+              <Badge variant={currentAnalysis.dailyMortality > 1 ? 'destructive' : 'secondary'} className="text-xs">
                 {currentAnalysis.dailyMortality > 1 ? t('warning') : t('normal')}
               </Badge>
             </div>
-            <div className="text-2xl font-bold">{currentAnalysis.dailyMortality}%</div>
-            <div className="text-sm text-muted-foreground">{t('daily_mortality')}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              ≈ {Math.round(currentAnalysis.fishCount * currentAnalysis.dailyMortality / 100)} {t('detected_subjects').toLowerCase()}
+            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.dailyMortality}%</div>
+            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('daily_mortality')}</div>
+            <div className="text-xs text-muted-foreground mt-1 truncate">
+              ≈ {Math.round(currentAnalysis.fishCount * currentAnalysis.dailyMortality / 100)}
             </div>
           </CardContent>
         </Card>
@@ -281,31 +281,33 @@ const IoTAIAnalysis = () => {
       {/* Recommandations intelligentes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-primary" />
-            {t('recommendations')}
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="truncate">{t('recommendations')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {currentAnalysis.recommendations.map((rec, idx) => (
               <div 
                 key={idx} 
-                className={`p-4 border rounded-lg ${getPriorityColor(rec.priority)}`}
+                className={`p-3 sm:p-4 border rounded-lg ${getPriorityColor(rec.priority)}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5">
-                    {getRecommendationIcon(rec.parameter)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge className={getPriorityColor(rec.priority)}>
-                        {getPriorityText(rec.priority)}
-                      </Badge>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="mt-0.5 flex-shrink-0">
+                      {getRecommendationIcon(rec.parameter)}
                     </div>
-                    <p className="text-sm font-medium">{rec.parameter}: {rec.action}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Badge className={`${getPriorityColor(rec.priority)} text-xs`}>
+                          {getPriorityText(rec.priority)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs sm:text-sm font-medium break-words">{rec.parameter}: {rec.action}</p>
+                    </div>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="w-full sm:w-auto text-xs flex-shrink-0">
                     {t('add')}
                   </Button>
                 </div>

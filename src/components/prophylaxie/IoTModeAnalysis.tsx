@@ -63,7 +63,8 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
     fishCount, 
     pondVolume, 
     averageWeight,
-    'grossissement'
+    'grossissement',
+    new Date()
   );
   
   const recommendations = analysis.recommendations;
@@ -134,35 +135,35 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
             </Card>
 
             {/* Métriques principales */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Card>
-                <CardContent className="p-4">
-                  <Fish className="w-5 h-5 text-blue-600 mb-2" />
-                  <div className="text-2xl font-bold">{fishCount.toLocaleString()}</div>
+                <CardContent className="p-3 sm:p-4">
+                  <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold truncate">{fishCount.toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">Poissons</div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <Activity className="w-5 h-5 text-purple-600 mb-2" />
-                  <div className="text-2xl font-bold">{averageWeight}g</div>
+                <CardContent className="p-3 sm:p-4">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold">{averageWeight}g</div>
                   <div className="text-xs text-muted-foreground">Poids moyen</div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <TrendingUp className="w-5 h-5 text-green-600 mb-2" />
-                  <div className="text-2xl font-bold">{dailyGrowth}%</div>
+                <CardContent className="p-3 sm:p-4">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold">{dailyGrowth}%</div>
                   <div className="text-xs text-muted-foreground">Croissance/j</div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <AlertTriangle className="w-5 h-5 text-orange-600 mb-2" />
-                  <div className="text-2xl font-bold">{dailyMortality}%</div>
+                <CardContent className="p-3 sm:p-4">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold">{dailyMortality}%</div>
                   <div className="text-xs text-muted-foreground">Mortalité/j</div>
                 </CardContent>
               </Card>
@@ -171,28 +172,28 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
             {/* Qualité de l'eau */}
             <Card>
               <CardHeader>
-                <CardTitle>Paramètres Eau (Temps Réel)</CardTitle>
+                <CardTitle className="text-sm sm:text-base">Paramètres Eau (Temps Réel)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">pH</div>
-                    <div className="text-xl font-bold text-blue-600">{waterParams.pH}</div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                  <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">pH</div>
+                    <div className="text-base sm:text-xl font-bold text-blue-600">{waterParams.pH}</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
-                  <div className="text-center p-3 bg-cyan-50 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Oxygène</div>
-                    <div className="text-xl font-bold text-cyan-600">{waterParams.oxygen} mg/L</div>
+                  <div className="text-center p-2 sm:p-3 bg-cyan-50 rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">Oxygène</div>
+                    <div className="text-base sm:text-xl font-bold text-cyan-600 truncate">{waterParams.oxygen} mg/L</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Température</div>
-                    <div className="text-xl font-bold text-orange-600">{waterParams.temperature}°C</div>
+                  <div className="text-center p-2 sm:p-3 bg-orange-50 rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">Température</div>
+                    <div className="text-base sm:text-xl font-bold text-orange-600">{waterParams.temperature}°C</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
-                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Ammoniaque</div>
-                    <div className="text-xl font-bold text-yellow-600">{waterParams.ammonia} ppm</div>
+                  <div className="text-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">Ammoniaque</div>
+                    <div className="text-base sm:text-xl font-bold text-yellow-600 truncate">{waterParams.ammonia} ppm</div>
                     <Badge className="mt-1 bg-green-100 text-green-800 text-xs">Optimal</Badge>
                   </div>
                 </div>
@@ -202,26 +203,26 @@ const IoTModeAnalysis: React.FC<IoTModeAnalysisProps> = ({ showDialog, onClose }
             {/* Recommandations */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  Recommandations de Prévention
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                  <span className="truncate">Recommandations de Prévention</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {recommendations.map((rec, idx) => (
                     <div 
                       key={idx}
-                      className={`p-3 border rounded-lg border-l-4 ${getPriorityColor(rec.priority)}`}
+                      className={`p-2 sm:p-3 border rounded-lg border-l-4 ${getPriorityColor(rec.priority)}`}
                     >
-                      <div className="flex items-start gap-3">
-                        {getIcon(rec.parameter)}
-                        <div className="flex-1">
-                          <Badge className={getPriorityColor(rec.priority)}>
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className="flex-shrink-0 mt-0.5">{getIcon(rec.parameter)}</div>
+                        <div className="flex-1 min-w-0">
+                          <Badge className={`${getPriorityColor(rec.priority)} text-xs mb-2`}>
                             {rec.priority.toUpperCase()}
                           </Badge>
-                          <p className="text-sm mt-2 font-medium">{rec.parameter}: {rec.action}</p>
-                          <p className="text-xs text-muted-foreground mt-1"><strong>Impact santé:</strong> {rec.healthImpact}</p>
+                          <p className="text-xs sm:text-sm mt-2 font-medium break-words">{rec.parameter}: {rec.action}</p>
+                          <p className="text-xs text-muted-foreground mt-1 break-words"><strong>Impact santé:</strong> {rec.healthImpact}</p>
                           <p className="text-xs text-muted-foreground mt-1"><strong>Délai:</strong> {rec.timeline}</p>
                         </div>
                       </div>
