@@ -36,12 +36,27 @@ export function ThemeProvider({
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const systemTheme = mediaQuery.matches ? "dark" : "light";
 
       root.classList.add(systemTheme);
+      
+      // Écouter les changements du thème système
+      const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+        root.classList.remove("light", "dark");
+        const matches = 'matches' in e ? e.matches : (e as MediaQueryList).matches;
+        root.classList.add(matches ? "dark" : "light");
+      };
+      
+      // Support pour Safari/iOS ancien et moderne
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener("change", handler);
+        return () => mediaQuery.removeEventListener("change", handler);
+      } else if ((mediaQuery as any).addListener) {
+        (mediaQuery as any).addListener(handler);
+        return () => (mediaQuery as any).removeListener(handler);
+      }
+      
       return;
     }
 
