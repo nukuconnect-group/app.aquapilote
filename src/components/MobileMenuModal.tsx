@@ -42,7 +42,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
         { id: 'health', label: t('health'), icon: Heart },
-        { id: 'production', label: t('production'), icon: Package },
+        { id: 'production', label: 'Cycles de production', icon: Package },
       ]
     },
     // Gestion financière

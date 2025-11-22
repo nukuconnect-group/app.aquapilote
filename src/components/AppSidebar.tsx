@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Fish, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -37,11 +37,10 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       label: language === 'fr' ? 'Production & Élevage' : 'Production & Livestock',
       items: [
         { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
-        { id: 'fish', label: t('fish'), icon: Fish },
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
         { id: 'health', label: t('health'), icon: Heart },
-        { id: 'production', label: t('production'), icon: Package },
+        { id: 'production', label: 'Cycles de production', icon: Package },
       ]
     },
     {
