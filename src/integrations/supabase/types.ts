@@ -77,6 +77,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_files: {
+        Row: {
+          compressed_size: number | null
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          metadata: Json | null
+          module: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          compressed_size?: number | null
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          module: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          compressed_size?: number | null
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          module?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
