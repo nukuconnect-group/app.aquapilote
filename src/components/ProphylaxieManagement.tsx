@@ -210,110 +210,120 @@ const ProphylaxieManagement = () => {
   return (
     <div className="space-y-6 p-2 sm:p-0">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 rounded-xl text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Gestion de la Prophylaxie</h2>
-            <p className="text-red-100">Calendrier sanitaire et suivi des traitements avec IA</p>
+      <div className="bg-gradient-to-r from-red-500 to-pink-600 p-4 sm:p-6 rounded-xl text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 break-words">
+              Gestion de la Prophylaxie
+            </h2>
+            <p className="text-red-100 text-sm sm:text-base">
+              Calendrier sanitaire et suivi des traitements avec IA
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <CameraAnalysis />
             <Button 
               variant="outline" 
-              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-xs sm:text-sm"
               onClick={() => setShowIoTDialog(true)}
             >
-              <Wifi className="w-4 h-4 mr-2" />
+              <Wifi className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Analyser avec IoT
             </Button>
             <Dialog open={showTreatmentDialog} onOpenChange={setShowTreatmentDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-xs sm:text-sm">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Nouveau traitement
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Planifier un traitement</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">Planifier un traitement</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <Label>Unité de production</Label>
+                  <Label className="text-sm">Unité de production</Label>
                   <Select value={newTreatment.unitId} onValueChange={(value) => setNewTreatment(prev => ({ ...prev, unitId: value }))}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {units.map(unit => (
-                        <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                        <SelectItem key={unit.id} value={unit.id} className="text-sm">{unit.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Type de traitement</Label>
+                  <Label className="text-sm">Type de traitement</Label>
                   <Select value={newTreatment.type} onValueChange={(value: Treatment['type']) => setNewTreatment(prev => ({ ...prev, type: value }))}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vaccination">Vaccination</SelectItem>
-                      <SelectItem value="treatment">Traitement</SelectItem>
-                      <SelectItem value="disinfection">Désinfection</SelectItem>
+                      <SelectItem value="vaccination" className="text-sm">Vaccination</SelectItem>
+                      <SelectItem value="treatment" className="text-sm">Traitement</SelectItem>
+                      <SelectItem value="disinfection" className="text-sm">Désinfection</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Date prévue</Label>
+                  <Label className="text-sm">Date prévue</Label>
                   <Input 
                     type="date"
                     value={newTreatment.date}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, date: e.target.value }))}
+                    className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label>Produit</Label>
+                  <Label className="text-sm">Produit</Label>
                   <Input 
                     value={newTreatment.product}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, product: e.target.value }))}
                     placeholder="Nom du produit"
+                    className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label>Dosage</Label>
+                  <Label className="text-sm">Dosage</Label>
                   <Input 
                     value={newTreatment.dosage}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, dosage: e.target.value }))}
                     placeholder="ex: 0.5 ml/kg"
+                    className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label>Numéro de lot</Label>
+                  <Label className="text-sm">Numéro de lot</Label>
                   <Input 
                     value={newTreatment.lot}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, lot: e.target.value }))}
                     placeholder="LOT-XXXX"
+                    className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label>Opérateur</Label>
+                  <Label className="text-sm">Opérateur</Label>
                   <Input 
                     value={newTreatment.operator}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, operator: e.target.value }))}
                     placeholder="Nom de l'opérateur"
+                    className="text-sm"
                   />
                 </div>
-                <div className="col-span-2">
-                  <Label>Notes</Label>
+                <div className="sm:col-span-2">
+                  <Label className="text-sm">Notes</Label>
                   <Textarea 
                     value={newTreatment.notes}
                     onChange={(e) => setNewTreatment(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Instructions et observations..."
+                    className="text-sm"
                   />
                 </div>
-                <div className="col-span-2">
-                  <Button onClick={handleSaveTreatment} className="w-full">
+                <div className="sm:col-span-2">
+                  <Button onClick={handleSaveTreatment} className="w-full text-sm">
                     Enregistrer le traitement
                   </Button>
                 </div>
@@ -326,20 +336,20 @@ const ProphylaxieManagement = () => {
 
       {/* Filtre */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <Label className="flex items-center gap-2 font-medium">
-              <Filter className="w-4 h-4" />
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <Label className="flex items-center gap-2 font-medium text-sm sm:text-base flex-shrink-0">
+              <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
               Filtrer par unité :
             </Label>
             <Select value={selectedUnitFilter} onValueChange={setSelectedUnitFilter}>
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-full sm:w-64 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toutes les unités</SelectItem>
+                <SelectItem value="all" className="text-sm">Toutes les unités</SelectItem>
                 {units.map(unit => (
-                  <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                  <SelectItem key={unit.id} value={unit.id} className="text-sm">{unit.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -349,48 +359,48 @@ const ProphylaxieManagement = () => {
 
       {/* Recommandations IA */}
       <Card className="border-l-4 border-l-primary">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-primary" />
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
             Recommandations de l'IA
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3">
-            <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">Priorité Moyenne</span>
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+          <div className="grid gap-2 sm:gap-3">
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                  <span className="font-medium text-xs sm:text-sm">Priorité Moyenne</span>
                   <Badge variant="outline" className="text-xs">Alimentation</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground break-words">
                   Ajuster la ration de 5% pour optimiser la croissance basé sur les données IoT actuelles
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">Priorité Basse</span>
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                  <span className="font-medium text-xs sm:text-sm">Priorité Basse</span>
                   <Badge variant="outline" className="text-xs">Prévention</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground break-words">
                   Maintenir le niveau d'oxygène actuel - Conditions optimales détectées
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <Activity className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">Priorité Moyenne</span>
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                  <span className="font-medium text-xs sm:text-sm">Priorité Moyenne</span>
                   <Badge variant="outline" className="text-xs">Surveillance</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground break-words">
                   Surveiller la température en après-midi - Légère variation détectée
                 </p>
               </div>
@@ -402,9 +412,9 @@ const ProphylaxieManagement = () => {
               onClick={() => setShowIoTDialog(true)}
               variant="outline"
               size="sm"
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
             >
-              <Wifi className="w-4 h-4 mr-2" />
+              <Wifi className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Voir l'analyse complète
             </Button>
           </div>
@@ -412,60 +422,72 @@ const ProphylaxieManagement = () => {
       </Card>
 
       <Tabs defaultValue="calendar" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="calendar">Calendrier</TabsTrigger>
-          <TabsTrigger value="treatments">Traitements</TabsTrigger>
-          <TabsTrigger value="alerts">
-            Alertes
-            {alerts.filter(a => a.status === 'active').length > 0 && (
-              <Badge className="ml-2 bg-red-500 text-white">
-                {alerts.filter(a => a.status === 'active').length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="diseases">Maladies</TabsTrigger>
-          <TabsTrigger value="planning">Planning</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <TabsList className="grid grid-cols-5 w-full min-w-[500px] sm:min-w-0">
+            <TabsTrigger value="calendar" className="text-xs sm:text-sm px-1 sm:px-3">
+              Calendrier
+            </TabsTrigger>
+            <TabsTrigger value="treatments" className="text-xs sm:text-sm px-1 sm:px-3">
+              Traitements
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="text-xs sm:text-sm px-1 sm:px-3">
+              Alertes
+              {alerts.filter(a => a.status === 'active').length > 0 && (
+                <Badge className="ml-1 sm:ml-2 bg-red-500 text-white text-[10px] sm:text-xs px-1">
+                  {alerts.filter(a => a.status === 'active').length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="diseases" className="text-xs sm:text-sm px-1 sm:px-3">
+              Maladies
+            </TabsTrigger>
+            <TabsTrigger value="planning" className="text-xs sm:text-sm px-1 sm:px-3">
+              Planning
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="calendar" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-blue-600" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   Calendrier sanitaire
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-4 md:p-6">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  className="rounded-md border"
+                  className="rounded-md border w-full"
                 />
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-orange-600" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                   Traitements à venir
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="space-y-2 sm:space-y-3">
                   {upcomingTreatments.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center py-4">
                       Aucun traitement planifié
                     </p>
                   ) : (
                     upcomingTreatments.map(treatment => (
-                      <div key={treatment.id} className="border rounded-lg p-3">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                      <div key={treatment.id} className="border rounded-lg p-2 sm:p-3">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             {getTypeIcon(treatment.type)}
-                            <span className="font-medium text-sm">{treatment.product}</span>
+                            <span className="font-medium text-xs sm:text-sm truncate">
+                              {treatment.product}
+                            </span>
                           </div>
                           <Badge className={getTypeColor(treatment.type)}>
                             {treatment.type}
@@ -484,55 +506,58 @@ const ProphylaxieManagement = () => {
         </TabsContent>
 
         <TabsContent value="treatments" className="space-y-4">
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredTreatments.map(treatment => (
               <Card key={treatment.id} className="border-l-4 border-l-blue-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${getTypeColor(treatment.type).replace('text-', 'bg-').replace('800', '100')}`}>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className={`p-1.5 sm:p-2 rounded-lg ${getTypeColor(treatment.type).replace('text-', 'bg-').replace('800', '100')} flex-shrink-0`}>
                         {getTypeIcon(treatment.type)}
                       </div>
-                      <div>
-                        <h4 className="font-medium">{treatment.product}</h4>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-medium text-sm sm:text-base truncate">
+                          {treatment.product}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground break-words">
                           {new Date(treatment.date).toLocaleDateString('fr-FR')} • {units.find(u => u.id === treatment.unitId)?.name}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getTypeColor(treatment.type)}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={`${getTypeColor(treatment.type)} text-xs`}>
                         {treatment.type}
                       </Badge>
                       <Button
                         size="sm"
                         variant={treatment.status === 'completed' ? 'default' : 'outline'}
                         onClick={() => toggleTreatmentStatus(treatment.id)}
+                        className="text-xs sm:text-sm"
                       >
                         {treatment.status === 'completed' ? (
-                          <><CheckCircle2 className="w-4 h-4 mr-1" /> Effectué</>
+                          <><CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Effectué</>
                         ) : (
-                          <><Clock className="w-4 h-4 mr-1" /> Planifié</>
+                          <><Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Planifié</>
                         )}
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
                     <div>
                       <span className="text-muted-foreground">Dosage:</span>
-                      <p className="font-medium">{treatment.dosage}</p>
+                      <p className="font-medium break-words">{treatment.dosage}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Lot:</span>
-                      <p className="font-medium">{treatment.lot}</p>
+                      <p className="font-medium break-words">{treatment.lot}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Opérateur:</span>
-                      <p className="font-medium">{treatment.operator}</p>
+                      <p className="font-medium truncate">{treatment.operator}</p>
                     </div>
                   </div>
                   {treatment.notes && (
-                    <div className="mt-3 p-2 bg-muted rounded text-sm">
+                    <div className="mt-3 p-2 bg-muted rounded text-xs sm:text-sm break-words">
                       <span className="font-medium">Notes: </span>
                       {treatment.notes}
                     </div>
@@ -544,25 +569,29 @@ const ProphylaxieManagement = () => {
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredAlerts.map(alert => (
               <Card key={alert.id} className={`border-l-4 ${alert.severity === 'high' ? 'border-l-red-500' : alert.severity === 'medium' ? 'border-l-orange-500' : 'border-l-yellow-500'}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className={`w-5 h-5 ${alert.severity === 'high' ? 'text-red-600' : alert.severity === 'medium' ? 'text-orange-600' : 'text-yellow-600'}`} />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{alert.type}</h4>
-                          <Badge className={getSeverityColor(alert.severity)}>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                      <AlertTriangle className={`w-4 h-4 sm:w-5 sm:h-5 ${alert.severity === 'high' ? 'text-red-600' : alert.severity === 'medium' ? 'text-orange-600' : 'text-yellow-600'} flex-shrink-0 mt-0.5`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h4 className="font-medium text-sm sm:text-base break-words">
+                            {alert.type}
+                          </h4>
+                          <Badge className={`${getSeverityColor(alert.severity)} text-xs`}>
                             {alert.severity === 'high' ? 'Élevé' : alert.severity === 'medium' ? 'Moyen' : 'Faible'}
                           </Badge>
                           {alert.status === 'resolved' && (
-                            <Badge className="bg-green-100 text-green-800">Résolu</Badge>
+                            <Badge className="bg-green-100 text-green-800 text-xs">Résolu</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">{alert.description}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 break-words">
+                          {alert.description}
+                        </p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground break-words">
                           {new Date(alert.date).toLocaleDateString('fr-FR')} • {units.find(u => u.id === alert.unitId)?.name}
                         </p>
                       </div>
@@ -571,8 +600,9 @@ const ProphylaxieManagement = () => {
                       <Button
                         size="sm"
                         onClick={() => resolveAlert(alert.id)}
+                        className="w-full sm:w-auto text-xs sm:text-sm"
                       >
-                        <CheckCircle2 className="w-4 h-4 mr-1" />
+                        <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Résoudre
                       </Button>
                     )}
@@ -585,27 +615,27 @@ const ProphylaxieManagement = () => {
 
         <TabsContent value="planning" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Planning de prophylaxie par unité</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-base sm:text-lg">Planning de prophylaxie par unité</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 {units.map(unit => {
                   const unitTreatments = treatments.filter(t => t.unitId === unit.id && t.status === 'planned');
                   return (
-                    <div key={unit.id} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-3">{unit.name}</h4>
+                    <div key={unit.id} className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="font-medium mb-3 text-sm sm:text-base break-words">{unit.name}</h4>
                       {unitTreatments.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Aucun traitement planifié</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Aucun traitement planifié</p>
                       ) : (
                         <div className="space-y-2">
                           {unitTreatments.map(treatment => (
-                            <div key={treatment.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                              <div className="flex items-center gap-2">
+                            <div key={treatment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 bg-muted rounded">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
                                 {getTypeIcon(treatment.type)}
-                                <span className="text-sm">{treatment.product}</span>
+                                <span className="text-xs sm:text-sm truncate">{treatment.product}</span>
                               </div>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-xs sm:text-sm text-muted-foreground">
                                 {new Date(treatment.date).toLocaleDateString('fr-FR')}
                               </span>
                             </div>
