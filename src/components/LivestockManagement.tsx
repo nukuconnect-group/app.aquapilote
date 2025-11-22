@@ -39,18 +39,19 @@ interface LivestockBatch {
 interface ControlFishing {
   id: string;
   date: string;
+  bassinId: string;
+  bassinName: string;
   sampleSize: number;
-  averageWeight: number;
-  minWeight: number;
-  maxWeight: number;
+  totalWeight: number;
+  estimatedTotal: number;
+  waterTemp: number;
+  season: string;
   mortality: number;
   mortalityCause?: string;
-  waterTemp: number;
-  ph: number;
-  oxygen: number;
-  rendementM2?: number;
   feedingAdjustment?: string;
   notes: string;
+  averageWeight?: number;
+  rendementM2?: number;
 }
 
 const LivestockManagement = () => {
@@ -101,6 +102,56 @@ const LivestockManagement = () => {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<LivestockBatch | null>(null);
+  const [showControlForm, setShowControlForm] = useState(false);
+  const [controlRecords, setControlRecords] = useState<ControlFishing[]>([
+    {
+      id: '1',
+      date: '2024-03-15',
+      bassinId: 'unit1',
+      bassinName: 'Bassin BAS001',
+      sampleSize: 50,
+      totalWeight: 6.25,
+      estimatedTotal: 1500,
+      waterTemp: 26.5,
+      season: 'Printemps',
+      mortality: 2,
+      mortalityCause: 'Stress manipulation',
+      feedingAdjustment: 'Maintenir ration actuelle',
+      notes: 'Croissance satisfaisante, poissons en bonne santé',
+      averageWeight: 125,
+      rendementM2: 15.2
+    },
+    {
+      id: '2',
+      date: '2024-02-28',
+      bassinId: 'unit1',
+      bassinName: 'Bassin BAS001',
+      sampleSize: 50,
+      totalWeight: 5.5,
+      estimatedTotal: 1480,
+      waterTemp: 24.5,
+      season: 'Hiver',
+      mortality: 3,
+      mortalityCause: 'Naturelle',
+      feedingAdjustment: 'Augmenter légèrement',
+      notes: 'Adaptation aux conditions hivernales',
+      averageWeight: 110,
+      rendementM2: 13.8
+    }
+  ]);
+  const [controlFormData, setControlFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    bassinId: '',
+    sampleSize: 0,
+    totalWeight: 0,
+    estimatedTotal: 0,
+    waterTemp: 0,
+    season: '',
+    mortality: 0,
+    mortalityCause: '',
+    feedingAdjustment: 'Maintenir ration actuelle',
+    notes: ''
+  });
   const [formData, setFormData] = useState({
     species: '',
     variety: '',
@@ -174,6 +225,53 @@ const LivestockManagement = () => {
     });
   };
 
+  const handleAddControlFishing = () => {
+    if (!controlFormData.bassinId || !controlFormData.sampleSize || !controlFormData.totalWeight) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const selectedUnit = units.find(u => u.id === controlFormData.bassinId);
+    const averageWeight = controlFormData.sampleSize > 0 
+      ? (controlFormData.totalWeight / controlFormData.sampleSize) * 1000 
+      : 0;
+
+    const newRecord: ControlFishing = {
+      id: Date.now().toString(),
+      ...controlFormData,
+      bassinName: selectedUnit?.name || '',
+      averageWeight: Math.round(averageWeight),
+      rendementM2: 0 // À calculer selon la surface disponible
+    };
+
+    setControlRecords(prev => [newRecord, ...prev]);
+    addLog('Pêche contrôle', 'Cheptel', `Nouvelle pêche de contrôle enregistrée - ${selectedUnit?.name}`, 'success');
+    
+    toast({
+      title: "Pêche de contrôle enregistrée",
+      description: `Données enregistrées pour ${selectedUnit?.name}`
+    });
+
+    setControlFormData({
+      date: new Date().toISOString().split('T')[0],
+      bassinId: '',
+      sampleSize: 0,
+      totalWeight: 0,
+      estimatedTotal: 0,
+      waterTemp: 0,
+      season: '',
+      mortality: 0,
+      mortalityCause: '',
+      feedingAdjustment: 'Maintenir ration actuelle',
+      notes: ''
+    });
+    setShowControlForm(false);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy': return 'bg-green-100 text-green-800';
@@ -188,9 +286,26 @@ const LivestockManagement = () => {
     ? livestockBatches 
     : livestockBatches.filter(batch => batch.unitId === selectedUnit);
 
+  const filteredControlRecords = selectedUnit === 'all'
+    ? controlRecords
+    : controlRecords.filter(record => record.bassinId === selectedUnit);
+
   const totalQuantity = filteredBatches.reduce((sum, batch) => sum + batch.quantity, 0);
   const totalWeight = filteredBatches.reduce((sum, batch) => sum + batch.totalWeight, 0);
   const healthyBatches = filteredBatches.filter(batch => batch.status === 'healthy').length;
+
+  // Calcul des métriques de pêche de contrôle
+  const avgWeight = filteredControlRecords.length > 0
+    ? filteredControlRecords.reduce((sum, r) => sum + (r.averageWeight || 0), 0) / filteredControlRecords.length
+    : 0;
+  const avgRendement = filteredControlRecords.length > 0
+    ? filteredControlRecords.reduce((sum, r) => sum + (r.rendementM2 || 0), 0) / filteredControlRecords.length
+    : 0;
+  const totalMortality = filteredControlRecords.reduce((sum, r) => sum + r.mortality, 0);
+  const growthEvolution = filteredControlRecords.length > 1
+    ? ((filteredControlRecords[0].averageWeight || 0) - (filteredControlRecords[filteredControlRecords.length - 1].averageWeight || 0)) / 
+      (filteredControlRecords[filteredControlRecords.length - 1].averageWeight || 1) * 100
+    : 0;
 
   // Calcul des métriques pour les alertes
   const [alertsData, setAlertsData] = useState<any>(null);
@@ -580,96 +695,372 @@ const LivestockManagement = () => {
 
         {/* Onglet Pêche de contrôle */}
         <TabsContent value="control">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pêche de contrôle</CardTitle>
-              <CardDescription>
-                Suivi détaillé des prélèvements et contrôles de qualité
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Graphique croissance poids */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-semibold mb-4">Évolution du poids moyen</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={[
-                    { date: '01/12', poids: 120, rendement: 15 },
-                    { date: '15/12', poids: 135, rendement: 18 },
-                    { date: '01/01', poids: 150, rendement: 21 },
-                    { date: '15/01', poids: 168, rendement: 24 },
-                    { date: '01/02', poids: 185, rendement: 27 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="poids" stroke="#3b82f6" name="Poids (g)" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="rendement" stroke="#10b981" name="Rendement (kg/m²)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="space-y-4">
+            {/* En-tête avec bouton d'ajout */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Fish className="w-5 h-5 text-cyan-600" />
+                      Pêche de Contrôle - {selectedUnit === 'all' ? 'Toutes les unités' : units.find(u => u.id === selectedUnit)?.name || ''}
+                    </CardTitle>
+                    <CardDescription>Suivi technique et évaluation des performances</CardDescription>
+                  </div>
+                  <Dialog open={showControlForm} onOpenChange={setShowControlForm}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-cyan-600 hover:bg-cyan-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nouvelle pêche de contrôle
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Enregistrer une Pêche de Contrôle</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Date</Label>
+                            <Input
+                              type="date"
+                              value={controlFormData.date}
+                              onChange={(e) => setControlFormData({...controlFormData, date: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label>Bassin *</Label>
+                            <Select value={controlFormData.bassinId} onValueChange={(value) => setControlFormData({...controlFormData, bassinId: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="ID du bassin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {units.map(unit => (
+                                  <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
 
-              {/* Graphique mortalité */}
-              <div className="border rounded-lg p-4">
-                <h4 className="font-semibold mb-4">Suivi de la mortalité</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={[
-                    { date: '01/12', mortalite: 12 },
-                    { date: '15/12', mortalite: 8 },
-                    { date: '01/01', mortalite: 15 },
-                    { date: '15/01', mortalite: 5 },
-                    { date: '01/02', mortalite: 7 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité (nb)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Taille de l'échantillon</Label>
+                            <Input
+                              type="number"
+                              value={controlFormData.sampleSize}
+                              onChange={(e) => setControlFormData({...controlFormData, sampleSize: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div>
+                            <Label>Poids total (kg)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={controlFormData.totalWeight}
+                              onChange={(e) => setControlFormData({...controlFormData, totalWeight: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        </div>
 
-              {/* Statistiques de contrôle */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="text-2xl font-bold">162g</p>
-                        <p className="text-sm text-gray-600">Poids moyen actuel</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Effectif total estimé</Label>
+                            <Input
+                              type="number"
+                              value={controlFormData.estimatedTotal}
+                              onChange={(e) => setControlFormData({...controlFormData, estimatedTotal: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div>
+                            <Label>Température eau (°C)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={controlFormData.waterTemp}
+                              onChange={(e) => setControlFormData({...controlFormData, waterTemp: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Saison</Label>
+                            <Select value={controlFormData.season} onValueChange={(value) => setControlFormData({...controlFormData, season: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner la saison" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Printemps">Printemps</SelectItem>
+                                <SelectItem value="Été">Été</SelectItem>
+                                <SelectItem value="Automne">Automne</SelectItem>
+                                <SelectItem value="Hiver">Hiver</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Mortalités observées</Label>
+                            <Input
+                              type="number"
+                              value={controlFormData.mortality}
+                              onChange={(e) => setControlFormData({...controlFormData, mortality: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Cause de mortalité</Label>
+                            <Select value={controlFormData.mortalityCause} onValueChange={(value) => setControlFormData({...controlFormData, mortalityCause: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner la cause" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Naturelle">Naturelle</SelectItem>
+                                <SelectItem value="Stress manipulation">Stress manipulation</SelectItem>
+                                <SelectItem value="Maladie">Maladie</SelectItem>
+                                <SelectItem value="Prédation">Prédation</SelectItem>
+                                <SelectItem value="Autre">Autre</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Ajustement alimentation</Label>
+                            <Select value={controlFormData.feedingAdjustment} onValueChange={(value) => setControlFormData({...controlFormData, feedingAdjustment: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Recommandation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Maintenir ration actuelle">Maintenir ration actuelle</SelectItem>
+                                <SelectItem value="Augmenter légèrement">Augmenter légèrement</SelectItem>
+                                <SelectItem value="Augmenter significativement">Augmenter significativement</SelectItem>
+                                <SelectItem value="Réduire légèrement">Réduire légèrement</SelectItem>
+                                <SelectItem value="Réduire significativement">Réduire significativement</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Observations</Label>
+                          <Textarea
+                            value={controlFormData.notes}
+                            onChange={(e) => setControlFormData({...controlFormData, notes: e.target.value})}
+                            placeholder="Notes et observations techniques..."
+                            rows={3}
+                          />
+                        </div>
                       </div>
-                    </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowControlForm(false)}>
+                          Annuler
+                        </Button>
+                        <Button onClick={handleAddControlFishing} className="bg-cyan-600 hover:bg-cyan-700">
+                          Enregistrer la pêche de contrôle
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Tabs de navigation */}
+            <Tabs defaultValue="enregistrements" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="enregistrements">Enregistrements</TabsTrigger>
+                <TabsTrigger value="graphiques">Graphique poids</TabsTrigger>
+                <TabsTrigger value="mortalite">Mortalité</TabsTrigger>
+              </TabsList>
+
+              {/* Tab Enregistrements */}
+              <TabsContent value="enregistrements">
+                {/* Métriques principales */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Activity className="w-8 h-8 text-blue-600" />
+                        <div>
+                          <p className="text-2xl font-bold">{avgWeight.toFixed(1)}g</p>
+                          <p className="text-sm text-muted-foreground">Poids moyen</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <BarChart3 className="w-8 h-8 text-green-600" />
+                        <div>
+                          <p className="text-2xl font-bold">{avgRendement.toFixed(1)}</p>
+                          <p className="text-sm text-muted-foreground">kg/m² moyen</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="w-8 h-8 text-orange-600" />
+                        <div>
+                          <p className="text-2xl font-bold">{totalMortality}</p>
+                          <p className="text-sm text-muted-foreground">Mortalités totales</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="w-8 h-8 text-purple-600" />
+                        <div>
+                          <p className="text-2xl font-bold">{growthEvolution.toFixed(1)}%</p>
+                          <p className="text-sm text-muted-foreground">Évolution croissance</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Liste des enregistrements */}
+                <div className="space-y-4">
+                  {filteredControlRecords.map((record) => (
+                    <Card key={record.id} className="border-l-4 border-l-cyan-600">
+                      <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="font-semibold text-lg">{record.bassinName}</h3>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                {new Date(record.date).toLocaleDateString('fr-FR')} - {record.season}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
+                              <div>
+                                <p className="text-muted-foreground">Échantillon</p>
+                                <p className="font-medium">{record.sampleSize} poissons</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Poids total</p>
+                                <p className="font-medium">{record.totalWeight} kg</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Mortalités</p>
+                                <p className="font-medium">{record.mortality}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Température</p>
+                                <p className="font-medium">{record.waterTemp}°C</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 mb-2">
+                              <Badge className="bg-blue-100 text-blue-800">{record.averageWeight}g moyen</Badge>
+                              <Badge className="bg-green-100 text-green-800">{record.rendementM2} kg/m²</Badge>
+                            </div>
+
+                            {record.mortalityCause && (
+                              <div className="text-sm mb-2">
+                                <span className="text-muted-foreground">Cause mortalité: </span>
+                                <span className="font-medium">{record.mortalityCause}</span>
+                              </div>
+                            )}
+
+                            <div className="text-sm mb-2">
+                              <span className="text-muted-foreground">Ajustement alimentation: </span>
+                              <span className="font-medium">{record.feedingAdjustment}</span>
+                            </div>
+
+                            {record.notes && (
+                              <div className="mt-2 p-2 bg-muted rounded-md">
+                                <p className="text-sm"><strong>Notes:</strong> {record.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {filteredControlRecords.length === 0 && (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <Fish className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <h3 className="text-lg font-semibold mb-2">Aucune pêche de contrôle enregistrée</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Commencez par enregistrer votre première pêche de contrôle
+                        </p>
+                        <Button onClick={() => setShowControlForm(true)} className="bg-cyan-600 hover:bg-cyan-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nouvelle pêche de contrôle
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Tab Graphiques poids */}
+              <TabsContent value="graphiques">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Évolution du poids moyen et rendement</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={filteredControlRecords.sort((a, b) => 
+                        new Date(a.date).getTime() - new Date(b.date).getTime()
+                      ).map(r => ({
+                        date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                        poids: r.averageWeight,
+                        rendement: r.rendementM2
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis yAxisId="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip />
+                        <Legend />
+                        <Line yAxisId="left" type="monotone" dataKey="poids" stroke="#3b82f6" name="Poids (g)" strokeWidth={2} />
+                        <Line yAxisId="right" type="monotone" dataKey="rendement" stroke="#10b981" name="Rendement (kg/m²)" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Tab Mortalité */}
+              <TabsContent value="mortalite">
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="text-2xl font-bold">+2.8g/j</p>
-                        <p className="text-sm text-gray-600">Croissance quotidienne</p>
-                      </div>
-                    </div>
+                  <CardHeader>
+                    <CardTitle>Suivi de la mortalité</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={filteredControlRecords.sort((a, b) => 
+                        new Date(a.date).getTime() - new Date(b.date).getTime()
+                      ).map(r => ({
+                        date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                        mortalite: r.mortality
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité (nb)" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-8 h-8 text-orange-600" />
-                      <div>
-                        <p className="text-2xl font-bold">1.2%</p>
-                        <p className="text-sm text-gray-600">Taux mortalité</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
 
         {/* Onglet Graphiques & Évolution */}
