@@ -184,6 +184,7 @@ const AdminDashboard = () => {
 
   const handleAddUser = async () => {
     try {
+      // Client-side validation for immediate feedback
       const validation = userCreationSchema.safeParse(newUser);
       if (!validation.success) {
         toast({
@@ -194,62 +195,29 @@ const AdminDashboard = () => {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.full_name
-          }
+      // Call Edge Function for server-side validation and user creation
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          full_name: newUser.full_name,
+          role: newUser.role
         }
       });
 
-      if (authError) {
+      if (error) {
         toast({
           title: t('error'),
-          description: authError.message,
+          description: error.message || 'Erreur lors de la création de l\'utilisateur',
           variant: 'destructive'
         });
         return;
       }
 
-      if (!authData.user) {
+      if (!data?.success) {
         toast({
           title: t('error'),
-          description: 'Erreur lors de la création de l\'utilisateur',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: newUser.email,
-          full_name: newUser.full_name
-        });
-
-      if (profileError) {
-        toast({
-          title: t('error'),
-          description: profileError.message,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: newUser.role as any
-        });
-
-      if (roleError) {
-        toast({
-          title: t('error'),
-          description: roleError.message,
+          description: data?.error || 'Erreur lors de la création de l\'utilisateur',
           variant: 'destructive'
         });
         return;
