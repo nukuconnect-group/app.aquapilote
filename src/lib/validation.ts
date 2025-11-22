@@ -24,7 +24,7 @@ export const userCreationSchema = z.object({
     .min(1, 'Le nom complet est requis')
     .max(100, 'Le nom doit contenir moins de 100 caractères'),
   
-  role: z.enum(['admin', 'manager', 'operator', 'user'], {
+  role: z.enum(['admin', 'moderator', 'user'], {
     errorMap: () => ({ message: 'Rôle invalide' })
   })
 });
