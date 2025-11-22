@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { OfflineProvider } from './contexts/OfflineContext';
 
 console.log('🚀 AQUA PILOT - Application complète restaurée');
 
@@ -39,6 +40,8 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <OfflineProvider>
+      <App />
+    </OfflineProvider>
   </React.StrictMode>
 );

@@ -17,7 +17,8 @@ import {
   ShoppingBag,
   Settings,
   Truck,
-  UserCog
+  UserCog,
+  Database
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -75,6 +76,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     {
       category: language === 'fr' ? 'Configuration' : 'Configuration',
       items: [
+        { id: 'offline', label: language === 'fr' ? 'Mode hors ligne' : 'Offline Mode', icon: Database },
         { id: 'settings', label: t('settings'), icon: Settings }
       ]
     }
