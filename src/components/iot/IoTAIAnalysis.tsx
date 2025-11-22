@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,9 +38,14 @@ const IoTAIAnalysis = () => {
   const { getBasinReadings, getUnitBasins } = useIoT();
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<AIAnalysisData[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Générer l'analyse basée sur les données IoT réelles
-  const generateAnalysis = () => {
+  const generateAnalysis = useCallback(() => {
+    if (!units || units.length === 0) {
+      setIsInitialized(true);
+      return;
+    }
     const analyses: AIAnalysisData[] = units.map(unit => {
       const basins = getUnitBasins(unit.id);
       
@@ -91,7 +96,8 @@ const IoTAIAnalysis = () => {
     });
 
     setAnalysisData(analyses);
-  };
+    setIsInitialized(true);
+  }, [units, getBasinReadings, getUnitBasins]);
 
   const runAIAnalysis = async (unitId?: string) => {
     setAnalyzing(true);
@@ -109,9 +115,11 @@ const IoTAIAnalysis = () => {
   };
 
   // Générer l'analyse initiale
-  React.useEffect(() => {
-    generateAnalysis();
-  }, [units]);
+  useEffect(() => {
+    if (units && units.length > 0 && !isInitialized) {
+      generateAnalysis();
+    }
+  }, [units, generateAnalysis, isInitialized]);
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 dark:text-green-400';
@@ -159,6 +167,17 @@ const IoTAIAnalysis = () => {
   };
 
   const currentAnalysis = analysisData.find(a => a.unitId === activeUnit?.id) || analysisData[0];
+
+  if (!isInitialized || !currentAnalysis) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <RefreshCw className="w-12 h-12 mx-auto animate-spin text-primary" />
+          <p className="text-muted-foreground">{t('loading')}...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
