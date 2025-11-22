@@ -6,29 +6,49 @@ import { OfflineProvider } from './contexts/OfflineContext';
 
 console.log('🚀 AQUA PILOT - Application complète restaurée');
 
-// Enregistrement du Service Worker pour le mode hors ligne
+// Enregistrement du Service Worker avec gestion améliorée des mises à jour
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register('/sw.js', { updateViaCache: 'none' })
       .then((registration) => {
         console.log('✅ Service Worker enregistré avec succès:', registration.scope);
+        
+        // Vérifier les mises à jour immédiatement
+        registration.update();
         
         // Écouter les mises à jour du SW
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
+            console.log('🔄 Nouvelle version du Service Worker trouvée');
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🔄 Nouvelle version disponible - rechargez pour mettre à jour');
+                console.log('✅ Nouvelle version installée et prête');
+                // Le message SW_UPDATED sera envoyé par le service worker
               }
             });
           }
         });
+        
+        // Vérifier les mises à jour périodiquement (toutes les 5 minutes)
+        setInterval(() => {
+          registration.update();
+        }, 5 * 60 * 1000);
       })
       .catch((error) => {
         console.error('❌ Erreur lors de l\'enregistrement du Service Worker:', error);
       });
+  });
+  
+  // Recharger la page si le contrôleur change
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      console.log('🔄 Nouveau contrôleur détecté, rechargement...');
+      window.location.reload();
+    }
   });
 }
 

@@ -9,6 +9,7 @@ import { LogsProvider } from '@/contexts/LogsContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -57,6 +58,7 @@ const AppContent: React.FC = () => {
       </Routes>
       <Toaster />
       <OfflineIndicator />
+      <PWAUpdatePrompt />
     </div>
   );
 };
