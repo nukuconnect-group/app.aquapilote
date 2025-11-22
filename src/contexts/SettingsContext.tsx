@@ -926,12 +926,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       applyTheme(mediaQuery.matches ? 'dark' : 'light');
       
-      const handler = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches ? 'dark' : 'light');
+      const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+        const matches = 'matches' in e ? e.matches : (e as MediaQueryList).matches;
+        applyTheme(matches ? 'dark' : 'light');
       };
       
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+      // Support pour les anciennes et nouvelles versions de Safari/iOS
+      try {
+        if (mediaQuery.addEventListener) {
+          mediaQuery.addEventListener('change', handler);
+          return () => mediaQuery.removeEventListener('change', handler);
+        } else if ((mediaQuery as any).addListener) {
+          // Fallback pour anciennes versions de Safari
+          (mediaQuery as any).addListener(handler);
+          return () => (mediaQuery as any).removeListener(handler);
+        }
+      } catch (e) {
+        console.warn('Impossible d\'écouter les changements de thème système:', e);
+      }
     } else {
       applyTheme(theme);
     }
