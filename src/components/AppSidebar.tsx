@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -69,6 +69,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     {
       label: language === 'fr' ? 'Configuration' : 'Configuration',
       items: [
+        { id: 'offline', label: language === 'fr' ? 'Mode hors ligne' : 'Offline Mode', icon: Database },
         { id: 'settings', label: t('settings'), icon: Settings },
       ]
     }
