@@ -699,18 +699,18 @@ const LivestockManagement = () => {
             {/* En-tête avec bouton d'ajout */}
             <Card>
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Fish className="w-5 h-5 text-cyan-600" />
-                      Pêche de Contrôle - {selectedUnit === 'all' ? 'Toutes les unités' : units.find(u => u.id === selectedUnit)?.name || ''}
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg flex-wrap">
+                      <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Pêche de Contrôle - {selectedUnit === 'all' ? 'Toutes les unités' : units.find(u => u.id === selectedUnit)?.name || ''}</span>
                     </CardTitle>
-                    <CardDescription>Suivi technique et évaluation des performances</CardDescription>
+                    <CardDescription className="text-xs sm:text-sm mt-1">Suivi technique et évaluation des performances</CardDescription>
                   </div>
                   <Dialog open={showControlForm} onOpenChange={setShowControlForm}>
                     <DialogTrigger asChild>
-                      <Button className="bg-cyan-600 hover:bg-cyan-700">
-                        <Plus className="w-4 h-4 mr-2" />
+                      <Button className="bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto text-xs sm:text-sm">
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                         Nouvelle pêche de contrôle
                       </Button>
                     </DialogTrigger>
@@ -866,60 +866,60 @@ const LivestockManagement = () => {
             </Card>
 
             {/* Tabs de navigation */}
-            <Tabs defaultValue="enregistrements" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="enregistrements">Enregistrements</TabsTrigger>
-                <TabsTrigger value="graphiques">Graphique poids</TabsTrigger>
-                <TabsTrigger value="mortalite">Mortalité</TabsTrigger>
+            <Tabs defaultValue="enregistrements" className="space-y-3 sm:space-y-4">
+              <TabsList className="w-full grid grid-cols-3 h-auto">
+                <TabsTrigger value="enregistrements" className="text-xs sm:text-sm px-2 py-2">Enreg.</TabsTrigger>
+                <TabsTrigger value="graphiques" className="text-xs sm:text-sm px-2 py-2">Poids</TabsTrigger>
+                <TabsTrigger value="mortalite" className="text-xs sm:text-sm px-2 py-2">Mortalité</TabsTrigger>
               </TabsList>
 
               {/* Tab Enregistrements */}
               <TabsContent value="enregistrements">
                 {/* Métriques principales */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-4">
                   <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-blue-600" />
-                        <div>
-                          <p className="text-2xl font-bold">{avgWeight.toFixed(1)}g</p>
-                          <p className="text-sm text-muted-foreground">Poids moyen</p>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-lg sm:text-2xl font-bold truncate">{avgWeight.toFixed(1)}g</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">Poids moyen</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   
                   <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <BarChart3 className="w-8 h-8 text-green-600" />
-                        <div>
-                          <p className="text-2xl font-bold">{avgRendement.toFixed(1)}</p>
-                          <p className="text-sm text-muted-foreground">kg/m² moyen</p>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-lg sm:text-2xl font-bold truncate">{avgRendement.toFixed(1)}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">kg/m² moy.</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   
                   <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <AlertTriangle className="w-8 h-8 text-orange-600" />
-                        <div>
-                          <p className="text-2xl font-bold">{totalMortality}</p>
-                          <p className="text-sm text-muted-foreground">Mortalités totales</p>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-lg sm:text-2xl font-bold truncate">{totalMortality}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">Mortalités</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   
                   <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <TrendingUp className="w-8 h-8 text-purple-600" />
-                        <div>
-                          <p className="text-2xl font-bold">{growthEvolution.toFixed(1)}%</p>
-                          <p className="text-sm text-muted-foreground">Évolution croissance</p>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-lg sm:text-2xl font-bold truncate">{growthEvolution.toFixed(1)}%</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">Évolution</p>
                         </div>
                       </div>
                     </CardContent>
@@ -927,27 +927,27 @@ const LivestockManagement = () => {
                 </div>
 
                 {/* Liste des enregistrements */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {filteredControlRecords.map((record) => (
                     <Card key={record.id} className="border-l-4 border-l-cyan-600">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col gap-3 sm:gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <h3 className="font-semibold text-lg">{record.bassinName}</h3>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            <div className="flex flex-col gap-2 mb-3">
+                              <h3 className="font-semibold text-base sm:text-lg">{record.bassinName}</h3>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs w-fit">
                                 {new Date(record.date).toLocaleDateString('fr-FR')} - {record.season}
                               </Badge>
                             </div>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm mb-3">
                               <div>
                                 <p className="text-muted-foreground">Échantillon</p>
-                                <p className="font-medium">{record.sampleSize} poissons</p>
+                                <p className="font-medium truncate">{record.sampleSize} poissons</p>
                               </div>
                               <div>
                                 <p className="text-muted-foreground">Poids total</p>
-                                <p className="font-medium">{record.totalWeight} kg</p>
+                                <p className="font-medium truncate">{record.totalWeight} kg</p>
                               </div>
                               <div>
                                 <p className="text-muted-foreground">Mortalités</p>
@@ -959,26 +959,26 @@ const LivestockManagement = () => {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-6 mb-2">
-                              <Badge className="bg-blue-100 text-blue-800">{record.averageWeight}g moyen</Badge>
-                              <Badge className="bg-green-100 text-green-800">{record.rendementM2} kg/m²</Badge>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">{record.averageWeight}g moy.</Badge>
+                              <Badge className="bg-green-100 text-green-800 text-xs">{record.rendementM2} kg/m²</Badge>
                             </div>
 
                             {record.mortalityCause && (
-                              <div className="text-sm mb-2">
+                              <div className="text-xs sm:text-sm mb-2">
                                 <span className="text-muted-foreground">Cause mortalité: </span>
-                                <span className="font-medium">{record.mortalityCause}</span>
+                                <span className="font-medium break-words">{record.mortalityCause}</span>
                               </div>
                             )}
 
-                            <div className="text-sm mb-2">
-                              <span className="text-muted-foreground">Ajustement alimentation: </span>
-                              <span className="font-medium">{record.feedingAdjustment}</span>
+                            <div className="text-xs sm:text-sm mb-2">
+                              <span className="text-muted-foreground">Ajustement alim.: </span>
+                              <span className="font-medium break-words">{record.feedingAdjustment}</span>
                             </div>
 
                             {record.notes && (
                               <div className="mt-2 p-2 bg-muted rounded-md">
-                                <p className="text-sm"><strong>Notes:</strong> {record.notes}</p>
+                                <p className="text-xs sm:text-sm break-words"><strong>Notes:</strong> {record.notes}</p>
                               </div>
                             )}
                           </div>
@@ -1008,28 +1008,30 @@ const LivestockManagement = () => {
               {/* Tab Graphiques poids */}
               <TabsContent value="graphiques">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Évolution du poids moyen et rendement</CardTitle>
+                  <CardHeader className="p-3 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">Évolution du poids moyen et rendement</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={filteredControlRecords.sort((a, b) => 
-                        new Date(a.date).getTime() - new Date(b.date).getTime()
-                      ).map(r => ({
-                        date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-                        poids: r.averageWeight,
-                        rendement: r.rendementM2
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip />
-                        <Legend />
-                        <Line yAxisId="left" type="monotone" dataKey="poids" stroke="#3b82f6" name="Poids (g)" strokeWidth={2} />
-                        <Line yAxisId="right" type="monotone" dataKey="rendement" stroke="#10b981" name="Rendement (kg/m²)" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                    <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={filteredControlRecords.sort((a, b) => 
+                          new Date(a.date).getTime() - new Date(b.date).getTime()
+                        ).map(r => ({
+                          date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                          poids: r.averageWeight,
+                          rendement: r.rendementM2
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                          <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                          <Tooltip contentStyle={{ fontSize: 12 }} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Line yAxisId="left" type="monotone" dataKey="poids" stroke="#3b82f6" name="Poids (g)" strokeWidth={2} />
+                          <Line yAxisId="right" type="monotone" dataKey="rendement" stroke="#10b981" name="Rendement (kg/m²)" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1037,25 +1039,27 @@ const LivestockManagement = () => {
               {/* Tab Mortalité */}
               <TabsContent value="mortalite">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Suivi de la mortalité</CardTitle>
+                  <CardHeader className="p-3 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">Suivi de la mortalité</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={filteredControlRecords.sort((a, b) => 
-                        new Date(a.date).getTime() - new Date(b.date).getTime()
-                      ).map(r => ({
-                        date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-                        mortalite: r.mortality
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité (nb)" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                    <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={filteredControlRecords.sort((a, b) => 
+                          new Date(a.date).getTime() - new Date(b.date).getTime()
+                        ).map(r => ({
+                          date: new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                          mortalite: r.mortality
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip contentStyle={{ fontSize: 12 }} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité (nb)" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1065,102 +1069,106 @@ const LivestockManagement = () => {
 
         {/* Onglet Graphiques & Évolution */}
         <TabsContent value="charts">
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             {/* Graphique performance par espèce */}
             <Card>
-              <CardHeader>
-                <CardTitle>Performance par espèce</CardTitle>
-                <CardDescription>Comparaison des performances des différentes espèces</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Performance par espèce</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Comparaison des performances des différentes espèces</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={[
-                    { espece: 'Tilapia', quantite: 1500, poids: 225, rendement: 28 },
-                    { espece: 'Carpe', quantite: 800, poids: 160, rendement: 22 },
-                    { espece: 'Truite', quantite: 600, poids: 120, rendement: 18 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="espece" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="quantite" fill="#3b82f6" name="Quantité" />
-                    <Bar dataKey="poids" fill="#10b981" name="Poids total (kg)" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={[
+                      { espece: 'Tilapia', quantite: 1500, poids: 225, rendement: 28 },
+                      { espece: 'Carpe', quantite: 800, poids: 160, rendement: 22 },
+                      { espece: 'Truite', quantite: 600, poids: 120, rendement: 18 }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="espece" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip contentStyle={{ fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar dataKey="quantite" fill="#3b82f6" name="Quantité" />
+                      <Bar dataKey="poids" fill="#10b981" name="Poids total (kg)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
             {/* Graphique tendances temporelles */}
             <Card>
-              <CardHeader>
-                <CardTitle>Tendances de croissance globale</CardTitle>
-                <CardDescription>Évolution globale du cheptel</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Tendances de croissance globale</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Évolution globale du cheptel</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={[
-                    { mois: 'Sept', individus: 2100, biomasse: 315 },
-                    { mois: 'Oct', individus: 2450, biomasse: 380 },
-                    { mois: 'Nov', individus: 2900, biomasse: 465 },
-                    { mois: 'Dec', individus: 3200, biomasse: 535 },
-                    { mois: 'Jan', individus: 3600, biomasse: 612 }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mois" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="individus" stroke="#8b5cf6" name="Individus" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="biomasse" stroke="#f59e0b" name="Biomasse (kg)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={[
+                      { mois: 'Sept', individus: 2100, biomasse: 315 },
+                      { mois: 'Oct', individus: 2450, biomasse: 380 },
+                      { mois: 'Nov', individus: 2900, biomasse: 465 },
+                      { mois: 'Dec', individus: 3200, biomasse: 535 },
+                      { mois: 'Jan', individus: 3600, biomasse: 612 }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mois" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                      <Tooltip contentStyle={{ fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Line yAxisId="left" type="monotone" dataKey="individus" stroke="#8b5cf6" name="Individus" strokeWidth={2} />
+                      <Line yAxisId="right" type="monotone" dataKey="biomasse" stroke="#f59e0b" name="Biomasse (kg)" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
             {/* KPIs additionnels */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <BarChart3 className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <p className="text-2xl font-bold">94.2%</p>
-                      <p className="text-sm text-gray-600">Taux de survie</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-lg sm:text-2xl font-bold truncate">94.2%</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Taux survie</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="text-2xl font-bold">1.52</p>
-                      <p className="text-sm text-gray-600">Indice de conversion</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-lg sm:text-2xl font-bold truncate">1.52</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Indice conv.</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <p className="text-2xl font-bold">26.5 kg/m²</p>
-                      <p className="text-sm text-gray-600">Densité moyenne</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-2xl font-bold truncate">26.5 kg/m²</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Densité moy.</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-8 h-8 text-orange-600" />
-                    <div>
-                      <p className="text-2xl font-bold">145j</p>
-                      <p className="text-sm text-gray-600">Durée cycle moyenne</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-lg sm:text-2xl font-bold truncate">145j</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Durée cycle</p>
                     </div>
                   </div>
                 </CardContent>
