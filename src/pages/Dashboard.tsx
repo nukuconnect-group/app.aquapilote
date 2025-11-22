@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           {/* Main Content avec scroll */}
-          <main className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-20 md:pb-6">
+          <main className="flex-1 overflow-y-auto px-0 py-2 sm:p-4 lg:p-6 pb-20 md:pb-6">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
