@@ -1,5 +1,5 @@
-// Service Worker AQUA PILOT - Optimisé pour iOS Safari
-const CACHE_VERSION = 'aqua-pilot-v3';
+// Service Worker AQUA PILOT - Optimisé avec gestion améliorée du cache
+const CACHE_VERSION = 'aqua-pilot-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
@@ -13,23 +13,25 @@ const STATIC_FILES = [
 
 // Installation - Simplifiée pour iOS
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
+  console.log('[SW] Installing new version...');
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
-        // Ne pas bloquer l'installation si le cache échoue (iOS)
         return cache.addAll(STATIC_FILES).catch((err) => {
           console.warn('[SW] Cache failed, continuing anyway:', err);
           return Promise.resolve();
         });
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[SW] Skip waiting to activate immediately');
+        return self.skipWaiting();
+      })
   );
 });
 
 // Activation - Nettoyage des anciens caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating new version...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -42,11 +44,26 @@ self.addEventListener('activate', (event) => {
             })
         );
       })
-      .then(() => self.clients.claim())
+      .then(() => {
+        console.log('[SW] Claiming all clients');
+        return self.clients.claim();
+      })
+      .then(() => {
+        // Notifier tous les clients qu'une nouvelle version est active
+        return self.clients.matchAll();
+      })
+      .then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ 
+            type: 'SW_UPDATED',
+            version: CACHE_VERSION 
+          });
+        });
+      })
   );
 });
 
-// Stratégie Network-First pour iOS (évite le cache agressif)
+// Stratégie Network-First avec timeout pour iOS Safari
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
@@ -61,57 +78,63 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stratégie Network-First pour iOS Safari
+  // Stratégie Network-First avec timeout
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Si succès, mettre en cache
-        if (response && response.status === 200 && response.type !== 'error') {
-          const responseToCache = response.clone();
+    Promise.race([
+      fetch(request)
+        .then((response) => {
+          // Si succès, mettre en cache
+          if (response && response.status === 200 && response.type !== 'error') {
+            const responseToCache = response.clone();
+            
+            // Ne pas bloquer la réponse avec le cache
+            caches.open(DYNAMIC_CACHE)
+              .then((cache) => cache.put(request, responseToCache))
+              .catch((err) => console.warn('[SW] Cache put failed:', err));
+          }
           
-          // Ne pas bloquer la réponse avec le cache
-          caches.open(DYNAMIC_CACHE)
-            .then((cache) => cache.put(request, responseToCache))
-            .catch((err) => console.warn('[SW] Cache put failed:', err));
-        }
-        
-        return response;
-      })
-      .catch((error) => {
-        console.log('[SW] Fetch failed, trying cache:', request.url);
-        
-        // Fallback sur le cache
-        return caches.match(request)
-          .then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            
-            // Pour les navigations, retourner la page d'index
-            if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
-              return caches.match('/index.html')
-                .then((indexResponse) => {
-                  if (indexResponse) return indexResponse;
-                  
-                  // Fallback HTML minimal
-                  return new Response(
-                    '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AQUA PILOT</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>',
-                    {
-                      status: 200,
-                      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-                    }
-                  );
-                });
-            }
-            
-            // Pour les autres ressources, retourner une erreur propre
-            return new Response('Resource not available offline', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: { 'Content-Type': 'text/plain' }
-            });
+          return response;
+        }),
+      // Timeout après 3 secondes pour éviter les attentes infinies
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Network timeout')), 3000)
+      )
+    ])
+    .catch((error) => {
+      console.log('[SW] Fetch failed or timeout, trying cache:', request.url);
+      
+      // Fallback sur le cache
+      return caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          // Pour les navigations, retourner la page d'index
+          if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/index.html')
+              .then((indexResponse) => {
+                if (indexResponse) return indexResponse;
+                
+                // Fallback HTML minimal
+                return new Response(
+                  '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AQUA PILOT</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>',
+                  {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                  }
+                );
+              });
+          }
+          
+          // Pour les autres ressources, retourner une erreur propre
+          return new Response('Resource not available offline', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' }
           });
-      })
+        });
+    })
   );
 });
 
@@ -163,10 +186,12 @@ self.addEventListener('notificationclick', (event) => {
 // Messages du SW
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING message');
     self.skipWaiting();
   }
   
   if (event.data && event.data.type === 'CLEAR_CACHE') {
+    console.log('[SW] Clearing all caches...');
     event.waitUntil(
       caches.keys()
         .then((cacheNames) => {
@@ -181,6 +206,16 @@ self.addEventListener('message', (event) => {
           clients.forEach((client) => {
             client.postMessage({ type: 'CACHE_CLEARED' });
           });
+        })
+    );
+  }
+  
+  if (event.data && event.data.type === 'CHECK_UPDATE') {
+    console.log('[SW] Checking for updates...');
+    event.waitUntil(
+      self.registration.update()
+        .then(() => {
+          console.log('[SW] Update check completed');
         })
     );
   }
