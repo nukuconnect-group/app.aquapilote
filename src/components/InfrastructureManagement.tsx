@@ -62,9 +62,9 @@ const InfrastructureManagement = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* En-tête spécifique à l'unité */}
-      <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-4 sm:p-6 rounded-xl text-white">
+      <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-4 sm:p-6 rounded-lg sm:rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 truncate">

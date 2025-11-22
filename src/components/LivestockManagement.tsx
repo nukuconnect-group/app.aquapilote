@@ -353,9 +353,9 @@ const LivestockManagement = () => {
   }, [filteredBatches, selectedUnit, units]);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 p-3 sm:p-4 md:p-6 rounded-xl text-white">
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1">Gestion du Cheptel</h2>
@@ -388,7 +388,7 @@ const LivestockManagement = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Espèce *</Label>
                       <Select value={formData.species} onValueChange={(value) => setFormData({...formData, species: value})}>
@@ -436,7 +436,7 @@ const LivestockManagement = () => {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Quantité *</Label>
                       <Input
