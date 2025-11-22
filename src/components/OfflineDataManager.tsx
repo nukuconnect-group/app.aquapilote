@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Database, 
   Download, 
@@ -12,11 +13,14 @@ import {
   AlertCircle,
   Wifi,
   WifiOff,
-  HardDrive
+  HardDrive,
+  FileUp
 } from 'lucide-react';
 import { useOfflineContext } from '@/contexts/OfflineContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import FileUploadManager from './FileUploadManager';
+import OfflineFilesSync from './OfflineFilesSync';
 
 export const OfflineDataManager = () => {
   const {
@@ -263,6 +267,9 @@ export const OfflineDataManager = () => {
                   • Les modifications effectuées hors ligne sont synchronisées automatiquement
                 </li>
                 <li className="break-words">
+                  • Les images sont compressées automatiquement avant l'upload
+                </li>
+                <li className="break-words">
                   • Cliquez sur "Télécharger toutes les données" pour forcer une mise à jour
                 </li>
               </ul>
@@ -270,6 +277,33 @@ export const OfflineDataManager = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Gestion des fichiers et photos */}
+      <Tabs defaultValue="upload" className="space-y-4">
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <TabsList className="w-full sm:w-auto inline-flex">
+            <TabsTrigger value="upload" className="text-xs sm:text-sm">
+              <FileUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              Upload de fichiers
+            </TabsTrigger>
+            <TabsTrigger value="sync" className="text-xs sm:text-sm">
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              Synchronisation
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="upload">
+          <FileUploadManager 
+            module="general" 
+            moduleLabel="Général"
+          />
+        </TabsContent>
+
+        <TabsContent value="sync">
+          <OfflineFilesSync />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
