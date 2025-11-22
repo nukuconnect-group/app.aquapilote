@@ -114,23 +114,23 @@ const IoTAIAnalysis = () => {
   }, [units]);
 
   const getHealthScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-orange-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-orange-600 dark:text-orange-400';
+    return 'text-destructive';
   };
 
   const getHealthScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-100';
-    if (score >= 60) return 'bg-orange-100';
-    return 'bg-red-100';
+    if (score >= 80) return 'bg-green-100 dark:bg-green-950/20';
+    if (score >= 60) return 'bg-orange-100 dark:bg-orange-950/20';
+    return 'bg-destructive/10';
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-500 text-white border-red-600';
+      case 'critical': return 'bg-destructive text-destructive-foreground border-destructive';
       case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'medium': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'medium': return 'bg-orange-100 dark:bg-orange-950/20 text-orange-800 dark:text-orange-400 border-orange-300 dark:border-orange-900';
+      case 'low': return 'bg-blue-100 dark:bg-blue-950/20 text-blue-800 dark:text-blue-400 border-blue-300 dark:border-blue-900';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
@@ -163,11 +163,11 @@ const IoTAIAnalysis = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec score de santé global */}
-      <Card className="border-l-4 border-l-purple-500">
+      <Card className="border-l-4 border-l-primary">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-purple-600" />
+              <Brain className="w-6 h-6 text-primary" />
               {t('recommendations')} IA - {units.find(u => u.id === currentAnalysis.unitId)?.name}
             </CardTitle>
             <Button 
@@ -209,32 +209,32 @@ const IoTAIAnalysis = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <Fish className="w-5 h-5 text-blue-600" />
-              <Badge className="bg-blue-100 text-blue-800">IoT + IA</Badge>
+              <Fish className="w-5 h-5 text-primary" />
+              <Badge variant="secondary">IoT + IA</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.fishCount.toLocaleString()}</div>
             <div className="text-sm text-muted-foreground">{t('detected_subjects')}</div>
-            <div className="text-xs text-green-600 mt-1">{t('status')}</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">{t('status')}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <Activity className="w-5 h-5 text-purple-600" />
-              <Badge className="bg-purple-100 text-purple-800">{t('average_weight')}</Badge>
+              <Activity className="w-5 h-5 text-primary" />
+              <Badge variant="secondary">{t('average_weight')}</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.averageWeight} g</div>
             <div className="text-sm text-muted-foreground">{t('average_weight')}</div>
-            <div className="text-xs text-green-600 mt-1">+{currentAnalysis.dailyGrowth}% / {t('daily_production').toLowerCase()}</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">+{currentAnalysis.dailyGrowth}% / {t('daily_production').toLowerCase()}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              <Badge className="bg-green-100 text-green-800">IA</Badge>
+              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <Badge variant="secondary">IA</Badge>
             </div>
             <div className="text-2xl font-bold">{currentAnalysis.dailyGrowth}%</div>
             <div className="text-sm text-muted-foreground">{t('daily_growth')}</div>
@@ -245,8 +245,8 @@ const IoTAIAnalysis = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
-              <Badge className={currentAnalysis.dailyMortality > 1 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+              <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              <Badge variant={currentAnalysis.dailyMortality > 1 ? 'destructive' : 'secondary'}>
                 {currentAnalysis.dailyMortality > 1 ? t('warning') : t('normal')}
               </Badge>
             </div>
@@ -263,7 +263,7 @@ const IoTAIAnalysis = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-purple-600" />
+            <Brain className="w-5 h-5 text-primary" />
             {t('recommendations')}
           </CardTitle>
         </CardHeader>
