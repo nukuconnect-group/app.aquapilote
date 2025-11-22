@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Home, Fish, Factory, Wifi, Menu } from 'lucide-react';
+import { Home, Factory, Wifi, Menu } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import MobileMenuModal from './MobileMenuModal';
 
@@ -17,7 +17,6 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
     { id: 'dashboard', label: t('dashboard'), icon: Home },
     { id: 'iot-control', label: t('iot-control'), icon: Wifi },
     { id: 'units', label: t('units'), icon: Factory },
-    { id: 'fish', label: t('fish'), icon: Fish },
   ];
 
   const handleMenuClick = () => {
