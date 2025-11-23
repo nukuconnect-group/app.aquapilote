@@ -45,7 +45,8 @@ serve(async (req) => {
     // Get user from token
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Auth error:', userError);
+      throw new Error('Utilisateur non authentifié. Veuillez vous connecter.');
     }
 
     const { iotData }: { iotData: IoTData } = await req.json();
