@@ -31,6 +31,8 @@ interface CycleDetailsProps {
     initialQuantity?: number;
     stockingDate?: string;
     fingerlingsCount?: number;
+    species?: string;
+    duration_months?: number;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -116,6 +118,12 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                   Informations du cycle
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
+                  {cycle.species && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Espèce</p>
+                      <p className="font-medium text-lg">{cycle.species}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-muted-foreground">Date de début</p>
                     <p className="font-medium">{new Date(cycle.startDate).toLocaleDateString('fr-FR')}</p>
@@ -128,6 +136,12 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                         : expectedEndDate}
                     </p>
                   </div>
+                  {cycle.duration_months && (
+                    <div>
+                      <p className="text-muted-foreground">Durée prévue</p>
+                      <p className="font-medium">{cycle.duration_months} mois</p>
+                    </div>
+                  )}
                   {cycle.stockingDate && (
                     <div>
                       <p className="text-muted-foreground">Date d'empoisonnement</p>
