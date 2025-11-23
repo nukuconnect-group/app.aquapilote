@@ -20,6 +20,8 @@ export interface ProductionCycle {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  species?: string;
+  duration_months?: number;
 }
 
 export const useProductionCycles = (unitId?: string) => {

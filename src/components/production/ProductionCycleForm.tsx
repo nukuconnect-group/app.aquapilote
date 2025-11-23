@@ -23,6 +23,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
   const [formData, setFormData] = useState({
     name: '',
     species: '',
+    customSpecies: '',
     startDate: '',
     expectedDuration: '6',
     initialQuantity: '',
@@ -33,6 +34,17 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     notes: '',
     infrastructure: ''
   });
+
+  // Calcul automatique de la date de fin
+  const calculateEndDate = () => {
+    if (!formData.startDate || !formData.expectedDuration) return '';
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + parseInt(formData.expectedDuration));
+    return endDate.toISOString().split('T')[0];
+  };
+
+  const calculatedEndDate = calculateEndDate();
 
   const speciesByType = {
     ecloserie: ['Carpe commune', 'Tilapia', 'Truite arc-en-ciel', 'Saumon', 'Bar'],
@@ -56,10 +68,10 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     e.preventDefault();
     
     try {
-      // Calculer la date de fin prévue
-      const startDate = new Date(formData.startDate);
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + parseInt(formData.expectedDuration));
+      // Déterminer l'espèce finale (personnalisée ou prédéfinie)
+      const finalSpecies = formData.species === 'custom' 
+        ? formData.customSpecies 
+        : formData.species;
       
       const cycleData = {
         unit_id: unitId,
@@ -68,13 +80,15 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         name: formData.name,
         status: 'active',
         start_date: formData.startDate,
-        end_date: endDate.toISOString().split('T')[0],
+        end_date: calculatedEndDate,
         current_quantity: parseInt(formData.initialQuantity),
         target_quantity: parseInt(formData.targetQuantity),
         initial_quantity: parseInt(formData.initialQuantity),
         fingerlings_count: parseInt(formData.initialQuantity),
         stocking_date: formData.startDate,
         notes: formData.notes,
+        species: finalSpecies,
+        duration_months: parseInt(formData.expectedDuration),
       };
 
       const savedCycle = await createCycle(cycleData);
@@ -108,6 +122,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
       setFormData({
         name: '',
         species: '',
+        customSpecies: '',
         startDate: '',
         expectedDuration: '6',
         initialQuantity: '',
@@ -164,7 +179,10 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="species">Espèce/Produit</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, species: value})}>
+                  <Select 
+                    value={formData.species} 
+                    onValueChange={(value) => setFormData({...formData, species: value})}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
@@ -172,9 +190,23 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                       {species.map((item) => (
                         <SelectItem key={item} value={item}>{item}</SelectItem>
                       ))}
+                      <SelectItem value="custom">➕ Espèce personnalisée</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {formData.species === 'custom' && (
+                  <div>
+                    <Label htmlFor="customSpecies">Nom de l'espèce</Label>
+                    <Input
+                      id="customSpecies"
+                      value={formData.customSpecies}
+                      onChange={(e) => setFormData({...formData, customSpecies: e.target.value})}
+                      placeholder="Ex: Tilapia du Nil"
+                      required
+                    />
+                  </div>
+                )}
                 
                 <div>
                   <Label htmlFor="infrastructure">Infrastructure</Label>
@@ -217,17 +249,28 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3 mois</SelectItem>
-                      <SelectItem value="6">6 mois</SelectItem>
-                      <SelectItem value="9">9 mois</SelectItem>
-                      <SelectItem value="12">12 mois</SelectItem>
-                      <SelectItem value="18">18 mois</SelectItem>
-                      <SelectItem value="24">24 mois</SelectItem>
+                    <SelectContent className="max-h-[200px]">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 24].map((months) => (
+                        <SelectItem key={months} value={months.toString()}>
+                          {months} mois
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+              
+              {calculatedEndDate && (
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <p className="text-sm font-medium text-primary">
+                    📅 Date de fin calculée : {new Date(calculatedEndDate).toLocaleDateString('fr-FR', { 
+                      day: 'numeric', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

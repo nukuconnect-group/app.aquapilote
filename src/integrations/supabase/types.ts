@@ -223,12 +223,14 @@ export type Database = {
         Row: {
           created_at: string | null
           current_quantity: number
+          duration_months: number | null
           end_date: string | null
           fingerlings_count: number | null
           id: string
           initial_quantity: number | null
           name: string
           notes: string | null
+          species: string | null
           start_date: string
           status: string
           stocking_date: string | null
@@ -242,12 +244,14 @@ export type Database = {
         Insert: {
           created_at?: string | null
           current_quantity?: number
+          duration_months?: number | null
           end_date?: string | null
           fingerlings_count?: number | null
           id?: string
           initial_quantity?: number | null
           name: string
           notes?: string | null
+          species?: string | null
           start_date: string
           status?: string
           stocking_date?: string | null
@@ -261,12 +265,14 @@ export type Database = {
         Update: {
           created_at?: string | null
           current_quantity?: number
+          duration_months?: number | null
           end_date?: string | null
           fingerlings_count?: number | null
           id?: string
           initial_quantity?: number | null
           name?: string
           notes?: string | null
+          species?: string | null
           start_date?: string
           status?: string
           stocking_date?: string | null
