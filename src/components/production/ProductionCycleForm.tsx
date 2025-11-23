@@ -8,16 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Save, Calendar } from 'lucide-react';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
 
 interface ProductionCycleFormProps {
   unitId: string;
   unitName: string;
   unitType: string;
-  onSave: (cycle: any) => void;
+  onSave?: (cycle: any) => void;
 }
 
 const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionCycleFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { createCycle } = useProductionCycles();
   const [formData, setFormData] = useState({
     name: '',
     species: '',
@@ -50,45 +52,75 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     commercialisation: ['Point vente', 'Zone expédition', 'Véhicule livraison']
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const cycle = {
-      id: Date.now().toString(),
-      name: formData.name,
-      species: formData.species,
-      startDate: formData.startDate,
-      expectedDuration: parseInt(formData.expectedDuration),
-      initialQuantity: parseInt(formData.initialQuantity),
-      targetQuantity: parseInt(formData.targetQuantity),
-      currentQuantity: parseInt(formData.initialQuantity),
-      initialWeight: parseFloat(formData.initialWeight),
-      targetWeight: parseFloat(formData.targetWeight),
-      feedType: formData.feedType,
-      notes: formData.notes,
-      infrastructure: formData.infrastructure,
-      unitId,
-      status: 'active',
-      progress: 0
-    };
+    try {
+      // Calculer la date de fin prévue
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + parseInt(formData.expectedDuration));
+      
+      const cycleData = {
+        unit_id: unitId,
+        unit_name: unitName,
+        unit_type: unitType,
+        name: formData.name,
+        status: 'active',
+        start_date: formData.startDate,
+        end_date: endDate.toISOString().split('T')[0],
+        current_quantity: parseInt(formData.initialQuantity),
+        target_quantity: parseInt(formData.targetQuantity),
+        initial_quantity: parseInt(formData.initialQuantity),
+        fingerlings_count: parseInt(formData.initialQuantity),
+        stocking_date: formData.startDate,
+        notes: formData.notes,
+      };
 
-    onSave(cycle);
-    setIsOpen(false);
-    
-    // Reset form
-    setFormData({
-      name: '',
-      species: '',
-      startDate: '',
-      expectedDuration: '6',
-      initialQuantity: '',
-      targetQuantity: '',
-      initialWeight: '',
-      targetWeight: '',
-      feedType: '',
-      notes: '',
-      infrastructure: ''
-    });
+      const savedCycle = await createCycle(cycleData);
+      
+      // Appeler onSave si fourni (pour compatibilité avec l'ancien code)
+      if (onSave) {
+        onSave({
+          id: savedCycle.id,
+          name: savedCycle.name,
+          species: formData.species,
+          startDate: savedCycle.start_date,
+          endDate: savedCycle.end_date,
+          expectedDuration: parseInt(formData.expectedDuration),
+          initialQuantity: savedCycle.initial_quantity,
+          targetQuantity: savedCycle.target_quantity,
+          currentQuantity: savedCycle.current_quantity,
+          initialWeight: parseFloat(formData.initialWeight) || 0,
+          targetWeight: parseFloat(formData.targetWeight) || 0,
+          feedType: formData.feedType,
+          notes: savedCycle.notes,
+          infrastructure: formData.infrastructure,
+          unitId: savedCycle.unit_id,
+          status: savedCycle.status,
+          progress: 0
+        });
+      }
+      
+      setIsOpen(false);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        species: '',
+        startDate: '',
+        expectedDuration: '6',
+        initialQuantity: '',
+        targetQuantity: '',
+        initialWeight: '',
+        targetWeight: '',
+        feedType: '',
+        notes: '',
+        infrastructure: ''
+      });
+    } catch (error) {
+      console.error('Error creating cycle:', error);
+    }
   };
 
   const species = speciesByType[unitType] || [];

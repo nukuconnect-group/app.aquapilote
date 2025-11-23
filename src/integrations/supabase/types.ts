@@ -50,6 +50,193 @@ export type Database = {
         }
         Relationships: []
       }
+      feeding_records: {
+        Row: {
+          behavior: string | null
+          created_at: string | null
+          cycle_id: string | null
+          date: string
+          fcr: number | null
+          feed_type: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          temperature: number | null
+          time: string | null
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          behavior?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          date: string
+          fcr?: number | null
+          feed_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity: number
+          temperature?: number | null
+          time?: string | null
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          behavior?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          date?: string
+          fcr?: number | null
+          feed_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          temperature?: number | null
+          time?: string | null
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeding_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_records: {
+        Row: {
+          average_weight: number | null
+          basin_id: string | null
+          created_at: string | null
+          cycle_id: string | null
+          date: string
+          density: number | null
+          feeding: number | null
+          id: string
+          mortality: number | null
+          notes: string | null
+          oxygen: number | null
+          ph: number | null
+          sample_count: number | null
+          temperature: number | null
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          average_weight?: number | null
+          basin_id?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          date: string
+          density?: number | null
+          feeding?: number | null
+          id?: string
+          mortality?: number | null
+          notes?: string | null
+          oxygen?: number | null
+          ph?: number | null
+          sample_count?: number | null
+          temperature?: number | null
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          average_weight?: number | null
+          basin_id?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          date?: string
+          density?: number | null
+          feeding?: number | null
+          id?: string
+          mortality?: number | null
+          notes?: string | null
+          oxygen?: number | null
+          ph?: number | null
+          sample_count?: number | null
+          temperature?: number | null
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_records_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_cycles: {
+        Row: {
+          created_at: string | null
+          current_quantity: number
+          end_date: string | null
+          fingerlings_count: number | null
+          id: string
+          initial_quantity: number | null
+          name: string
+          notes: string | null
+          start_date: string
+          status: string
+          stocking_date: string | null
+          target_quantity: number
+          unit_id: string
+          unit_name: string
+          unit_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_quantity?: number
+          end_date?: string | null
+          fingerlings_count?: number | null
+          id?: string
+          initial_quantity?: number | null
+          name: string
+          notes?: string | null
+          start_date: string
+          status?: string
+          stocking_date?: string | null
+          target_quantity: number
+          unit_id: string
+          unit_name: string
+          unit_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_quantity?: number
+          end_date?: string | null
+          fingerlings_count?: number | null
+          id?: string
+          initial_quantity?: number | null
+          name?: string
+          notes?: string | null
+          start_date?: string
+          status?: string
+          stocking_date?: string | null
+          target_quantity?: number
+          unit_id?: string
+          unit_name?: string
+          unit_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
