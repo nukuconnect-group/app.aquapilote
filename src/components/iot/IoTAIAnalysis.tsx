@@ -1,17 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp } from 'lucide-react';
+import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp, Zap, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
+import { useIoT } from '@/contexts/IoTContext';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface IoTData {
   temperature: number;
@@ -29,7 +31,10 @@ interface AquapiloteResponse {
 const IoTAIAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AquapiloteResponse | null>(null);
+  const [autoAnalysisResult, setAutoAnalysisResult] = useState<AquapiloteResponse | null>(null);
+  const [mode, setMode] = useState<'auto' | 'manual'>('auto');
   const { analyses, loading: loadingHistory, refetch, deleteAnalysis } = useAIAnalyses(20);
+  const { basins, sensorReadings, getActiveAlerts } = useIoT();
   
   const [iotData, setIotData] = useState<IoTData>({
     temperature: 25,
@@ -38,6 +43,80 @@ const IoTAIAnalysis = () => {
     ammonium: 0.5,
     nitrite: 0.2
   });
+
+  // Récupérer les dernières données des capteurs IoT automatiquement
+  const latestSensorData = useMemo(() => {
+    if (basins.length === 0) return null;
+    
+    const latestReadings = {
+      temperature: 0,
+      oxygene_dissous: 0,
+      ph: 0,
+      count: { temp: 0, oxygen: 0, ph: 0 }
+    };
+
+    // Récupérer les lectures les plus récentes de tous les bassins
+    basins.forEach(basin => {
+      const basinReadings = sensorReadings
+        .filter(r => r.basinId === basin.id)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      const tempReading = basinReadings.find(r => r.sensorType === 'temperature');
+      const oxygenReading = basinReadings.find(r => r.sensorType === 'oxygen');
+      const phReading = basinReadings.find(r => r.sensorType === 'ph');
+
+      if (tempReading) {
+        latestReadings.temperature += tempReading.value;
+        latestReadings.count.temp++;
+      }
+      if (oxygenReading) {
+        latestReadings.oxygene_dissous += oxygenReading.value;
+        latestReadings.count.oxygen++;
+      }
+      if (phReading) {
+        latestReadings.ph += phReading.value;
+        latestReadings.count.ph++;
+      }
+    });
+
+    // Calculer les moyennes
+    if (latestReadings.count.temp === 0 && latestReadings.count.oxygen === 0 && latestReadings.count.ph === 0) {
+      return null;
+    }
+
+    return {
+      temperature: latestReadings.count.temp > 0 ? latestReadings.temperature / latestReadings.count.temp : 25,
+      oxygene_dissous: latestReadings.count.oxygen > 0 ? latestReadings.oxygene_dissous / latestReadings.count.oxygen : 7.5,
+      ph: latestReadings.count.ph > 0 ? latestReadings.ph / latestReadings.count.ph : 7.2,
+      ammonium: 0.5, // Valeur par défaut (non mesurée par capteurs)
+      nitrite: 0.2    // Valeur par défaut (non mesurée par capteurs)
+    };
+  }, [sensorReadings, basins]);
+
+  // Analyse automatique quand les données des capteurs changent
+  useEffect(() => {
+    if (mode === 'auto' && latestSensorData) {
+      const analyzeAuto = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('aquapilote-recommendation', {
+            body: { iotData: latestSensorData }
+          });
+
+          if (!error && !data.error) {
+            setAutoAnalysisResult(data);
+          }
+        } catch (error) {
+          console.error('Erreur analyse automatique:', error);
+        }
+      };
+
+      // Analyser toutes les 30 secondes
+      const interval = setInterval(analyzeAuto, 30000);
+      analyzeAuto(); // Première analyse immédiate
+
+      return () => clearInterval(interval);
+    }
+  }, [mode, latestSensorData]);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -105,8 +184,110 @@ const IoTAIAnalysis = () => {
       }));
   }, [analyses]);
 
+  const activeAlerts = getActiveAlerts();
+
   return (
     <div className="space-y-6">
+      {/* Alertes automatiques en temps réel */}
+      {mode === 'auto' && activeAlerts.length > 0 && (
+        <Card className="border-red-500 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="w-5 h-5" />
+              Alertes Actives ({activeAlerts.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeAlerts.slice(0, 5).map(alert => {
+                const basin = basins.find(b => b.id === alert.basinId);
+                return (
+                  <Alert key={alert.id} variant={alert.status === 'critical' ? 'destructive' : 'default'}>
+                    <AlertDescription className="flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold">{basin?.name || alert.basinId}</span>
+                        {' - '}
+                        <span className="capitalize">{alert.sensorType}</span>
+                        {': '}
+                        <span className="font-bold">{alert.value} {alert.unit}</span>
+                      </div>
+                      <Badge variant={alert.status === 'critical' ? 'destructive' : 'secondary'}>
+                        {alert.status === 'critical' ? 'CRITIQUE' : 'ATTENTION'}
+                      </Badge>
+                    </AlertDescription>
+                  </Alert>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Analyse IA automatique en temps réel */}
+      {mode === 'auto' && autoAnalysisResult && (
+        <Card className="border-purple-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-6 h-6 text-purple-600" />
+              Analyse IA Automatique en Temps Réel
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Basée sur les dernières données des capteurs IoT
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Paramètres actuels */}
+            {latestSensorData && (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                <div className="bg-background rounded-lg p-3 border">
+                  <div className="text-xs text-muted-foreground">Température</div>
+                  <div className="text-lg font-bold">{latestSensorData.temperature.toFixed(1)}°C</div>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <div className="text-xs text-muted-foreground">Oxygène</div>
+                  <div className="text-lg font-bold">{latestSensorData.oxygene_dissous.toFixed(1)} mg/L</div>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <div className="text-xs text-muted-foreground">pH</div>
+                  <div className="text-lg font-bold">{latestSensorData.ph.toFixed(1)}</div>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <div className="text-xs text-muted-foreground">Ammonium</div>
+                  <div className="text-lg font-bold">{latestSensorData.ammonium.toFixed(1)} mg/L</div>
+                </div>
+                <div className="bg-background rounded-lg p-3 border">
+                  <div className="text-xs text-muted-foreground">Nitrite</div>
+                  <div className="text-lg font-bold">{latestSensorData.nitrite.toFixed(1)} mg/L</div>
+                </div>
+              </div>
+            )}
+
+            {/* Badge d'alerte */}
+            <div className="flex justify-center">
+              {autoAnalysisResult.alerte ? (
+                <Badge className="bg-red-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  ALERTE
+                </Badge>
+              ) : (
+                <Badge className="bg-green-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  RAS
+                </Badge>
+              )}
+            </div>
+
+            {/* Conseil */}
+            <Alert className={autoAnalysisResult.alerte ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
+              <AlertDescription className="text-base">
+                <div className="font-semibold mb-2 text-foreground">Recommandation Automatique :</div>
+                <div className="text-foreground/90">{autoAnalysisResult.conseil}</div>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -114,120 +295,157 @@ const IoTAIAnalysis = () => {
             Analyse IA des Bassins
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Entrez les paramètres de l'eau pour obtenir une analyse intelligente et des recommandations personnalisées
+            Mode automatique : analyse en temps réel des capteurs IoT | Mode manuel : entrez les paramètres manuellement
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Formulaire de saisie */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="temperature">Température (°C)</Label>
-              <Input
-                id="temperature"
-                type="number"
-                step="0.1"
-                value={iotData.temperature}
-                onChange={(e) => handleInputChange('temperature', e.target.value)}
-                placeholder="Ex: 25.5"
-              />
-            </div>
+          {/* Sélection du mode */}
+          <Tabs value={mode} onValueChange={(v) => setMode(v as 'auto' | 'manual')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="auto" className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                Automatique
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Manuel
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="oxygene">Oxygène Dissous (mg/L)</Label>
-              <Input
-                id="oxygene"
-                type="number"
-                step="0.1"
-                value={iotData.oxygene_dissous}
-                onChange={(e) => handleInputChange('oxygene_dissous', e.target.value)}
-                placeholder="Ex: 7.5"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ph">pH (potentiel hydrogène)</Label>
-              <Input
-                id="ph"
-                type="number"
-                step="0.1"
-                value={iotData.ph}
-                onChange={(e) => handleInputChange('ph', e.target.value)}
-                placeholder="Ex: 7.2"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ammonium">Ammonium/Ammoniaque (mg/L)</Label>
-              <Input
-                id="ammonium"
-                type="number"
-                step="0.1"
-                value={iotData.ammonium}
-                onChange={(e) => handleInputChange('ammonium', e.target.value)}
-                placeholder="Ex: 0.5"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nitrite">Nitrite (mg/L)</Label>
-              <Input
-                id="nitrite"
-                type="number"
-                step="0.1"
-                value={iotData.nitrite}
-                onChange={(e) => handleInputChange('nitrite', e.target.value)}
-                placeholder="Ex: 0.2"
-              />
-            </div>
-          </div>
-
-          {/* Bouton d'analyse */}
-          <Button 
-            onClick={handleAnalyze} 
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            size="lg"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Analyse en cours...
-              </>
-            ) : (
-              <>
-                <Brain className="w-5 h-5 mr-2" />
-                Analyser et Recommander
-              </>
-            )}
-          </Button>
-
-          {/* Affichage des résultats */}
-          {result && (
-            <div className="space-y-4 pt-4 border-t">
-              {/* Badge d'alerte */}
-              <div className="flex justify-center">
-                {result.alerte ? (
-                  <Badge className="bg-red-500 text-white px-6 py-2 text-lg flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
-                    ALERTE
-                  </Badge>
-                ) : (
-                  <Badge className="bg-green-500 text-white px-6 py-2 text-lg flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    RAS
-                  </Badge>
-                )}
-              </div>
-
-              {/* Conseil */}
-              <Alert className={result.alerte ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
-                <AlertDescription className="text-base">
-                  <div className="font-semibold mb-2 text-foreground">Recommandation :</div>
-                  <div className="text-foreground/90">{result.conseil}</div>
+            <TabsContent value="auto" className="space-y-4 mt-4">
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertDescription className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <div className="font-semibold text-blue-900">Mode automatique activé</div>
+                    <div className="text-sm text-blue-700">
+                      L'analyse est effectuée automatiquement toutes les 30 secondes en utilisant les données des capteurs IoT en temps réel.
+                    </div>
+                  </div>
                 </AlertDescription>
               </Alert>
-            </div>
-          )}
+              {!latestSensorData && (
+                <Alert>
+                  <AlertDescription>
+                    En attente des données des capteurs IoT...
+                  </AlertDescription>
+                </Alert>
+              )}
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-4 mt-4">
+              {/* Formulaire de saisie */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="temperature">Température (°C)</Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    value={iotData.temperature}
+                    onChange={(e) => handleInputChange('temperature', e.target.value)}
+                    placeholder="Ex: 25.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="oxygene">Oxygène Dissous (mg/L)</Label>
+                  <Input
+                    id="oxygene"
+                    type="number"
+                    step="0.1"
+                    value={iotData.oxygene_dissous}
+                    onChange={(e) => handleInputChange('oxygene_dissous', e.target.value)}
+                    placeholder="Ex: 7.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ph">pH (potentiel hydrogène)</Label>
+                  <Input
+                    id="ph"
+                    type="number"
+                    step="0.1"
+                    value={iotData.ph}
+                    onChange={(e) => handleInputChange('ph', e.target.value)}
+                    placeholder="Ex: 7.2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ammonium">Ammonium/Ammoniaque (mg/L)</Label>
+                  <Input
+                    id="ammonium"
+                    type="number"
+                    step="0.1"
+                    value={iotData.ammonium}
+                    onChange={(e) => handleInputChange('ammonium', e.target.value)}
+                    placeholder="Ex: 0.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nitrite">Nitrite (mg/L)</Label>
+                  <Input
+                    id="nitrite"
+                    type="number"
+                    step="0.1"
+                    value={iotData.nitrite}
+                    onChange={(e) => handleInputChange('nitrite', e.target.value)}
+                    placeholder="Ex: 0.2"
+                  />
+                </div>
+              </div>
+
+              {/* Bouton d'analyse */}
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                size="lg"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Analyse en cours...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="w-5 h-5 mr-2" />
+                    Analyser et Recommander
+                  </>
+                )}
+              </Button>
+
+              {/* Affichage des résultats */}
+              {result && (
+                <div className="space-y-4 pt-4 border-t">
+                  {/* Badge d'alerte */}
+                  <div className="flex justify-center">
+                    {result.alerte ? (
+                      <Badge className="bg-red-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5" />
+                        ALERTE
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5" />
+                        RAS
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Conseil */}
+                  <Alert className={result.alerte ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
+                    <AlertDescription className="text-base">
+                      <div className="font-semibold mb-2 text-foreground">Recommandation :</div>
+                      <div className="text-foreground/90">{result.conseil}</div>
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
