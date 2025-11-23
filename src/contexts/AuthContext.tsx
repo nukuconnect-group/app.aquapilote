@@ -268,6 +268,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return { success: false, error: 'Le mot de passe doit contenir au moins un chiffre' };
     }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      setIsLoading(false);
+      return { success: false, error: 'Le mot de passe doit contenir au moins un caractère spécial' };
+    }
     
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
