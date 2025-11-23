@@ -40,6 +40,9 @@ const validateUserInput = (data: any) => {
     if (!/[0-9]/.test(data.password)) {
       errors.push('Le mot de passe doit contenir au moins un chiffre');
     }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(data.password)) {
+      errors.push('Le mot de passe doit contenir au moins un caractère spécial');
+    }
   }
   
   // Full name validation
