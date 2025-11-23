@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,8 +36,15 @@ interface CycleDetailsProps {
 }
 
 const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, onClose, onEdit }) => {
+  // États pour les données d'alimentation et de santé
+  const [feedingRecords, setFeedingRecords] = useState<any[]>([]);
+  const [healthRecords, setHealthRecords] = useState<any[]>([]);
+  
   // Données calculées (à remplacer par de vraies données provenant du context/API)
   const daysElapsed = Math.floor((new Date().getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24));
+  const cycleDuration = cycle.endDate 
+    ? Math.floor((new Date(cycle.endDate).getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 150; // Par défaut 150 jours si pas de date de fin
   const expectedEndDate = cycle.endDate || 'Non défini';
   const averageWeight = ((cycle.currentQuantity * 2.5) / cycle.currentQuantity * 1000).toFixed(0); // Poids moyen en grammes
   const dailyGrowth = (parseFloat(averageWeight) / daysElapsed).toFixed(1);
@@ -46,6 +53,23 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
   const survivalRate = ((cycle.currentQuantity / cycle.targetQuantity) * 100).toFixed(1);
   const waterTemperature = 24.5; // °C
   const dissolvedOxygen = 7.2; // mg/L
+  
+  // Récupération des données d'alimentation et de santé depuis le localStorage
+  useEffect(() => {
+    if (isOpen && cycle.id) {
+      // Récupérer les données d'alimentation pour ce cycle depuis le localStorage
+      const storedFeeding = localStorage.getItem(`feeding_records_${cycle.id}`);
+      if (storedFeeding) {
+        setFeedingRecords(JSON.parse(storedFeeding));
+      }
+      
+      // Récupérer les données de santé pour ce cycle depuis le localStorage
+      const storedHealth = localStorage.getItem(`health_records_${cycle.id}`);
+      if (storedHealth) {
+        setHealthRecords(JSON.parse(storedHealth));
+      }
+    }
+  }, [isOpen, cycle.id]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -255,6 +279,9 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
               cycleId={cycle.id}
               cycleName={cycle.name}
               daysElapsed={daysElapsed}
+              cycleDuration={cycleDuration}
+              feedingRecords={feedingRecords}
+              healthRecords={healthRecords}
             />
           </TabsContent>
         </Tabs>
