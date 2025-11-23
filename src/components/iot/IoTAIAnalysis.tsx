@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
 import { useIoT } from '@/contexts/IoTContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -29,6 +30,7 @@ interface AquapiloteResponse {
 }
 
 const IoTAIAnalysis = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AquapiloteResponse | null>(null);
   const [autoAnalysisResult, setAutoAnalysisResult] = useState<AquapiloteResponse | null>(null);
@@ -93,6 +95,12 @@ const IoTAIAnalysis = () => {
     };
   }, [sensorReadings, basins]);
 
+  // Réinitialiser les résultats quand on change de mode
+  useEffect(() => {
+    setResult(null);
+    setAutoAnalysisResult(null);
+  }, [mode]);
+
   // Analyse automatique quand les données des capteurs changent
   useEffect(() => {
     if (mode === 'auto' && latestSensorData) {
@@ -119,33 +127,50 @@ const IoTAIAnalysis = () => {
   }, [mode, latestSensorData]);
 
   const handleAnalyze = async () => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour utiliser l\'analyse IA');
+      return;
+    }
+
     setLoading(true);
     setResult(null);
 
     try {
+      console.log('Envoi des données pour analyse:', iotData);
+      
       const { data, error } = await supabase.functions.invoke('aquapilote-recommendation', {
         body: { iotData }
       });
 
+      console.log('Réponse reçue:', { data, error });
+
       if (error) {
         console.error('Error calling function:', error);
-        toast.error('Erreur lors de l\'analyse');
+        toast.error(`Erreur lors de l'analyse: ${error.message}`);
+        setLoading(false);
         return;
       }
 
-      if (data.error) {
-        toast.error(data.error);
+      if (data && data.error) {
+        console.error('Error in response:', data.error);
+        toast.error(`Erreur: ${data.error}`);
+        setLoading(false);
         return;
       }
 
-      setResult(data);
-      toast.success('Analyse terminée avec succès');
-      
-      // Refresh history
-      await refetch();
+      if (data) {
+        console.log('Résultat de l\'analyse:', data);
+        setResult(data);
+        toast.success('✅ Analyse terminée avec succès');
+        
+        // Refresh history
+        await refetch();
+      } else {
+        toast.error('Aucune donnée reçue de l\'analyse');
+      }
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Une erreur est survenue lors de l\'analyse');
+      toast.error(`Une erreur est survenue: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setLoading(false);
     }
@@ -334,6 +359,18 @@ const IoTAIAnalysis = () => {
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-4 mt-4">
+              <Alert className="bg-blue-50 border-blue-200 mb-4">
+                <AlertDescription className="flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <div className="font-semibold text-blue-900">Mode manuel</div>
+                    <div className="text-sm text-blue-700">
+                      Entrez manuellement les paramètres de l'eau pour obtenir une analyse personnalisée.
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+              
               {/* Formulaire de saisie */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
