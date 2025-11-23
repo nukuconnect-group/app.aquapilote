@@ -1,346 +1,217 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Brain, 
-  Fish, 
-  TrendingUp, 
-  AlertTriangle,
-  Activity,
-  Droplets,
-  Wind,
-  ThermometerSun,
-  RefreshCw
-} from 'lucide-react';
-import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
-import { useToast } from '@/components/ui/use-toast';
-import { useSettings } from '@/contexts/SettingsContext';
-import { useIoT } from '@/contexts/IoTContext';
-import { analyzeWaterQuality, WaterQualityAnalysis, WaterQualityRecommendation } from '@/utils/waterQualityAnalysis';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Brain, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface AIAnalysisData {
-  unitId: string;
-  fishCount: number;
-  averageWeight: number;
-  dailyGrowth: number;
-  dailyMortality: number;
-  healthScore: number;
-  recommendations: WaterQualityRecommendation[];
-  lastUpdate: string;
+interface IoTData {
+  temperature: number;
+  oxygene_dissous: number;
+  ph: number;
+  ammonium: number;
+  nitrite: number;
+}
+
+interface AquapiloteResponse {
+  alerte: boolean;
+  conseil: string;
 }
 
 const IoTAIAnalysis = () => {
-  const { units, activeUnit } = useProductionUnits();
-  const { toast } = useToast();
-  const { t, formatCurrency } = useSettings();
-  const { getBasinReadings, getUnitBasins } = useIoT();
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisData, setAnalysisData] = useState<AIAnalysisData[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<AquapiloteResponse | null>(null);
+  
+  const [iotData, setIotData] = useState<IoTData>({
+    temperature: 25,
+    oxygene_dissous: 7.5,
+    ph: 7.2,
+    ammonium: 0.5,
+    nitrite: 0.2
+  });
 
-  // Générer l'analyse basée sur les données IoT réelles
-  const generateAnalysis = useCallback(() => {
-    if (!units || units.length === 0) {
-      setIsInitialized(true);
-      return;
-    }
-    const analyses: AIAnalysisData[] = units.map(unit => {
-      const basins = getUnitBasins(unit.id);
-      
-      // Données simulées pour le poisson (à remplacer par de vraies données)
-      const fishCount = Math.floor(Math.random() * 5000) + 8000;
-      const averageWeight = Math.floor(Math.random() * 150) + 150;
-      const basinVolume = 50; // Volume en m³ (à adapter selon vos données)
-      
-      // Récupérer les paramètres d'eau du premier bassin
-      const firstBasin = basins[0];
-      const readings = firstBasin ? getBasinReadings(firstBasin.id) : [];
-      
-      const latestReadings = {
-        temperature: readings.find(r => r.sensorType === 'temperature')?.value || 25,
-        pH: readings.find(r => r.sensorType === 'ph')?.value || 7.5,
-        oxygen: readings.find(r => r.sensorType === 'oxygen')?.value || 6.5,
-        ammonia: 0.03, // Pas encore disponible dans les capteurs IoT
-      };
+  const handleAnalyze = async () => {
+    setLoading(true);
+    setResult(null);
 
-      // Générer les recommandations basées sur l'analyse
-      const temp = latestReadings.temperature;
-      const ph = latestReadings.pH;
-      const oxygen = latestReadings.oxygen;
-      const ammonia = latestReadings.ammonia || 0;
+    try {
+      const { data, error } = await supabase.functions.invoke('aquapilote-recommendation', {
+        body: { iotData }
+      });
 
-      const analysis = analyzeWaterQuality(
-        temp, ph, oxygen, ammonia, fishCount, basinVolume, averageWeight, unit.type, new Date()
-      );
-      const recommendations = analysis.recommendations;
+      if (error) {
+        console.error('Error calling function:', error);
+        toast.error('Erreur lors de l\'analyse');
+        return;
+      }
 
-      // Calculer le score de santé basé sur les recommandations
-      const criticalCount = recommendations.filter(r => r.priority === 'high' && r.status === 'critical').length;
-      const highCount = recommendations.filter(r => r.priority === 'high').length;
-      const mediumCount = recommendations.filter(r => r.priority === 'medium').length;
-      
-      let healthScore = analysis.healthScore;
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
 
-      return {
-        unitId: unit.id,
-        fishCount,
-        averageWeight,
-        dailyGrowth: Math.random() * 2 + 2.5,
-        dailyMortality: Math.random() * 1 + 0.5,
-        healthScore,
-        recommendations,
-        lastUpdate: new Date().toISOString()
-      };
-    });
-
-    setAnalysisData(analyses);
-    setIsInitialized(true);
-  }, [units, getBasinReadings, getUnitBasins]);
-
-  const runAIAnalysis = async (unitId?: string) => {
-    setAnalyzing(true);
-    
-    // Générer l'analyse
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    generateAnalysis();
-    
-    toast({
-      title: t('success'),
-      description: `Analyse complète générée pour ${unitId ? units.find(u => u.id === unitId)?.name : 'toutes les unités'}`,
-    });
-    
-    setAnalyzing(false);
-  };
-
-  // Générer l'analyse initiale
-  useEffect(() => {
-    if (units && units.length > 0 && !isInitialized) {
-      generateAnalysis();
-    }
-  }, [units, generateAnalysis, isInitialized]);
-
-  const getHealthScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 dark:text-green-400';
-    if (score >= 60) return 'text-orange-600 dark:text-orange-400';
-    return 'text-destructive';
-  };
-
-  const getHealthScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-100 dark:bg-green-950/20';
-    if (score >= 60) return 'bg-orange-100 dark:bg-orange-950/20';
-    return 'bg-destructive/10';
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-destructive text-destructive-foreground border-destructive';
-      case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'medium': return 'bg-orange-100 dark:bg-orange-950/20 text-orange-800 dark:text-orange-400 border-orange-300 dark:border-orange-900';
-      case 'low': return 'bg-blue-100 dark:bg-blue-950/20 text-blue-800 dark:text-blue-400 border-blue-300 dark:border-blue-900';
-      default: return 'bg-muted text-muted-foreground border-border';
+      setResult(data);
+      toast.success('Analyse terminée avec succès');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Une erreur est survenue lors de l\'analyse');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getPriorityText = (priority: string) => {
-    const priorities = {
-      critical: 'CRITIQUE',
-      high: t('critical'),
-      medium: t('warning'),
-      low: t('info')
-    };
-    return priorities[priority] || priority;
+  const handleInputChange = (field: keyof IoTData, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setIotData(prev => ({
+      ...prev,
+      [field]: numValue
+    }));
   };
-
-  const getRecommendationIcon = (type: string) => {
-    switch (type) {
-      case 'feeding': return <Fish className="w-4 h-4" />;
-      case 'oxygenation': return <Wind className="w-4 h-4" />;
-      case 'water_renewal': return <Droplets className="w-4 h-4" />;
-      case 'treatment': return <Activity className="w-4 h-4" />;
-      case 'temperature': return <ThermometerSun className="w-4 h-4" />;
-      case 'ph_adjustment': return <Activity className="w-4 h-4" />;
-      case 'density': return <Fish className="w-4 h-4" />;
-      default: return <AlertTriangle className="w-4 h-4" />;
-    }
-  };
-
-  const currentAnalysis = analysisData.find(a => a.unitId === activeUnit?.id) || analysisData[0];
-
-  if (!isInitialized || !currentAnalysis) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center space-y-4">
-          <RefreshCw className="w-12 h-12 mx-auto animate-spin text-primary" />
-          <p className="text-muted-foreground">{t('loading')}...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec score de santé global */}
-      <Card className="border-l-4 border-l-primary">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-primary" />
-              {t('recommendations')} IA - {units.find(u => u.id === currentAnalysis.unitId)?.name}
-            </CardTitle>
-            <Button 
-              onClick={() => runAIAnalysis(activeUnit?.id)}
-              disabled={analyzing}
-              size="sm"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${analyzing ? 'animate-spin' : ''}`} />
-              {analyzing ? t('loading') : t('last_update')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-20 h-20 rounded-full ${getHealthScoreBg(currentAnalysis.healthScore)} flex items-center justify-center`}>
-                <span className={`text-2xl font-bold ${getHealthScoreColor(currentAnalysis.healthScore)}`}>
-                  {currentAnalysis.healthScore}
-                </span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{t('health_score')} {t('global_health')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('statistics')}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="text-xs text-muted-foreground">
-                {t('last_update')} : {new Date(currentAnalysis.lastUpdate).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Métriques principales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <Badge variant="secondary" className="text-xs">IoT + IA</Badge>
-            </div>
-            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.fishCount.toLocaleString()}</div>
-            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('detected_subjects')}</div>
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1">{t('status')}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{t('average_weight')}</Badge>
-            </div>
-            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.averageWeight} g</div>
-            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('average_weight')}</div>
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1 truncate">+{currentAnalysis.dailyGrowth}%</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
-              <Badge variant="secondary" className="text-xs">IA</Badge>
-            </div>
-            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.dailyGrowth}%</div>
-            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('daily_growth')}</div>
-            <div className="text-xs text-muted-foreground mt-1 truncate">{t('statistics')}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
-              <Badge variant={currentAnalysis.dailyMortality > 1 ? 'destructive' : 'secondary'} className="text-xs">
-                {currentAnalysis.dailyMortality > 1 ? t('warning') : t('normal')}
-              </Badge>
-            </div>
-            <div className="text-lg sm:text-2xl font-bold">{currentAnalysis.dailyMortality}%</div>
-            <div className="text-xs sm:text-sm text-muted-foreground truncate">{t('daily_mortality')}</div>
-            <div className="text-xs text-muted-foreground mt-1 truncate">
-              ≈ {Math.round(currentAnalysis.fishCount * currentAnalysis.dailyMortality / 100)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recommandations intelligentes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="truncate">{t('recommendations')}</span>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-6 h-6 text-purple-600" />
+            Analyse IA des Bassins
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Entrez les paramètres de l'eau pour obtenir une analyse intelligente et des recommandations personnalisées
+          </p>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2 sm:space-y-3">
-            {currentAnalysis.recommendations.map((rec, idx) => (
-              <div 
-                key={idx} 
-                className={`p-3 sm:p-4 border rounded-lg ${getPriorityColor(rec.priority)}`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
-                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                    <div className="mt-0.5 flex-shrink-0">
-                      {getRecommendationIcon(rec.parameter)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <Badge className={`${getPriorityColor(rec.priority)} text-xs`}>
-                          {getPriorityText(rec.priority)}
-                        </Badge>
-                      </div>
-                      <p className="text-xs sm:text-sm font-medium break-words">{rec.parameter}: {rec.action}</p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" className="w-full sm:w-auto text-xs flex-shrink-0">
-                    {t('add')}
-                  </Button>
-                </div>
-              </div>
-            ))}
+        <CardContent className="space-y-6">
+          {/* Formulaire de saisie */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="temperature">Température (°C)</Label>
+              <Input
+                id="temperature"
+                type="number"
+                step="0.1"
+                value={iotData.temperature}
+                onChange={(e) => handleInputChange('temperature', e.target.value)}
+                placeholder="Ex: 25.5"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="oxygene">Oxygène Dissous (mg/L)</Label>
+              <Input
+                id="oxygene"
+                type="number"
+                step="0.1"
+                value={iotData.oxygene_dissous}
+                onChange={(e) => handleInputChange('oxygene_dissous', e.target.value)}
+                placeholder="Ex: 7.5"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ph">pH (potentiel hydrogène)</Label>
+              <Input
+                id="ph"
+                type="number"
+                step="0.1"
+                value={iotData.ph}
+                onChange={(e) => handleInputChange('ph', e.target.value)}
+                placeholder="Ex: 7.2"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ammonium">Ammonium/Ammoniaque (mg/L)</Label>
+              <Input
+                id="ammonium"
+                type="number"
+                step="0.1"
+                value={iotData.ammonium}
+                onChange={(e) => handleInputChange('ammonium', e.target.value)}
+                placeholder="Ex: 0.5"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nitrite">Nitrite (mg/L)</Label>
+              <Input
+                id="nitrite"
+                type="number"
+                step="0.1"
+                value={iotData.nitrite}
+                onChange={(e) => handleInputChange('nitrite', e.target.value)}
+                placeholder="Ex: 0.2"
+              />
+            </div>
           </div>
+
+          {/* Bouton d'analyse */}
+          <Button 
+            onClick={handleAnalyze} 
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            size="lg"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Analyse en cours...
+              </>
+            ) : (
+              <>
+                <Brain className="w-5 h-5 mr-2" />
+                Analyser et Recommander
+              </>
+            )}
+          </Button>
+
+          {/* Affichage des résultats */}
+          {result && (
+            <div className="space-y-4 pt-4 border-t">
+              {/* Badge d'alerte */}
+              <div className="flex justify-center">
+                {result.alerte ? (
+                  <Badge className="bg-red-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    ALERTE
+                  </Badge>
+                ) : (
+                  <Badge className="bg-green-500 text-white px-6 py-2 text-lg flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5" />
+                    RAS
+                  </Badge>
+                )}
+              </div>
+
+              {/* Conseil */}
+              <Alert className={result.alerte ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
+                <AlertDescription className="text-base">
+                  <div className="font-semibold mb-2 text-foreground">Recommandation :</div>
+                  <div className="text-foreground/90">{result.conseil}</div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Graphique de tendance santé */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('evolution')} {t('health_score')} (7 {t('daily_production').toLowerCase()})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { day: 'Lun', score: 85 },
-              { day: 'Mar', score: 84 },
-              { day: 'Mer', score: 86 },
-              { day: 'Jeu', score: 88 },
-              { day: 'Ven', score: 87 },
-              { day: 'Sam', score: 86 },
-              { day: 'Dim', score: currentAnalysis.healthScore }
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4">
-                <div className="w-12 text-sm font-medium">{item.day}</div>
-                <Progress value={item.score} className="flex-1" />
-                <div className={`w-12 text-sm font-bold text-right ${getHealthScoreColor(item.score)}`}>
-                  {item.score}
-                </div>
-              </div>
-            ))}
+      {/* Carte d'information */}
+      <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <Brain className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">À propos de l'analyse IA</h3>
+              <p className="text-sm text-blue-800">
+                Notre système d'intelligence artificielle analyse en temps réel les paramètres de l'eau de vos bassins 
+                et fournit des recommandations personnalisées basées sur les meilleures pratiques en aquaculture. 
+                Les alertes sont déclenchées lorsque les paramètres sortent des plages optimales pour assurer la santé 
+                de vos poissons.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
