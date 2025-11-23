@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar } from 'lucide-react';
+import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface IoTData {
   temperature: number;
@@ -87,6 +88,22 @@ const IoTAIAnalysis = () => {
       [field]: numValue
     }));
   };
+
+  // Préparer les données pour les graphiques
+  const chartData = useMemo(() => {
+    return [...analyses]
+      .reverse() // Du plus ancien au plus récent
+      .map(analysis => ({
+        date: format(new Date(analysis.created_at), 'dd/MM HH:mm', { locale: fr }),
+        timestamp: new Date(analysis.created_at).getTime(),
+        temperature: Number(analysis.temperature),
+        oxygene: Number(analysis.oxygene_dissous),
+        ph: Number(analysis.ph),
+        ammonium: Number(analysis.ammonium),
+        nitrite: Number(analysis.nitrite),
+        alerte: analysis.alerte
+      }));
+  }, [analyses]);
 
   return (
     <div className="space-y-6">
@@ -231,6 +248,153 @@ const IoTAIAnalysis = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Graphiques d'évolution */}
+      {analyses.length >= 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Évolution des Paramètres
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Visualisez l'évolution des paramètres d'eau au fil du temps
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Température */}
+            <div>
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500" />
+                Température (°C)
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="temperature" 
+                    stroke="#f97316" 
+                    strokeWidth={2}
+                    dot={{ fill: '#f97316', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Oxygène dissous */}
+            <div>
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                Oxygène Dissous (mg/L)
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="oxygene" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3b82f6', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* pH */}
+            <div>
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                pH
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} domain={[6, 9]} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ph" 
+                    stroke="#22c55e" 
+                    strokeWidth={2}
+                    dot={{ fill: '#22c55e', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Ammonium et Nitrite */}
+            <div>
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500" />
+                Ammonium (NH₄) et Nitrite (NO₂) (mg/L)
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ammonium" 
+                    name="Ammonium"
+                    stroke="#a855f7" 
+                    strokeWidth={2}
+                    dot={{ fill: '#a855f7', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="nitrite" 
+                    name="Nitrite"
+                    stroke="#ec4899" 
+                    strokeWidth={2}
+                    dot={{ fill: '#ec4899', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Historique des analyses */}
       <Card>
