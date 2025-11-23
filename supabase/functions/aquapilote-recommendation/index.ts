@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,7 @@ interface IoTData {
   ph: number;
   ammonium: number;
   nitrite: number;
+  unit_id?: string;
 }
 
 interface AquapiloteResponse {
@@ -25,6 +27,27 @@ serve(async (req) => {
   }
 
   try {
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
+
+    // Get user from token
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { iotData }: { iotData: IoTData } = await req.json();
     
     console.log('Received IoT data:', iotData);
@@ -105,6 +128,26 @@ Réponds uniquement avec un objet JSON contenant 'alerte' (boolean) et 'conseil'
     }
 
     console.log('Parsed response:', aquapiloteResponse);
+
+    // Save analysis to database
+    const { error: saveError } = await supabase
+      .from('ai_analyses')
+      .insert({
+        user_id: user.id,
+        unit_id: iotData.unit_id || null,
+        temperature: iotData.temperature,
+        oxygene_dissous: iotData.oxygene_dissous,
+        ph: iotData.ph,
+        ammonium: iotData.ammonium,
+        nitrite: iotData.nitrite,
+        alerte: aquapiloteResponse.alerte,
+        conseil: aquapiloteResponse.conseil
+      });
+
+    if (saveError) {
+      console.error('Error saving analysis:', saveError);
+      // Don't fail the request, just log the error
+    }
 
     return new Response(JSON.stringify(aquapiloteResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

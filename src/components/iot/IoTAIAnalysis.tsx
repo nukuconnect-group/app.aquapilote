@@ -5,9 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAIAnalyses } from '@/hooks/useAIAnalyses';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface IoTData {
   temperature: number;
@@ -25,6 +28,7 @@ interface AquapiloteResponse {
 const IoTAIAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AquapiloteResponse | null>(null);
+  const { analyses, loading: loadingHistory, refetch, deleteAnalysis } = useAIAnalyses(20);
   
   const [iotData, setIotData] = useState<IoTData>({
     temperature: 25,
@@ -56,11 +60,23 @@ const IoTAIAnalysis = () => {
 
       setResult(data);
       toast.success('Analyse terminée avec succès');
+      
+      // Refresh history
+      await refetch();
     } catch (error) {
       console.error('Error:', error);
       toast.error('Une erreur est survenue lors de l\'analyse');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAnalysis(id);
+      toast.success('Analyse supprimée');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
     }
   };
 
@@ -213,6 +229,105 @@ const IoTAIAnalysis = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Historique des analyses */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="w-5 h-5 text-blue-600" />
+            Historique des Analyses
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Consultez l'évolution des recommandations au fil du temps
+          </p>
+        </CardHeader>
+        <CardContent>
+          {loadingHistory ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : analyses.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>Aucune analyse pour le moment</p>
+              <p className="text-sm mt-1">Effectuez votre première analyse ci-dessus</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {analyses.map((analysis) => (
+                <div
+                  key={analysis.id}
+                  className="border rounded-lg p-4 space-y-3 hover:bg-accent/50 transition-colors"
+                >
+                  {/* En-tête avec date et badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(analysis.created_at), { 
+                          addSuffix: true,
+                          locale: fr 
+                        })}
+                      </span>
+                      {analysis.alerte ? (
+                        <Badge className="bg-red-500 text-white flex-shrink-0">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          ALERTE
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-500 text-white flex-shrink-0">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          RAS
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(analysis.id)}
+                      className="flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+
+                  {/* Paramètres */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                    <div className="bg-background rounded p-2">
+                      <div className="text-muted-foreground">Temp.</div>
+                      <div className="font-semibold">{analysis.temperature}°C</div>
+                    </div>
+                    <div className="bg-background rounded p-2">
+                      <div className="text-muted-foreground">O₂</div>
+                      <div className="font-semibold">{analysis.oxygene_dissous} mg/L</div>
+                    </div>
+                    <div className="bg-background rounded p-2">
+                      <div className="text-muted-foreground">pH</div>
+                      <div className="font-semibold">{analysis.ph}</div>
+                    </div>
+                    <div className="bg-background rounded p-2">
+                      <div className="text-muted-foreground">NH₄</div>
+                      <div className="font-semibold">{analysis.ammonium} mg/L</div>
+                    </div>
+                    <div className="bg-background rounded p-2">
+                      <div className="text-muted-foreground">NO₂</div>
+                      <div className="font-semibold">{analysis.nitrite} mg/L</div>
+                    </div>
+                  </div>
+
+                  {/* Conseil */}
+                  <Alert className={analysis.alerte ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+                    <AlertDescription className="text-sm">
+                      <div className="font-medium mb-1">Recommandation :</div>
+                      <div className="text-foreground/80">{analysis.conseil}</div>
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

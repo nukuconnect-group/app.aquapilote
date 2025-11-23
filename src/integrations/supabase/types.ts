@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_analyses: {
+        Row: {
+          alerte: boolean
+          ammonium: number
+          conseil: string
+          created_at: string
+          id: string
+          nitrite: number
+          oxygene_dissous: number
+          ph: number
+          temperature: number
+          unit_id: string | null
+          user_id: string
+        }
+        Insert: {
+          alerte: boolean
+          ammonium: number
+          conseil: string
+          created_at?: string
+          id?: string
+          nitrite: number
+          oxygene_dissous: number
+          ph: number
+          temperature: number
+          unit_id?: string | null
+          user_id: string
+        }
+        Update: {
+          alerte?: boolean
+          ammonium?: number
+          conseil?: string
+          created_at?: string
+          id?: string
+          nitrite?: number
+          oxygene_dissous?: number
+          ph?: number
+          temperature?: number
+          unit_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       feeding_records: {
         Row: {
           behavior: string | null
