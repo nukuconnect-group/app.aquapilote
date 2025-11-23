@@ -15,6 +15,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import CycleEvolutionCharts from './CycleEvolutionCharts';
+import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
 
 interface CycleDetailsProps {
   cycle: {
@@ -36,40 +38,36 @@ interface CycleDetailsProps {
 }
 
 const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, onClose, onEdit }) => {
-  // États pour les données d'alimentation et de santé
-  const [feedingRecords, setFeedingRecords] = useState<any[]>([]);
-  const [healthRecords, setHealthRecords] = useState<any[]>([]);
+  // Utilisation des hooks pour récupérer les données depuis Supabase
+  const { records: feedingRecords } = useFeedingRecords(cycle.id);
+  const { records: healthRecords } = useHealthRecords(cycle.id);
   
-  // Données calculées (à remplacer par de vraies données provenant du context/API)
+  // Données calculées
   const daysElapsed = Math.floor((new Date().getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24));
   const cycleDuration = cycle.endDate 
     ? Math.floor((new Date(cycle.endDate).getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24))
     : 150; // Par défaut 150 jours si pas de date de fin
   const expectedEndDate = cycle.endDate || 'Non défini';
-  const averageWeight = ((cycle.currentQuantity * 2.5) / cycle.currentQuantity * 1000).toFixed(0); // Poids moyen en grammes
-  const dailyGrowth = (parseFloat(averageWeight) / daysElapsed).toFixed(1);
-  const feedConsumed = (cycle.currentQuantity * 1.5).toFixed(1); // kg d'aliment
-  const feedConversionRatio = 1.2; // FCR
-  const survivalRate = ((cycle.currentQuantity / cycle.targetQuantity) * 100).toFixed(1);
-  const waterTemperature = 24.5; // °C
-  const dissolvedOxygen = 7.2; // mg/L
   
-  // Récupération des données d'alimentation et de santé depuis le localStorage
-  useEffect(() => {
-    if (isOpen && cycle.id) {
-      // Récupérer les données d'alimentation pour ce cycle depuis le localStorage
-      const storedFeeding = localStorage.getItem(`feeding_records_${cycle.id}`);
-      if (storedFeeding) {
-        setFeedingRecords(JSON.parse(storedFeeding));
-      }
-      
-      // Récupérer les données de santé pour ce cycle depuis le localStorage
-      const storedHealth = localStorage.getItem(`health_records_${cycle.id}`);
-      if (storedHealth) {
-        setHealthRecords(JSON.parse(storedHealth));
-      }
-    }
-  }, [isOpen, cycle.id]);
+  // Calcul du poids moyen basé sur les enregistrements de santé
+  const latestHealthRecord = healthRecords.length > 0 ? healthRecords[0] : null;
+  const averageWeight = latestHealthRecord?.average_weight 
+    ? latestHealthRecord.average_weight.toFixed(0)
+    : ((cycle.currentQuantity * 2.5) / cycle.currentQuantity * 1000).toFixed(0);
+  const dailyGrowth = (parseFloat(averageWeight) / Math.max(1, daysElapsed)).toFixed(1);
+  
+  // Calcul basé sur les enregistrements d'alimentation
+  const feedConsumed = feedingRecords.reduce((sum, r) => sum + (r.quantity || 0), 0).toFixed(1);
+  const avgFCR = feedingRecords.length > 0
+    ? (feedingRecords.reduce((sum, r) => sum + (r.fcr || 0), 0) / feedingRecords.length).toFixed(2)
+    : '1.2';
+  const feedConversionRatio = parseFloat(avgFCR);
+  
+  const survivalRate = ((cycle.currentQuantity / cycle.targetQuantity) * 100).toFixed(1);
+  
+  // Données environnementales basées sur le dernier enregistrement de santé
+  const waterTemperature = latestHealthRecord?.temperature || 24.5;
+  const dissolvedOxygen = latestHealthRecord?.oxygen || 7.2;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
