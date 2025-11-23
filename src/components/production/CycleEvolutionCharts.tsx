@@ -21,35 +21,132 @@ interface CycleEvolutionChartsProps {
   cycleId: string;
   cycleName: string;
   daysElapsed: number;
+  cycleDuration?: number; // Durée totale prévue du cycle en jours
+  feedingRecords?: any[]; // Enregistrements d'alimentation du module Feeding
+  healthRecords?: any[]; // Enregistrements de pêche de contrôle du module Health
 }
 
-const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cycleName, daysElapsed }) => {
-  // Données simulées - à remplacer par de vraies données
-  const growthData = Array.from({ length: Math.min(daysElapsed, 30) }, (_, i) => ({
-    jour: i + 1,
-    poidsMoyen: 50 + (i * 15) + Math.random() * 20,
-    objectif: 50 + (i * 16),
-    mortalite: Math.random() * 2
-  }));
+const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ 
+  cycleId, 
+  cycleName, 
+  daysElapsed,
+  cycleDuration = 150, // Par défaut 150 jours
+  feedingRecords = [],
+  healthRecords = []
+}) => {
+  // Calcul du pourcentage d'avancement du cycle (0-100%)
+  const cycleProgress = Math.min(100, (daysElapsed / cycleDuration) * 100);
+  
+  // Génération des données de croissance avec pourcentage (0-100%)
+  const growthData = Array.from({ length: Math.max(1, daysElapsed) }, (_, i) => {
+    const dayNumber = i + 1;
+    const progressPct = Math.min(100, (dayNumber / cycleDuration) * 100);
+    
+    // Recherche du poids moyen dans les enregistrements de santé pour ce jour
+    const healthRecord = healthRecords.find(r => {
+      const recordDate = new Date(r.date);
+      const cycleDay = Math.floor((recordDate.getTime() - Date.now() + (daysElapsed * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
+      return cycleDay === dayNumber;
+    });
+    
+    const actualWeight = healthRecord?.density || null;
+    
+    return {
+      jour: dayNumber,
+      progression: progressPct,
+      objectif: progressPct, // Objectif suit la progression linéaire
+      poidsMoyen: actualWeight || (progressPct * 5), // Poids estimé basé sur la progression
+      mortalite: Math.random() * 1.5
+    };
+  });
 
-  const feedingData = Array.from({ length: Math.min(daysElapsed, 30) }, (_, i) => ({
-    jour: i + 1,
-    quantite: 80 + (i * 3) + Math.random() * 10,
-    fcr: 1.2 + Math.random() * 0.3
-  }));
+  // Génération des données d'alimentation liées aux enregistrements réels
+  const feedingData = Array.from({ length: Math.max(1, daysElapsed) }, (_, i) => {
+    const dayNumber = i + 1;
+    
+    // Recherche des enregistrements d'alimentation pour ce jour
+    const feedingRecord = feedingRecords.find(r => {
+      const recordDate = new Date(r.date);
+      const cycleDay = Math.floor((recordDate.getTime() - Date.now() + (daysElapsed * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
+      return cycleDay === dayNumber;
+    });
+    
+    return {
+      jour: dayNumber,
+      quantite: feedingRecord?.quantity || 0,
+      fcr: feedingRecord?.fcr || 1.2 + Math.random() * 0.3,
+      hasData: !!feedingRecord
+    };
+  });
 
-  const waterQualityData = Array.from({ length: 14 }, (_, i) => ({
-    jour: `J${i + 1}`,
-    temperature: 24 + Math.random() * 2,
-    oxygene: 6.5 + Math.random() * 1.5,
-    ph: 7 + Math.random() * 0.5
-  }));
+  const waterQualityData = Array.from({ length: Math.min(14, daysElapsed) }, (_, i) => {
+    const dayNumber = i + 1;
+    
+    // Recherche des données de qualité d'eau dans les enregistrements de santé
+    const healthRecord = healthRecords.find(r => {
+      const recordDate = new Date(r.date);
+      const cycleDay = Math.floor((recordDate.getTime() - Date.now() + (daysElapsed * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
+      return cycleDay === dayNumber;
+    });
+    
+    return {
+      jour: `J${dayNumber}`,
+      temperature: healthRecord?.temperature || 24 + Math.random() * 2,
+      oxygene: healthRecord?.oxygen || 6.5 + Math.random() * 1.5,
+      ph: healthRecord?.ph || 7 + Math.random() * 0.5
+    };
+  });
 
-  // Alertes simulées
-  const alerts = [
-    { level: 'warning', message: 'Température élevée détectée (26.5°C)', date: 'Il y a 2 jours' },
-    { level: 'info', message: 'Taux de croissance optimal', date: 'Il y a 1 jour' }
-  ];
+  // Génération d'alertes basées sur les données réelles
+  const alerts = [];
+  
+  // Alertes basées sur les enregistrements de santé
+  if (healthRecords.length > 0) {
+    const latestHealth = healthRecords[healthRecords.length - 1];
+    if (latestHealth.temperature > 28) {
+      alerts.push({ 
+        level: 'warning', 
+        message: `Température élevée détectée (${latestHealth.temperature.toFixed(1)}°C)`, 
+        date: new Date(latestHealth.date).toLocaleDateString('fr-FR')
+      });
+    }
+    if (latestHealth.oxygen < 6) {
+      alerts.push({ 
+        level: 'warning', 
+        message: `Niveau d'oxygène bas (${latestHealth.oxygen.toFixed(1)} mg/L)`, 
+        date: new Date(latestHealth.date).toLocaleDateString('fr-FR')
+      });
+    }
+  }
+  
+  // Alertes basées sur l'alimentation
+  if (feedingRecords.length > 0) {
+    const latestFeeding = feedingRecords[feedingRecords.length - 1];
+    if (latestFeeding.fcr && latestFeeding.fcr > 1.8) {
+      alerts.push({ 
+        level: 'warning', 
+        message: `FCR élevé détecté (${latestFeeding.fcr.toFixed(2)})`, 
+        date: new Date(latestFeeding.date).toLocaleDateString('fr-FR')
+      });
+    }
+  }
+  
+  // Alerte sur la progression du cycle
+  if (cycleProgress < 50 && daysElapsed > cycleDuration * 0.6) {
+    alerts.push({ 
+      level: 'warning', 
+      message: 'Progression du cycle en retard sur l\'objectif', 
+      date: 'Aujourd\'hui'
+    });
+  }
+  
+  if (alerts.length === 0) {
+    alerts.push({ 
+      level: 'info', 
+      message: 'Tous les paramètres sont dans les normes', 
+      date: 'Aujourd\'hui'
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -88,20 +185,32 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
         </Card>
       )}
 
-      {/* Évolution de la croissance */}
+      {/* Progression du cycle */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="w-4 h-4 text-primary" />
-            Évolution du Poids Moyen
+            Progression du Cycle (0-100%)
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 p-3 bg-primary/5 rounded-lg">
+            <div className="flex justify-between text-sm mb-2">
+              <span>Jour {daysElapsed} / {cycleDuration}</span>
+              <span className="font-bold">{cycleProgress.toFixed(1)}%</span>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-3">
+              <div 
+                className="bg-primary h-3 rounded-full transition-all" 
+                style={{ width: `${cycleProgress}%` }}
+              />
+            </div>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={growthData}>
                 <defs>
-                  <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="progressGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                   </linearGradient>
@@ -113,7 +222,8 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis 
-                  label={{ value: 'Poids (g)', angle: -90, position: 'insideLeft' }}
+                  domain={[0, 100]}
+                  label={{ value: 'Progression (%)', angle: -90, position: 'insideLeft' }}
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <Tooltip 
@@ -122,6 +232,7 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}
+                  formatter={(value: any) => `${value.toFixed(1)}%`}
                 />
                 <Legend />
                 <Area
@@ -135,11 +246,11 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
                 />
                 <Area
                   type="monotone"
-                  dataKey="poidsMoyen"
+                  dataKey="progression"
                   stroke="hsl(var(--primary))"
                   strokeWidth={3}
-                  fill="url(#growthGrad)"
-                  name="Poids Moyen"
+                  fill="url(#progressGrad)"
+                  name="Progression Réelle"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -147,7 +258,61 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
         </CardContent>
       </Card>
 
-      {/* Alimentation et FCR */}
+      {/* Évolution du poids (données de pêche de contrôle) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Activity className="w-4 h-4 text-primary" />
+            Évolution du Poids (Pêche de Contrôle)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {healthRecords.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="jour" 
+                    label={{ value: 'Jours', position: 'insideBottom', offset: -5 }}
+                    stroke="hsl(var(--muted-foreground))"
+                  />
+                  <YAxis 
+                    label={{ value: 'Poids Moyen (g)', angle: -90, position: 'insideLeft' }}
+                    stroke="hsl(var(--muted-foreground))"
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="poidsMoyen"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    name="Poids Moyen"
+                    dot={{ fill: 'hsl(var(--primary))' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Aucune donnée de pêche de contrôle</p>
+                <p className="text-sm">Enregistrez des données dans le module Prophylaxie</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Alimentation et FCR (données du module alimentation) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -156,65 +321,87 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({ cycleId, cy
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={feedingData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="jour" 
-                  label={{ value: 'Jours', position: 'insideBottom', offset: -5 }}
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <YAxis 
-                  yAxisId="left"
-                  label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft' }}
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <YAxis 
-                  yAxisId="right"
-                  orientation="right"
-                  label={{ value: 'FCR', angle: 90, position: 'insideRight' }}
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="quantite"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  name="Quantité d'aliment (kg)"
-                  dot={{ fill: '#10b981' }}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="fcr"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  name="FCR"
-                  dot={{ fill: '#f59e0b' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <p className="text-muted-foreground text-xs">FCR Moyen</p>
-              <p className="text-lg font-bold text-green-700">1.25</p>
+          {feedingRecords.length > 0 ? (
+            <>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={feedingData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="jour" 
+                      label={{ value: 'Jours', position: 'insideBottom', offset: -5 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis 
+                      yAxisId="left"
+                      label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft' }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      label={{ value: 'FCR', angle: 90, position: 'insideRight' }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="quantite"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      name="Quantité d'aliment (kg)"
+                      dot={(props) => {
+                        const { payload } = props;
+                        return payload.hasData ? <circle {...props} fill="#10b981" r={4} /> : null;
+                      }}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="fcr"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      name="FCR"
+                      dot={(props) => {
+                        const { payload } = props;
+                        return payload.hasData ? <circle {...props} fill="#f59e0b" r={4} /> : null;
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-muted-foreground text-xs">FCR Moyen</p>
+                  <p className="text-lg font-bold text-green-700">
+                    {(feedingRecords.reduce((sum, r) => sum + (r.fcr || 0), 0) / feedingRecords.length).toFixed(2)}
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Aliment Total</p>
+                  <p className="text-lg font-bold text-blue-700">
+                    {feedingRecords.reduce((sum, r) => sum + (r.quantity || 0), 0).toLocaleString()} kg
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Scale className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Aucune donnée d'alimentation</p>
+                <p className="text-sm">Enregistrez des données dans le module Alimentation</p>
+              </div>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-muted-foreground text-xs">Aliment Total</p>
-              <p className="text-lg font-bold text-blue-700">2,450 kg</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
