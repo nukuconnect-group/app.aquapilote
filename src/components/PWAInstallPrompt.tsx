@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Smartphone, X, Monitor } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const PWAInstallPrompt: React.FC = () => {
+  const { isDemoMode, user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -32,11 +34,12 @@ const PWAInstallPrompt: React.FC = () => {
       setDeferredPrompt(event);
       
       // Attendre un peu avant de montrer le prompt pour ne pas être intrusif
+      // Afficher même en mode démo après 5 secondes
       setTimeout(() => {
         if (!isInstalled) {
           setShowInstallPrompt(true);
         }
-      }, 3000);
+      }, 5000);
     };
 
     // Écouter l'installation réussie
@@ -81,11 +84,17 @@ const PWAInstallPrompt: React.FC = () => {
     sessionStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Ne pas montrer si déjà installé ou rejeté cette session
-  if (isInstalled || 
-      sessionStorage.getItem('pwa-install-dismissed') === 'true' || 
-      !showInstallPrompt || 
-      !deferredPrompt) {
+  // Afficher seulement si :
+  // - L'app n'est pas déjà installée
+  // - Le prompt n'a pas été dismissé cette session
+  // - Le prompt est disponible OU l'utilisateur est en mode démo/connecté
+  // En mode démo/connecté, afficher un message pour l'installation même sans deferredPrompt
+  if (isInstalled || sessionStorage.getItem('pwa-install-dismissed') === 'true') {
+    return null;
+  }
+
+  // Afficher le prompt si disponible OU si l'utilisateur est connecté/en mode démo
+  if (!showInstallPrompt && !(isDemoMode || user)) {
     return null;
   }
 
@@ -129,19 +138,29 @@ const PWAInstallPrompt: React.FC = () => {
               <p className="text-xs text-gray-600 mb-3 leading-relaxed">
                 {deviceType === 'mobile' 
                   ? "Installez l'app sur votre téléphone pour un accès rapide et hors-ligne"
-                  : "Installez l'app sur votre ordinateur pour un accès rapide depuis le bureau"
-                }
+                  : "Installez l'app sur votre ordinateur pour un accès rapide depuis le bureau"}
+                {!deferredPrompt && " (Utilisez le menu de votre navigateur)"}
               </p>
               
               <div className="flex gap-2">
-                <Button
-                  onClick={handleInstallClick}
-                  size="sm"
-                  className="flex-1 bg-gradient-aqua text-white text-xs h-8"
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Installer
-                </Button>
+                {deferredPrompt ? (
+                  <Button
+                    onClick={handleInstallClick}
+                    size="sm"
+                    className="flex-1 bg-gradient-aqua text-white text-xs h-8"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Installer
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleDismiss}
+                    size="sm"
+                    className="flex-1 bg-gradient-aqua text-white text-xs h-8"
+                  >
+                    J'ai compris
+                  </Button>
+                )}
                 
                 <Button
                   onClick={handleDismiss}

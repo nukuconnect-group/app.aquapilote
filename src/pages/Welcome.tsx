@@ -11,7 +11,7 @@ import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
  */
 const Welcome: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasSeenOnboarding, isDemoMode } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -25,8 +25,11 @@ const Welcome: React.FC = () => {
     if (!isLoading && user) {
       // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
       navigate('/dashboard', { replace: true });
+    } else if (!isLoading && !user && !isDemoMode && !hasSeenOnboarding) {
+      // Si pas connecté et pas vu l'onboarding, rediriger vers l'onboarding
+      navigate('/onboarding', { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, hasSeenOnboarding, isDemoMode, navigate]);
 
   const handleGetStarted = () => {
     navigate('/auth', { replace: true });

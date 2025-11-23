@@ -14,10 +14,12 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Welcome from '@/pages/Welcome';
+import OnboardingFlow from '@/pages/OnboardingFlow';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
 import { useIOSDetection } from '@/hooks/useIOSDetection';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 
 const AppContent: React.FC = () => {
   const { isIOSSafari } = useIOSDetection();
@@ -35,6 +37,9 @@ const AppContent: React.FC = () => {
         {/* Page d'accueil - Compatible iOS */}
         <Route path="/" element={<Welcome />} />
         <Route path="/index.html" element={<Navigate to="/" replace />} />
+        
+        {/* Page d'onboarding */}
+        <Route path="/onboarding" element={<OnboardingFlow />} />
         
         {/* Page d'authentification */}
         <Route path="/auth" element={<Auth />} />
@@ -59,6 +64,7 @@ const AppContent: React.FC = () => {
       <Toaster />
       <OfflineIndicator />
       <PWAUpdatePrompt />
+      <PWAInstallPrompt />
     </div>
   );
 };
