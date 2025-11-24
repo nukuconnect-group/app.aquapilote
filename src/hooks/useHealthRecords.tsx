@@ -36,17 +36,19 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
         .order('date', { ascending: false });
 
       if (cycleId) {
-        query = query.eq('cycle_id', cycleId);
+        query = query.eq('cycle_id', cycleId as any);
       }
 
       if (unitId) {
-        query = query.eq('unit_id', unitId);
+        query = query.eq('unit_id', unitId as any);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setRecords(data || []);
+      if (data) {
+        setRecords(data as unknown as HealthRecord[]);
+      }
     } catch (error: any) {
       console.error('Error fetching health records:', error);
       toast({
@@ -70,7 +72,7 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
 
       const { data, error } = await supabase
         .from('health_records')
-        .insert([{ ...record, user_id: user.id }])
+        .insert([{ ...record, user_id: user.id }] as any)
         .select()
         .single();
 
@@ -99,7 +101,7 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
       const { error } = await supabase
         .from('health_records')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 
@@ -125,7 +127,7 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
       const { error } = await supabase
         .from('health_records')
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 

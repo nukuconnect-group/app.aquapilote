@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    lock: false, // Désactiver le lock pour iOS Safari
+    lock: false as any, // Désactiver le lock pour iOS Safari
   },
   db: {
     schema: 'public'

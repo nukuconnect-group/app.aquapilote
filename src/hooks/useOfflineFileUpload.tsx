@@ -109,11 +109,12 @@ export const useOfflineFileUpload = () => {
 
         const { data: recordData, error: recordError } = await supabase
           .from('user_files')
-          .insert(fileRecord)
+          .insert(fileRecord as any)
           .select()
           .single();
 
         if (recordError) throw recordError;
+        if (!recordData) throw new Error('No data returned');
 
         setUploadProgress(100);
 
@@ -123,7 +124,7 @@ export const useOfflineFileUpload = () => {
         });
 
         return {
-          id: recordData.id,
+          id: recordData.id as string,
           fileName: processedFile.name,
           filePath: uploadData.path,
           fileType: processedFile.type,
@@ -237,7 +238,7 @@ export const useOfflineFileUpload = () => {
         const { error: recordError } = await supabase
           .from('user_files')
           .delete()
-          .eq('id', fileId);
+          .eq('id', fileId as any);
 
         if (recordError) throw recordError;
 
@@ -284,8 +285,8 @@ export const useOfflineFileUpload = () => {
         const { data, error } = await supabase
           .from('user_files')
           .select('*')
-          .eq('module', module)
-          .eq('user_id', user.id)
+          .eq('module', module as any)
+          .eq('user_id', user.id as any)
           .order('created_at', { ascending: false });
 
         if (error) throw error;

@@ -32,7 +32,6 @@ export const useAIAnalyses = (limit: number = 10) => {
       const { data, error } = await supabase
         .from('ai_analyses')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -41,7 +40,9 @@ export const useAIAnalyses = (limit: number = 10) => {
         return;
       }
 
-      setAnalyses(data || []);
+      if (data) {
+        setAnalyses(data as unknown as AIAnalysis[]);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -52,11 +53,10 @@ export const useAIAnalyses = (limit: number = 10) => {
   const deleteAnalysis = async (id: string) => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('ai_analyses')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id);
+      const { error } = await supabase
+        .from('ai_analyses')
+        .delete()
+        .eq('id', id as any);
 
     if (error) {
       console.error('Error deleting analysis:', error);

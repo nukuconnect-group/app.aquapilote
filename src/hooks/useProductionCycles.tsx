@@ -38,13 +38,15 @@ export const useProductionCycles = (unitId?: string) => {
         .order('created_at', { ascending: false });
 
       if (unitId) {
-        query = query.eq('unit_id', unitId);
+        query = query.eq('unit_id', unitId as any);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setCycles(data || []);
+      if (data) {
+        setCycles(data as unknown as ProductionCycle[]);
+      }
     } catch (error: any) {
       console.error('Error fetching cycles:', error);
       toast({
@@ -68,7 +70,7 @@ export const useProductionCycles = (unitId?: string) => {
 
       const { data, error } = await supabase
         .from('production_cycles')
-        .insert([{ ...cycle, user_id: user.id }])
+        .insert([{ ...cycle, user_id: user.id }] as any)
         .select()
         .single();
 
@@ -80,7 +82,7 @@ export const useProductionCycles = (unitId?: string) => {
       });
 
       await fetchCycles();
-      return data;
+      return data as unknown as ProductionCycle;
     } catch (error: any) {
       console.error('Error creating cycle:', error);
       toast({
@@ -97,7 +99,7 @@ export const useProductionCycles = (unitId?: string) => {
       const { error } = await supabase
         .from('production_cycles')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 
@@ -123,7 +125,7 @@ export const useProductionCycles = (unitId?: string) => {
       const { error } = await supabase
         .from('production_cycles')
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 

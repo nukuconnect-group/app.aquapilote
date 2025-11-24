@@ -96,6 +96,10 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
 
       const savedCycle = await createCycle(cycleData);
       
+      if (!savedCycle) {
+        throw new Error('Failed to create cycle');
+      }
+      
       // Créer les infrastructures rattachées au cycle
       if (formData.infrastructures.length > 0) {
         await createInfrastructures(savedCycle.id, formData.infrastructures, unitType);
@@ -110,13 +114,13 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
           startDate: savedCycle.start_date,
           endDate: savedCycle.end_date,
           expectedDuration: parseInt(formData.expectedDuration),
-          initialQuantity: savedCycle.initial_quantity,
-          targetQuantity: savedCycle.target_quantity,
-          currentQuantity: savedCycle.current_quantity,
+          initialQuantity: savedCycle.initial_quantity || 0,
+          targetQuantity: savedCycle.target_quantity || 0,
+          currentQuantity: savedCycle.current_quantity || 0,
           initialWeight: parseFloat(formData.initialWeight) || 0,
           targetWeight: parseFloat(formData.targetWeight) || 0,
           feedType: formData.feedType,
-          notes: savedCycle.notes,
+          notes: savedCycle.notes || '',
           infrastructures: formData.infrastructures,
           unitId: savedCycle.unit_id,
           status: savedCycle.status,

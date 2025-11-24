@@ -31,11 +31,13 @@ export const useCycleInfrastructures = (cycleId?: string) => {
       const { data, error } = await supabase
         .from('cycle_infrastructures')
         .select('*')
-        .eq('cycle_id', cycleId)
+        .eq('cycle_id', cycleId as any)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setInfrastructures(data || []);
+      if (data) {
+        setInfrastructures(data as unknown as CycleInfrastructure[]);
+      }
     } catch (error: any) {
       console.error('Error fetching infrastructures:', error);
       toast({
@@ -62,12 +64,11 @@ export const useCycleInfrastructures = (cycleId?: string) => {
         infrastructure_name: name,
         infrastructure_type: infrastructureType,
         current_quantity: 0,
-        user_id: user.id
       }));
 
       const { data, error } = await supabase
         .from('cycle_infrastructures')
-        .insert(infrastructuresToCreate)
+        .insert(infrastructuresToCreate as any)
         .select();
 
       if (error) throw error;
@@ -95,7 +96,7 @@ export const useCycleInfrastructures = (cycleId?: string) => {
       const { error } = await supabase
         .from('cycle_infrastructures')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 
@@ -121,7 +122,7 @@ export const useCycleInfrastructures = (cycleId?: string) => {
       const { error } = await supabase
         .from('cycle_infrastructures')
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 

@@ -94,7 +94,6 @@ export const OfflineFilesSync = () => {
           const { error: recordError } = await supabase
             .from('user_files')
             .insert({
-              user_id: pendingFile.userId,
               file_name: pendingFile.fileName,
               file_path: uploadData.path,
               file_type: pendingFile.fileType,
@@ -102,7 +101,7 @@ export const OfflineFilesSync = () => {
               compressed_size: pendingFile.compressedSize,
               module: pendingFile.module,
               metadata: pendingFile.metadata,
-            });
+            } as any);
 
           if (recordError) throw recordError;
 
