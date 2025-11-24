@@ -15,6 +15,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import CycleEvolutionCharts from './CycleEvolutionCharts';
+import CycleInfrastructuresList from './CycleInfrastructuresList';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 
@@ -101,11 +102,12 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
+            <TabsTrigger value="infrastructures">Infrastructures</TabsTrigger>
             <TabsTrigger value="evolution">
               <BarChart3 className="w-4 h-4 mr-2" />
-              Évolution & Graphiques
+              Évolution
             </TabsTrigger>
           </TabsList>
 
@@ -284,6 +286,10 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="infrastructures" className="mt-4">
+            <CycleInfrastructuresList cycleId={cycle.id} />
           </TabsContent>
 
           <TabsContent value="evolution" className="mt-4">

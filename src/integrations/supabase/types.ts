@@ -92,6 +92,50 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_infrastructures: {
+        Row: {
+          created_at: string | null
+          current_quantity: number | null
+          cycle_id: string
+          id: string
+          infrastructure_name: string
+          infrastructure_type: string
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_quantity?: number | null
+          cycle_id: string
+          id?: string
+          infrastructure_name: string
+          infrastructure_type: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_quantity?: number | null
+          cycle_id?: string
+          id?: string
+          infrastructure_name?: string
+          infrastructure_type?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_cycle"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feeding_records: {
         Row: {
           behavior: string | null

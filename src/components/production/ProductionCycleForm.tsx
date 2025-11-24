@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Save, Calendar } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ProductionCycleFormProps {
   unitId: string;
@@ -20,6 +22,7 @@ interface ProductionCycleFormProps {
 const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionCycleFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { createCycle } = useProductionCycles();
+  const { createInfrastructures } = useCycleInfrastructures();
   const [formData, setFormData] = useState({
     name: '',
     species: '',
@@ -32,7 +35,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     targetWeight: '',
     feedType: '',
     notes: '',
-    infrastructure: ''
+    infrastructures: [] as string[]
   });
 
   // Calcul automatique de la date de fin
@@ -93,6 +96,11 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
 
       const savedCycle = await createCycle(cycleData);
       
+      // Créer les infrastructures rattachées au cycle
+      if (formData.infrastructures.length > 0) {
+        await createInfrastructures(savedCycle.id, formData.infrastructures, unitType);
+      }
+      
       // Appeler onSave si fourni (pour compatibilité avec l'ancien code)
       if (onSave) {
         onSave({
@@ -109,7 +117,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
           targetWeight: parseFloat(formData.targetWeight) || 0,
           feedType: formData.feedType,
           notes: savedCycle.notes,
-          infrastructure: formData.infrastructure,
+          infrastructures: formData.infrastructures,
           unitId: savedCycle.unit_id,
           status: savedCycle.status,
           progress: 0
@@ -131,7 +139,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         targetWeight: '',
         feedType: '',
         notes: '',
-        infrastructure: ''
+        infrastructures: []
       });
     } catch (error) {
       console.error('Error creating cycle:', error);
@@ -196,7 +204,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                 </div>
                 
                 {formData.species === 'custom' && (
-                  <div>
+                  <div className="sm:col-span-2">
                     <Label htmlFor="customSpecies">Nom de l'espèce</Label>
                     <Input
                       id="customSpecies"
@@ -207,20 +215,56 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                     />
                   </div>
                 )}
-                
-                <div>
-                  <Label htmlFor="infrastructure">Infrastructure</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, infrastructure: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {infrastructures.map((item) => (
-                        <SelectItem key={item} value={item}>{item}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Infrastructures rattachées */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Infrastructures rattachées au cycle</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sélectionnez une ou plusieurs infrastructures qui feront partie de ce cycle de production
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {infrastructures.map((item) => (
+                    <div key={item} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`infra-${item}`}
+                        checked={formData.infrastructures.includes(item)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              infrastructures: [...formData.infrastructures, item]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              infrastructures: formData.infrastructures.filter(i => i !== item)
+                            });
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor={`infra-${item}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {item}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
+                {formData.infrastructures.length > 0 && (
+                  <div className="mt-3 p-3 bg-primary/10 rounded-lg">
+                    <p className="text-sm font-medium text-primary">
+                      {formData.infrastructures.length} infrastructure(s) sélectionnée(s)
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
