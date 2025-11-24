@@ -59,10 +59,17 @@ const PWAInstallPrompt: React.FC = () => {
     };
   }, [isInstalled]);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+  const handleInstallClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      return;
+    }
 
     try {
+      console.log('Triggering install prompt');
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       
@@ -70,6 +77,7 @@ const PWAInstallPrompt: React.FC = () => {
       
       if (outcome === 'accepted') {
         setShowInstallPrompt(false);
+        sessionStorage.setItem('pwa-install-dismissed', 'true');
       }
       
       setDeferredPrompt(null);
@@ -78,8 +86,12 @@ const PWAInstallPrompt: React.FC = () => {
     }
   };
 
-  const handleDismiss = () => {
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('PWA prompt dismissed');
     setShowInstallPrompt(false);
+    setDeferredPrompt(null);
     // Ne plus montrer pendant cette session
     sessionStorage.setItem('pwa-install-dismissed', 'true');
   };
@@ -87,14 +99,12 @@ const PWAInstallPrompt: React.FC = () => {
   // Afficher seulement si :
   // - L'app n'est pas déjà installée
   // - Le prompt n'a pas été dismissé cette session
-  // - Le prompt est disponible OU l'utilisateur est en mode démo/connecté
-  // En mode démo/connecté, afficher un message pour l'installation même sans deferredPrompt
+  // - showInstallPrompt est true
   if (isInstalled || sessionStorage.getItem('pwa-install-dismissed') === 'true') {
     return null;
   }
 
-  // Afficher le prompt si disponible OU si l'utilisateur est connecté/en mode démo
-  if (!showInstallPrompt && !(isDemoMode || user)) {
+  if (!showInstallPrompt) {
     return null;
   }
 
@@ -128,8 +138,10 @@ const PWAInstallPrompt: React.FC = () => {
                   Installer AQUA PILOT
                 </h3>
                 <button
+                  type="button"
                   onClick={handleDismiss}
-                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                  aria-label="Fermer"
                 >
                   <X className="w-4 h-4" />
                 </button>
