@@ -5,7 +5,6 @@ import Header from '@/components/Header';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileMenuModal from '@/components/MobileMenuModal';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
-import { OfflineIndicator } from '@/components/OfflineIndicator';
 import OfflineDataManager from '@/components/OfflineDataManager';
 import IntelligentDashboard from '@/components/IntelligentDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
@@ -131,9 +130,6 @@ const Dashboard: React.FC = () => {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
-        
-        {/* Offline Indicator */}
-        <OfflineIndicator />
       </div>
     </SidebarProvider>
   );
