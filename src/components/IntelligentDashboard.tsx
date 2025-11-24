@@ -10,6 +10,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
+import { ConnectionStatusIndicator } from './ConnectionStatusIndicator';
 const IntelligentDashboard = () => {
   const {
     activeUnit,
@@ -229,6 +230,11 @@ const IntelligentDashboard = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+              {/* Indicateur de connexion - visible uniquement sur mobile */}
+              <div className="md:hidden">
+                <ConnectionStatusIndicator />
+              </div>
+              
               <div className="text-left sm:text-right">
                 <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
                 <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
