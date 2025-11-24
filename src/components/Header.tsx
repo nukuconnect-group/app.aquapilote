@@ -14,7 +14,6 @@ import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import SettingsManagement from '@/components/SettingsManagement';
 import ProfileDialog from '@/components/ProfileDialog';
-import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
