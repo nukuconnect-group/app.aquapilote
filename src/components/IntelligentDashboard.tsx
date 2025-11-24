@@ -232,7 +232,7 @@ const IntelligentDashboard = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               {/* Indicateur de connexion - visible uniquement sur mobile */}
               <div className="md:hidden">
-                <ConnectionStatusIndicator />
+                <ConnectionStatusIndicator showTextOnMobile />
               </div>
               
               <div className="text-left sm:text-right">

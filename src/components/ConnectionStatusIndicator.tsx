@@ -13,7 +13,11 @@ interface ConnectionState {
   lastSync?: Date;
 }
 
-export const ConnectionStatusIndicator: React.FC = () => {
+interface ConnectionStatusIndicatorProps {
+  showTextOnMobile?: boolean;
+}
+
+export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({ showTextOnMobile = false }) => {
   const { language } = useSettings();
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     network: 'connected',
@@ -172,7 +176,7 @@ export const ConnectionStatusIndicator: React.FC = () => {
             <div className={cn("transition-colors", getStatusColor())}>
               {getStatusIcon()}
             </div>
-            <span className="text-xs text-primary-foreground hidden sm:inline">
+            <span className={`text-xs text-primary-foreground ${showTextOnMobile ? '' : 'hidden'} sm:inline`}>
               {getStatusText()}
             </span>
           </div>
