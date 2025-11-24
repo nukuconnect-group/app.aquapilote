@@ -230,11 +230,6 @@ const IntelligentDashboard = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-              {/* Indicateur de connexion - visible uniquement sur mobile */}
-              <div className="md:hidden">
-                <ConnectionStatusIndicator showTextOnMobile />
-              </div>
-              
               <div className="text-left sm:text-right">
                 <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
                 <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
