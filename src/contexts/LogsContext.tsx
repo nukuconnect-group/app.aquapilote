@@ -51,8 +51,8 @@ export const LogsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        if (data) {
-          const formattedLogs = data.map(log => ({
+        if (data && Array.isArray(data)) {
+          const formattedLogs = data.map((log: any) => ({
             id: log.id,
             timestamp: log.timestamp,
             userId: log.user_id || '',
@@ -113,14 +113,13 @@ export const LogsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase
         .from('activity_logs')
         .insert({
-          user_id: user.id,
           user_name: user.name,
           action,
           module,
           details,
           severity,
           timestamp: new Date().toISOString()
-        });
+        } as any);
 
       if (error) {
         console.error('Error adding log:', error);
