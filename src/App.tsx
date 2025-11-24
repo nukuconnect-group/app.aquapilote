@@ -1,4 +1,3 @@
-
 // React core imports
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -8,7 +7,6 @@ import { IoTProvider } from '@/contexts/IoTContext';
 import { LogsProvider } from '@/contexts/LogsContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { Toaster } from '@/components/ui/toaster';
-import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -62,7 +60,6 @@ const AppContent: React.FC = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
-      <OfflineIndicator />
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
     </div>
