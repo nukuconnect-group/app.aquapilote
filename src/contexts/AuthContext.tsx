@@ -112,52 +112,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Set up auth state listener
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         if (session?.user) {
-          setTimeout(() => {
-            fetchUserData(session.user);
+          // Utiliser setTimeout pour éviter les deadlocks
+          setTimeout(async () => {
+            if (mounted) {
+              await fetchUserData(session.user);
+              setIsLoading(false);
+            }
           }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       if (session?.user) {
-        fetchUserData(session.user);
+        await fetchUserData(session.user);
       }
       setIsLoading(false);
     });
 
     // Set up realtime subscription for profile updates
-    const profileChannel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${session?.user?.id}`
-        },
-        (payload) => {
-          if (session?.user) {
-            fetchUserData(session.user);
-          }
-        }
-      )
-      .subscribe();
+    let profileChannel: ReturnType<typeof supabase.channel> | null = null;
+    
+    // Attendre que la session soit chargée avant de s'abonner
+    const setupRealtimeSubscription = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id && mounted) {
+        profileChannel = supabase
+          .channel('profile-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'profiles',
+              filter: `id=eq.${session.user.id}`
+            },
+            (payload) => {
+              if (session?.user && mounted) {
+                setTimeout(() => {
+                  fetchUserData(session.user);
+                }, 0);
+              }
+            }
+          )
+          .subscribe();
+      }
+    };
+    
+    setupRealtimeSubscription();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
-      supabase.removeChannel(profileChannel);
+      if (profileChannel) {
+        supabase.removeChannel(profileChannel);
+      }
     };
   }, []);
 
