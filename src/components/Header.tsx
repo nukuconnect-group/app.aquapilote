@@ -171,6 +171,13 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
           </SheetHeader>
           
           <div className="space-y-6 mt-6">
+            {/* Indicateur de connexion */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <ConnectionStatusIndicator showTextOnMobile />
+            </div>
+
+            <Separator />
+
             {/* Profil utilisateur */}
             {isAuthenticated && user && (
               <div className="space-y-4">
