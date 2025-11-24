@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -313,28 +314,44 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     }
   ]);
 
-  const [cycles, setCycles] = useState<ProductionCycle[]>([
-    {
-      id: 'CY001',
-      unitId: 'ECLO001',
-      name: 'Cycle Tilapia Q1 2024',
-      startDate: '2024-01-15',
-      status: 'active',
-      targetQuantity: 50000,
-      currentQuantity: 45000,
-      notes: 'Excellente croissance observée'
-    },
-    {
-      id: 'CY002',
-      unitId: 'GROSS001',
-      name: 'Cycle Grossissement Batch A',
-      startDate: '2024-02-01',
-      status: 'active',
-      targetQuantity: 30000,
-      currentQuantity: 25000,
-      notes: 'Alimentation renforcée en cours'
-    }
-  ]);
+  const [cycles, setCycles] = useState<ProductionCycle[]>([]);
+
+  // Charger les cycles de production depuis Supabase
+  useEffect(() => {
+    const fetchCycles = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('production_cycles')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Transformer les données de Supabase au format du contexte
+        const transformedCycles: ProductionCycle[] = (data || []).map(cycle => ({
+          id: cycle.id,
+          unitId: cycle.unit_id,
+          name: cycle.name,
+          startDate: cycle.start_date,
+          endDate: cycle.end_date || undefined,
+          status: cycle.status as 'active' | 'completed' | 'paused',
+          targetQuantity: cycle.target_quantity,
+          currentQuantity: cycle.current_quantity,
+          notes: cycle.notes || ''
+        }));
+
+        setCycles(transformedCycles);
+      } catch (error) {
+        console.error('Error fetching cycles:', error);
+      }
+    };
+
+    fetchCycles();
+  }, []);
 
   const [purchases, setPurchases] = useState<Purchase[]>([
     {
@@ -536,18 +553,79 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     return cycles.filter(cy => cy.unitId === unitId);
   };
 
-  const addCycle = (cycleData: Omit<ProductionCycle, 'id'>) => {
-    const newCycle: ProductionCycle = {
-      ...cycleData,
-      id: `CY${Date.now()}`
-    };
-    setCycles([...cycles, newCycle]);
+  const addCycle = async (cycleData: Omit<ProductionCycle, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
+
+      // Trouver l'unité pour obtenir ses informations
+      const unit = units.find(u => u.id === cycleData.unitId);
+      
+      const { data, error } = await supabase
+        .from('production_cycles')
+        .insert([{
+          user_id: user.id,
+          unit_id: cycleData.unitId,
+          unit_name: unit?.name || '',
+          unit_type: unit?.type || 'grossissement',
+          name: cycleData.name,
+          start_date: cycleData.startDate,
+          end_date: cycleData.endDate || null,
+          status: cycleData.status,
+          target_quantity: cycleData.targetQuantity,
+          current_quantity: cycleData.currentQuantity,
+          notes: cycleData.notes || null
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Ajouter au state local
+      const newCycle: ProductionCycle = {
+        id: data.id,
+        unitId: data.unit_id,
+        name: data.name,
+        startDate: data.start_date,
+        endDate: data.end_date || undefined,
+        status: data.status as 'active' | 'completed' | 'paused',
+        targetQuantity: data.target_quantity,
+        currentQuantity: data.current_quantity,
+        notes: data.notes || ''
+      };
+      
+      setCycles([...cycles, newCycle]);
+    } catch (error) {
+      console.error('Error adding cycle:', error);
+      throw error;
+    }
   };
 
-  const updateCycle = (id: string, updates: Partial<ProductionCycle>) => {
-    setCycles(cycles.map(cy => 
-      cy.id === id ? { ...cy, ...updates } : cy
-    ));
+  const updateCycle = async (id: string, updates: Partial<ProductionCycle>) => {
+    try {
+      const { error } = await supabase
+        .from('production_cycles')
+        .update({
+          name: updates.name,
+          start_date: updates.startDate,
+          end_date: updates.endDate || null,
+          status: updates.status,
+          target_quantity: updates.targetQuantity,
+          current_quantity: updates.currentQuantity,
+          notes: updates.notes
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Mettre à jour le state local
+      setCycles(cycles.map(cy => 
+        cy.id === id ? { ...cy, ...updates } : cy
+      ));
+    } catch (error) {
+      console.error('Error updating cycle:', error);
+      throw error;
+    }
   };
 
   const getUnitFinancialData = (unitId: string): UnitFinancialData | null => {
