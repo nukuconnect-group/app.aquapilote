@@ -14,6 +14,7 @@ import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import SettingsManagement from '@/components/SettingsManagement';
 import ProfileDialog from '@/components/ProfileDialog';
+import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
@@ -77,6 +78,10 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
 
           {/* Navigation actions à droite */}
           <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2">
+            {/* Indicateur de statut de connexion - visible sur ordinateur et tablette */}
+            <div className="hidden md:flex">
+              <ConnectionStatusIndicator />
+            </div>
             
             {/* Notifications */}
             <NotificationsPanel />
