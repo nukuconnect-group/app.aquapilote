@@ -52,12 +52,6 @@ const ProductionUnitsManagement = () => {
   ];
 
   const handleSaveUnit = () => {
-    // Validation des champs requis
-    if (!newUnit.name || !newUnit.type) {
-      addLog('Erreur', 'Infrastructures', 'Veuillez remplir tous les champs requis', 'error');
-      return;
-    }
-
     if (editingUnit) {
       updateUnit(editingUnit.id, newUnit);
       addLog('Unité modifiée', 'Infrastructures', `Unité ${newUnit.name} mise à jour`, 'info');

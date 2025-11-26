@@ -145,17 +145,13 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         notes: '',
         infrastructures: []
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating cycle:', error);
-      // Ne pas afficher de toast d'erreur si c'est une erreur LockManager
-      if (!error?.message?.includes('LockManager') && error?.code !== '18') {
-        alert('Erreur lors de la création du cycle. Veuillez réessayer.');
-      }
     }
   };
 
-  const species = speciesByType[unitType as keyof typeof speciesByType] || [];
-  const infrastructures = infrastructuresByType[unitType as keyof typeof infrastructuresByType] || [];
+  const species = speciesByType[unitType] || [];
+  const infrastructures = infrastructuresByType[unitType] || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
