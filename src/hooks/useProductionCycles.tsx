@@ -48,12 +48,18 @@ export const useProductionCycles = (unitId?: string) => {
         setCycles(data as unknown as ProductionCycle[]);
       }
     } catch (error: any) {
-      console.error('Error fetching cycles:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les cycles de production',
-        variant: 'destructive',
-      });
+      // Gérer l'erreur SecurityError de LockManager sans afficher de toast
+      if (error?.message?.includes('LockManager') || error?.code === '18') {
+        console.warn('LockManager not available, skipping...');
+        setCycles([]);
+      } else {
+        console.error('Error fetching cycles:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les cycles de production',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
