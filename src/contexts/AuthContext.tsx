@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { initializeDemoData } from '@/lib/demoData';
-
+import { initializeDemoData, clearDemoData } from '@/lib/demoData';
 
 interface User {
   id: string;
@@ -391,18 +390,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const enterDemoMode = () => {
-    console.log('Entering demo mode with full data initialization');
-    
-    // Initialiser toutes les données de démonstration complètes
-    initializeDemoData();
-    
     setIsDemoMode(true);
     setIsLoading(false);
-    
     // Marquer l'onboarding comme vu en mode démo
     localStorage.setItem('aqua_pilot_onboarding', 'true');
     setHasSeenOnboarding(true);
-    setHasSelectedPlan(true);
+    // Initialiser les données fictives
+    initializeDemoData();
     
     // Créer un utilisateur démonstration
     const demoUser: User = {
@@ -417,13 +411,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     setUser(demoUser);
-    
-    console.log('Demo mode activated with complete dataset');
   };
 
   const exitDemoMode = () => {
     setIsDemoMode(false);
     setUser(null);
+    // Effacer les données fictives
+    clearDemoData();
   };
 
   return (

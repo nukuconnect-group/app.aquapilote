@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, FileText } from 'lucide-react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
+import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 interface PrivacyPolicyProps {
   onAccept: () => void;
 }
@@ -15,26 +15,11 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({
   return <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-aqua-50 to-blue-100">
       <Card className="w-full max-w-2xl mx-auto shadow-2xl">
         <CardHeader className="text-center pb-4">
-          <div className="flex justify-center mb-6">
-            <div className="relative group">
-              {/* Effet de lueur en arrière-plan */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-blue-500/30 blur-3xl group-hover:blur-[60px] transition-all duration-700 animate-pulse" />
-              
-              {/* Logo avec effet 3D */}
-              <img 
-                src={aquaPilotLogo} 
-                alt="AQUA PILOT" 
-                className="relative h-32 sm:h-40 w-auto object-contain transform hover:scale-110 transition-all duration-500"
-                style={{
-                  filter: 'drop-shadow(0 10px 30px rgba(59, 130, 246, 0.6)) drop-shadow(0 0 50px rgba(59, 130, 246, 0.4))',
-                  transform: 'perspective(1000px) rotateX(5deg)',
-                  animation: 'float 6s ease-in-out infinite'
-                }}
-              />
-            </div>
+          <div className="flex justify-center mb-4">
+            <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-16 h-16" />
           </div>
-          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-            <Shield className="w-6 h-6 text-primary" />
+          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+            <Shield className="w-6 h-6 text-aqua-600" />
             Politique de Confidentialité
           </CardTitle>
         </CardHeader>
