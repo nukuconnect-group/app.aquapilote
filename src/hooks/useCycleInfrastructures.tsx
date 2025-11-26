@@ -39,12 +39,18 @@ export const useCycleInfrastructures = (cycleId?: string) => {
         setInfrastructures(data as unknown as CycleInfrastructure[]);
       }
     } catch (error: any) {
-      console.error('Error fetching infrastructures:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les infrastructures',
-        variant: 'destructive',
-      });
+      // Gérer l'erreur SecurityError de LockManager sans afficher de toast
+      if (error?.message?.includes('LockManager') || error?.code === '18') {
+        console.warn('LockManager not available, skipping...');
+        setInfrastructures([]);
+      } else {
+        console.error('Error fetching infrastructures:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les infrastructures',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
