@@ -292,13 +292,13 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                             <div className="ml-6">
                               <Label className="text-xs">Lot de poisson (optionnel)</Label>
                               <Select
-                                value={formData.infrastructureBatches[infra.name] || (infra as any).suggestedBatchId || ''}
+                                value={formData.infrastructureBatches[infra.name] || (infra as any).suggestedBatchId || 'none'}
                                 onValueChange={(value) => {
                                   setFormData({
                                     ...formData,
                                     infrastructureBatches: {
                                       ...formData.infrastructureBatches,
-                                      [infra.name]: value
+                                      [infra.name]: value === 'none' ? '' : value
                                     }
                                   });
                                 }}
@@ -307,7 +307,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                                   <SelectValue placeholder="Sélectionner un lot" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Aucun lot</SelectItem>
+                                  <SelectItem value="none">Aucun lot</SelectItem>
                                   {batches.map((batch) => (
                                     <SelectItem key={batch.id} value={batch.id}>
                                       {batch.species} - {batch.quantity} individus ({batch.average_weight}g)

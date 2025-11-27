@@ -275,14 +275,14 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
         <div className="sm:col-span-2">
           <Label className="text-sm">Lot de poisson suggéré (optionnel)</Label>
           <Select 
-            value={newInfrastructure.suggestedBatchId} 
-            onValueChange={(value) => setNewInfrastructure(prev => ({ ...prev, suggestedBatchId: value }))}
+            value={newInfrastructure.suggestedBatchId || "none"} 
+            onValueChange={(value) => setNewInfrastructure(prev => ({ ...prev, suggestedBatchId: value === "none" ? "" : value }))}
           >
             <SelectTrigger className="text-sm">
               <SelectValue placeholder="Sélectionner un lot (sera utilisé lors du rattachement à un cycle)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Aucun lot</SelectItem>
+              <SelectItem value="none">Aucun lot</SelectItem>
               {batches
                 .filter(batch => batch.unit_id === newInfrastructure.unitId)
                 .map((batch) => (
