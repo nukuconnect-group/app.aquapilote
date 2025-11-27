@@ -17,8 +17,11 @@ import FeedingHistory from './feeding/FeedingHistory';
 import FeedStockManager from './feeding/FeedStockManager';
 import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
+import FeedingAnalyticsDashboard from './feeding/FeedingAnalyticsDashboard';
 import { generateFeedingRecordHTML, printHTML } from '@/lib/feedingPrintUtils';
 import { useToast } from '@/hooks/use-toast';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
@@ -26,6 +29,8 @@ const FeedingManagement = () => {
   const { toast } = useToast();
   const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords();
   const { cycles } = useProductionCycles(activeUnit?.id);
+  const { stocks } = useFeedStocks(activeUnit?.id);
+  const { infrastructures } = useCycleInfrastructures(cycles.find(c => c.status === 'active')?.id || '');
   
   const activeCycle = cycles.find(c => c.status === 'active');
 
@@ -339,11 +344,13 @@ const FeedingManagement = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Graphiques à venir...</p>
-            </CardContent>
-          </Card>
+          <FeedingAnalyticsDashboard
+            records={unitRecords}
+            stocks={stocks}
+            infrastructures={infrastructures}
+            cycles={cycles}
+            unitName={activeUnit.name}
+          />
         </TabsContent>
       </Tabs>
     </div>
