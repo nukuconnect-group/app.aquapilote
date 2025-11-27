@@ -46,6 +46,28 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     infrastructures: [] as string[],
     infrastructureBatches: {} as Record<string, string>
   });
+  
+  // Auto-calculer quantité et poids initiaux basés sur les lots sélectionnés
+  React.useEffect(() => {
+    const selectedBatchIds = Object.values(formData.infrastructureBatches).filter(id => id);
+    if (selectedBatchIds.length > 0) {
+      const selectedBatches = batches.filter(b => selectedBatchIds.includes(b.id));
+      
+      // Somme des quantités de tous les lots
+      const totalQuantity = selectedBatches.reduce((sum, b) => sum + b.quantity, 0);
+      
+      // Poids initial total (quantité * poids moyen pour chaque lot)
+      const totalWeight = selectedBatches.reduce((sum, b) => 
+        sum + (b.quantity * (b.average_weight || 0)), 0
+      );
+      
+      setFormData(prev => ({
+        ...prev,
+        initialQuantity: totalQuantity.toString(),
+        initialWeight: totalWeight.toFixed(2)
+      }));
+    }
+  }, [formData.infrastructureBatches, batches]);
 
   // Calcul automatique de la date de fin
   const calculateEndDate = () => {
@@ -403,7 +425,12 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                     onChange={(e) => setFormData({...formData, initialQuantity: e.target.value})}
                     placeholder="1000"
                     required
+                    className="bg-muted"
+                    title="Calculé automatiquement d'après les lots rattachés"
                   />
+                  {formData.infrastructureBatches && Object.keys(formData.infrastructureBatches).length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">✓ Calculé automatiquement</p>
+                  )}
                 </div>
                 
                 <div>
@@ -419,15 +446,20 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                 </div>
                 
                 <div>
-                  <Label htmlFor="initialWeight">Poids initial (kg)</Label>
+                  <Label htmlFor="initialWeight">Poids initial total (g)</Label>
                   <Input
                     id="initialWeight"
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     value={formData.initialWeight}
                     onChange={(e) => setFormData({...formData, initialWeight: e.target.value})}
-                    placeholder="50"
+                    placeholder="10000"
+                    className="bg-muted"
+                    title="Calculé automatiquement d'après les lots rattachés"
                   />
+                  {formData.infrastructureBatches && Object.keys(formData.infrastructureBatches).length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">✓ Calculé automatiquement</p>
+                  )}
                 </div>
                 
                 <div>
