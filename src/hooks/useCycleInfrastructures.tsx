@@ -55,7 +55,12 @@ export const useCycleInfrastructures = (cycleId?: string) => {
     fetchInfrastructures();
   }, [cycleId]);
 
-  const createInfrastructures = async (cycleId: string, infrastructureNames: string[], infrastructureType: string) => {
+  const createInfrastructures = async (
+    cycleId: string, 
+    infrastructureNames: string[], 
+    infrastructureType: string,
+    batchMapping?: Record<string, string>
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
@@ -65,7 +70,8 @@ export const useCycleInfrastructures = (cycleId?: string) => {
         infrastructure_name: name,
         infrastructure_type: infrastructureType,
         current_quantity: 0,
-        user_id: user.id
+        user_id: user.id,
+        livestock_batch_id: batchMapping?.[name] || null
       }));
 
       const { data, error } = await supabase
