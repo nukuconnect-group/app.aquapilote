@@ -178,6 +178,9 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
       `;
 
+      let emailSent = false;
+      let emailError = null;
+      
       try {
         const emailResponse = await resend.emails.send({
           from: "AquaPilote <onboarding@resend.dev>",
@@ -187,9 +190,36 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         console.log(`Email sent to ${email}:`, emailResponse);
+        emailSent = true;
         alertsSent++;
-      } catch (emailError) {
-        console.error(`Error sending email to ${email}:`, emailError);
+      } catch (error: any) {
+        emailError = error.message;
+        console.error(`Error sending email to ${email}:`, error);
+      }
+
+      // Enregistrer l'historique des alertes pour chaque stock
+      for (const stock of stocks) {
+        const { error: historyError } = await supabase
+          .from('alert_history')
+          .insert({
+            user_id: userId,
+            stock_id: stock.id,
+            alert_type: 'low_stock',
+            message: `Stock faible: ${stock.custom_name || stock.feed_type} - Quantité: ${stock.quantity}${stock.unit}`,
+            email_sent: emailSent,
+            email_error: emailError,
+            stock_details: {
+              feed_type: stock.feed_type,
+              custom_name: stock.custom_name,
+              quantity: stock.quantity,
+              unit: stock.unit,
+              min_threshold: stock.min_threshold,
+            }
+          });
+
+        if (historyError) {
+          console.error('Error saving alert history:', historyError);
+        }
       }
     }
 
