@@ -254,9 +254,15 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                               checked={formData.infrastructures.includes(infra.name)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
+                                  // Auto-sélectionner le lot suggéré si disponible
+                                  const suggestedBatch = (infra as any).suggestedBatchId || '';
                                   setFormData({
                                     ...formData,
-                                    infrastructures: [...formData.infrastructures, infra.name]
+                                    infrastructures: [...formData.infrastructures, infra.name],
+                                    infrastructureBatches: {
+                                      ...formData.infrastructureBatches,
+                                      [infra.name]: suggestedBatch
+                                    }
                                   });
                                 } else {
                                   const newBatches = { ...formData.infrastructureBatches };
@@ -286,7 +292,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                             <div className="ml-6">
                               <Label className="text-xs">Lot de poisson (optionnel)</Label>
                               <Select
-                                value={formData.infrastructureBatches[infra.name] || ''}
+                                value={formData.infrastructureBatches[infra.name] || (infra as any).suggestedBatchId || ''}
                                 onValueChange={(value) => {
                                   setFormData({
                                     ...formData,
@@ -309,6 +315,11 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {(infra as any).suggestedBatchId && (
+                                <p className="text-xs text-primary mt-1">
+                                  ✓ Lot suggéré pour cette infrastructure
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
