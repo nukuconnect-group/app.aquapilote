@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp, Zap, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import { toast } from 'sonner';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
 import { useIoT } from '@/contexts/IoTContext';
