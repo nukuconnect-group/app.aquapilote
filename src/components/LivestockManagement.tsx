@@ -491,15 +491,6 @@ const LivestockManagement = () => {
                   )}
 
                   <div>
-                    <Label>Date de récolte prévue</Label>
-                    <Input
-                      type="date"
-                      value={formData.expectedHarvestDate}
-                      onChange={(e) => setFormData({...formData, expectedHarvestDate: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
                     <Label>Taux de survie prévisionnel (%)</Label>
                     <Input
                       type="number"
