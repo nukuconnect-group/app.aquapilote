@@ -5,12 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Building, Settings, Trash2, Power, PowerOff, Edit, MapPin } from 'lucide-react';
+import { Building, Settings, Trash2, Power, PowerOff, Edit, MapPin, Fish, Plus } from 'lucide-react';
 import { Infrastructure, useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import InfrastructureForm from './InfrastructureForm';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import InfrastructureLivestockCard from './InfrastructureLivestockCard';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 interface InfrastructureCardProps {
   infrastructure: Infrastructure;
@@ -19,8 +24,10 @@ interface InfrastructureCardProps {
 const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const { infrastructures, setInfrastructures, activeUnit } = useProductionUnits();
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const { infrastructures: cycleInfras } = useCycleInfrastructures();
-  const { batches } = useLivestockBatches(infrastructure.unitId);
+  const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
+  const { toast } = useToast();
+  const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures();
+  const { batches, createBatch } = useLivestockBatches(infrastructure.unitId);
   
   // Trouver l'infrastructure de cycle associée
   const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
@@ -29,6 +36,22 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const attachedBatch = cycleInfra?.livestock_batch_id 
     ? batches.find(b => b.id === cycleInfra.livestock_batch_id)
     : null;
+
+  // État du formulaire de création de lot
+  const [batchFormData, setBatchFormData] = useState({
+    species: '',
+    variety: '',
+    quantity: 0,
+    averageWeight: 0,
+    acquisitionDate: new Date().toISOString().split('T')[0],
+    source: '',
+    notes: '',
+    expectedHarvestDate: '',
+    feedingPlan: '',
+    status: 'healthy' as const
+  });
+
+  const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade', 'Autre'];
 
   const getInfrastructureIcon = (type: string) => {
     if (type.includes('bassin')) return Building;
@@ -77,6 +100,82 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const handleEditSave = (updatedInfrastructure: any) => {
     console.log('Infrastructure updated:', updatedInfrastructure);
     // The form component already handles the saving logic
+  };
+
+  const handleCreateAndAttachBatch = async () => {
+    if (!batchFormData.species || !batchFormData.quantity) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir les champs obligatoires (espèce et quantité)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!activeUnit) {
+      toast({
+        title: "Erreur",
+        description: "Aucune unité sélectionnée",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Calculer l'âge et le poids total
+      const currentAge = batchFormData.acquisitionDate 
+        ? Math.floor((Date.now() - new Date(batchFormData.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      const totalWeight = batchFormData.quantity * batchFormData.averageWeight / 1000;
+
+      // Créer le lot
+      const newBatch = await createBatch({
+        species: batchFormData.species,
+        variety: batchFormData.variety,
+        quantity: batchFormData.quantity,
+        average_weight: batchFormData.averageWeight,
+        total_weight: totalWeight,
+        acquisition_date: batchFormData.acquisitionDate || null,
+        source: batchFormData.source,
+        unit_id: activeUnit.id,
+        unit_name: activeUnit.name,
+        status: batchFormData.status,
+        notes: batchFormData.notes,
+        expected_harvest_date: batchFormData.expectedHarvestDate || null,
+        current_age: currentAge,
+        feeding_plan: batchFormData.feedingPlan,
+        last_health_check: new Date().toISOString().split('T')[0]
+      });
+
+      // Si un cycle infra existe, rattacher le lot
+      if (cycleInfra && newBatch) {
+        await updateInfrastructure(cycleInfra.id, {
+          livestock_batch_id: newBatch.id
+        });
+      }
+
+      toast({
+        title: "Succès",
+        description: "Lot créé et rattaché à l'infrastructure"
+      });
+
+      // Réinitialiser le formulaire
+      setBatchFormData({
+        species: '',
+        variety: '',
+        quantity: 0,
+        averageWeight: 0,
+        acquisitionDate: new Date().toISOString().split('T')[0],
+        source: '',
+        notes: '',
+        expectedHarvestDate: '',
+        feedingPlan: '',
+        status: 'healthy'
+      });
+      setIsCreateBatchOpen(false);
+    } catch (error) {
+      console.error('Error creating batch:', error);
+    }
   };
 
   const IconComponent = getInfrastructureIcon(infrastructure.type);
@@ -137,12 +236,29 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
           )}
           
           {/* Afficher le lot de poisson rattaché s'il existe */}
-          {attachedBatch && (
+          {attachedBatch ? (
             <div className="pt-3 border-t">
               <InfrastructureLivestockCard 
                 batch={attachedBatch} 
                 infrastructureId={infrastructure.id}
               />
+            </div>
+          ) : cycleInfra && (
+            <div className="pt-3 border-t">
+              <div className="text-center py-4">
+                <Fish className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Aucun lot rattaché à cette infrastructure
+                </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => setIsCreateBatchOpen(true)}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Créer et rattacher un lot
+                </Button>
+              </div>
             </div>
           )}
           
@@ -219,6 +335,143 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
             onSave={handleEditSave}
             onClose={() => setIsEditOpen(false)} 
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de création de lot */}
+      <Dialog open={isCreateBatchOpen} onOpenChange={setIsCreateBatchOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Créer un lot de poisson</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Espèce *</Label>
+                <Select 
+                  value={batchFormData.species} 
+                  onValueChange={(value) => setBatchFormData({...batchFormData, species: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {species.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Variété</Label>
+                <Input
+                  value={batchFormData.variety}
+                  onChange={(e) => setBatchFormData({...batchFormData, variety: e.target.value})}
+                  placeholder="Variété"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Quantité *</Label>
+                <Input
+                  type="number"
+                  value={batchFormData.quantity || ''}
+                  onChange={(e) => setBatchFormData({...batchFormData, quantity: parseInt(e.target.value) || 0})}
+                  placeholder="Nombre d'individus"
+                />
+              </div>
+              <div>
+                <Label>Poids moyen (g)</Label>
+                <Input
+                  type="number"
+                  value={batchFormData.averageWeight || ''}
+                  onChange={(e) => setBatchFormData({...batchFormData, averageWeight: parseInt(e.target.value) || 0})}
+                  placeholder="Poids en grammes"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Date d'acquisition</Label>
+              <Input
+                type="date"
+                value={batchFormData.acquisitionDate}
+                onChange={(e) => setBatchFormData({...batchFormData, acquisitionDate: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <Label>Source/Fournisseur</Label>
+              <Input
+                value={batchFormData.source}
+                onChange={(e) => setBatchFormData({...batchFormData, source: e.target.value})}
+                placeholder="Nom du fournisseur"
+              />
+            </div>
+
+            <div>
+              <Label>Plan d'alimentation</Label>
+              <Input
+                value={batchFormData.feedingPlan}
+                onChange={(e) => setBatchFormData({...batchFormData, feedingPlan: e.target.value})}
+                placeholder="Ex: Standard croissance"
+              />
+            </div>
+
+            <div>
+              <Label>Date de récolte prévue</Label>
+              <Input
+                type="date"
+                value={batchFormData.expectedHarvestDate}
+                onChange={(e) => setBatchFormData({...batchFormData, expectedHarvestDate: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <Label>Statut</Label>
+              <Select 
+                value={batchFormData.status} 
+                onValueChange={(value) => setBatchFormData({...batchFormData, status: value as any})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="healthy">En bonne santé</SelectItem>
+                  <SelectItem value="sick">Malade</SelectItem>
+                  <SelectItem value="quarantine">Quarantaine</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={batchFormData.notes}
+                onChange={(e) => setBatchFormData({...batchFormData, notes: e.target.value})}
+                placeholder="Notes supplémentaires..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleCreateAndAttachBatch}
+                className="flex-1"
+              >
+                <Fish className="w-4 h-4 mr-2" />
+                Créer et rattacher
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setIsCreateBatchOpen(false)}
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
