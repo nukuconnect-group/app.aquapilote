@@ -398,7 +398,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                   <Label htmlFor="feedType">Programme alimentaire</Label>
                   <Select onValueChange={(value) => setFormData({...formData, feedType: value})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un programme" />
+                      <SelectValue placeholder="Sélectionner un aliment" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="starter">Programme Starter</SelectItem>
@@ -407,6 +407,9 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                       <SelectItem value="reproducteur">Programme Reproducteur</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 Créez vos stocks d'aliments dans le module Alimentation
+                  </p>
                 </div>
               ) : null}
             </CardContent>

@@ -136,6 +136,63 @@ export type Database = {
           },
         ]
       }
+      feed_stocks: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          custom_name: string | null
+          expiration_date: string | null
+          fat_content: number | null
+          feed_type: string
+          id: string
+          min_threshold: number | null
+          notes: string | null
+          protein_content: number | null
+          quantity: number
+          supplier: string | null
+          unit: string
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          custom_name?: string | null
+          expiration_date?: string | null
+          fat_content?: number | null
+          feed_type: string
+          id?: string
+          min_threshold?: number | null
+          notes?: string | null
+          protein_content?: number | null
+          quantity?: number
+          supplier?: string | null
+          unit?: string
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          custom_name?: string | null
+          expiration_date?: string | null
+          fat_content?: number | null
+          feed_type?: string
+          id?: string
+          min_threshold?: number | null
+          notes?: string | null
+          protein_content?: number | null
+          quantity?: number
+          supplier?: string | null
+          unit?: string
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       feeding_records: {
         Row: {
           behavior: string | null
