@@ -457,6 +457,7 @@ export type Database = {
           created_at: string | null
           current_age: number | null
           expected_harvest_date: string | null
+          expected_survival_rate: number | null
           feeding_plan: string | null
           id: string
           last_health_check: string | null
@@ -478,6 +479,7 @@ export type Database = {
           created_at?: string | null
           current_age?: number | null
           expected_harvest_date?: string | null
+          expected_survival_rate?: number | null
           feeding_plan?: string | null
           id?: string
           last_health_check?: string | null
@@ -499,6 +501,7 @@ export type Database = {
           created_at?: string | null
           current_age?: number | null
           expected_harvest_date?: string | null
+          expected_survival_rate?: number | null
           feeding_plan?: string | null
           id?: string
           last_health_check?: string | null

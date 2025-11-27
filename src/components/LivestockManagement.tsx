@@ -148,7 +148,8 @@ const LivestockManagement = () => {
     notes: '',
     expectedHarvestDate: '',
     feedingPlan: '',
-    status: 'healthy' as const
+    status: 'healthy' as const,
+    expectedSurvivalRate: 95
   });
 
   const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade'];
@@ -184,7 +185,8 @@ const LivestockManagement = () => {
         expected_harvest_date: formData.expectedHarvestDate || null,
         current_age: currentAge,
         feeding_plan: formData.feedingPlan,
-        last_health_check: new Date().toISOString().split('T')[0]
+        last_health_check: new Date().toISOString().split('T')[0],
+        expected_survival_rate: formData.expectedSurvivalRate
       });
 
       addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
@@ -201,7 +203,8 @@ const LivestockManagement = () => {
         notes: '',
         expectedHarvestDate: '',
         feedingPlan: '',
-        status: 'healthy'
+        status: 'healthy',
+        expectedSurvivalRate: 95
       });
       setShowAddForm(false);
     } catch (error) {
@@ -494,6 +497,22 @@ const LivestockManagement = () => {
                       value={formData.expectedHarvestDate}
                       onChange={(e) => setFormData({...formData, expectedHarvestDate: e.target.value})}
                     />
+                  </div>
+
+                  <div>
+                    <Label>Taux de survie prévisionnel (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={formData.expectedSurvivalRate}
+                      onChange={(e) => setFormData({...formData, expectedSurvivalRate: parseFloat(e.target.value) || 95})}
+                      placeholder="Ex: 95"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Taux de survie attendu pour ce lot (par défaut 95%)
+                    </p>
                   </div>
 
                   <div>

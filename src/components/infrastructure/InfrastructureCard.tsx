@@ -144,7 +144,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
         expected_harvest_date: batchFormData.expectedHarvestDate || null,
         current_age: currentAge,
         feeding_plan: batchFormData.feedingPlan,
-        last_health_check: new Date().toISOString().split('T')[0]
+        last_health_check: new Date().toISOString().split('T')[0],
+        expected_survival_rate: 95
       });
 
       // Si un cycle infra existe, rattacher le lot
