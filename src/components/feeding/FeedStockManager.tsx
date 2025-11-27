@@ -16,83 +16,38 @@ import {
   TrendingDown,
   Edit,
   Trash2,
-  BarChart3
+  BarChart3,
+  Loader2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-
-interface FeedStock {
-  id: string;
-  customName: string;
-  feedType: string;
-  quantity: number;
-  unit: string;
-  expirationDate: string;
-  supplier: string;
-  cost: number;
-  proteinContent: number;
-  fatContent: number;
-  notes: string;
-  createdAt: string;
-  minThreshold: number;
-}
+import { useFeedStocks } from '@/hooks/useFeedStocks';
 
 interface FeedStockManagerProps {
   unitId: string;
-  onStockUpdate: (stocks: FeedStock[]) => void;
+  onStockUpdate?: (stocks: any[]) => void;
 }
 
 const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
-  const [stocks, setStocks] = useState<FeedStock[]>([
-    {
-      id: '1',
-      customName: 'Granulés Premium Tilapia',
-      feedType: 'granules_flottants',
-      quantity: 500,
-      unit: 'kg',
-      expirationDate: '2024-06-15',
-      supplier: 'AquaNutrition SA',
-      cost: 2.50,
-      proteinContent: 32,
-      fatContent: 6,
-      notes: 'Aliment haute performance pour croissance',
-      createdAt: '2024-01-15',
-      minThreshold: 100
-    },
-    {
-      id: '2',
-      customName: 'Farine de Poisson Premium',
-      feedType: 'farine_poisson',
-      quantity: 50,
-      unit: 'kg',
-      expirationDate: '2024-05-20',
-      supplier: 'BioMarine Ltd',
-      cost: 4.20,
-      proteinContent: 65,
-      fatContent: 12,
-      notes: 'Source de protéines naturelles',
-      createdAt: '2024-01-10',
-      minThreshold: 25
-    }
-  ]);
+  const { stocks, loading, createStock, updateStock, deleteStock } = useFeedStocks(unitId);
 
   const [customFeedTypes, setCustomFeedTypes] = useState<string[]>([]);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingStock, setEditingStock] = useState<FeedStock | null>(null);
+  const [editingStock, setEditingStock] = useState<any | null>(null);
   const [showCustomTypeInput, setShowCustomTypeInput] = useState(false);
   const [customFeedTypeName, setCustomFeedTypeName] = useState('');
 
   const [newStock, setNewStock] = useState({
-    customName: '',
-    feedType: '',
+    custom_name: '',
+    feed_type: '',
     quantity: 0,
     unit: 'kg',
-    expirationDate: '',
+    expiration_date: '',
     supplier: '',
     cost: 0,
-    proteinContent: 0,
-    fatContent: 0,
+    protein_content: 0,
+    fat_content: 0,
     notes: '',
-    minThreshold: 50
+    min_threshold: 50
   });
 
   const predefinedFeedTypes = [
@@ -118,7 +73,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
   const handleSaveCustomFeedType = () => {
     if (customFeedTypeName.trim()) {
       setCustomFeedTypes(prev => [...prev, customFeedTypeName.trim()]);
-      setNewStock(prev => ({ ...prev, feedType: customFeedTypeName.trim() }));
+      setNewStock(prev => ({ ...prev, feed_type: customFeedTypeName.trim() }));
       setCustomFeedTypeName('');
       setShowCustomTypeInput(false);
     }
@@ -128,85 +83,116 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
     if (value === 'custom') {
       setShowCustomTypeInput(true);
     } else {
-      setNewStock(prev => ({ ...prev, feedType: value }));
+      setNewStock(prev => ({ ...prev, feed_type: value }));
       setShowCustomTypeInput(false);
     }
   };
 
-  const handleSaveStock = () => {
-    const stockData: FeedStock = {
-      id: editingStock ? editingStock.id : Date.now().toString(),
-      ...newStock,
-      createdAt: editingStock ? editingStock.createdAt : new Date().toISOString()
-    };
+  const handleSaveStock = async () => {
+    try {
+      const stockData = {
+        unit_id: unitId,
+        custom_name: newStock.custom_name,
+        feed_type: newStock.feed_type,
+        quantity: newStock.quantity,
+        unit: newStock.unit,
+        expiration_date: newStock.expiration_date || undefined,
+        supplier: newStock.supplier || undefined,
+        cost: newStock.cost || undefined,
+        protein_content: newStock.protein_content || undefined,
+        fat_content: newStock.fat_content || undefined,
+        notes: newStock.notes || undefined,
+        min_threshold: newStock.min_threshold || 50
+      };
 
-    if (editingStock) {
-      setStocks(prev => prev.map(s => s.id === editingStock.id ? stockData : s));
-    } else {
-      setStocks(prev => [...prev, stockData]);
+      if (editingStock) {
+        await updateStock(editingStock.id, stockData);
+      } else {
+        await createStock(stockData);
+      }
+
+      if (onStockUpdate) {
+        onStockUpdate(stocks);
+      }
+      
+      setNewStock({
+        custom_name: '',
+        feed_type: '',
+        quantity: 0,
+        unit: 'kg',
+        expiration_date: '',
+        supplier: '',
+        cost: 0,
+        protein_content: 0,
+        fat_content: 0,
+        notes: '',
+        min_threshold: 50
+      });
+      setEditingStock(null);
+      setShowDialog(false);
+    } catch (error) {
+      console.error('Error saving stock:', error);
     }
-
-    onStockUpdate(editingStock ? stocks.map(s => s.id === editingStock.id ? stockData : s) : [...stocks, stockData]);
-    
-    setNewStock({
-      customName: '',
-      feedType: '',
-      quantity: 0,
-      unit: 'kg',
-      expirationDate: '',
-      supplier: '',
-      cost: 0,
-      proteinContent: 0,
-      fatContent: 0,
-      notes: '',
-      minThreshold: 50
-    });
-    setEditingStock(null);
-    setShowDialog(false);
   };
 
-  const handleEditStock = (stock: FeedStock) => {
+  const handleEditStock = (stock: any) => {
     setEditingStock(stock);
     setNewStock({
-      customName: stock.customName,
-      feedType: stock.feedType,
+      custom_name: stock.custom_name || '',
+      feed_type: stock.feed_type,
       quantity: stock.quantity,
       unit: stock.unit,
-      expirationDate: stock.expirationDate,
-      supplier: stock.supplier,
-      cost: stock.cost,
-      proteinContent: stock.proteinContent,
-      fatContent: stock.fatContent,
-      notes: stock.notes,
-      minThreshold: stock.minThreshold
+      expiration_date: stock.expiration_date || '',
+      supplier: stock.supplier || '',
+      cost: stock.cost || 0,
+      protein_content: stock.protein_content || 0,
+      fat_content: stock.fat_content || 0,
+      notes: stock.notes || '',
+      min_threshold: stock.min_threshold || 50
     });
     setShowDialog(true);
   };
 
-  const handleDeleteStock = (stockId: string) => {
-    const updatedStocks = stocks.filter(s => s.id !== stockId);
-    setStocks(updatedStocks);
-    onStockUpdate(updatedStocks);
+  const handleDeleteStock = async (stockId: string) => {
+    try {
+      await deleteStock(stockId);
+      if (onStockUpdate) {
+        onStockUpdate(stocks);
+      }
+    } catch (error) {
+      console.error('Error deleting stock:', error);
+    }
   };
 
-  const getLowStockItems = () => stocks.filter(stock => stock.quantity <= stock.minThreshold);
+  const getLowStockItems = () => stocks.filter(stock => stock.quantity <= (stock.min_threshold || 50));
   const getExpiringItems = () => {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return stocks.filter(stock => new Date(stock.expirationDate) <= thirtyDaysFromNow);
+    return stocks.filter(stock => stock.expiration_date && new Date(stock.expiration_date) <= thirtyDaysFromNow);
   };
 
-  const getTotalValue = () => stocks.reduce((total, stock) => total + (stock.quantity * stock.cost), 0);
+  const getTotalValue = () => stocks.reduce((total, stock) => total + (stock.quantity * (stock.cost || 0)), 0);
 
   // Données pour le graphique d'évolution (simulé avec dates créées)
   const stockEvolutionData = stocks
     .slice()
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .sort((a, b) => new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime())
     .map(stock => ({
-      date: new Date(stock.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+      date: new Date(stock.created_at || '').toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
       quantite: stock.quantity,
-      nom: stock.customName
+      nom: stock.custom_name || stock.feed_type
     }));
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <span>Chargement des stocks...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -240,8 +226,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                   <div>
                     <Label className="text-sm">Nom personnalisé de l'aliment</Label>
                     <Input 
-                      value={newStock.customName}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, customName: e.target.value }))}
+                      value={newStock.custom_name}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, custom_name: e.target.value }))}
                       placeholder="Ex: Granulés Premium Tilapia"
                       className="text-sm"
                     />
@@ -249,7 +235,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
                   <div>
                     <Label className="text-sm">Type d'aliment</Label>
-                    <Select value={newStock.feedType} onValueChange={handleFeedTypeChange}>
+                    <Select value={newStock.feed_type} onValueChange={handleFeedTypeChange}>
                       <SelectTrigger className="text-sm">
                         <SelectValue placeholder="Sélectionner le type" />
                       </SelectTrigger>
@@ -307,8 +293,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     <Label className="text-sm">Date d'expiration</Label>
                     <Input 
                       type="date"
-                      value={newStock.expirationDate}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, expirationDate: e.target.value }))}
+                      value={newStock.expiration_date}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, expiration_date: e.target.value }))}
                       className="text-sm"
                     />
                   </div>
@@ -342,8 +328,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     <Label className="text-sm">Seuil minimum</Label>
                     <Input 
                       type="number"
-                      value={newStock.minThreshold}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, minThreshold: parseFloat(e.target.value) || 0 }))}
+                      value={newStock.min_threshold}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, min_threshold: parseFloat(e.target.value) || 0 }))}
                       className="text-sm"
                     />
                   </div>
@@ -353,8 +339,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     <Input 
                       type="number"
                       step="0.1"
-                      value={newStock.proteinContent}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, proteinContent: parseFloat(e.target.value) || 0 }))}
+                      value={newStock.protein_content}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, protein_content: parseFloat(e.target.value) || 0 }))}
                       className="text-sm"
                     />
                   </div>
@@ -364,8 +350,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     <Input 
                       type="number"
                       step="0.1"
-                      value={newStock.fatContent}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, fatContent: parseFloat(e.target.value) || 0 }))}
+                      value={newStock.fat_content}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, fat_content: parseFloat(e.target.value) || 0 }))}
                       className="text-sm"
                     />
                   </div>
@@ -391,17 +377,17 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 setShowDialog(false);
                 setEditingStock(null);
                 setNewStock({
-                  customName: '',
-                  feedType: '',
+                  custom_name: '',
+                  feed_type: '',
                   quantity: 0,
                   unit: 'kg',
-                  expirationDate: '',
+                  expiration_date: '',
                   supplier: '',
                   cost: 0,
-                  proteinContent: 0,
-                  fatContent: 0,
+                  protein_content: 0,
+                  fat_content: 0,
                   notes: '',
-                  minThreshold: 50
+                  min_threshold: 50
                 });
               }}>
                 Annuler
@@ -426,7 +412,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 <div className="space-y-1">
                   {getLowStockItems().map(item => (
                     <div key={item.id} className="text-xs">
-                      <strong>{item.customName}</strong>: {item.quantity} {item.unit}
+                      <strong>{item.custom_name || item.feed_type}</strong>: {item.quantity} {item.unit}
                     </div>
                   ))}
                 </div>
@@ -446,7 +432,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 <div className="space-y-1">
                   {getExpiringItems().map(item => (
                     <div key={item.id} className="text-xs">
-                      <strong>{item.customName}</strong>: {new Date(item.expirationDate).toLocaleDateString('fr-FR')}
+                      <strong>{item.custom_name || item.feed_type}</strong>: {item.expiration_date ? new Date(item.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
                     </div>
                   ))}
                 </div>
@@ -502,12 +488,12 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
-                  <CardTitle className="text-base">{stock.customName}</CardTitle>
+                  <CardTitle className="text-base">{stock.custom_name || stock.feed_type}</CardTitle>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
-                      {predefinedFeedTypes.find(t => t.value === stock.feedType)?.label || stock.feedType}
+                      {predefinedFeedTypes.find(t => t.value === stock.feed_type)?.label || stock.feed_type}
                     </Badge>
-                    <Badge className={stock.quantity <= stock.minThreshold ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                    <Badge className={stock.quantity <= (stock.min_threshold || 50) ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
                       {stock.quantity} {stock.unit}
                     </Badge>
                   </div>
@@ -526,19 +512,21 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
                 <div>
                   <span className="text-gray-600">Expiration:</span>
-                  <span className="ml-1 font-medium">{new Date(stock.expirationDate).toLocaleDateString('fr-FR')}</span>
+                  <span className="ml-1 font-medium">
+                    {stock.expiration_date ? new Date(stock.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Coût:</span>
-                  <span className="ml-1 font-medium">{stock.cost}€/{stock.unit}</span>
+                  <span className="ml-1 font-medium">{stock.cost || 0}€/{stock.unit}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Protéines:</span>
-                  <span className="ml-1 font-medium">{stock.proteinContent}%</span>
+                  <span className="ml-1 font-medium">{stock.protein_content || 0}%</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Fournisseur:</span>
-                  <span className="ml-1 font-medium">{stock.supplier}</span>
+                  <span className="ml-1 font-medium">{stock.supplier || 'N/A'}</span>
                 </div>
               </div>
               {stock.notes && (

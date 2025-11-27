@@ -1,74 +1,26 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Utensils, Plus, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils } from 'lucide-react';
+import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
+import ProductionCycleForm from './production/ProductionCycleForm';
+import ProductionCycleDetails from './production/ProductionCycleDetails';
+import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useSettings } from '@/contexts/SettingsContext';
 import FeedingForm from './feeding/FeedingForm';
 import FeedingHistory from './feeding/FeedingHistory';
 import FeedStockManager from './feeding/FeedStockManager';
 import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
-import ResponsiveCard from './ResponsiveCard';
-import ResponsiveTable from './ResponsiveTable';
-import { useSettings } from '@/contexts/SettingsContext';
-
-interface FeedingRecord {
-  id: string;
-  date: string;
-  time: string;
-  feedType: string;
-  quantity: number;
-  unit: string;
-  temperature: number;
-  notes: string;
-  unitId: string;
-  feederName?: string;
-  prescribedQuantity?: number;
-  actualQuantity?: number;
-  remainingQuantity?: number;
-  fishBehavior?: string;
-}
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
   const { t } = useSettings();
-  const [feedingRecords, setFeedingRecords] = useState<FeedingRecord[]>([
-    {
-      id: '1',
-      date: '2024-01-15',
-      time: '08:30',
-      feedType: 'Aliment croissance (2-3mm)',
-      quantity: 25,
-      unit: 'kg',
-      temperature: 18.5,
-      notes: 'Comportement alimentaire normal',
-      unitId: 'grossissement-1',
-      feederName: 'Jean Martin',
-      prescribedQuantity: 25,
-      actualQuantity: 25,
-      remainingQuantity: 0,
-      fishBehavior: 'Comportement normal'
-    },
-    {
-      id: '2',
-      date: '2024-01-15',
-      time: '17:00',
-      feedType: 'Aliment starter (0.5-1mm)',
-      quantity: 5,
-      unit: 'kg',
-      temperature: 19.2,
-      notes: 'Alevins très actifs',
-      unitId: 'ecloserie-1',
-      feederName: 'Marie Dubois',
-      prescribedQuantity: 6,
-      actualQuantity: 5,
-      remainingQuantity: 1,
-      fishBehavior: 'Très actifs'
-    }
-  ]);
+  const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords();
 
   if (!activeUnit) {
     return (
@@ -180,22 +132,47 @@ const FeedingManagement = () => {
     );
   }
 
-  const unitRecords = feedingRecords.filter(record => record.unitId === activeUnit.id);
+  const unitRecords = feedingRecords.filter(record => record.unit_id === activeUnit.id);
 
-  const handleSaveFeedingRecord = (record: Omit<FeedingRecord, 'id'>) => {
-    const newRecord: FeedingRecord = {
-      ...record,
-      id: Date.now().toString()
-    };
-    setFeedingRecords([...feedingRecords, newRecord]);
+  const handleSaveFeedingRecord = async (record: any) => {
+    try {
+      await createRecord({
+        unit_id: activeUnit.id,
+        date: record.date,
+        time: record.time,
+        feed_type: record.feedType,
+        quantity: record.quantity,
+        temperature: record.temperature || undefined,
+        notes: record.notes || undefined,
+        behavior: record.fishBehavior || undefined,
+      });
+    } catch (error) {
+      console.error('Error saving feeding record:', error);
+    }
   };
 
-  const handleEditRecord = (record: FeedingRecord) => {
-    console.log('Edit record:', record);
+  const handleEditRecord = async (record: any) => {
+    try {
+      await updateRecord(record.id, {
+        date: record.date,
+        time: record.time,
+        feed_type: record.feed_type,
+        quantity: record.quantity,
+        temperature: record.temperature || undefined,
+        notes: record.notes || undefined,
+        behavior: record.behavior || undefined,
+      });
+    } catch (error) {
+      console.error('Error updating feeding record:', error);
+    }
   };
 
-  const handleDeleteRecord = (id: string) => {
-    setFeedingRecords(feedingRecords.filter(record => record.id !== id));
+  const handleDeleteRecord = async (id: string) => {
+    try {
+      await deleteRecord(id);
+    } catch (error) {
+      console.error('Error deleting feeding record:', error);
+    }
   };
 
   const handleStockUpdate = (stocks: any[]) => {
@@ -288,19 +265,54 @@ const FeedingManagement = () => {
         </div>
 
         <TabsContent value="history" className="space-y-4">
-          <FeedingHistory 
-            records={unitRecords}
-            onEdit={handleEditRecord}
-            onDelete={handleDeleteRecord}
-          />
+          {loading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                Chargement des enregistrements...
+              </CardContent>
+            </Card>
+          ) : unitRecords.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                Aucun enregistrement d'alimentation pour cette unité.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {unitRecords.map((record) => (
+                <Card key={record.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{record.feed_type}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {record.date} - {record.time || 'N/A'}
+                        </p>
+                        <p className="text-sm">Quantité: {record.quantity} kg</p>
+                        {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEditRecord(record)}>
+                          Modifier
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
+                          Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="planning" className="space-y-4">
-          <FeedingPlanScheduler
-            cycleId="CY001"
-            cycleName="Cycle Tilapia Q1 2024"
-            onPlanUpdate={handlePlanUpdate}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Fonctionnalité de planification à venir...</p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-4">
@@ -311,11 +323,11 @@ const FeedingManagement = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <FeedingChart
-            records={unitRecords}
-            cycleId="CY001"
-            cycleName="Cycle Tilapia Q1 2024"
-          />
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Graphiques à venir...</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -327,7 +327,7 @@ const ProductionManagement = () => {
                             <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                               <div 
                                 className="bg-green-600 h-2 rounded-full" 
-                                style={{ width: `${(cycle.currentQuantity / cycle.targetQuantity) * 100}%` }}
+                                style={{ width: `${Math.min(100, (cycle.currentQuantity / cycle.targetQuantity) * 100)}%` }}
                               />
                             </div>
                           </div>

@@ -187,9 +187,15 @@ const ProductionCycles = () => {
         </Card>
       ) : (
         cycles.map((cycle) => {
-          const progression = cycle.end_date 
-            ? Math.round(((new Date().getTime() - new Date(cycle.start_date).getTime()) / 
-                (new Date(cycle.end_date).getTime() - new Date(cycle.start_date).getTime())) * 100)
+          const progression = cycle.end_date && cycle.start_date
+            ? (() => {
+                const now = new Date().getTime();
+                const start = new Date(cycle.start_date).getTime();
+                const end = new Date(cycle.end_date).getTime();
+                const totalDuration = end - start;
+                const elapsed = now - start;
+                return Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+              })()
             : 0;
           
           const statusLabel = {
