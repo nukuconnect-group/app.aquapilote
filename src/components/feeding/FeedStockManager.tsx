@@ -17,10 +17,13 @@ import {
   Edit,
   Trash2,
   BarChart3,
-  Loader2
+  Loader2,
+  Bell
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
+import { supabase } from '@/integrations/supabase/clientConfig';
+import { useToast } from '@/hooks/use-toast';
 
 interface FeedStockManagerProps {
   unitId: string;
@@ -29,6 +32,8 @@ interface FeedStockManagerProps {
 
 const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
   const { stocks, loading, createStock, updateStock, deleteStock } = useFeedStocks(unitId);
+  const { toast } = useToast();
+  const [sendingAlerts, setSendingAlerts] = useState(false);
 
   const [customFeedTypes, setCustomFeedTypes] = useState<string[]>([]);
   const [showDialog, setShowDialog] = useState(false);
@@ -173,6 +178,45 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
   const getTotalValue = () => stocks.reduce((total, stock) => total + (stock.quantity * (stock.cost || 0)), 0);
 
+  const handleCheckAlerts = async () => {
+    try {
+      setSendingAlerts(true);
+      console.log('Checking stock alerts manually...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Erreur',
+          description: 'Vous devez être connecté pour envoyer des alertes',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-stock-alert', {
+        body: { user_id: user.id, manual_check: true }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Vérification terminée',
+        description: data.message || 'Aucune alerte à envoyer',
+      });
+
+      console.log('Alert check result:', data);
+    } catch (error: any) {
+      console.error('Error checking alerts:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de vérifier les alertes',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingAlerts(false);
+    }
+  };
+
   // Données pour le graphique d'évolution (simulé avec dates créées)
   const stockEvolutionData = stocks
     .slice()
@@ -203,13 +247,28 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
             Valeur totale: {getTotalValue().toFixed(2)} €
           </p>
         </div>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogTrigger asChild>
-            <Button className="text-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter stock
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleCheckAlerts}
+            disabled={sendingAlerts}
+            className="text-sm"
+          >
+            {sendingAlerts ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Bell className="w-4 h-4 mr-2" />
+            )}
+            Vérifier alertes
+          </Button>
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <DialogTrigger asChild>
+              <Button className="text-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter stock
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingStock ? 'Modifier le stock' : 'Ajouter un nouveau stock'}</DialogTitle>
@@ -394,7 +453,8 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Alertes */}
