@@ -15,6 +15,7 @@ import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SmartAlerts from './alerts/SmartAlerts';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 
 interface LivestockBatch {
   id: string;
@@ -61,44 +62,27 @@ const LivestockManagement = () => {
   const { t } = useSettings();
   
   const [selectedUnit, setSelectedUnit] = useState('all');
-  const [livestockBatches, setLivestockBatches] = useState<LivestockBatch[]>([
-    {
-      id: '1',
-      species: 'Tilapia',
-      variety: 'Tilapia du Nil',
-      quantity: 1500,
-      averageWeight: 150,
-      totalWeight: 225,
-      acquisitionDate: '2024-01-15',
-      source: 'Écloserie Aqua Plus',
-      unitId: 'unit1',
-      unitName: 'Bassin A1',
-      status: 'healthy',
-      notes: 'Lot en bonne santé, croissance normale',
-      expectedHarvestDate: '2024-06-15',
-      currentAge: 120,
-      feedingPlan: 'Standard croissance',
-      lastHealthCheck: '2024-03-01'
-    },
-    {
-      id: '2',
-      species: 'Carpe',
-      variety: 'Carpe commune',
-      quantity: 800,
-      averageWeight: 200,
-      totalWeight: 160,
-      acquisitionDate: '2024-02-01',
-      source: 'Pisciculture Lac Vert',
-      unitId: 'unit2',
-      unitName: 'Bassin B1',
-      status: 'healthy',
-      notes: 'Adaptation réussie',
-      expectedHarvestDate: '2024-07-01',
-      currentAge: 90,
-      feedingPlan: 'Intensif',
-      lastHealthCheck: '2024-02-28'
-    }
-  ]);
+  const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch } = useLivestockBatches();
+  
+  // Convertir les lots de la DB au format local pour compatibilité
+  const livestockBatches: LivestockBatch[] = dbBatches.map(batch => ({
+    id: batch.id,
+    species: batch.species,
+    variety: batch.variety || '',
+    quantity: batch.quantity,
+    averageWeight: batch.average_weight,
+    totalWeight: batch.total_weight,
+    acquisitionDate: batch.acquisition_date || '',
+    source: batch.source || '',
+    unitId: batch.unit_id,
+    unitName: batch.unit_name,
+    status: batch.status as 'healthy' | 'sick' | 'quarantine' | 'sold',
+    notes: batch.notes || '',
+    expectedHarvestDate: batch.expected_harvest_date || '',
+    currentAge: batch.current_age,
+    feedingPlan: batch.feeding_plan || '',
+    lastHealthCheck: batch.last_health_check || ''
+  }));
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<LivestockBatch | null>(null);
@@ -169,7 +153,7 @@ const LivestockManagement = () => {
 
   const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade'];
 
-  const handleAddBatch = () => {
+  const handleAddBatch = async () => {
     if (!formData.species || !formData.quantity || !formData.unitId) {
       toast({
         title: "Erreur",
@@ -180,49 +164,59 @@ const LivestockManagement = () => {
     }
 
     const selectedUnit = units.find(u => u.id === formData.unitId);
-    const newBatch: LivestockBatch = {
-      id: Date.now().toString(),
-      ...formData,
-      unitName: selectedUnit?.name || '',
-      totalWeight: formData.quantity * formData.averageWeight / 1000, // en kg
-      currentAge: Math.floor((Date.now() - new Date(formData.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24)),
-      lastHealthCheck: new Date().toISOString().split('T')[0]
-    };
+    const currentAge = formData.acquisitionDate 
+      ? Math.floor((Date.now() - new Date(formData.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
 
-    setLivestockBatches(prev => [...prev, newBatch]);
-    addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
-    
-    toast({
-      title: "Lot ajouté",
-      description: `${formData.quantity} ${formData.species} ajoutés avec succès à ${selectedUnit?.name}`
-    });
+    try {
+      await createBatch({
+        species: formData.species,
+        variety: formData.variety,
+        quantity: formData.quantity,
+        average_weight: formData.averageWeight,
+        total_weight: formData.quantity * formData.averageWeight / 1000,
+        acquisition_date: formData.acquisitionDate || null,
+        source: formData.source,
+        unit_id: formData.unitId,
+        unit_name: selectedUnit?.name || '',
+        status: formData.status,
+        notes: formData.notes,
+        expected_harvest_date: formData.expectedHarvestDate || null,
+        current_age: currentAge,
+        feeding_plan: formData.feedingPlan,
+        last_health_check: new Date().toISOString().split('T')[0]
+      });
 
-    setFormData({
-      species: '',
-      variety: '',
-      quantity: 0,
-      averageWeight: 0,
-      acquisitionDate: '',
-      source: '',
-      unitId: '',
-      unitName: '',
-      notes: '',
-      expectedHarvestDate: '',
-      feedingPlan: '',
-      status: 'healthy'
-    });
-    setShowAddForm(false);
+      addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
+
+      setFormData({
+        species: '',
+        variety: '',
+        quantity: 0,
+        averageWeight: 0,
+        acquisitionDate: '',
+        source: '',
+        unitId: '',
+        unitName: '',
+        notes: '',
+        expectedHarvestDate: '',
+        feedingPlan: '',
+        status: 'healthy'
+      });
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Error adding batch:', error);
+    }
   };
 
-  const handleDeleteBatch = (id: string) => {
+  const handleDeleteBatch = async (id: string) => {
     const batch = livestockBatches.find(b => b.id === id);
-    setLivestockBatches(prev => prev.filter(b => b.id !== id));
-    addLog('Suppression cheptel', 'Cheptel', `Lot supprimé: ${batch?.species} - ${batch?.quantity} individus`, 'warning');
-    
-    toast({
-      title: "Lot supprimé",
-      description: "Le lot a été supprimé avec succès"
-    });
+    try {
+      await deleteBatch(id);
+      addLog('Suppression cheptel', 'Cheptel', `Lot supprimé: ${batch?.species} - ${batch?.quantity} individus`, 'warning');
+    } catch (error) {
+      console.error('Error deleting batch:', error);
+    }
   };
 
   const handleAddControlFishing = () => {
