@@ -148,6 +148,21 @@ const FeedingManagement = () => {
 
   const handleSaveFeedingRecord = async (record: any) => {
     try {
+      // Enrichir les notes avec les informations supplémentaires
+      let enrichedNotes = record.notes || '';
+      
+      if (record.feederName) {
+        enrichedNotes = `Nourri par: ${record.feederName}\n${enrichedNotes}`;
+      }
+      
+      if (record.prescribedQuantity && record.actualQuantity) {
+        enrichedNotes += `\nQuantité prescrite: ${record.prescribedQuantity} ${record.unit}`;
+        enrichedNotes += `\nQuantité servie: ${record.actualQuantity} ${record.unit}`;
+        if (record.remainingQuantity) {
+          enrichedNotes += `\nQuantité restante: ${record.remainingQuantity} ${record.unit}`;
+        }
+      }
+
       await createRecord({
         unit_id: activeUnit.id,
         cycle_id: activeCycle?.id,
@@ -157,7 +172,7 @@ const FeedingManagement = () => {
         feed_type: record.feedType,
         quantity: record.quantity,
         temperature: record.temperature || undefined,
-        notes: record.notes || undefined,
+        notes: enrichedNotes.trim() || undefined,
         behavior: record.fishBehavior || undefined,
       });
     } catch (error) {

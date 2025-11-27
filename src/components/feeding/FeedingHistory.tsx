@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Clock, Thermometer, BarChart3 } from 'lucide-react';
+import { Edit, Trash2, Clock, Thermometer, BarChart3, Printer } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface FeedingRecord {
@@ -22,9 +22,10 @@ interface FeedingHistoryProps {
   records: FeedingRecord[];
   onEdit: (record: FeedingRecord) => void;
   onDelete: (id: string) => void;
+  onPrint: (record: FeedingRecord) => void;
 }
 
-const FeedingHistory = ({ records, onEdit, onDelete }: FeedingHistoryProps) => {
+const FeedingHistory = ({ records, onEdit, onDelete, onPrint }: FeedingHistoryProps) => {
   const sortedRecords = records.sort((a, b) => 
     new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime()
   );
@@ -133,6 +134,15 @@ const FeedingHistory = ({ records, onEdit, onDelete }: FeedingHistoryProps) => {
               </div>
               
               <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => onPrint(record)}
+                  className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                  title="Imprimer la fiche"
+                >
+                  <Printer className="w-3 h-3" />
+                </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
