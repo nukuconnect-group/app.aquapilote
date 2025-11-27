@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ProductionCycle {
@@ -38,7 +38,7 @@ export const useProductionCycles = (unitId?: string) => {
         .order('created_at', { ascending: false });
 
       if (unitId) {
-        query = query.eq('unit_id', unitId);
+        query = query.eq('unit_id', unitId as any);
       }
 
       const { data, error } = await query;
@@ -70,7 +70,7 @@ export const useProductionCycles = (unitId?: string) => {
 
       const { data, error } = await supabase
         .from('production_cycles')
-        .insert([{ ...cycle, user_id: user.id }])
+        .insert([{ ...cycle, user_id: user.id }] as any)
         .select()
         .single();
 
@@ -98,8 +98,8 @@ export const useProductionCycles = (unitId?: string) => {
     try {
       const { error } = await supabase
         .from('production_cycles')
-        .update(updates)
-        .eq('id', id);
+        .update(updates as any)
+        .eq('id', id as any);
 
       if (error) throw error;
 
@@ -125,7 +125,7 @@ export const useProductionCycles = (unitId?: string) => {
       const { error } = await supabase
         .from('production_cycles')
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
 
