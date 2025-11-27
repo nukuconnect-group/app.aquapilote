@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2 } from 'lucide-react';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { generateFeedingPlanHTML, printHTML } from '@/lib/feedingPrintUtils';
 
 interface FeedingPlanSchedulerProps {
@@ -21,6 +22,7 @@ interface FeedingPlanSchedulerProps {
 
 const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingPlanSchedulerProps) => {
   const { plans, loading, createPlan, updatePlan, deletePlan } = useFeedingPlans(unitId, cycleId);
+  const { infrastructures, loading: loadingInfra } = useCycleInfrastructures(cycleId || '');
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,6 +31,7 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
     quantity: '',
     unit: 'kg',
     days: [] as string[],
+    infrastructureId: '',
     notes: ''
   });
 
@@ -58,6 +61,7 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
       await createPlan({
         unit_id: unitId,
         cycle_id: cycleId,
+        infrastructure_id: formData.infrastructureId || undefined,
         time: formData.time,
         feed_type: formData.feedType,
         quantity: parseFloat(formData.quantity),
@@ -74,6 +78,7 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
         quantity: '',
         unit: 'kg',
         days: [],
+        infrastructureId: '',
         notes: ''
       });
     } catch (error) {
@@ -195,6 +200,27 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                   </SelectContent>
                 </Select>
               </div>
+
+              {cycleId && infrastructures.length > 0 && (
+                <div>
+                  <Label htmlFor="infrastructure">Infrastructure</Label>
+                  <Select 
+                    value={formData.infrastructureId} 
+                    onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une infrastructure (optionnel)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {infrastructures.map((infra) => (
+                        <SelectItem key={infra.id} value={infra.id}>
+                          {infra.infrastructure_name} ({infra.infrastructure_type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

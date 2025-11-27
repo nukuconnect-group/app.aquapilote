@@ -244,6 +244,7 @@ export type Database = {
           days: string[]
           feed_type: string
           id: string
+          infrastructure_id: string | null
           is_active: boolean
           notes: string | null
           quantity: number
@@ -259,6 +260,7 @@ export type Database = {
           days?: string[]
           feed_type: string
           id?: string
+          infrastructure_id?: string | null
           is_active?: boolean
           notes?: string | null
           quantity: number
@@ -274,6 +276,7 @@ export type Database = {
           days?: string[]
           feed_type?: string
           id?: string
+          infrastructure_id?: string | null
           is_active?: boolean
           notes?: string | null
           quantity?: number
@@ -289,6 +292,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feeding_plans_infrastructure_id_fkey"
+            columns: ["infrastructure_id"]
+            isOneToOne: false
+            referencedRelation: "cycle_infrastructures"
             referencedColumns: ["id"]
           },
         ]

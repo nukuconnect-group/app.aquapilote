@@ -7,6 +7,7 @@ export interface FeedingPlan {
   user_id: string;
   unit_id: string;
   cycle_id?: string;
+  infrastructure_id?: string;
   time: string;
   feed_type: string;
   quantity: number;
