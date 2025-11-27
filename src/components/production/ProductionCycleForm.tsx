@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Save, Calendar } from 'lucide-react';
+import { Plus, Save, Calendar, AlertCircle } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProductionCycleFormProps {
   unitId: string;
@@ -23,6 +24,11 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
   const [isOpen, setIsOpen] = useState(false);
   const { createCycle } = useProductionCycles();
   const { createInfrastructures } = useCycleInfrastructures();
+  const { getUnitInfrastructures } = useProductionUnits();
+  
+  // Récupérer les infrastructures réelles de l'unité
+  const unitInfrastructures = getUnitInfrastructures(unitId);
+  
   const [formData, setFormData] = useState({
     name: '',
     species: '',
@@ -56,15 +62,6 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     conservation: ['Produits frais', 'Produits congelés', 'Produits fumés'],
     fabrication_aliment: ['Aliment starter', 'Aliment croissance', 'Aliment finition'],
     commercialisation: ['Vente directe', 'Grossistes', 'Restauration']
-  };
-
-  const infrastructuresByType = {
-    ecloserie: ['Bac éclosion 1', 'Bac éclosion 2', 'Bac alevinage', 'Système recirculation'],
-    grossissement: ['Bassin A1', 'Bassin A2', 'Bassin B1', 'Étang Nord', 'Cage flottante'],
-    transformation: ['Atelier découpe', 'Zone emballage', 'Poste filetage'],
-    conservation: ['Chambre froide 1', 'Chambre froide 2', 'Congélateur'],
-    fabrication_aliment: ['Ligne production 1', 'Ligne production 2', 'Zone stockage'],
-    commercialisation: ['Point vente', 'Zone expédition', 'Véhicule livraison']
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,7 +148,8 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
   };
 
   const species = speciesByType[unitType] || [];
-  const infrastructures = infrastructuresByType[unitType] || [];
+  // Utiliser les infrastructures réelles de l'unité au lieu des hardcodées
+  const infrastructures = unitInfrastructures.filter(inf => inf.status === 'active');
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -233,41 +231,58 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                 <p className="text-sm text-muted-foreground mb-3">
                   Sélectionnez une ou plusieurs infrastructures qui feront partie de ce cycle de production
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {infrastructures.map((item) => (
-                    <div key={item} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`infra-${item}`}
-                        checked={formData.infrastructures.includes(item)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              infrastructures: [...formData.infrastructures, item]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              infrastructures: formData.infrastructures.filter(i => i !== item)
-                            });
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor={`infra-${item}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {item}
-                      </Label>
+                
+                {infrastructures.length === 0 ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Aucune infrastructure active disponible. Créez d'abord des infrastructures dans le module Infrastructure pour pouvoir les rattacher à un cycle.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {infrastructures.map((infra) => (
+                        <div key={infra.id} className="flex items-center space-x-2 p-2 border rounded-lg">
+                          <Checkbox
+                            id={`infra-${infra.id}`}
+                            checked={formData.infrastructures.includes(infra.name)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  infrastructures: [...formData.infrastructures, infra.name]
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  infrastructures: formData.infrastructures.filter(i => i !== infra.name)
+                                });
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`infra-${infra.id}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            <div>
+                              <div className="font-medium">{infra.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                {formData.infrastructures.length > 0 && (
-                  <div className="mt-3 p-3 bg-primary/10 rounded-lg">
-                    <p className="text-sm font-medium text-primary">
-                      {formData.infrastructures.length} infrastructure(s) sélectionnée(s)
-                    </p>
-                  </div>
+                    {formData.infrastructures.length > 0 && (
+                      <div className="mt-3 p-3 bg-primary/10 rounded-lg">
+                        <p className="text-sm font-medium text-primary">
+                          {formData.infrastructures.length} infrastructure(s) sélectionnée(s)
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>
