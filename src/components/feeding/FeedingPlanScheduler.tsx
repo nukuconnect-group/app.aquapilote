@@ -8,51 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Plus, Clock, Bell } from 'lucide-react';
-
-interface FeedingPlan {
-  id: string;
-  cycleId: string;
-  time: string;
-  feedType: string;
-  quantity: number;
-  unit: string;
-  days: string[];
-  isActive: boolean;
-  notes: string;
-}
+import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2 } from 'lucide-react';
+import { useFeedingPlans } from '@/hooks/useFeedingPlans';
+import { generateFeedingPlanHTML, printHTML } from '@/lib/feedingPrintUtils';
 
 interface FeedingPlanSchedulerProps {
-  cycleId: string;
+  unitId: string;
+  unitName: string;
+  cycleId?: string;
   cycleName: string;
-  onPlanUpdate: (plans: FeedingPlan[]) => void;
 }
 
-const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanSchedulerProps) => {
-  const [plans, setPlans] = useState<FeedingPlan[]>([
-    {
-      id: '1',
-      cycleId,
-      time: '08:00',
-      feedType: 'Aliment croissance (2-3mm)',
-      quantity: 25,
-      unit: 'kg',
-      days: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
-      isActive: true,
-      notes: 'Distribution matinale principale'
-    },
-    {
-      id: '2',
-      cycleId,
-      time: '17:00',
-      feedType: 'Aliment croissance (2-3mm)',
-      quantity: 15,
-      unit: 'kg',
-      days: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
-      isActive: true,
-      notes: 'Distribution vespérale'
-    }
-  ]);
+const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingPlanSchedulerProps) => {
+  const { plans, loading, createPlan, updatePlan, deletePlan } = useFeedingPlans(unitId, cycleId);
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,42 +51,52 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
     'Complément vitaminé'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newPlan: FeedingPlan = {
-      id: Date.now().toString(),
-      cycleId,
-      time: formData.time,
-      feedType: formData.feedType,
-      quantity: parseFloat(formData.quantity),
-      unit: formData.unit,
-      days: formData.days,
-      isActive: true,
-      notes: formData.notes
-    };
+    try {
+      await createPlan({
+        unit_id: unitId,
+        cycle_id: cycleId,
+        time: formData.time,
+        feed_type: formData.feedType,
+        quantity: parseFloat(formData.quantity),
+        unit: formData.unit,
+        days: formData.days,
+        is_active: true,
+        notes: formData.notes
+      });
 
-    const updatedPlans = [...plans, newPlan];
-    setPlans(updatedPlans);
-    onPlanUpdate(updatedPlans);
-
-    setIsOpen(false);
-    setFormData({
-      time: '',
-      feedType: '',
-      quantity: '',
-      unit: 'kg',
-      days: [],
-      notes: ''
-    });
+      setIsOpen(false);
+      setFormData({
+        time: '',
+        feedType: '',
+        quantity: '',
+        unit: 'kg',
+        days: [],
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error creating plan:', error);
+    }
   };
 
-  const togglePlanStatus = (planId: string) => {
-    const updatedPlans = plans.map(plan =>
-      plan.id === planId ? { ...plan, isActive: !plan.isActive } : plan
-    );
-    setPlans(updatedPlans);
-    onPlanUpdate(updatedPlans);
+  const togglePlanStatus = async (planId: string) => {
+    const plan = plans.find(p => p.id === planId);
+    if (plan) {
+      await updatePlan(planId, { is_active: !plan.is_active });
+    }
+  };
+
+  const handleDeletePlan = async (planId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce planning ?')) {
+      await deletePlan(planId);
+    }
+  };
+
+  const handlePrint = () => {
+    const html = generateFeedingPlanHTML(plans, unitName);
+    printHTML(html);
   };
 
   const toggleDay = (day: string) => {
@@ -133,7 +111,7 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
     const currentTime = now.getHours() * 60 + now.getMinutes();
     const currentDay = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][now.getDay()];
     
-    const activePlans = plans.filter(p => p.isActive && p.days.includes(currentDay));
+    const activePlans = plans.filter(p => p.is_active && p.days.includes(currentDay));
     const upcomingPlans = activePlans.filter(p => {
       const [hours, minutes] = p.time.split(':').map(Number);
       const planTime = hours * 60 + minutes;
@@ -152,16 +130,35 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
     return null;
   };
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          Chargement des planifications...
+        </CardContent>
+      </Card>
+    );
+  }
+
   const nextFeeding = getNextFeedingTime();
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h3 className="text-lg font-semibold">Planification des nourrissages</h3>
-          <p className="text-sm text-gray-600">Cycle: {cycleName}</p>
+          <p className="text-sm text-gray-600">Unité: {unitName}</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex gap-2">
+          {plans.length > 0 && (
+            <>
+              <Button size="sm" variant="outline" onClick={handlePrint}>
+                <Printer className="w-4 h-4 mr-1" />
+                Imprimer
+              </Button>
+            </>
+          )}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="w-4 h-4 mr-1" />
@@ -262,6 +259,7 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {nextFeeding && (
@@ -272,9 +270,17 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
               <h4 className="font-medium text-orange-800">Prochain nourrissage</h4>
             </div>
             <div className="text-sm">
-              <p className="font-medium">{nextFeeding.time} - {nextFeeding.feedType}</p>
+              <p className="font-medium">{nextFeeding.time} - {nextFeeding.feed_type}</p>
               <p className="text-orange-700">{nextFeeding.quantity} {nextFeeding.unit}</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {plans.length === 0 && (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            Aucun planning configuré. Créez votre premier planning de nourrissage.
           </CardContent>
         </Card>
       )}
@@ -283,16 +289,16 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
         {plans.map((plan) => (
           <Card key={plan.id}>
             <CardContent className="p-4">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-blue-600" />
                     <h4 className="font-medium">{plan.time}</h4>
-                    <Badge variant={plan.isActive ? "default" : "secondary"}>
-                      {plan.isActive ? "Actif" : "Inactif"}
+                    <Badge variant={plan.is_active ? "default" : "secondary"}>
+                      {plan.is_active ? "Actif" : "Inactif"}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{plan.feedType}</p>
+                  <p className="text-sm text-gray-600 mb-1">{plan.feed_type}</p>
                   <p className="text-sm font-medium mb-2">{plan.quantity} {plan.unit}</p>
                   <div className="flex flex-wrap gap-1 mb-2">
                     {plan.days.map((day) => (
@@ -305,10 +311,20 @@ const FeedingPlanScheduler = ({ cycleId, cycleName, onPlanUpdate }: FeedingPlanS
                     <p className="text-xs text-gray-500">{plan.notes}</p>
                   )}
                 </div>
-                <Switch
-                  checked={plan.isActive}
-                  onCheckedChange={() => togglePlanStatus(plan.id)}
-                />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={plan.is_active}
+                    onCheckedChange={() => togglePlanStatus(plan.id)}
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeletePlan(plan.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

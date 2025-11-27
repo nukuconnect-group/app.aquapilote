@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, Save, AlertTriangle, Calculator } from 'lucide-react';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 
 interface FeedingRecord {
   id: string;
@@ -31,16 +32,19 @@ interface FeedingRecord {
 interface FeedingFormProps {
   unitId: string;
   unitName: string;
+  cycleId?: string;
   onSave: (record: Omit<FeedingRecord, 'id'>) => void;
 }
 
-const FeedingForm = ({ unitId, unitName, onSave }: FeedingFormProps) => {
+const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { infrastructures, loading: loadingInfra } = useCycleInfrastructures(cycleId || '');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().slice(0, 5),
     feedType: '',
     feederName: '',
+    infrastructureId: '',
     prescribedQuantity: '',
     actualQuantity: '',
     unit: 'kg',
@@ -85,6 +89,7 @@ const FeedingForm = ({ unitId, unitName, onSave }: FeedingFormProps) => {
       time: formData.time,
       feedType: formData.feedType,
       feederName: formData.feederName,
+      infrastructureId: formData.infrastructureId || undefined,
       prescribedQuantity: parseFloat(formData.prescribedQuantity),
       actualQuantity: parseFloat(formData.actualQuantity),
       remainingQuantity,
@@ -103,6 +108,7 @@ const FeedingForm = ({ unitId, unitName, onSave }: FeedingFormProps) => {
       time: new Date().toTimeString().slice(0, 5),
       feedType: '',
       feederName: '',
+      infrastructureId: '',
       prescribedQuantity: '',
       actualQuantity: '',
       unit: 'kg',
@@ -175,6 +181,27 @@ const FeedingForm = ({ unitId, unitName, onSave }: FeedingFormProps) => {
               </SelectContent>
             </Select>
           </div>
+
+          {cycleId && infrastructures.length > 0 && (
+            <div>
+              <Label htmlFor="infrastructure">Infrastructure</Label>
+              <Select 
+                value={formData.infrastructureId} 
+                onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une infrastructure (optionnel)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {infrastructures.map((infra) => (
+                    <SelectItem key={infra.id} value={infra.id}>
+                      {infra.infrastructure_name} ({infra.infrastructure_type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <div>
