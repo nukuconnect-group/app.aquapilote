@@ -56,6 +56,7 @@ export interface ProductionUnit {
   currentStock: number;
   manager: string;
   createdAt: string;
+  photoUrl?: string;
   customEquipment?: Equipment[];
   activeCycles?: ProductionCycle[];
   financialData?: UnitFinancialData;

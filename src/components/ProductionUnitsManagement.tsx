@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { 
@@ -18,19 +19,29 @@ import {
   Settings,
   Eye,
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  X
 } from 'lucide-react';
 import { useProductionUnits, ProductionUnitType } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useOfflineFileUpload } from '@/hooks/useOfflineFileUpload';
+import { toast } from 'sonner';
 
 const ProductionUnitsManagement = () => {
   const { units, addUnit, updateUnit, deleteUnit } = useProductionUnits();
   const { addLog } = useLogs();
+  const isMobile = useIsMobile();
+  const { uploadFiles } = useOfflineFileUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [configUnit, setConfigUnit] = useState<any>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
   const [newUnit, setNewUnit] = useState({
     name: '',
@@ -39,7 +50,8 @@ const ProductionUnitsManagement = () => {
     capacity: 0,
     currentStock: 0,
     manager: '',
-    isActive: true
+    isActive: true,
+    photoUrl: ''
   });
 
   const unitTypes = [
@@ -50,6 +62,40 @@ const ProductionUnitsManagement = () => {
     { value: 'fabrication_aliment', label: 'Fabrication d\'aliment' },
     { value: 'commercialisation', label: 'Commercialisation' }
   ];
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const results = await uploadFiles([file], {
+        module: 'production-units',
+        compress: true,
+      });
+
+      if (results.length > 0 && results[0].publicUrl) {
+        setSelectedPhoto(results[0].publicUrl);
+        setNewUnit(prev => ({ ...prev, photoUrl: results[0].publicUrl }));
+        toast.success('Photo uploadée avec succès');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de l\'upload de la photo');
+      console.error(error);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setSelectedPhoto(null);
+    setNewUnit(prev => ({ ...prev, photoUrl: '' }));
+  };
 
   const handleSaveUnit = () => {
     if (editingUnit) {
@@ -68,8 +114,10 @@ const ProductionUnitsManagement = () => {
       capacity: 0,
       currentStock: 0,
       manager: '',
-      isActive: true
+      isActive: true,
+      photoUrl: ''
     });
+    setSelectedPhoto(null);
     setShowAddDialog(false);
   };
 
@@ -82,8 +130,10 @@ const ProductionUnitsManagement = () => {
       capacity: unit.capacity,
       currentStock: unit.currentStock,
       manager: unit.manager,
-      isActive: unit.isActive
+      isActive: unit.isActive,
+      photoUrl: unit.photoUrl || ''
     });
+    setSelectedPhoto(unit.photoUrl || null);
     setShowAddDialog(true);
   };
 
@@ -192,6 +242,47 @@ const ProductionUnitsManagement = () => {
                     className="text-sm"
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <Label className="text-sm">Photo de l'unité</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <div className="space-y-2">
+                    {selectedPhoto ? (
+                      <div className="relative">
+                        <img
+                          src={selectedPhoto}
+                          alt="Photo de l'unité"
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          className="absolute top-2 right-2"
+                          onClick={handleRemovePhoto}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingPhoto}
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {uploadingPhoto ? 'Upload en cours...' : 'Ajouter une photo'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 <div className="sm:col-span-2 flex gap-2">
                   <Button onClick={handleSaveUnit} className="flex-1">
                     {editingUnit ? 'Modifier' : 'Créer'} l'unité
@@ -199,6 +290,7 @@ const ProductionUnitsManagement = () => {
                   <Button variant="outline" onClick={() => {
                     setShowAddDialog(false);
                     setEditingUnit(null);
+                    setSelectedPhoto(null);
                     setNewUnit({
                       name: '',
                       type: '' as ProductionUnitType,
@@ -206,7 +298,8 @@ const ProductionUnitsManagement = () => {
                       capacity: 0,
                       currentStock: 0,
                       manager: '',
-                      isActive: true
+                      isActive: true,
+                      photoUrl: ''
                     });
                   }}>
                     Annuler
@@ -224,7 +317,15 @@ const ProductionUnitsManagement = () => {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <Building className="w-5 h-5 text-purple-600" />
+                  {unit.photoUrl ? (
+                    <img
+                      src={unit.photoUrl}
+                      alt={unit.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <Building className="w-5 h-5 text-purple-600" />
+                  )}
                   <div>
                     <CardTitle className="text-base sm:text-lg">{unit.name}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -319,31 +420,58 @@ const ProductionUnitsManagement = () => {
         ))}
       </div>
 
-      {/* Dialog de configuration */}
-      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
-        <DialogContent className="max-w-full sm:max-w-lg mx-2">
-          <DialogHeader>
-            <DialogTitle>Configuration - {configUnit?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>État de l'unité</Label>
-              <Switch 
-                checked={configUnit?.isActive}
-                onCheckedChange={(checked) => {
-                  handleToggleUnit(configUnit.id, configUnit.name, configUnit.isActive);
-                  setConfigUnit({...configUnit, isActive: checked});
-                }}
-              />
+      {/* Dialog/Sheet de configuration selon le device */}
+      {isMobile ? (
+        <Sheet open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+          <SheetContent side="bottom" className="h-[70vh]">
+            <SheetHeader>
+              <SheetTitle>Configuration - {configUnit?.name}</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <Label>État de l'unité</Label>
+                <Switch 
+                  checked={configUnit?.isActive}
+                  onCheckedChange={(checked) => {
+                    handleToggleUnit(configUnit.id, configUnit.name, configUnit.isActive);
+                    setConfigUnit({...configUnit, isActive: checked});
+                  }}
+                />
+              </div>
+              <div className="text-sm text-gray-600 space-y-2">
+                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
+                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
-              <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
-              <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+          <DialogContent className="max-w-full sm:max-w-lg mx-2">
+            <DialogHeader>
+              <DialogTitle>Configuration - {configUnit?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>État de l'unité</Label>
+                <Switch 
+                  checked={configUnit?.isActive}
+                  onCheckedChange={(checked) => {
+                    handleToggleUnit(configUnit.id, configUnit.name, configUnit.isActive);
+                    setConfigUnit({...configUnit, isActive: checked});
+                  }}
+                />
+              </div>
+              <div className="text-sm text-gray-600 space-y-2">
+                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
+                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
