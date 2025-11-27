@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 
 export interface CycleInfrastructure {
@@ -64,6 +64,7 @@ export const useCycleInfrastructures = (cycleId?: string) => {
         infrastructure_name: name,
         infrastructure_type: infrastructureType,
         current_quantity: 0,
+        user_id: user.id
       }));
 
       const { data, error } = await supabase
