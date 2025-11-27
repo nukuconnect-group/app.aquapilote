@@ -6,6 +6,7 @@ export interface FeedingRecord {
   id: string;
   user_id: string;
   cycle_id?: string;
+  infrastructure_id?: string;
   unit_id: string;
   date: string;
   time?: string;

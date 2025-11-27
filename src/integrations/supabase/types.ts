@@ -237,6 +237,62 @@ export type Database = {
         }
         Relationships: []
       }
+      feeding_plans: {
+        Row: {
+          created_at: string | null
+          cycle_id: string | null
+          days: string[]
+          feed_type: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          quantity: number
+          time: string
+          unit: string
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          cycle_id?: string | null
+          days?: string[]
+          feed_type: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          quantity: number
+          time: string
+          unit?: string
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          cycle_id?: string | null
+          days?: string[]
+          feed_type?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          quantity?: number
+          time?: string
+          unit?: string
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeding_plans_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feeding_records: {
         Row: {
           behavior: string | null
@@ -246,6 +302,7 @@ export type Database = {
           fcr: number | null
           feed_type: string | null
           id: string
+          infrastructure_id: string | null
           notes: string | null
           quantity: number
           temperature: number | null
@@ -262,6 +319,7 @@ export type Database = {
           fcr?: number | null
           feed_type?: string | null
           id?: string
+          infrastructure_id?: string | null
           notes?: string | null
           quantity: number
           temperature?: number | null
@@ -278,6 +336,7 @@ export type Database = {
           fcr?: number | null
           feed_type?: string | null
           id?: string
+          infrastructure_id?: string | null
           notes?: string | null
           quantity?: number
           temperature?: number | null
@@ -292,6 +351,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feeding_records_infrastructure_id_fkey"
+            columns: ["infrastructure_id"]
+            isOneToOne: false
+            referencedRelation: "cycle_infrastructures"
             referencedColumns: ["id"]
           },
         ]

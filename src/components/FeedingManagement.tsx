@@ -3,24 +3,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import ProductionCycleForm from './production/ProductionCycleForm';
 import ProductionCycleDetails from './production/ProductionCycleDetails';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useSettings } from '@/contexts/SettingsContext';
 import FeedingForm from './feeding/FeedingForm';
 import FeedingHistory from './feeding/FeedingHistory';
 import FeedStockManager from './feeding/FeedStockManager';
 import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
+import { generateFeedingRecordHTML, printHTML } from '@/lib/feedingPrintUtils';
+import { useToast } from '@/hooks/use-toast';
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
   const { t } = useSettings();
+  const { toast } = useToast();
   const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords();
+  const { cycles } = useProductionCycles(activeUnit?.id);
+  
+  const activeCycle = cycles.find(c => c.status === 'active');
 
   if (!activeUnit) {
     return (
@@ -138,6 +145,8 @@ const FeedingManagement = () => {
     try {
       await createRecord({
         unit_id: activeUnit.id,
+        cycle_id: activeCycle?.id,
+        infrastructure_id: record.infrastructureId,
         date: record.date,
         time: record.time,
         feed_type: record.feedType,
@@ -149,6 +158,11 @@ const FeedingManagement = () => {
     } catch (error) {
       console.error('Error saving feeding record:', error);
     }
+  };
+
+  const handlePrintRecord = (record: any) => {
+    const html = generateFeedingRecordHTML(record, activeUnit.name);
+    printHTML(html);
   };
 
   const handleEditRecord = async (record: any) => {
@@ -202,6 +216,7 @@ const FeedingManagement = () => {
             <FeedingForm 
               unitId={activeUnit.id}
               unitName={activeUnit.name}
+              cycleId={activeCycle?.id}
               onSave={handleSaveFeedingRecord}
             />
           </div>
@@ -282,8 +297,8 @@ const FeedingManagement = () => {
               {unitRecords.map((record) => (
                 <Card key={record.id}>
                   <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
+                    <div className="flex justify-between items-start flex-wrap gap-2">
+                      <div className="flex-1">
                         <p className="font-medium">{record.feed_type}</p>
                         <p className="text-sm text-muted-foreground">
                           {record.date} - {record.time || 'N/A'}
@@ -292,8 +307,8 @@ const FeedingManagement = () => {
                         {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEditRecord(record)}>
-                          Modifier
+                        <Button size="sm" variant="outline" onClick={() => handlePrintRecord(record)}>
+                          <Printer className="w-4 h-4" />
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
                           Supprimer
@@ -308,11 +323,12 @@ const FeedingManagement = () => {
         </TabsContent>
 
         <TabsContent value="planning" className="space-y-4">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-muted-foreground">Fonctionnalité de planification à venir...</p>
-            </CardContent>
-          </Card>
+          <FeedingPlanScheduler
+            unitId={activeUnit.id}
+            unitName={activeUnit.name}
+            cycleId={activeCycle?.id}
+            cycleName={activeCycle?.name || 'Aucun cycle actif'}
+          />
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-4">
