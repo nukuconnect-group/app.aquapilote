@@ -111,10 +111,40 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
                             <span className="text-muted-foreground">Quantité actuelle:</span>
                             <span className="font-semibold">{infra.current_quantity.toLocaleString()}</span>
                           </div>
-                          {infra.livestock_batch_id && (
-                            <div className="flex items-center gap-2 text-primary">
-                              <Fish className="w-4 h-4" />
-                              <span className="font-medium">Lot de poisson rattaché</span>
+                          {attachedBatch ? (
+                            <div className="mt-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                              <div className="flex items-center gap-2 text-primary mb-1">
+                                <Fish className="w-4 h-4" />
+                                <span className="font-semibold text-sm">Lot rattaché</span>
+                              </div>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Espèce:</span>
+                                  <span className="font-medium">{attachedBatch.species}</span>
+                                </div>
+                                {attachedBatch.variety && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Variété:</span>
+                                    <span className="font-medium">{attachedBatch.variety}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Quantité:</span>
+                                  <span className="font-medium">{attachedBatch.quantity.toLocaleString()} individus</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Poids moyen:</span>
+                                  <span className="font-medium">{attachedBatch.average_weight}g</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Taux survie prévu:</span>
+                                  <span className="font-medium text-blue-600">{attachedBatch.expected_survival_rate}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                              Aucun lot rattaché
                             </div>
                           )}
                           {infra.notes && (
@@ -141,20 +171,20 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
                             <DialogTitle>Modifier {infra.infrastructure_name}</DialogTitle>
                           </DialogHeader>
                            <div className="space-y-4 py-4">
-                            <div>
+                             <div>
                               <Label htmlFor="livestock">Lot de poisson rattaché</Label>
                               <Select 
-                                value={editData.livestock_batch_id} 
+                                value={editData.livestock_batch_id || "none"} 
                                 onValueChange={(value) => setEditData({
                                   ...editData,
-                                  livestock_batch_id: value
+                                  livestock_batch_id: value === "none" ? "" : value
                                 })}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Sélectionner un lot (optionnel)" />
+                                <SelectTrigger className="text-sm">
+                                  <SelectValue placeholder="Sélectionner un lot" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Aucun lot</SelectItem>
+                                  <SelectItem value="none">Aucun lot</SelectItem>
                                   {batches.map((batch) => (
                                     <SelectItem key={batch.id} value={batch.id}>
                                       {batch.species} - {batch.quantity} individus ({batch.average_weight}g)

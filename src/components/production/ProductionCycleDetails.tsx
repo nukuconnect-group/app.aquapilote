@@ -18,6 +18,7 @@ import CycleEvolutionCharts from './CycleEvolutionCharts';
 import CycleInfrastructuresList from './CycleInfrastructuresList';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useCycleBatchData } from '@/hooks/useCycleBatchData';
 
 interface CycleDetailsProps {
   cycle: {
@@ -45,6 +46,9 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
   const { records: feedingRecords } = useFeedingRecords(cycle.id);
   const { records: healthRecords } = useHealthRecords(cycle.id);
   
+  // Utiliser le hook pour récupérer les données des lots et infrastructures
+  const cycleBatchData = useCycleBatchData(cycle.id);
+  
   // Données calculées
   const daysElapsed = Math.floor((new Date().getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24));
   const cycleDuration = cycle.endDate 
@@ -66,7 +70,14 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
     : '1.2';
   const feedConversionRatio = parseFloat(avgFCR);
   
-  const survivalRate = ((cycle.currentQuantity / cycle.targetQuantity) * 100).toFixed(1);
+  // Calcul du taux de survie basé sur les lots rattachés et les mortalités
+  const totalMortality = cycleBatchData.totalMortality || healthRecords.reduce((sum, record) => sum + (record.mortality || 0), 0);
+  const initialQuantity = cycleBatchData.totalInitialQuantity || cycle.initialQuantity || cycle.targetQuantity;
+  const currentAlive = initialQuantity - totalMortality;
+  const survivalRate = initialQuantity > 0 
+    ? ((currentAlive / initialQuantity) * 100).toFixed(1)
+    : '100.0';
+  const expectedSurvivalRate = cycleBatchData.expectedSurvivalRate.toFixed(1);
   
   // Données environnementales basées sur le dernier enregistrement de santé
   const waterTemperature = latestHealthRecord?.temperature || 24.5;
@@ -154,10 +165,12 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                     <p className="text-muted-foreground">Jours écoulés</p>
                     <p className="font-medium">{daysElapsed} jours</p>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Taux de survie</p>
-                    <p className="font-medium text-green-600">{survivalRate}%</p>
-                  </div>
+                <div>
+                  <p className="text-muted-foreground">Taux de survie</p>
+                  <p className={`font-medium ${parseFloat(survivalRate) >= 90 ? 'text-green-600' : parseFloat(survivalRate) >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {survivalRate}%
+                  </p>
+                </div>
                 </div>
               </CardContent>
             </Card>
@@ -184,23 +197,39 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                       </div>
                     )}
                     <div>
-                      <p className="text-muted-foreground">Quantité actuelle</p>
-                      <p className="font-medium text-lg">{cycle.currentQuantity.toLocaleString()}</p>
+                      <p className="text-muted-foreground">Quantité actuelle vivante</p>
+                      <p className="font-medium text-lg">{currentAlive.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Mortalités cumulées</p>
+                      <p className="font-medium text-lg text-red-600">{totalMortality.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Objectif final prévu</p>
                       <p className="font-medium text-lg">{cycle.targetQuantity.toLocaleString()}</p>
                     </div>
+                    <div>
+                      <p className="text-muted-foreground">Taux de survie actuel</p>
+                      <p className={`font-medium text-lg ${parseFloat(survivalRate) >= 90 ? 'text-green-600' : parseFloat(survivalRate) >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {survivalRate}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Taux de survie prévisionnel</p>
+                      <p className="font-medium text-lg text-blue-600">
+                        {expectedSurvivalRate}%
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">Progression</span>
-                      <span className="font-medium">{((cycle.currentQuantity / cycle.targetQuantity) * 100).toFixed(0)}%</span>
+                      <span className="text-muted-foreground">Progression vs Objectif</span>
+                      <span className="font-medium">{((currentAlive / cycle.targetQuantity) * 100).toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-3">
                       <div 
                         className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all"
-                        style={{ width: `${(cycle.currentQuantity / cycle.targetQuantity) * 100}%` }}
+                        style={{ width: `${Math.min(100, (currentAlive / cycle.targetQuantity) * 100)}%` }}
                       ></div>
                     </div>
                   </div>

@@ -20,6 +20,7 @@ export interface LivestockBatch {
   current_age: number;
   feeding_plan: string | null;
   last_health_check: string | null;
+  expected_survival_rate: number;
   created_at: string;
   updated_at: string;
 }
