@@ -9,6 +9,7 @@ export interface CycleInfrastructure {
   infrastructure_type: string;
   current_quantity: number;
   notes?: string;
+  livestock_batch_id?: string;
   created_at: string;
   updated_at: string;
   user_id: string;

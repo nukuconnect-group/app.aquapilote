@@ -144,6 +144,7 @@ export type Database = {
           id: string
           infrastructure_name: string
           infrastructure_type: string
+          livestock_batch_id: string | null
           notes: string | null
           updated_at: string | null
           user_id: string
@@ -155,6 +156,7 @@ export type Database = {
           id?: string
           infrastructure_name: string
           infrastructure_type: string
+          livestock_batch_id?: string | null
           notes?: string | null
           updated_at?: string | null
           user_id: string
@@ -166,6 +168,7 @@ export type Database = {
           id?: string
           infrastructure_name?: string
           infrastructure_type?: string
+          livestock_batch_id?: string | null
           notes?: string | null
           updated_at?: string | null
           user_id?: string
@@ -176,6 +179,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "production_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_livestock_batch"
+            columns: ["livestock_batch_id"]
+            isOneToOne: false
+            referencedRelation: "livestock_batches"
             referencedColumns: ["id"]
           },
         ]
@@ -439,6 +449,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      livestock_batches: {
+        Row: {
+          acquisition_date: string | null
+          average_weight: number | null
+          created_at: string | null
+          current_age: number | null
+          expected_harvest_date: string | null
+          feeding_plan: string | null
+          id: string
+          last_health_check: string | null
+          notes: string | null
+          quantity: number
+          source: string | null
+          species: string
+          status: string
+          total_weight: number | null
+          unit_id: string
+          unit_name: string
+          updated_at: string | null
+          user_id: string
+          variety: string | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          average_weight?: number | null
+          created_at?: string | null
+          current_age?: number | null
+          expected_harvest_date?: string | null
+          feeding_plan?: string | null
+          id?: string
+          last_health_check?: string | null
+          notes?: string | null
+          quantity?: number
+          source?: string | null
+          species: string
+          status?: string
+          total_weight?: number | null
+          unit_id: string
+          unit_name: string
+          updated_at?: string | null
+          user_id: string
+          variety?: string | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          average_weight?: number | null
+          created_at?: string | null
+          current_age?: number | null
+          expected_harvest_date?: string | null
+          feeding_plan?: string | null
+          id?: string
+          last_health_check?: string | null
+          notes?: string | null
+          quantity?: number
+          source?: string | null
+          species?: string
+          status?: string
+          total_weight?: number | null
+          unit_id?: string
+          unit_name?: string
+          updated_at?: string | null
+          user_id?: string
+          variety?: string | null
+        }
+        Relationships: []
       }
       production_cycles: {
         Row: {
