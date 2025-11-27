@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Save, Calendar, AlertCircle } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,6 +26,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
   const { createCycle } = useProductionCycles();
   const { createInfrastructures } = useCycleInfrastructures();
   const { getUnitInfrastructures } = useProductionUnits();
+  const { batches } = useLivestockBatches(unitId);
   
   // Récupérer les infrastructures réelles de l'unité
   const unitInfrastructures = getUnitInfrastructures(unitId);
@@ -41,7 +43,8 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     targetWeight: '',
     feedType: '',
     notes: '',
-    infrastructures: [] as string[]
+    infrastructures: [] as string[],
+    infrastructureBatches: {} as Record<string, string>
   });
 
   // Calcul automatique de la date de fin
@@ -97,9 +100,9 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         throw new Error('Failed to create cycle');
       }
       
-      // Créer les infrastructures rattachées au cycle
+      // Créer les infrastructures rattachées au cycle avec leurs lots
       if (formData.infrastructures.length > 0) {
-        await createInfrastructures(savedCycle.id, formData.infrastructures, unitType);
+        await createInfrastructures(savedCycle.id, formData.infrastructures, unitType, formData.infrastructureBatches);
       }
       
       // Appeler onSave si fourni (pour compatibilité avec l'ancien code)
@@ -140,7 +143,8 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         targetWeight: '',
         feedType: '',
         notes: '',
-        infrastructures: []
+        infrastructures: [],
+        infrastructureBatches: {}
       });
     } catch (error) {
       console.error('Error creating cycle:', error);
@@ -241,37 +245,72 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                   </Alert>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-3">
                       {infrastructures.map((infra) => (
-                        <div key={infra.id} className="flex items-center space-x-2 p-2 border rounded-lg">
-                          <Checkbox
-                            id={`infra-${infra.id}`}
-                            checked={formData.infrastructures.includes(infra.name)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
-                                  ...formData,
-                                  infrastructures: [...formData.infrastructures, infra.name]
-                                });
-                              } else {
-                                setFormData({
-                                  ...formData,
-                                  infrastructures: formData.infrastructures.filter(i => i !== infra.name)
-                                });
-                              }
-                            }}
-                          />
-                          <Label
-                            htmlFor={`infra-${infra.id}`}
-                            className="text-sm font-normal cursor-pointer flex-1"
-                          >
-                            <div>
-                              <div className="font-medium">{infra.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
+                        <div key={infra.id} className="p-3 border rounded-lg space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`infra-${infra.id}`}
+                              checked={formData.infrastructures.includes(infra.name)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({
+                                    ...formData,
+                                    infrastructures: [...formData.infrastructures, infra.name]
+                                  });
+                                } else {
+                                  const newBatches = { ...formData.infrastructureBatches };
+                                  delete newBatches[infra.name];
+                                  setFormData({
+                                    ...formData,
+                                    infrastructures: formData.infrastructures.filter(i => i !== infra.name),
+                                    infrastructureBatches: newBatches
+                                  });
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`infra-${infra.id}`}
+                              className="text-sm font-normal cursor-pointer flex-1"
+                            >
+                              <div>
+                                <div className="font-medium">{infra.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
+                                </div>
                               </div>
+                            </Label>
+                          </div>
+                          
+                          {formData.infrastructures.includes(infra.name) && (
+                            <div className="ml-6">
+                              <Label className="text-xs">Lot de poisson (optionnel)</Label>
+                              <Select
+                                value={formData.infrastructureBatches[infra.name] || ''}
+                                onValueChange={(value) => {
+                                  setFormData({
+                                    ...formData,
+                                    infrastructureBatches: {
+                                      ...formData.infrastructureBatches,
+                                      [infra.name]: value
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="text-xs h-8">
+                                  <SelectValue placeholder="Sélectionner un lot" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Aucun lot</SelectItem>
+                                  {batches.map((batch) => (
+                                    <SelectItem key={batch.id} value={batch.id}>
+                                      {batch.species} - {batch.quantity} individus ({batch.average_weight}g)
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
-                          </Label>
+                          )}
                         </div>
                       ))}
                     </div>
