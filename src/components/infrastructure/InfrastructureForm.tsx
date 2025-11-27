@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus } from 'lucide-react';
 import { useProductionUnits, Infrastructure } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 
 interface InfrastructureFormProps {
   onSave?: (infrastructure: any) => void;
@@ -20,6 +21,7 @@ interface InfrastructureFormProps {
 const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: InfrastructureFormProps) => {
   const { units, infrastructures, setInfrastructures, addUnit, updateInfrastructure, addInfrastructure } = useProductionUnits();
   const { addLog } = useLogs();
+  const { batches } = useLivestockBatches();
   
   const [showDialog, setShowDialog] = useState(false);
   const [customTypes, setCustomTypes] = useState<string[]>([]);
@@ -40,6 +42,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
     customTypeName: '',
     capacity: 0,
     status: 'active' as 'active' | 'maintenance' | 'inactive',
+    suggestedBatchId: '',
     specifications: {
       volume: '',
       profondeur: '',
@@ -60,6 +63,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
         customTypeName: infrastructure.customTypeName || '',
         capacity: infrastructure.capacity,
         status: infrastructure.status,
+        suggestedBatchId: (infrastructure as any).suggestedBatchId || '',
         specifications: {
           volume: infrastructure.specifications?.volume || '',
           profondeur: infrastructure.specifications?.profondeur || '',
@@ -162,6 +166,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
         customTypeName: '',
         capacity: 0,
         status: 'active',
+        suggestedBatchId: '',
         specifications: {
           volume: '',
           profondeur: '',
@@ -265,6 +270,31 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
               <SelectItem value="inactive">Inactif</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label className="text-sm">Lot de poisson suggéré (optionnel)</Label>
+          <Select 
+            value={newInfrastructure.suggestedBatchId} 
+            onValueChange={(value) => setNewInfrastructure(prev => ({ ...prev, suggestedBatchId: value }))}
+          >
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="Sélectionner un lot (sera utilisé lors du rattachement à un cycle)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Aucun lot</SelectItem>
+              {batches
+                .filter(batch => batch.unit_id === newInfrastructure.unitId)
+                .map((batch) => (
+                  <SelectItem key={batch.id} value={batch.id}>
+                    {batch.species} - {batch.quantity} individus ({batch.average_weight}g) - {batch.unit_name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Ce lot sera automatiquement pré-sélectionné lors de la création d'un cycle utilisant cette infrastructure
+          </p>
         </div>
 
         {/* Spécifications techniques */}
