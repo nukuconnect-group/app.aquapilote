@@ -92,6 +92,50 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_history: {
+        Row: {
+          alert_type: string
+          created_at: string
+          email_error: string | null
+          email_sent: boolean
+          id: string
+          message: string
+          stock_details: Json | null
+          stock_id: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_type?: string
+          created_at?: string
+          email_error?: string | null
+          email_sent?: boolean
+          id?: string
+          message: string
+          stock_details?: Json | null
+          stock_id?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          email_error?: string | null
+          email_sent?: boolean
+          id?: string
+          message?: string
+          stock_details?: Json | null
+          stock_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_history_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "feed_stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cycle_infrastructures: {
         Row: {
           created_at: string | null

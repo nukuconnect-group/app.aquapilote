@@ -18,12 +18,14 @@ import {
   Trash2,
   BarChart3,
   Loader2,
-  Bell
+  Bell,
+  History
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import AlertHistory from '@/components/alerts/AlertHistory';
 
 interface FeedStockManagerProps {
   unitId: string;
@@ -457,147 +459,167 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         </div>
       </div>
 
-      {/* Alertes */}
-      {(getLowStockItems().length > 0 || getExpiringItems().length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {getLowStockItems().length > 0 && (
-            <Card className="border-yellow-300 bg-yellow-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-yellow-800 text-sm">
-                  <TrendingDown className="w-4 h-4" />
-                  Stock faible ({getLowStockItems().length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  {getLowStockItems().map(item => (
-                    <div key={item.id} className="text-xs">
-                      <strong>{item.custom_name || item.feed_type}</strong>: {item.quantity} {item.unit}
+      {/* Tabs for Stocks and Alert History */}
+      <Tabs defaultValue="stocks" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="stocks" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            Stocks
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            Historique Alertes
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="stocks" className="space-y-4">
+          {/* Alertes */}
+          {(getLowStockItems().length > 0 || getExpiringItems().length > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {getLowStockItems().length > 0 && (
+                <Card className="border-yellow-300 bg-yellow-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-yellow-800 text-sm">
+                      <TrendingDown className="w-4 h-4" />
+                      Stock faible ({getLowStockItems().length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      {getLowStockItems().map(item => (
+                        <div key={item.id} className="text-xs">
+                          <strong>{item.custom_name || item.feed_type}</strong>: {item.quantity} {item.unit}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {getExpiringItems().length > 0 && (
-            <Card className="border-red-300 bg-red-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-red-800 text-sm">
-                  <AlertTriangle className="w-4 h-4" />
-                  Expiration proche ({getExpiringItems().length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  {getExpiringItems().map(item => (
-                    <div key={item.id} className="text-xs">
-                      <strong>{item.custom_name || item.feed_type}</strong>: {item.expiration_date ? new Date(item.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Graphique d'évolution des stocks */}
-      {stocks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="w-5 h-5" />
-              Évolution des Stocks d'Aliment
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stockEvolutionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }} />
-                  <Tooltip 
-                    contentStyle={{ fontSize: 12 }}
-                    formatter={(value: any, name: string) => [
-                      `${value} kg`,
-                      'Quantité'
-                    ]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="quantite" 
-                    stroke="#f97316" 
-                    strokeWidth={2}
-                    name="Stock"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Liste des stocks */}
-      <div className="grid gap-4">
-        {stocks.map(stock => (
-          <Card key={stock.id}>
-            <CardHeader className="pb-2">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div>
-                  <CardTitle className="text-base">{stock.custom_name || stock.feed_type}</CardTitle>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">
-                      {predefinedFeedTypes.find(t => t.value === stock.feed_type)?.label || stock.feed_type}
-                    </Badge>
-                    <Badge className={stock.quantity <= (stock.min_threshold || 50) ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
-                      {stock.quantity} {stock.unit}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEditStock(stock)}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteStock(stock.id)} className="text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
-                <div>
-                  <span className="text-gray-600">Expiration:</span>
-                  <span className="ml-1 font-medium">
-                    {stock.expiration_date ? new Date(stock.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Coût:</span>
-                  <span className="ml-1 font-medium">{stock.cost || 0}€/{stock.unit}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Protéines:</span>
-                  <span className="ml-1 font-medium">{stock.protein_content || 0}%</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Fournisseur:</span>
-                  <span className="ml-1 font-medium">{stock.supplier || 'N/A'}</span>
-                </div>
-              </div>
-              {stock.notes && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                  <strong>Notes:</strong> {stock.notes}
-                </div>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+
+              {getExpiringItems().length > 0 && (
+                <Card className="border-red-300 bg-red-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-red-800 text-sm">
+                      <AlertTriangle className="w-4 h-4" />
+                      Expiration proche ({getExpiringItems().length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      {getExpiringItems().map(item => (
+                        <div key={item.id} className="text-xs">
+                          <strong>{item.custom_name || item.feed_type}</strong>: {item.expiration_date ? new Date(item.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Graphique d'évolution des stocks */}
+          {stocks.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <BarChart3 className="w-5 h-5" />
+                  Évolution des Stocks d'Aliment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={stockEvolutionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} label={{ value: 'Quantité (kg)', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }} />
+                      <Tooltip 
+                        contentStyle={{ fontSize: 12 }}
+                        formatter={(value: any, name: string) => [
+                          `${value} kg`,
+                          'Quantité'
+                        ]}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="quantite" 
+                        stroke="#f97316" 
+                        strokeWidth={2}
+                        name="Stock"
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Liste des stocks */}
+          <div className="grid gap-4">
+            {stocks.map(stock => (
+              <Card key={stock.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-base">{stock.custom_name || stock.feed_type}</CardTitle>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {predefinedFeedTypes.find(t => t.value === stock.feed_type)?.label || stock.feed_type}
+                        </Badge>
+                        <Badge className={stock.quantity <= (stock.min_threshold || 50) ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                          {stock.quantity} {stock.unit}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditStock(stock)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteStock(stock.id)} className="text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+                    <div>
+                      <span className="text-gray-600">Expiration:</span>
+                      <span className="ml-1 font-medium">
+                        {stock.expiration_date ? new Date(stock.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Coût:</span>
+                      <span className="ml-1 font-medium">{stock.cost || 0}€/{stock.unit}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Protéines:</span>
+                      <span className="ml-1 font-medium">{stock.protein_content || 0}%</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Fournisseur:</span>
+                      <span className="ml-1 font-medium">{stock.supplier || 'N/A'}</span>
+                    </div>
+                  </div>
+                  {stock.notes && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                      <strong>Notes:</strong> {stock.notes}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="history">
+          <AlertHistory />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
