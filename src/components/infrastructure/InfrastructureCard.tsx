@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,14 +8,27 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Building, Settings, Trash2, Power, PowerOff, Edit, MapPin } from 'lucide-react';
 import { Infrastructure, useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import InfrastructureForm from './InfrastructureForm';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import InfrastructureLivestockCard from './InfrastructureLivestockCard';
 
 interface InfrastructureCardProps {
   infrastructure: Infrastructure;
 }
 
 const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
-  const { infrastructures, setInfrastructures } = useProductionUnits();
+  const { infrastructures, setInfrastructures, activeUnit } = useProductionUnits();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { infrastructures: cycleInfras } = useCycleInfrastructures();
+  const { batches } = useLivestockBatches(infrastructure.unitId);
+  
+  // Trouver l'infrastructure de cycle associée
+  const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
+  
+  // Trouver le lot de poisson rattaché
+  const attachedBatch = cycleInfra?.livestock_batch_id 
+    ? batches.find(b => b.id === cycleInfra.livestock_batch_id)
+    : null;
 
   const getInfrastructureIcon = (type: string) => {
     if (type.includes('bassin')) return Building;
@@ -120,6 +133,16 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                     </span>
                   ))}
               </div>
+            </div>
+          )}
+          
+          {/* Afficher le lot de poisson rattaché s'il existe */}
+          {attachedBatch && (
+            <div className="pt-3 border-t">
+              <InfrastructureLivestockCard 
+                batch={attachedBatch} 
+                infrastructureId={infrastructure.id}
+              />
             </div>
           )}
           

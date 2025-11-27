@@ -5,9 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, Edit, Trash2, TrendingUp } from 'lucide-react';
+import { Building2, Edit, Trash2, TrendingUp, Fish } from 'lucide-react';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import InfrastructureLivestockCard from '../infrastructure/InfrastructureLivestockCard';
 
 interface CycleInfrastructuresListProps {
   cycleId: string;
@@ -15,14 +18,16 @@ interface CycleInfrastructuresListProps {
 
 const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) => {
   const { infrastructures, loading, updateInfrastructure, deleteInfrastructure } = useCycleInfrastructures(cycleId);
+  const { batches } = useLivestockBatches();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ current_quantity: 0, notes: '' });
+  const [editData, setEditData] = useState({ current_quantity: 0, notes: '', livestock_batch_id: '' });
 
   const handleEdit = (infra: any) => {
     setEditingId(infra.id);
     setEditData({
       current_quantity: infra.current_quantity,
-      notes: infra.notes || ''
+      notes: infra.notes || '',
+      livestock_batch_id: infra.livestock_batch_id || ''
     });
   };
 
@@ -81,33 +86,44 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
           </div>
           
           <div className="space-y-3">
-            {infrastructures.map((infra) => (
-              <Card key={infra.id} className="border-2">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Building2 className="w-4 h-4 text-muted-foreground" />
-                        <h4 className="font-semibold">{infra.infrastructure_name}</h4>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Type:</span>
-                          <Badge variant="outline" className="text-xs">
-                            {infra.infrastructure_type}
-                          </Badge>
+            {infrastructures.map((infra) => {
+              const attachedBatch = infra.livestock_batch_id 
+                ? batches.find(b => b.id === infra.livestock_batch_id)
+                : null;
+
+              return (
+                <Card key={infra.id} className="border-2">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Building2 className="w-4 h-4 text-muted-foreground" />
+                          <h4 className="font-semibold">{infra.infrastructure_name}</h4>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Quantité actuelle:</span>
-                          <span className="font-semibold">{infra.current_quantity.toLocaleString()}</span>
-                        </div>
-                        {infra.notes && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            <span className="font-medium">Notes:</span> {infra.notes}
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Type:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {infra.infrastructure_type}
+                            </Badge>
                           </div>
-                        )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Quantité actuelle:</span>
+                            <span className="font-semibold">{infra.current_quantity.toLocaleString()}</span>
+                          </div>
+                          {infra.livestock_batch_id && (
+                            <div className="flex items-center gap-2 text-primary">
+                              <Fish className="w-4 h-4" />
+                              <span className="font-medium">Lot de poisson rattaché</span>
+                            </div>
+                          )}
+                          {infra.notes && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              <span className="font-medium">Notes:</span> {infra.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
                     
                     <div className="flex gap-2">
                       <Dialog open={editingId === infra.id} onOpenChange={(open) => !open && setEditingId(null)}>
@@ -124,7 +140,29 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
                           <DialogHeader>
                             <DialogTitle>Modifier {infra.infrastructure_name}</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4 py-4">
+                           <div className="space-y-4 py-4">
+                            <div>
+                              <Label htmlFor="livestock">Lot de poisson rattaché</Label>
+                              <Select 
+                                value={editData.livestock_batch_id} 
+                                onValueChange={(value) => setEditData({
+                                  ...editData,
+                                  livestock_batch_id: value
+                                })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Sélectionner un lot (optionnel)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Aucun lot</SelectItem>
+                                  {batches.map((batch) => (
+                                    <SelectItem key={batch.id} value={batch.id}>
+                                      {batch.species} - {batch.quantity} individus ({batch.average_weight}g)
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div>
                               <Label htmlFor="quantity">Quantité actuelle</Label>
                               <Input
@@ -166,9 +204,20 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
                       </Button>
                     </div>
                   </div>
+
+                  {/* Afficher les détails du lot rattaché */}
+                  {attachedBatch && (
+                    <div className="mt-4 pt-4 border-t">
+                      <InfrastructureLivestockCard 
+                        batch={attachedBatch} 
+                        infrastructureId={infra.id}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
