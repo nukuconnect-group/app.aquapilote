@@ -141,6 +141,7 @@ const LivestockManagement = () => {
   const [formData, setFormData] = useState({
     species: '',
     variety: '',
+    type: 'alevins',
     quantity: 0,
     averageWeight: 0,
     acquisitionDate: '',
@@ -196,6 +197,7 @@ const LivestockManagement = () => {
       setFormData({
         species: '',
         variety: '',
+        type: 'alevins',
         quantity: 0,
         averageWeight: 0,
         acquisitionDate: '',
@@ -402,13 +404,29 @@ const LivestockManagement = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label>Variété</Label>
+                      <Label>Souche/Variété</Label>
                       <Input
                         value={formData.variety}
                         onChange={(e) => setFormData({...formData, variety: e.target.value})}
-                        placeholder="Variété"
+                        placeholder="Ex: Monosex, Red, etc."
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label>Type de lot *</Label>
+                    <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner le type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alevins">Alevins</SelectItem>
+                        <SelectItem value="geniteurs">Géniteurs</SelectItem>
+                        <SelectItem value="juveniles">Juvéniles</SelectItem>
+                        <SelectItem value="adultes">Adultes</SelectItem>
+                        <SelectItem value="autres">Autres</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
