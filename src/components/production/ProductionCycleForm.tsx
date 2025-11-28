@@ -255,7 +255,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
             <CardContent>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground mb-3">
-                  Sélectionnez une ou plusieurs infrastructures qui feront partie de ce cycle de production
+                  Sélectionnez une ou plusieurs infrastructures qui feront partie de ce cycle de production. Les lots seront automatiquement rattachés.
                 </p>
                 
                 {infrastructures.length === 0 ? (
@@ -268,84 +268,59 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {infrastructures.map((infra) => (
-                        <div key={infra.id} className="p-3 border rounded-lg space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`infra-${infra.id}`}
-                              checked={formData.infrastructures.includes(infra.name)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  // Auto-sélectionner le lot suggéré si disponible
-                                  const suggestedBatch = (infra as any).suggestedBatchId || '';
-                                  setFormData({
-                                    ...formData,
-                                    infrastructures: [...formData.infrastructures, infra.name],
-                                    infrastructureBatches: {
-                                      ...formData.infrastructureBatches,
-                                      [infra.name]: suggestedBatch
-                                    }
-                                  });
-                                } else {
-                                  const newBatches = { ...formData.infrastructureBatches };
-                                  delete newBatches[infra.name];
-                                  setFormData({
-                                    ...formData,
-                                    infrastructures: formData.infrastructures.filter(i => i !== infra.name),
-                                    infrastructureBatches: newBatches
-                                  });
-                                }
-                              }}
-                            />
-                            <Label
-                              htmlFor={`infra-${infra.id}`}
-                              className="text-sm font-normal cursor-pointer flex-1"
-                            >
-                              <div>
-                                <div className="font-medium">{infra.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
-                                </div>
-                              </div>
-                            </Label>
-                          </div>
-                          
-                          {formData.infrastructures.includes(infra.name) && (
-                            <div className="ml-6">
-                              <Label className="text-xs">Lot de poisson (optionnel)</Label>
-                              <Select
-                                value={formData.infrastructureBatches[infra.name] || (infra as any).suggestedBatchId || 'none'}
-                                onValueChange={(value) => {
-                                  setFormData({
-                                    ...formData,
-                                    infrastructureBatches: {
-                                      ...formData.infrastructureBatches,
-                                      [infra.name]: value === 'none' ? '' : value
-                                    }
-                                  });
+                      {infrastructures.map((infra) => {
+                        // Trouver le lot suggéré pour cette infrastructure
+                        const suggestedBatch = batches.find(b => (infra as any).suggestedBatchId === b.id);
+                        
+                        return (
+                          <div key={infra.id} className="p-3 border rounded-lg space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`infra-${infra.id}`}
+                                checked={formData.infrastructures.includes(infra.name)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    // Auto-sélectionner le lot suggéré si disponible
+                                    const suggestedBatchId = (infra as any).suggestedBatchId || '';
+                                    setFormData({
+                                      ...formData,
+                                      infrastructures: [...formData.infrastructures, infra.name],
+                                      infrastructureBatches: {
+                                        ...formData.infrastructureBatches,
+                                        [infra.name]: suggestedBatchId
+                                      }
+                                    });
+                                  } else {
+                                    const newBatches = { ...formData.infrastructureBatches };
+                                    delete newBatches[infra.name];
+                                    setFormData({
+                                      ...formData,
+                                      infrastructures: formData.infrastructures.filter(i => i !== infra.name),
+                                      infrastructureBatches: newBatches
+                                    });
+                                  }
                                 }}
+                              />
+                              <Label
+                                htmlFor={`infra-${infra.id}`}
+                                className="text-sm font-normal cursor-pointer flex-1"
                               >
-                                <SelectTrigger className="text-xs h-8">
-                                  <SelectValue placeholder="Sélectionner un lot" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Aucun lot</SelectItem>
-                                  {batches.map((batch) => (
-                                    <SelectItem key={batch.id} value={batch.id}>
-                                      {batch.species} - {batch.quantity} individus ({batch.average_weight}g)
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {(infra as any).suggestedBatchId && (
-                                <p className="text-xs text-primary mt-1">
-                                  ✓ Lot suggéré pour cette infrastructure
-                                </p>
-                              )}
+                                <div>
+                                  <div className="font-medium">{infra.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
+                                  </div>
+                                  {suggestedBatch && (
+                                    <div className="text-xs text-primary mt-1 font-medium">
+                                      → Lot: {suggestedBatch.species} - {suggestedBatch.quantity} individus ({suggestedBatch.average_weight}g)
+                                    </div>
+                                  )}
+                                </div>
+                              </Label>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                     {formData.infrastructures.length > 0 && (
                       <div className="mt-3 p-3 bg-primary/10 rounded-lg">
