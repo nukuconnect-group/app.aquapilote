@@ -41,6 +41,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const [batchFormData, setBatchFormData] = useState({
     species: '',
     variety: '',
+    type: 'alevins',
     quantity: 0,
     averageWeight: 0,
     acquisitionDate: new Date().toISOString().split('T')[0],
@@ -132,6 +133,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
       const newBatch = await createBatch({
         species: batchFormData.species,
         variety: batchFormData.variety,
+        type: batchFormData.type,
         quantity: batchFormData.quantity,
         average_weight: batchFormData.averageWeight,
         total_weight: totalWeight,
@@ -164,6 +166,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
       setBatchFormData({
         species: '',
         variety: '',
+        type: 'alevins',
         quantity: 0,
         averageWeight: 0,
         acquisitionDate: new Date().toISOString().split('T')[0],
@@ -364,13 +367,32 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                 </Select>
               </div>
               <div>
-                <Label>Variété</Label>
+                <Label>Souche/Variété</Label>
                 <Input
                   value={batchFormData.variety}
                   onChange={(e) => setBatchFormData({...batchFormData, variety: e.target.value})}
-                  placeholder="Variété"
+                  placeholder="Ex: Monosex, Red, etc."
                 />
               </div>
+            </div>
+
+            <div>
+              <Label>Type de lot *</Label>
+              <Select 
+                value={batchFormData.type} 
+                onValueChange={(value) => setBatchFormData({...batchFormData, type: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner le type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alevins">Alevins</SelectItem>
+                  <SelectItem value="geniteurs">Géniteurs</SelectItem>
+                  <SelectItem value="juveniles">Juvéniles</SelectItem>
+                  <SelectItem value="adultes">Adultes</SelectItem>
+                  <SelectItem value="autres">Autres</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

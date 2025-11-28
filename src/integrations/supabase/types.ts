@@ -467,6 +467,7 @@ export type Database = {
           species: string
           status: string
           total_weight: number | null
+          type: string | null
           unit_id: string
           unit_name: string
           updated_at: string | null
@@ -489,6 +490,7 @@ export type Database = {
           species: string
           status?: string
           total_weight?: number | null
+          type?: string | null
           unit_id: string
           unit_name: string
           updated_at?: string | null
@@ -511,6 +513,7 @@ export type Database = {
           species?: string
           status?: string
           total_weight?: number | null
+          type?: string | null
           unit_id?: string
           unit_name?: string
           updated_at?: string | null

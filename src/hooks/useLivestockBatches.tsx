@@ -7,6 +7,7 @@ export interface LivestockBatch {
   user_id: string;
   species: string;
   variety: string | null;
+  type: string | null;
   quantity: number;
   average_weight: number;
   total_weight: number;

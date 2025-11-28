@@ -176,6 +176,7 @@ const LivestockManagement = () => {
       await createBatch({
         species: formData.species,
         variety: formData.variety,
+        type: formData.type,
         quantity: formData.quantity,
         average_weight: formData.averageWeight,
         total_weight: formData.quantity * formData.averageWeight / 1000,
