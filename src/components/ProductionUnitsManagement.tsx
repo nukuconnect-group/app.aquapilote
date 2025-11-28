@@ -99,13 +99,20 @@ const ProductionUnitsManagement = () => {
   };
 
   const handleSaveUnit = () => {
+    const unitToSave = {
+      ...newUnit,
+      photoUrl: selectedPhoto || newUnit.photoUrl || ''
+    };
+    
     if (editingUnit) {
-      updateUnit(editingUnit.id, newUnit);
-      addLog('Unité modifiée', 'Infrastructures', `Unité ${newUnit.name} mise à jour`, 'info');
+      updateUnit(editingUnit.id, unitToSave);
+      addLog('Unité modifiée', 'Infrastructures', `Unité ${unitToSave.name} mise à jour`, 'info');
       setEditingUnit(null);
+      toast.success('Unité modifiée avec succès');
     } else {
-      addUnit(newUnit);
-      addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${newUnit.name} ajoutée`, 'success');
+      addUnit(unitToSave);
+      addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${unitToSave.name} ajoutée`, 'success');
+      toast.success('Unité créée avec succès');
     }
     
     setNewUnit({
@@ -321,9 +328,9 @@ const ProductionUnitsManagement = () => {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-16 h-16 rounded-lg">
+                  <Avatar className="w-16 h-16 rounded-lg" key={unit.photoUrl || unit.id}>
                     <AvatarImage 
-                      src={unit.photoUrl} 
+                      src={unit.photoUrl || ''} 
                       alt={unit.name}
                       className="object-cover"
                     />
