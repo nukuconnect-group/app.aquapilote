@@ -21,7 +21,7 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
   const { cycles } = useProductionCycles(unitId);
   const [selectedCycleId, setSelectedCycleId] = useState('');
   const { infrastructures } = useCycleInfrastructures(selectedCycleId);
-  const { createRecord } = useHealthRecords();
+  const { createRecord, records: allHealthRecords } = useHealthRecords(selectedCycleId, unitId);
   
   const [formData, setFormData] = useState({
     infrastructureId: '',
@@ -37,6 +37,15 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
 
   const activeCycles = cycles.filter(c => c.status === 'active');
   const selectedCycle = cycles.find(c => c.id === selectedCycleId);
+  const selectedInfrastructure = infrastructures.find(i => i.id === formData.infrastructureId);
+  
+  // Filtrer les pêches de contrôle passées pour l'infrastructure sélectionnée
+  const pastControlRecords = allHealthRecords.filter(r => r.basin_id === formData.infrastructureId);
+  
+  // Calculs automatiques
+  const samplePercentage = selectedInfrastructure?.current_quantity && formData.sample_count
+    ? ((parseInt(formData.sample_count) / selectedInfrastructure.current_quantity) * 100).toFixed(2)
+    : '0';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,11 +158,37 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
                       <SelectContent>
                         {infrastructures.map((infra) => (
                           <SelectItem key={infra.id} value={infra.id}>
-                            {infra.infrastructure_name} ({infra.infrastructure_type})
+                            {infra.infrastructure_name} ({infra.infrastructure_type}) - {infra.current_quantity || 0} sujets
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                  )}
+                </div>
+              )}
+              
+              {/* Informations sur l'infrastructure sélectionnée */}
+              {selectedInfrastructure && (
+                <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                  <h4 className="font-semibold text-sm">Informations de l'infrastructure</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Nombre de sujets actuel:</span>
+                      <p className="font-medium">{selectedInfrastructure.current_quantity || 0} individus</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Pêches de contrôle passées:</span>
+                      <p className="font-medium">{pastControlRecords.length} enregistrement(s)</p>
+                    </div>
+                  </div>
+                  {pastControlRecords.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-muted-foreground text-xs">Dernière pêche de contrôle:</span>
+                      <p className="text-xs">
+                        {new Date(pastControlRecords[0].date).toLocaleDateString()} - 
+                        Poids moyen: {pastControlRecords[0].average_weight || 'N/A'}g
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -247,10 +282,15 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
                         onChange={(e) => setFormData({...formData, sample_count: e.target.value})}
                         placeholder="30"
                       />
+                      {selectedInfrastructure && formData.sample_count && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Échantillon: {samplePercentage}% du lot total
+                        </p>
+                      )}
                     </div>
 
                     <div>
-                      <Label htmlFor="average_weight">Poids moyen (g)</Label>
+                      <Label htmlFor="average_weight">Poids moyen individuel (g)</Label>
                       <Input
                         id="average_weight"
                         type="number"
@@ -259,6 +299,11 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
                         onChange={(e) => setFormData({...formData, average_weight: e.target.value})}
                         placeholder="250"
                       />
+                      {formData.average_weight && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Poids moyen: {formData.average_weight}g par individu
+                        </p>
+                      )}
                     </div>
                   </div>
 
