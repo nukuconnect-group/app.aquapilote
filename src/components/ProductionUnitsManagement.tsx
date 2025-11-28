@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Building, 
   Plus, 
@@ -251,23 +252,26 @@ const ProductionUnitsManagement = () => {
                     onChange={handlePhotoSelect}
                     className="hidden"
                   />
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedPhoto ? (
-                      <div className="relative">
-                        <img
-                          src={selectedPhoto}
-                          alt="Photo de l'unité"
-                          className="w-full h-40 object-cover rounded-lg"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          className="absolute top-2 right-2"
-                          onClick={handleRemovePhoto}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative w-full max-w-md">
+                          <img
+                            src={selectedPhoto}
+                            alt="Photo de l'unité"
+                            className="w-full h-48 object-cover rounded-lg border-2 border-border"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="absolute top-2 right-2"
+                            onClick={handleRemovePhoto}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Photo sélectionnée</p>
                       </div>
                     ) : (
                       <Button
@@ -317,15 +321,16 @@ const ProductionUnitsManagement = () => {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  {unit.photoUrl ? (
-                    <img
-                      src={unit.photoUrl}
+                  <Avatar className="w-16 h-16 rounded-lg">
+                    <AvatarImage 
+                      src={unit.photoUrl} 
                       alt={unit.name}
-                      className="w-12 h-12 rounded-lg object-cover"
+                      className="object-cover"
                     />
-                  ) : (
-                    <Building className="w-5 h-5 text-purple-600" />
-                  )}
+                    <AvatarFallback className="rounded-lg bg-purple-100 text-purple-600">
+                      <Building className="w-6 h-6" />
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <CardTitle className="text-base sm:text-lg">{unit.name}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
