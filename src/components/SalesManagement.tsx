@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -16,6 +16,7 @@ import ProductionUnitSelector from './ProductionUnitSelector';
 import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
+import ReceiptPreview, { ReceiptData } from './economics/ReceiptPreview';
 
 interface Sale {
   id: string;
@@ -41,6 +42,8 @@ const SalesManagement = () => {
   const { formatCurrency } = useSettings();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
   const [sales, setSales] = useState<Sale[]>([
     {
       id: 'V001',
@@ -81,7 +84,40 @@ const SalesManagement = () => {
     ]
   });
 
-  const handleSaveSale = () => {
+  const handlePreviewReceipt = () => {
+    const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
+    const taxRate = 20;
+    const tax = totalAmount * (taxRate / 100);
+    const total = totalAmount + tax;
+
+    const receiptData: ReceiptData = {
+      type: 'receipt',
+      number: `REC-${new Date().getFullYear()}-${String(sales.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString(),
+      clientName: newSale.clientName,
+      clientContact: newSale.clientContact,
+      items: newSale.products.map(p => ({
+        name: p.name,
+        quantity: p.quantity,
+        unitPrice: p.unitPrice,
+        total: p.quantity * p.unitPrice
+      })),
+      subtotal: totalAmount,
+      tax: tax,
+      taxRate: taxRate,
+      total: total,
+      paymentMethod: newSale.paymentMethod,
+      notes: newSale.notes,
+      companyName: 'Aqua Pilote',
+      companyAddress: 'Votre adresse',
+      companyContact: 'contact@aquapilote.com'
+    };
+
+    setPreviewReceiptData(receiptData);
+    setShowReceiptPreview(true);
+  };
+
+  const handleConfirmSale = () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
     
     const sale: Sale = {
@@ -95,13 +131,13 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount,
-      status: 'pending',
+      status: 'confirmed',
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes
     };
 
     setSales(prev => [sale, ...prev]);
-    addLog('Nouvelle vente', 'Vente', `Vente créée pour ${sale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
+    addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${sale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
     
     setNewSale({
       clientName: '',
@@ -112,6 +148,7 @@ const SalesManagement = () => {
       notes: ''
     });
     setShowSaleDialog(false);
+    setShowReceiptPreview(false);
   };
 
   const addProduct = () => {
@@ -319,9 +356,17 @@ const SalesManagement = () => {
                     </div>
                   </div>
 
-                  <Button onClick={handleSaveSale} className="w-full">
-                    Enregistrer la vente
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviewReceipt} 
+                      className="flex-1"
+                      disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Prévisualiser le reçu
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -568,6 +613,17 @@ const SalesManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Receipt Preview Dialog */}
+      {previewReceiptData && (
+        <ReceiptPreview
+          open={showReceiptPreview}
+          onOpenChange={setShowReceiptPreview}
+          data={previewReceiptData}
+          onConfirm={handleConfirmSale}
+          showConfirmButton={true}
+        />
+      )}
     </div>
   );
 };
