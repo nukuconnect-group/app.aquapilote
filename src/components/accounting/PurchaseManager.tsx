@@ -287,19 +287,19 @@ const PurchaseManager = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec sélecteur de devise */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">Gestion des Achats</h3>
-          <p className="text-sm text-gray-600">Suivi et catégorisation des dépenses d'exploitation</p>
-        </div>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3 md:gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="hidden">
+            <h3 className="text-base md:text-lg font-semibold">Gestion des Achats</h3>
+            <p className="text-xs md:text-sm text-gray-600">Suivi et catégorisation des dépenses d'exploitation</p>
+          </div>
           <Select value={currency} onValueChange={(value) => setCurrency(value as 'XOF' | 'EUR' | 'USD' | 'MAD')}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-40 text-sm md:text-base">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {currencies.map(curr => (
-                <SelectItem key={curr.code} value={curr.code}>
+                <SelectItem key={curr.code} value={curr.code} className="text-sm md:text-base">
                   {curr.symbol} {curr.name}
                 </SelectItem>
               ))}
@@ -308,57 +308,57 @@ const PurchaseManager = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Dépenses</p>
-                <p className="text-2xl font-bold text-red-600">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-red-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm text-gray-600">Total Dépenses</p>
+                <p className="text-base md:text-2xl font-bold text-red-600 truncate">
                   {totalAmount.toLocaleString()} {getCurrencySymbol(currency)}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">En Attente</p>
-                <p className="text-2xl font-bold text-yellow-600">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Clock className="w-6 h-6 md:w-8 md:h-8 text-yellow-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm text-gray-600">En Attente</p>
+                <p className="text-base md:text-2xl font-bold text-yellow-600 truncate">
                   {pendingAmount.toLocaleString()} {getCurrencySymbol(currency)}
                 </p>
               </div>
-              <Clock className="w-8 h-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Reçus</p>
-                <p className="text-2xl font-bold text-green-600">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <CheckCircle className="w-6 h-6 md:w-8 md:h-8 text-green-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm text-gray-600">Reçus</p>
+                <p className="text-base md:text-2xl font-bold text-green-600 truncate">
                   {receivedAmount.toLocaleString()} {getCurrencySymbol(currency)}
                 </p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Commandes</p>
-                <p className="text-2xl font-bold">{filteredPurchases.length}</p>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-blue-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm text-gray-600">Commandes</p>
+                <p className="text-base md:text-2xl font-bold truncate">{filteredPurchases.length}</p>
               </div>
-              <ShoppingCart className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
