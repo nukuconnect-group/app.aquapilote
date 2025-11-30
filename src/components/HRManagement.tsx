@@ -346,75 +346,85 @@ const HRManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl text-white">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-6 rounded-xl text-white">
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex flex-col gap-3">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Gestion des Ressources Humaines</h2>
-              <p className="text-blue-100">Personnel, paie et administration RH</p>
+              <h2 className="text-xl md:text-2xl font-bold mb-1 md:mb-2">Gestion des Ressources Humaines</h2>
+              <p className="text-sm md:text-base text-blue-100">Personnel, paie et administration RH</p>
             </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" onClick={() => setShowPaySlipGenerator(true)}>
-              <FileText className="w-4 h-4 mr-2" />
-              Générer Bulletin
-            </Button>
-            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" onClick={() => setShowEmployeeForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvel Employé
-            </Button>
-          </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm md:text-base" 
+                onClick={() => setShowPaySlipGenerator(true)}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Générer Bulletin
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm md:text-base" 
+                onClick={() => setShowEmployeeForm(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvel Employé
+              </Button>
+            </div>
           </div>
           <ProductionUnitSelector />
         </div>
       </div>
 
       {/* KPIs RH */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{hrStats.totalEmployees}</p>
-                <p className="text-sm text-gray-600">Employés total</p>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg md:text-2xl font-bold truncate">{hrStats.totalEmployees}</p>
+                <p className="text-xs md:text-sm text-gray-600">Employés total</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <UserCheck className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{hrStats.activeEmployees}</p>
-                <p className="text-sm text-gray-600">Actifs</p>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <UserCheck className="w-6 h-6 md:w-8 md:h-8 text-green-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-lg md:text-2xl font-bold truncate">{hrStats.activeEmployees}</p>
+                <p className="text-xs md:text-sm text-gray-600">Actifs</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-purple-600" />
-              <div>
-                 <p className="text-2xl font-bold">{formatCurrency(hrStats.totalPayroll)}</p>
-                <p className="text-sm text-gray-600">Masse salariale</p>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-purple-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base md:text-2xl font-bold truncate">{formatCurrency(hrStats.totalPayroll)}</p>
+                <p className="text-xs md:text-sm text-gray-600">Masse salariale</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-orange-600" />
-              <div>
-                 <p className="text-2xl font-bold">{formatCurrency(Math.round(hrStats.avgSalary))}</p>
-                <p className="text-sm text-gray-600">Salaire moyen</p>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Calendar className="w-6 h-6 md:w-8 md:h-8 text-orange-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base md:text-2xl font-bold truncate">{formatCurrency(Math.round(hrStats.avgSalary))}</p>
+                <p className="text-xs md:text-sm text-gray-600">Salaire moyen</p>
               </div>
             </div>
           </CardContent>
@@ -422,12 +432,14 @@ const HRManagement = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full">
-          <TabsTrigger value="employees">Employés</TabsTrigger>
-          <TabsTrigger value="payroll">Bulletins de Paie</TabsTrigger>
-          <TabsTrigger value="reports">Rapports RH</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="employees" className="space-y-3 md:space-y-4">
+        <div className="overflow-x-auto">
+          <TabsList className="grid grid-cols-3 w-full text-xs md:text-sm">
+            <TabsTrigger value="employees">Employés</TabsTrigger>
+            <TabsTrigger value="payroll">Bulletins</TabsTrigger>
+            <TabsTrigger value="reports">Rapports</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="employees">
           <Card>
