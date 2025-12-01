@@ -365,34 +365,36 @@ const PurchaseManager = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="list">Liste des achats</TabsTrigger>
-            <TabsTrigger value="analytics">Analyses</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+          <div className="overflow-x-auto">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="list" className="text-xs sm:text-sm">Liste des achats</TabsTrigger>
+              <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analyses</TabsTrigger>
+            </TabsList>
+          </div>
           
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={exportPurchases}>
-              <Download className="w-4 h-4 mr-2" />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={exportPurchases} className="w-full sm:w-auto text-sm">
+              <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               Exporter
             </Button>
-            <Button onClick={() => setShowPurchaseForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button onClick={() => setShowPurchaseForm(true)} className="w-full sm:w-auto text-sm">
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               Nouvel achat
             </Button>
           </div>
         </div>
 
-        <TabsContent value="list" className="space-y-4">
+        <TabsContent value="list" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="w-5 h-5" />
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
                 Filtres
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
                 <div>
                   <Label>Catégorie</Label>
                   <Select value={filters.category} onValueChange={(value) => setFilters({...filters, category: value})}>

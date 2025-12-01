@@ -338,80 +338,80 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             Prévisualisation du {getDocumentTitle()}
           </DialogTitle>
         </DialogHeader>
 
         <Card>
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-            <CardTitle className="text-center text-2xl">{getDocumentTitle()}</CardTitle>
-            <p className="text-center text-blue-100 text-lg">{data.number}</p>
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 sm:p-6">
+            <CardTitle className="text-center text-lg sm:text-2xl">{getDocumentTitle()}</CardTitle>
+            <p className="text-center text-blue-100 text-sm sm:text-lg">{data.number}</p>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             {/* Company Info */}
             {data.companyName && (
-              <div className="mb-6 p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">{data.companyName}</h3>
-                {data.companyAddress && <p className="text-sm text-muted-foreground">{data.companyAddress}</p>}
-                {data.companyContact && <p className="text-sm text-muted-foreground">{data.companyContact}</p>}
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 truncate">{data.companyName}</h3>
+                {data.companyAddress && <p className="text-xs sm:text-sm text-muted-foreground truncate">{data.companyAddress}</p>}
+                {data.companyContact && <p className="text-xs sm:text-sm text-muted-foreground truncate">{data.companyContact}</p>}
               </div>
             )}
 
             {/* Client and Date Info */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold mb-2">Informations Client</h3>
-                <p className="text-sm"><strong>Nom:</strong> {data.clientName}</p>
-                {data.clientContact && <p className="text-sm"><strong>Contact:</strong> {data.clientContact}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Informations Client</h3>
+                <p className="text-xs sm:text-sm"><strong>Nom:</strong> <span className="break-words">{data.clientName}</span></p>
+                {data.clientContact && <p className="text-xs sm:text-sm"><strong>Contact:</strong> <span className="break-words">{data.clientContact}</span></p>}
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold mb-2">Informations Document</h3>
-                <p className="text-sm"><strong>Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
-                {data.paymentMethod && <p className="text-sm"><strong>Paiement:</strong> {data.paymentMethod}</p>}
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Informations Document</h3>
+                <p className="text-xs sm:text-sm"><strong>Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
+                {data.paymentMethod && <p className="text-xs sm:text-sm"><strong>Paiement:</strong> {data.paymentMethod}</p>}
               </div>
             </div>
 
-            <Separator className="my-4" />
+            <Separator className="my-3 sm:my-4" />
 
             {/* Items Table */}
-            <div className="space-y-3 mb-6">
-              <h3 className="font-semibold">Détails des produits</h3>
+            <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+              <h3 className="font-semibold text-sm sm:text-base">Détails des produits</h3>
               {data.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start p-3 bg-muted/50 rounded">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
+                <div key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:items-start p-2 sm:p-3 bg-muted/50 rounded gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm sm:text-base break-words">{item.name}</p>
+                    {item.description && <p className="text-xs sm:text-sm text-muted-foreground break-words">{item.description}</p>}
                   </div>
-                  <div className="text-right ml-4">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-left sm:text-right sm:ml-4 flex-shrink-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {item.quantity} x {formatCurrency(item.unitPrice)}
                     </p>
-                    <p className="font-semibold">{formatCurrency(item.total)}</p>
+                    <p className="font-semibold text-sm sm:text-base">{formatCurrency(item.total)}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <Separator className="my-4" />
+            <Separator className="my-3 sm:my-4" />
 
             {/* Totals */}
-            <div className="space-y-2 max-w-sm ml-auto">
-              <div className="flex justify-between text-muted-foreground">
+            <div className="space-y-2 max-w-full sm:max-w-sm sm:ml-auto bg-muted/30 p-3 rounded-lg">
+              <div className="flex justify-between text-muted-foreground text-xs sm:text-sm">
                 <span>Sous-total:</span>
-                <span>{formatCurrency(data.subtotal)}</span>
+                <span className="font-medium">{formatCurrency(data.subtotal)}</span>
               </div>
               {data.tax && (
-                <div className="flex justify-between text-muted-foreground">
+                <div className="flex justify-between text-muted-foreground text-xs sm:text-sm">
                   <span>TVA ({data.taxRate || 20}%):</span>
-                  <span>{formatCurrency(data.tax)}</span>
+                  <span className="font-medium">{formatCurrency(data.tax)}</span>
                 </div>
               )}
               <Separator />
-              <div className="flex justify-between text-xl font-bold text-blue-600">
+              <div className="flex justify-between text-base sm:text-xl font-bold text-blue-600">
                 <span>TOTAL:</span>
                 <span>{formatCurrency(data.total)}</span>
               </div>
@@ -419,25 +419,25 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
             {/* Notes */}
             {data.notes && (
-              <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                <h4 className="font-semibold text-sm mb-2 text-yellow-900">Notes / Conditions</h4>
-                <p className="text-sm text-yellow-800">{data.notes}</p>
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                <h4 className="font-semibold text-xs sm:text-sm mb-1 sm:mb-2 text-yellow-900">Notes / Conditions</h4>
+                <p className="text-xs sm:text-sm text-yellow-800 break-words">{data.notes}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <div className="flex gap-2 justify-end mt-4">
-          <Button variant="outline" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-2" />
+        <div className="flex flex-col sm:flex-row gap-2 justify-end mt-3 sm:mt-4">
+          <Button variant="outline" onClick={handleDownload} className="w-full sm:w-auto text-sm">
+            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
             Télécharger
           </Button>
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-2" />
+          <Button variant="outline" onClick={handlePrint} className="w-full sm:w-auto text-sm">
+            <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
             Imprimer
           </Button>
           {showConfirmButton && onConfirm && (
-            <Button onClick={onConfirm} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={onConfirm} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto text-sm">
               Confirmer et enregistrer
             </Button>
           )}

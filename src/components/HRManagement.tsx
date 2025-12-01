@@ -443,50 +443,79 @@ const HRManagement = () => {
 
         <TabsContent value="employees">
           <Card>
-            <CardHeader>
-              <CardTitle>Liste des Employés</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-base sm:text-lg">Liste des Employés</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Poste</TableHead>
-                    <TableHead>Unité</TableHead>
-                    <TableHead>Salaire</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Contrat</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {employees.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{employee.firstName} {employee.lastName}</p>
-                          <p className="text-sm text-gray-600">{employee.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{employee.position}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {employee.unitName}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatCurrency(employee.salary)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(employee.status)}>
-                          {employee.status === 'active' ? 'Actif' : 
-                           employee.status === 'inactive' ? 'Inactif' : 'Congés'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{employee.contractType}</Badge>
-                      </TableCell>
+            <CardContent className="p-0 sm:p-3 md:p-6">
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs lg:text-sm">Nom</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Poste</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Unité</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Salaire</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Statut</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Contrat</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((employee) => (
+                      <TableRow key={employee.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-xs lg:text-sm">{employee.firstName} {employee.lastName}</p>
+                            <p className="text-xs text-gray-600">{employee.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs lg:text-sm">{employee.position}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {employee.unitName}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs lg:text-sm">{formatCurrency(employee.salary)}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(employee.status) + " text-xs"}>
+                            {employee.status === 'active' ? 'Actif' : 
+                             employee.status === 'inactive' ? 'Inactif' : 'Congés'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3 p-3">
+                {employees.map((employee) => (
+                  <Card key={employee.id} className="border">
+                    <CardContent className="p-3">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
+                          <p className="text-xs text-gray-600">{employee.email}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <Badge variant="outline" className="text-xs">{employee.position}</Badge>
+                          <Badge variant="outline" className="text-xs">{employee.unitName}</Badge>
+                          <Badge className={getStatusColor(employee.status) + " text-xs"}>
+                            {employee.status === 'active' ? 'Actif' : 
+                             employee.status === 'inactive' ? 'Inactif' : 'Congés'}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
+                        </div>
+                        <p className="text-sm font-medium">{formatCurrency(employee.salary)}/mois</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
