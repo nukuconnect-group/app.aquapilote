@@ -304,16 +304,16 @@ const SuppliersManagement = () => {
   const categories = [...new Set(suppliers.map(s => s.category))];
 
   return (
-    <div className="space-y-6 p-2 sm:p-0">
+    <div className="space-y-4 sm:space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-6 rounded-xl text-white">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Gestion des Fournisseurs</h2>
-              <p className="text-blue-100">Base de données et historique des commandes</p>
+      <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-4 sm:p-6 rounded-xl text-white">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2 truncate">Gestion des Fournisseurs</h2>
+              <p className="text-sm sm:text-base text-blue-100">Base de données et historique des commandes</p>
             </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={showSupplierDialog} onOpenChange={(open) => {
               setShowSupplierDialog(open);
               if (!open) {
@@ -332,16 +332,17 @@ const SuppliersManagement = () => {
               }
             }}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouveau fournisseur
+                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base">
+                  <Plus className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nouveau fournisseur</span>
+                  <span className="sm:hidden">Nouveau</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{editingSupplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+              <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+              <DialogHeader>
+                <DialogTitle className="text-base sm:text-lg">{editingSupplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label>Nom de l'entreprise</Label>
                     <Input 
@@ -442,12 +443,13 @@ const SuppliersManagement = () => {
 
             <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                  <Package className="w-4 h-4 mr-2" />
-                  Nouvelle commande
+                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base">
+                  <Package className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nouvelle commande</span>
+                  <span className="sm:hidden">Commande</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-xl">
+              <DialogContent className="w-[95vw] max-w-xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Créer une commande</DialogTitle>
                 </DialogHeader>
@@ -512,16 +514,16 @@ const SuppliersManagement = () => {
       </div>
 
       {/* KPIs */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              Total fournisseurs
+          <CardHeader className="pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
+              <span className="truncate">Total fournisseurs</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{suppliers.length}</p>
+          <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+            <p className="text-xl sm:text-3xl font-bold">{suppliers.length}</p>
             <p className="text-xs text-muted-foreground mt-1">
               {suppliers.filter(s => s.status === 'active').length} actifs
             </p>
@@ -529,14 +531,14 @@ const SuppliersManagement = () => {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Package className="w-4 h-4 text-orange-600" />
-              Commandes en cours
+          <CardHeader className="pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 flex-shrink-0" />
+              <span className="truncate">Commandes en cours</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-orange-600">
+          <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+            <p className="text-xl sm:text-3xl font-bold text-orange-600">
               {orders.filter(o => o.status === 'pending').length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -546,14 +548,14 @@ const SuppliersManagement = () => {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Livraisons
+          <CardHeader className="pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
+              <span className="truncate">Livraisons</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-green-600">
+          <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+            <p className="text-xl sm:text-3xl font-bold text-green-600">
               {orders.filter(o => o.status === 'delivered').length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -563,14 +565,14 @@ const SuppliersManagement = () => {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-purple-600" />
-              Montant total
+          <CardHeader className="pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 flex-shrink-0" />
+              <span className="truncate">Montant total</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-purple-600">
+          <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
+            <p className="text-xl sm:text-3xl font-bold text-purple-600">
               {(orders.reduce((sum, o) => sum + o.amount, 0) / 1000).toFixed(0)}k
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -582,8 +584,8 @@ const SuppliersManagement = () => {
 
       {/* Filtres et recherche */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -591,54 +593,62 @@ const SuppliersManagement = () => {
                   placeholder="Rechercher un fournisseur..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm sm:text-base"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="active">Actif</SelectItem>
-                <SelectItem value="inactive">Inactif</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes catégories</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs sm:text-sm">Tous les statuts</SelectItem>
+                  <SelectItem value="active" className="text-xs sm:text-sm">Actif</SelectItem>
+                  <SelectItem value="inactive" className="text-xs sm:text-sm">Inactif</SelectItem>
+                  <SelectItem value="pending" className="text-xs sm:text-sm">En attente</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs sm:text-sm">Toutes catégories</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat} className="text-xs sm:text-sm">{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="suppliers" className="space-y-4">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="suppliers">Fournisseurs</TabsTrigger>
-          <TabsTrigger value="orders">Historique commandes</TabsTrigger>
+      <Tabs defaultValue="suppliers" className="space-y-3 sm:space-y-4">
+        <TabsList className="grid grid-cols-2 w-full bg-muted">
+          <TabsTrigger value="suppliers" className="text-xs sm:text-sm">
+            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            Fournisseurs
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="text-xs sm:text-sm">
+            <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            Commandes
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="suppliers" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+        <TabsContent value="suppliers" className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             {filteredSuppliers.map(supplier => (
               <Card key={supplier.id} className="border-l-4 border-l-blue-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-lg">{supplier.name}</h4>
-                      <p className="text-sm text-muted-foreground">{supplier.contact}</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-base sm:text-lg truncate">{supplier.name}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{supplier.contact}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Badge className={getStatusColor(supplier.status)}>
+                    <div className="flex-shrink-0">
+                      <Badge className={getStatusColor(supplier.status) + " text-xs"}>
                         {getStatusIcon(supplier.status)}
                         <span className="ml-1">
                           {supplier.status === 'active' ? 'Actif' : supplier.status === 'inactive' ? 'Inactif' : 'En attente'}
@@ -648,35 +658,35 @@ const SuppliersManagement = () => {
                   </div>
 
                   <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{supplier.phone}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{supplier.phone}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span>{supplier.email}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{supplier.email}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span>{supplier.address}</span>
+                    <div className="flex items-start gap-2 text-xs sm:text-sm">
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <span className="line-clamp-2">{supplier.address}</span>
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <Badge className="mb-2">{supplier.category}</Badge>
-                    <div className="text-sm">
+                    <Badge className="mb-2 text-xs">{supplier.category}</Badge>
+                    <div className="text-xs sm:text-sm">
                       <span className="font-medium">Produits: </span>
-                      <span className="text-muted-foreground">{supplier.products.join(', ')}</span>
+                      <span className="text-muted-foreground line-clamp-2">{supplier.products.join(', ')}</span>
                     </div>
-                    <div className="mt-1">
-                      <span className="text-sm font-medium">Évaluation: </span>
-                      <span className="text-yellow-600">{'⭐'.repeat(Math.floor(supplier.rating))}</span>
-                      <span className="text-sm text-muted-foreground ml-1">({supplier.rating})</span>
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-xs sm:text-sm font-medium">Évaluation: </span>
+                      <span className="text-yellow-600 text-sm">{'⭐'.repeat(Math.floor(supplier.rating))}</span>
+                      <span className="text-xs text-muted-foreground">({supplier.rating})</span>
                     </div>
                   </div>
 
                   {supplier.notes && (
-                    <div className="p-2 bg-muted rounded text-sm mb-3">
+                    <div className="p-2 bg-muted rounded text-xs sm:text-sm mb-3 line-clamp-3">
                       {supplier.notes}
                     </div>
                   )}
@@ -686,7 +696,7 @@ const SuppliersManagement = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleToggleStatus(supplier.id)}
-                      className="flex-1"
+                      className="flex-1 text-xs sm:text-sm"
                     >
                       {supplier.status === 'active' ? 'Désactiver' : 'Activer'}
                     </Button>
@@ -695,14 +705,14 @@ const SuppliersManagement = () => {
                       variant="outline"
                       onClick={() => handleEditSupplier(supplier)}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setDeletingSupplier(supplier.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -711,39 +721,39 @@ const SuppliersManagement = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="orders" className="space-y-4">
-          <div className="space-y-4">
+        <TabsContent value="orders" className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {orders.map(order => {
               const supplier = suppliers.find(s => s.id === order.supplierId);
               return (
                 <Card key={order.id} className="border-l-4 border-l-orange-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-medium">{supplier?.name}</h4>
-                        <p className="text-sm text-muted-foreground">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm sm:text-base truncate">{supplier?.name}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Commande #{order.id} • {new Date(order.date).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
-                      <Badge className={getOrderStatusColor(order.status)}>
+                      <Badge className={getOrderStatusColor(order.status) + " text-xs flex-shrink-0"}>
                         {order.status === 'delivered' ? 'Livré' : order.status === 'pending' ? 'En cours' : 'Annulé'}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                       <div>
-                        <span className="text-muted-foreground">Produits:</span>
-                        <p className="font-medium">{order.products}</p>
+                        <span className="text-muted-foreground block mb-0.5">Produits:</span>
+                        <p className="font-medium line-clamp-2">{order.products}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Quantité:</span>
+                        <span className="text-muted-foreground block mb-0.5">Quantité:</span>
                         <p className="font-medium">{order.quantity}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Montant:</span>
+                        <span className="text-muted-foreground block mb-0.5">Montant:</span>
                         <p className="font-medium">{order.amount.toLocaleString()} FCFA</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Livraison:</span>
+                        <span className="text-muted-foreground block mb-0.5">Livraison:</span>
                         <p className="font-medium">{new Date(order.deliveryDate).toLocaleDateString('fr-FR')}</p>
                       </div>
                     </div>

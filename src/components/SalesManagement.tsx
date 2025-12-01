@@ -442,74 +442,98 @@ const SalesManagement = () => {
       {/* Tabs pour les différentes fonctionnalités */}
       <Tabs defaultValue="history" className="space-y-3 sm:space-y-4">
         <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex w-full sm:w-auto min-w-full">
-            <TabsTrigger value="history" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Historique</TabsTrigger>
-            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Vue</TabsTrigger>
-            <TabsTrigger value="clients" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Clients</TabsTrigger>
-            <TabsTrigger value="invoices" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Factures</TabsTrigger>
-            <TabsTrigger value="templates" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Modèles</TabsTrigger>
-            <TabsTrigger value="products" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Produits</TabsTrigger>
+          <TabsList className="inline-flex w-full sm:w-auto min-w-full bg-muted">
+            <TabsTrigger value="history" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Historique</span>
+              <span className="sm:hidden">Hist.</span>
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Vue</span>
+              <span className="sm:hidden">Vue</span>
+            </TabsTrigger>
+            <TabsTrigger value="clients" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Clients</span>
+              <span className="sm:hidden">Cli.</span>
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Factures</span>
+              <span className="sm:hidden">Fact.</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Modèles</span>
+              <span className="sm:hidden">Mod.</span>
+            </TabsTrigger>
+            <TabsTrigger value="products" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Produits</span>
+              <span className="sm:hidden">Prod.</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
                 Historique Détaillé des Ventes
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 {sales.map(sale => (
-                  <div key={sale.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold">{sale.clientName}</h4>
-                        <p className="text-sm text-gray-600">
+                  <div key={sale.id} className="border rounded-lg p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm sm:text-base truncate">{sale.clientName}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {new Date(sale.date).toLocaleDateString('fr-FR')} - {sale.clientContact}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                         <Badge className={getStatusColor(sale.status)}>
                           {getStatusText(sale.status)}
                         </Badge>
-                        <p className="text-lg font-bold text-green-600 mt-1">
+                        <p className="text-base sm:text-lg font-bold text-green-600">
                           {formatCurrency(sale.totalAmount)}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded p-3 mb-3">
-                      <p className="text-sm font-medium mb-2">Produits vendus:</p>
+                    <div className="bg-muted rounded p-2 sm:p-3 mb-3">
+                      <p className="text-xs sm:text-sm font-medium mb-2">Produits vendus:</p>
                       {sale.products.map((product, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span>{product.name} x {product.quantity}</span>
-                          <span>{formatCurrency(product.total)}</span>
+                        <div key={idx} className="flex justify-between text-xs sm:text-sm gap-2">
+                          <span className="truncate">{product.name} x {product.quantity}</span>
+                          <span className="flex-shrink-0 font-medium">{formatCurrency(product.total)}</span>
                         </div>
                       ))}
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Unité:</span>
-                        <Badge variant="outline" className="ml-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Unité:</span>
+                        <Badge variant="outline" className="text-xs">
                           {units.find(u => u.id === sale.unitId)?.name}
                         </Badge>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Paiement:</span>
-                        <span className="ml-2 font-medium">{sale.paymentMethod}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Paiement:</span>
+                        <span className="font-medium">{sale.paymentMethod}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Réf:</span>
-                        <span className="ml-2 font-mono">{sale.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Réf:</span>
+                        <span className="font-mono">{sale.id}</span>
                       </div>
                     </div>
                     
                     {sale.notes && (
-                      <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                      <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs sm:text-sm">
                         <strong>Notes:</strong> {sale.notes}
                       </div>
                     )}
