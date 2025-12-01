@@ -232,27 +232,28 @@ const SalesManagement = () => {
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-xl text-white">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Gestion des Ventes</h2>
-              <p className="text-green-100">Suivi des ventes, clients et facturation par unité</p>
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 rounded-xl text-white">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2 truncate">Gestion des Ventes</h2>
+              <p className="text-sm sm:text-base text-green-100">Suivi des ventes, clients et facturation par unité</p>
             </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouvelle Vente
+                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base">
+                  <Plus className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nouvelle Vente</span>
+                  <span className="sm:hidden">Nouveau</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
-                  <DialogTitle>Créer une Nouvelle Vente</DialogTitle>
+                  <DialogTitle className="text-base sm:text-lg">Créer une Nouvelle Vente</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label>Nom du client</Label>
                       <Input 
@@ -289,69 +290,75 @@ const SalesManagement = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label>Produits</Label>
-                      <Button size="sm" variant="outline" onClick={addProduct}>
-                        <Plus className="w-4 h-4 mr-1" />
+                      <Label className="text-sm sm:text-base">Produits</Label>
+                      <Button size="sm" variant="outline" onClick={addProduct} className="text-xs sm:text-sm">
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Ajouter
                       </Button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:space-y-3">
                       {newSale.products.map((product, index) => (
-                        <div key={index} className="grid grid-cols-4 gap-2 p-2 border rounded">
+                        <div key={index} className="flex flex-col gap-2 p-2 sm:p-3 border rounded">
                           <Input 
                             placeholder="Produit"
                             value={product.name}
                             onChange={(e) => updateProduct(index, 'name', e.target.value)}
+                            className="text-sm sm:text-base"
                           />
-                          <Input 
-                            type="number"
-                            placeholder="Quantité"
-                            value={product.quantity || ''}
-                            onChange={(e) => updateProduct(index, 'quantity', parseInt(e.target.value) || 0)}
-                          />
-                          <Input 
-                            type="number"
-                            step="0.01"
-                            placeholder="Prix unitaire"
-                            value={product.unitPrice || ''}
-                            onChange={(e) => updateProduct(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          />
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium">
-                              {formatCurrency(product.quantity * product.unitPrice)}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input 
+                              type="number"
+                              placeholder="Quantité"
+                              value={product.quantity || ''}
+                              onChange={(e) => updateProduct(index, 'quantity', parseInt(e.target.value) || 0)}
+                              className="text-sm sm:text-base"
+                            />
+                            <Input 
+                              type="number"
+                              step="0.01"
+                              placeholder="Prix unitaire"
+                              value={product.unitPrice || ''}
+                              onChange={(e) => updateProduct(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                              className="text-sm sm:text-base"
+                            />
+                          </div>
+                          <div className="flex items-center justify-end">
+                            <span className="text-sm sm:text-base font-medium">
+                              Total: {formatCurrency(product.quantity * product.unitPrice)}
                             </span>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="text-right mt-2">
-                      <span className="text-lg font-bold">
+                    <div className="text-right mt-2 sm:mt-3 p-2 bg-muted rounded">
+                      <span className="text-base sm:text-lg font-bold">
                         Total: {formatCurrency(newSale.products.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0))}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label>Mode de paiement</Label>
+                      <Label className="text-sm sm:text-base">Mode de paiement</Label>
                       <Select value={newSale.paymentMethod} onValueChange={(value) => setNewSale(prev => ({ ...prev, paymentMethod: value }))}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-sm sm:text-base">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Espèces">Espèces</SelectItem>
-                          <SelectItem value="Virement">Virement</SelectItem>
-                          <SelectItem value="Carte">Carte bancaire</SelectItem>
-                          <SelectItem value="Chèque">Chèque</SelectItem>
+                          <SelectItem value="Espèces" className="text-sm sm:text-base">Espèces</SelectItem>
+                          <SelectItem value="Virement" className="text-sm sm:text-base">Virement</SelectItem>
+                          <SelectItem value="Carte" className="text-sm sm:text-base">Carte bancaire</SelectItem>
+                          <SelectItem value="Chèque" className="text-sm sm:text-base">Chèque</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>Notes</Label>
+                      <Label className="text-sm sm:text-base">Notes</Label>
                       <Input 
                         value={newSale.notes}
                         onChange={(e) => setNewSale(prev => ({ ...prev, notes: e.target.value }))}
                         placeholder="Notes additionnelles"
+                        className="text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -371,9 +378,9 @@ const SalesManagement = () => {
               </DialogContent>
             </Dialog>
             
-            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30" onClick={generateSalesReport}>
-              <Download className="w-4 h-4 mr-2" />
-              Rapport
+            <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base" onClick={generateSalesReport}>
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Rapport</span>
             </Button>
           </div>
           </div>
@@ -382,50 +389,50 @@ const SalesManagement = () => {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{formatCurrency(salesData.totalRevenue)}</p>
-                <p className="text-sm text-gray-600">Chiffre d'affaires</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base sm:text-2xl font-bold truncate">{formatCurrency(salesData.totalRevenue)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Chiffre d'affaires</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <ShoppingCart className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{salesData.totalOrders}</p>
-                <p className="text-sm text-gray-600">Commandes</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base sm:text-2xl font-bold truncate">{salesData.totalOrders}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Commandes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold">{salesData.totalClients}</p>
-                <p className="text-sm text-gray-600">Clients actifs</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base sm:text-2xl font-bold truncate">{salesData.totalClients}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Clients actifs</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-8 h-8 text-orange-600" />
-              <div>
-                <p className="text-2xl font-bold">{formatCurrency(salesData.avgOrderValue)}</p>
-                <p className="text-sm text-gray-600">Panier moyen</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-base sm:text-2xl font-bold truncate">{formatCurrency(salesData.avgOrderValue)}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Panier moyen</p>
               </div>
             </div>
           </CardContent>
@@ -433,15 +440,17 @@ const SalesManagement = () => {
       </div>
 
       {/* Tabs pour les différentes fonctionnalités */}
-      <Tabs defaultValue="history" className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="history">Historique</TabsTrigger>
-          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="invoices">Factures</TabsTrigger>
-          <TabsTrigger value="templates">Modèles</TabsTrigger>
-          <TabsTrigger value="products">Produits</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="history" className="space-y-3 sm:space-y-4">
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-full sm:w-auto min-w-full">
+            <TabsTrigger value="history" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Historique</TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Vue</TabsTrigger>
+            <TabsTrigger value="clients" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Clients</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Factures</TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Modèles</TabsTrigger>
+            <TabsTrigger value="products" className="text-xs sm:text-sm flex-1 sm:flex-none px-2 sm:px-3">Produits</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="history" className="space-y-4">
           <Card>
