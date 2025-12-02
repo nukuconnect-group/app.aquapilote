@@ -266,12 +266,13 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
           </Button>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
-              <Button className="text-sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Ajouter stock
+              <Button className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Ajouter stock</span>
+                <span className="sm:hidden">Ajouter</span>
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>{editingStock ? 'Modifier le stock' : 'Ajouter un nouveau stock'}</DialogTitle>
             </DialogHeader>

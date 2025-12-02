@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -290,12 +290,28 @@ const FeedingManagement = () => {
 
       {/* Onglets pour les détails */}
       <Tabs defaultValue="history" className="space-y-4">
-        <div className="overflow-x-auto">
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="history">Historique</TabsTrigger>
-            <TabsTrigger value="planning">Planification</TabsTrigger>
-            <TabsTrigger value="stock">Stock aliment</TabsTrigger>
-            <TabsTrigger value="analytics">Suivi graphique</TabsTrigger>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="w-full grid grid-cols-2 sm:inline-flex sm:w-auto gap-1">
+            <TabsTrigger value="history" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <History className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Historique</span>
+              <span className="sm:hidden">Hist.</span>
+            </TabsTrigger>
+            <TabsTrigger value="planning" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Planification</span>
+              <span className="sm:hidden">Plan.</span>
+            </TabsTrigger>
+            <TabsTrigger value="stock" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Stock aliment</span>
+              <span className="sm:hidden">Stock</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Suivi graphique</span>
+              <span className="sm:hidden">Graph.</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -316,22 +332,24 @@ const FeedingManagement = () => {
             <div className="space-y-2">
               {unitRecords.map((record) => (
                 <Card key={record.id}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start flex-wrap gap-2">
-                      <div className="flex-1">
-                        <p className="font-medium">{record.feed_type}</p>
-                        <p className="text-sm text-muted-foreground">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base truncate">{record.feed_type}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {record.date} - {record.time || 'N/A'}
                         </p>
-                        <p className="text-sm">Quantité: {record.quantity} kg</p>
-                        {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
+                        <p className="text-xs sm:text-sm">Quantité: {record.quantity} kg</p>
+                        {record.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{record.notes}</p>}
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handlePrintRecord(record)}>
-                          <Printer className="w-4 h-4" />
+                      <div className="flex gap-2 justify-end sm:justify-start flex-shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => handlePrintRecord(record)} className="h-8 px-2 sm:px-3">
+                          <Printer className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="ml-1 hidden sm:inline text-xs">Impr.</span>
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
-                          Supprimer
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)} className="h-8 px-2 sm:px-3 text-xs">
+                          <span className="sm:hidden">Suppr.</span>
+                          <span className="hidden sm:inline">Supprimer</span>
                         </Button>
                       </div>
                     </div>
