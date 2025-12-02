@@ -10,6 +10,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
+import farmBackground from '@/assets/aquaculture-cages-desktop.jpg';
 const IntelligentDashboard = () => {
   const {
     activeUnit,
@@ -167,15 +168,26 @@ const IntelligentDashboard = () => {
   } = getUnitSpecificData();
   if (!activeUnit && viewMode === 'unit') {
     return <div className="space-y-6">
-        {/* En-tête amélioré du tableau de bord */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-xl shadow-lg">
-          <div className="p-6 text-white">
+        {/* En-tête amélioré du tableau de bord avec image de ferme */}
+        <div className="relative rounded-xl shadow-lg overflow-hidden">
+          {/* Image de fond floutée */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src={farmBackground} 
+              alt="Ferme aquacole" 
+              className="w-full h-full object-cover blur-sm scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/85 via-blue-800/85 to-blue-900/85" />
+          </div>
+
+          {/* Contenu */}
+          <div className="relative z-10 p-6 text-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg">
                   <Fish className="w-8 h-8 text-white" />
                 </div>
-                 <div>
+                <div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
                     {t('intelligent_dashboard')}
                   </h1>
@@ -185,17 +197,18 @@ const IntelligentDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                <div className="text-left sm:text-right">
-                  <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                  <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20">
+                <Clock className="w-5 h-5 text-white/90" />
+                <div className="text-left">
+                  <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                  <p className="font-bold text-sm">{t('today')}, 14:30</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Sélecteur d'unité intégré dans l'en-tête */}
-          <div className="px-6 pb-6">
+          <div className="relative z-10 px-6 pb-6">
             <ProductionUnitSelector />
           </div>
         </div>
@@ -212,12 +225,25 @@ const IntelligentDashboard = () => {
       </div>;
   }
   return <div className="space-y-4 sm:space-y-6">
-      {/* En-tête amélioré du tableau de bord */}
-      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-xl shadow-lg">
-        <div className="p-6 text-white px-[18px] py-[18px]">
+      {/* En-tête amélioré du tableau de bord avec image de ferme */}
+      <div className="relative rounded-xl shadow-lg overflow-hidden">
+        {/* Image de fond floutée */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={farmBackground} 
+            alt="Ferme aquacole" 
+            className="w-full h-full object-cover blur-sm scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/85 via-blue-800/85 to-blue-900/85" />
+        </div>
+
+        {/* Contenu */}
+        <div className="relative z-10 p-6 text-white px-[18px] py-[18px]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-              
+              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg hidden sm:block">
+                <Fish className="w-8 h-8 text-white" />
+              </div>
               <div>
                 <h1 className="sm:text-3xl mb-2 tracking-tight text-xl font-extrabold">
                   {t('intelligent_dashboard')}
@@ -228,17 +254,18 @@ const IntelligentDashboard = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-              <div className="text-left sm:text-right">
-                <p className="text-xs sm:text-sm text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                <p className="font-bold text-sm sm:text-base">{t('today')}, 14:30</p>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20">
+              <Clock className="w-5 h-5 text-white/90" />
+              <div className="text-left">
+                <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                <p className="font-bold text-sm">{t('today')}, 14:30</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Sélecteur d'unité intégré dans l'en-tête */}
-        <div className="px-6 pb-6">
+        <div className="relative z-10 px-6 pb-6">
           <ProductionUnitSelector />
         </div>
       </div>
