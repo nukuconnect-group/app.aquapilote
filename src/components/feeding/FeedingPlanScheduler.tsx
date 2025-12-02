@@ -149,53 +149,55 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center flex-wrap gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">Planification des nourrissages</h3>
-          <p className="text-sm text-gray-600">Unité: {unitName}</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div className="min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold truncate">Planification des nourrissages</h3>
+          <p className="text-xs sm:text-sm text-gray-600 truncate">Unité: {unitName}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           {plans.length > 0 && (
             <>
-              <Button size="sm" variant="outline" onClick={handlePrint}>
-                <Printer className="w-4 h-4 mr-1" />
-                Imprimer
+              <Button size="sm" variant="outline" onClick={handlePrint} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Printer className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Imprimer</span>
               </Button>
             </>
           )}
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Nouveau planning
+            <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Nouveau planning</span>
+              <span className="sm:hidden">Nouveau</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>Nouveau planning de nourrissage</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">Nouveau planning de nourrissage</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="time">Heure</Label>
+                <Label htmlFor="time" className="text-xs sm:text-sm">Heure</Label>
                 <Input
                   id="time"
                   type="time"
                   value={formData.time}
                   onChange={(e) => setFormData({...formData, time: e.target.value})}
                   required
+                  className="text-xs sm:text-sm h-9 sm:h-10"
                 />
               </div>
 
               <div>
-                <Label htmlFor="feedType">Type d'aliment</Label>
+                <Label htmlFor="feedType" className="text-xs sm:text-sm">Type d'aliment</Label>
                 <Select value={formData.feedType} onValueChange={(value) => setFormData({...formData, feedType: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                     <SelectValue placeholder="Sélectionner un type" />
                   </SelectTrigger>
                   <SelectContent>
                     {feedTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                      <SelectItem key={type} value={type} className="text-xs sm:text-sm">{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -203,17 +205,17 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
 
               {cycleId && infrastructures.length > 0 && (
                 <div>
-                  <Label htmlFor="infrastructure">Infrastructure</Label>
+                  <Label htmlFor="infrastructure" className="text-xs sm:text-sm">Infrastructure</Label>
                   <Select 
                     value={formData.infrastructureId} 
                     onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                       <SelectValue placeholder="Sélectionner une infrastructure (optionnel)" />
                     </SelectTrigger>
                     <SelectContent>
                       {infrastructures.map((infra) => (
-                        <SelectItem key={infra.id} value={infra.id}>
+                        <SelectItem key={infra.id} value={infra.id} className="text-xs sm:text-sm">
                           {infra.infrastructure_name} ({infra.infrastructure_type})
                         </SelectItem>
                       ))}
@@ -222,9 +224,9 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <Label htmlFor="quantity">Quantité</Label>
+                  <Label htmlFor="quantity" className="text-xs sm:text-sm">Quantité</Label>
                   <Input
                     id="quantity"
                     type="number"
@@ -232,24 +234,25 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                     value={formData.quantity}
                     onChange={(e) => setFormData({...formData, quantity: e.target.value})}
                     required
+                    className="text-xs sm:text-sm h-9 sm:h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="unit">Unité</Label>
+                  <Label htmlFor="unit" className="text-xs sm:text-sm">Unité</Label>
                   <Select value={formData.unit} onValueChange={(value) => setFormData({...formData, unit: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="kg" className="text-xs sm:text-sm">kg</SelectItem>
+                      <SelectItem value="g" className="text-xs sm:text-sm">g</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div>
-                <Label>Jours de la semaine</Label>
+                <Label className="text-xs sm:text-sm">Jours de la semaine</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {weekDays.map((day) => (
                     <div key={day.key} className="flex items-center space-x-2">
@@ -258,27 +261,28 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                         checked={formData.days.includes(day.key)}
                         onCheckedChange={() => toggleDay(day.key)}
                       />
-                      <Label htmlFor={day.key} className="text-sm">{day.label}</Label>
+                      <Label htmlFor={day.key} className="text-xs sm:text-sm">{day.label}</Label>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes" className="text-xs sm:text-sm">Notes</Label>
                 <Input
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   placeholder="Notes sur ce planning..."
+                  className="text-xs sm:text-sm h-9 sm:h-10"
                 />
               </div>
 
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
+                <Button type="submit" className="flex-1 h-9 sm:h-10 text-xs sm:text-sm">
                   Créer planning
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="h-9 sm:h-10 text-xs sm:text-sm">
                   Annuler
                 </Button>
               </div>
@@ -290,13 +294,13 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
 
       {nextFeeding && (
         <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Bell className="w-4 h-4 text-orange-600" />
-              <h4 className="font-medium text-orange-800">Prochain nourrissage</h4>
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 flex-shrink-0" />
+              <h4 className="font-medium text-orange-800 text-xs sm:text-sm">Prochain nourrissage</h4>
             </div>
-            <div className="text-sm">
-              <p className="font-medium">{nextFeeding.time} - {nextFeeding.feed_type}</p>
+            <div className="text-xs sm:text-sm">
+              <p className="font-medium truncate">{nextFeeding.time} - {nextFeeding.feed_type}</p>
               <p className="text-orange-700">{nextFeeding.quantity} {nextFeeding.unit}</p>
             </div>
           </CardContent>
@@ -311,33 +315,33 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
         </Card>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {plans.map((plan) => (
           <Card key={plan.id}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <h4 className="font-medium">{plan.time}</h4>
-                    <Badge variant={plan.is_active ? "default" : "secondary"}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
+                    <h4 className="font-medium text-sm sm:text-base">{plan.time}</h4>
+                    <Badge variant={plan.is_active ? "default" : "secondary"} className="text-xs">
                       {plan.is_active ? "Actif" : "Inactif"}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{plan.feed_type}</p>
-                  <p className="text-sm font-medium mb-2">{plan.quantity} {plan.unit}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">{plan.feed_type}</p>
+                  <p className="text-xs sm:text-sm font-medium mb-2">{plan.quantity} {plan.unit}</p>
                   <div className="flex flex-wrap gap-1 mb-2">
                     {plan.days.map((day) => (
-                      <Badge key={day} variant="outline" className="text-xs">
+                      <Badge key={day} variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2">
                         {day.charAt(0).toUpperCase() + day.slice(1, 3)}
                       </Badge>
                     ))}
                   </div>
                   {plan.notes && (
-                    <p className="text-xs text-gray-500">{plan.notes}</p>
+                    <p className="text-xs text-gray-500 line-clamp-2">{plan.notes}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-end sm:justify-start flex-shrink-0">
                   <Switch
                     checked={plan.is_active}
                     onCheckedChange={() => togglePlanStatus(plan.id)}
@@ -346,9 +350,9 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                     size="sm" 
                     variant="ghost" 
                     onClick={() => handleDeletePlan(plan.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>

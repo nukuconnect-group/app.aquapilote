@@ -126,57 +126,60 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
           Nouvelle fiche alimentation
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">
             Fiche d'alimentation - {unitName}
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date" className="text-xs sm:text-sm">Date</Label>
               <Input
                 id="date"
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
                 required
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
             <div>
-              <Label htmlFor="time">Heure</Label>
+              <Label htmlFor="time" className="text-xs sm:text-sm">Heure</Label>
               <Input
                 id="time"
                 type="time"
                 value={formData.time}
                 onChange={(e) => setFormData({...formData, time: e.target.value})}
                 required
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="feederName">Nom de la personne</Label>
+            <Label htmlFor="feederName" className="text-xs sm:text-sm">Nom de la personne</Label>
             <Input
               id="feederName"
               value={formData.feederName}
               onChange={(e) => setFormData({...formData, feederName: e.target.value})}
               placeholder="Nom de la personne qui nourrit"
               required
+              className="text-xs sm:text-sm h-9 sm:h-10"
             />
           </div>
 
           <div>
-            <Label htmlFor="feedType">Type d'aliment</Label>
+            <Label htmlFor="feedType" className="text-xs sm:text-sm">Type d'aliment</Label>
             <Select onValueChange={(value) => setFormData({...formData, feedType: value})}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                 <SelectValue placeholder="Sélectionner un type d'aliment" />
               </SelectTrigger>
               <SelectContent>
                 {feedTypes.map((type) => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                  <SelectItem key={type} value={type} className="text-xs sm:text-sm">{type}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -184,17 +187,17 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
 
           {cycleId && infrastructures.length > 0 && (
             <div>
-              <Label htmlFor="infrastructure">Infrastructure</Label>
+              <Label htmlFor="infrastructure" className="text-xs sm:text-sm">Infrastructure</Label>
               <Select 
                 value={formData.infrastructureId} 
                 onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                   <SelectValue placeholder="Sélectionner une infrastructure (optionnel)" />
                 </SelectTrigger>
                 <SelectContent>
                   {infrastructures.map((infra) => (
-                    <SelectItem key={infra.id} value={infra.id}>
+                    <SelectItem key={infra.id} value={infra.id} className="text-xs sm:text-sm">
                       {infra.infrastructure_name} ({infra.infrastructure_type})
                     </SelectItem>
                   ))}
@@ -203,9 +206,9 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="prescribedQuantity">Quantité prescrite</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="col-span-2 sm:col-span-1">
+              <Label htmlFor="prescribedQuantity" className="text-xs sm:text-sm">Qté prescrite</Label>
               <Input
                 id="prescribedQuantity"
                 type="number"
@@ -213,10 +216,11 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
                 value={formData.prescribedQuantity}
                 onChange={(e) => setFormData({...formData, prescribedQuantity: e.target.value})}
                 required
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="actualQuantity">Quantité servie</Label>
+            <div className="col-span-2 sm:col-span-1">
+              <Label htmlFor="actualQuantity" className="text-xs sm:text-sm">Qté servie</Label>
               <Input
                 id="actualQuantity"
                 type="number"
@@ -224,18 +228,19 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
                 value={formData.actualQuantity}
                 onChange={(e) => setFormData({...formData, actualQuantity: e.target.value})}
                 required
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="unit">Unité</Label>
+            <div className="col-span-2 sm:col-span-1">
+              <Label htmlFor="unit" className="text-xs sm:text-sm">Unité</Label>
               <Select value={formData.unit} onValueChange={(value) => setFormData({...formData, unit: value})}>
-                <SelectTrigger>
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kg">kg</SelectItem>
-                  <SelectItem value="g">g</SelectItem>
-                  <SelectItem value="l">l</SelectItem>
+                  <SelectItem value="kg" className="text-xs sm:text-sm">kg</SelectItem>
+                  <SelectItem value="g" className="text-xs sm:text-sm">g</SelectItem>
+                  <SelectItem value="l" className="text-xs sm:text-sm">l</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -243,10 +248,10 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
 
           {/* Calcul automatique de la quantité restante */}
           {(formData.prescribedQuantity && formData.actualQuantity) && (
-            <Card className={`p-3 ${hasRemainingFood ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'}`}>
+            <Card className={`p-2 sm:p-3 ${hasRemainingFood ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'}`}>
               <div className="flex items-center gap-2">
-                <Calculator className="w-4 h-4" />
-                <span className="text-sm font-medium">
+                <Calculator className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium">
                   Quantité restante: {remainingQuantity.toFixed(1)} {formData.unit}
                 </span>
               </div>
@@ -255,59 +260,61 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
 
           {/* Alerte si de la nourriture reste */}
           {hasRemainingFood && (
-            <Alert className="border-orange-200 bg-orange-50">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
+            <Alert className="border-orange-200 bg-orange-50 p-3">
+              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800 text-xs sm:text-sm">
                 Il reste de la nourriture non consommée. Veuillez décrire l'état des poissons.
               </AlertDescription>
             </Alert>
           )}
 
           <div>
-            <Label htmlFor="fishBehavior">Comportement des poissons</Label>
+            <Label htmlFor="fishBehavior" className="text-xs sm:text-sm">Comportement des poissons</Label>
             <Select 
               value={formData.fishBehavior} 
               onValueChange={(value) => setFormData({...formData, fishBehavior: value})}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                 <SelectValue placeholder="Sélectionner le comportement observé" />
               </SelectTrigger>
               <SelectContent>
                 {fishBehaviors.map((behavior) => (
-                  <SelectItem key={behavior} value={behavior}>{behavior}</SelectItem>
+                  <SelectItem key={behavior} value={behavior} className="text-xs sm:text-sm">{behavior}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="temperature">Température de l'eau (°C)</Label>
+            <Label htmlFor="temperature" className="text-xs sm:text-sm">Température de l'eau (°C)</Label>
             <Input
               id="temperature"
               type="number"
               step="0.1"
               value={formData.temperature}
               onChange={(e) => setFormData({...formData, temperature: e.target.value})}
+              className="text-xs sm:text-sm h-9 sm:h-10"
             />
           </div>
 
           <div>
-            <Label htmlFor="notes">Notes et observations</Label>
+            <Label htmlFor="notes" className="text-xs sm:text-sm">Notes et observations</Label>
             <Textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
               placeholder="Conditions particulières, observations spéciales..."
               rows={3}
+              className="text-xs sm:text-sm"
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">
-              <Save className="w-4 h-4 mr-2" />
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
+            <Button type="submit" className="flex-1 h-9 sm:h-10 text-xs sm:text-sm">
+              <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               Enregistrer
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="h-9 sm:h-10 text-xs sm:text-sm">
               Annuler
             </Button>
           </div>
