@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -97,11 +98,24 @@ const AquaAssistant = () => {
     let assistantContent = '';
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aqua-assistant`, {
+      // Get the current session for authenticated requests
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Connexion requise",
+          description: "Tu dois être connecté pour utiliser l'assistant.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/aqua-assistant', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ 
           messages: newMessages.map(m => ({ role: m.role, content: m.content }))

@@ -4,7 +4,7 @@ project_id = "hhsvraqchtqqgaezhnzn"
 verify_jwt = true
 
 [functions.aqua-assistant]
-verify_jwt = false
+verify_jwt = true
 
 [functions.aquapilote-recommendation]
 verify_jwt = true
