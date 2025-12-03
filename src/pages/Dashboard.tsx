@@ -26,6 +26,7 @@ import WeatherDashboard from '@/components/WeatherDashboard';
 import TeamManagement from '@/components/TeamManagement';
 import ReportsManagement from '@/components/ReportsManagement';
 import SettingsManagement from '@/components/SettingsManagement';
+import AquaAssistant from '@/components/AquaAssistant';
 
 /**
  * Page principale du dashboard
@@ -130,6 +131,9 @@ const Dashboard: React.FC = () => {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
+
+        {/* Assistant IA AquaAssistant */}
+        <AquaAssistant />
       </div>
     </SidebarProvider>
   );
