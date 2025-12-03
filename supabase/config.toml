@@ -3,6 +3,9 @@ project_id = "hhsvraqchtqqgaezhnzn"
 [functions.admin-create-user]
 verify_jwt = true
 
+[functions.aqua-assistant]
+verify_jwt = false
+
 [functions.aquapilote-recommendation]
 verify_jwt = true
 
