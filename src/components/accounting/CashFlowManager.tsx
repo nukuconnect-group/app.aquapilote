@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CreditCard, Plus, AlertTriangle, Calendar, Eye, Edit, Trash2, Download } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { useLogs } from '@/contexts/LogsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface BankAccount {
   id: string;
@@ -35,6 +36,7 @@ interface Invoice {
 
 const CashFlowManager = () => {
   const { addLog } = useLogs();
+  const { formatCurrency, t } = useSettings();
 
   const [accounts, setAccounts] = useState<BankAccount[]>([
     { id: '1', name: 'Compte courant principal', type: 'checking', balance: 15420, currency: 'EUR' },
@@ -191,8 +193,8 @@ const CashFlowManager = () => {
             <div className="flex items-center justify-between mb-2">
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-2xl font-bold">€{totalBalance.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Trésorerie totale</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalBalance)}</p>
+            <p className="text-sm text-gray-600">{t('totalCash') || 'Trésorerie totale'}</p>
           </CardContent>
         </Card>
         
@@ -201,8 +203,8 @@ const CashFlowManager = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="h-5 w-5 bg-green-600 rounded-full" />
             </div>
-            <p className="text-2xl font-bold text-green-600">€{totalReceivables.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">À recevoir</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalReceivables)}</p>
+            <p className="text-sm text-gray-600">{t('toReceive') || 'À recevoir'}</p>
           </CardContent>
         </Card>
         
@@ -211,8 +213,8 @@ const CashFlowManager = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="h-5 w-5 bg-red-600 rounded-full" />
             </div>
-            <p className="text-2xl font-bold text-red-600">€{totalPayables.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">À payer</p>
+            <p className="text-2xl font-bold text-red-600">{formatCurrency(totalPayables)}</p>
+            <p className="text-sm text-gray-600">{t('toPay') || 'À payer'}</p>
           </CardContent>
         </Card>
         
@@ -222,7 +224,7 @@ const CashFlowManager = () => {
               <AlertTriangle className="h-5 w-5 text-orange-600" />
             </div>
             <p className="text-2xl font-bold text-orange-600">{overdueInvoices.length}</p>
-            <p className="text-sm text-gray-600">En retard</p>
+            <p className="text-sm text-gray-600">{t('overdue')}</p>
           </CardContent>
         </Card>
       </div>
@@ -258,7 +260,7 @@ const CashFlowManager = () => {
                     </Button>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">€{account.balance.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
                     <p className="text-sm text-gray-500">{account.currency}</p>
                   </div>
                 </CardContent>
@@ -295,7 +297,7 @@ const CashFlowManager = () => {
                       </p>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="text-lg font-bold">€{invoice.amount.toLocaleString()}</span>
+                      <span className="text-lg font-bold">{formatCurrency(invoice.amount)}</span>
                       <div className="flex space-x-1">
                         {invoice.status === 'pending' && (
                           <Button
@@ -377,8 +379,8 @@ const CashFlowManager = () => {
                           <p className="text-sm text-gray-600">{invoice.client || invoice.supplier}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-red-600">€{invoice.amount.toLocaleString()}</p>
-                          <p className="text-sm text-red-500">Échéance: {invoice.dueDate}</p>
+                          <p className="font-bold text-red-600">{formatCurrency(invoice.amount)}</p>
+                          <p className="text-sm text-red-500">{t('dueDate')}: {invoice.dueDate}</p>
                         </div>
                       </div>
                     ))}
@@ -397,7 +399,7 @@ const CashFlowManager = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-orange-700">
-                    Votre trésorerie actuelle (€{totalBalance.toLocaleString()}) est inférieure au seuil recommandé de €5,000.
+                    {t('lowCashWarning') || `Votre trésorerie actuelle (${formatCurrency(totalBalance)}) est inférieure au seuil recommandé de ${formatCurrency(5000)}.`}
                   </p>
                 </CardContent>
               </Card>

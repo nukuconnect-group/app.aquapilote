@@ -12,6 +12,7 @@ import { Users, Plus, Edit, Phone, Mail, MapPin, ShoppingCart, AlertCircle } fro
 import { clientSchema, ClientInput } from '@/lib/validationSchemas';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Client {
   id: string;
@@ -40,6 +41,7 @@ interface Order {
 
 const ClientManager = () => {
   const { toast } = useToast();
+  const { formatCurrency, t } = useSettings();
   const [clients, setClients] = useState<Client[]>([
     {
       id: '1',
@@ -162,13 +164,13 @@ const ClientManager = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'active': return 'Actif';
-      case 'potential': return 'Potentiel';
-      case 'inactive': return 'Inactif';
-      case 'pending': return 'En attente';
-      case 'processing': return 'En cours';
-      case 'delivered': return 'Livré';
-      case 'cancelled': return 'Annulé';
+      case 'active': return t('active');
+      case 'potential': return t('potential') || 'Potentiel';
+      case 'inactive': return t('inactive');
+      case 'pending': return t('pending');
+      case 'processing': return t('processing') || 'En cours';
+      case 'delivered': return t('delivered') || 'Livré';
+      case 'cancelled': return t('cancelled') || 'Annulé';
       default: return status;
     }
   };
@@ -178,11 +180,11 @@ const ClientManager = () => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Users className="w-5 h-5 text-blue-600" />
-          Gestion des Clients
+          {t('clientManagement') || 'Gestion des Clients'}
         </h3>
         <Button onClick={() => setShowAddClient(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Nouveau Client
+          {t('newClient') || 'Nouveau Client'}
         </Button>
       </div>
 
@@ -315,10 +317,10 @@ const ClientManager = () => {
                         </div>
                       </div>
                       <div className="flex gap-4 mt-2 text-sm">
-                        <span>Commandes: <strong>{client.totalOrders}</strong></span>
-                        <span>CA total: <strong>€{client.totalRevenue.toLocaleString()}</strong></span>
+                        <span>{t('orders') || 'Commandes'}: <strong>{client.totalOrders}</strong></span>
+                        <span>{t('totalRevenue') || 'CA total'}: <strong>{formatCurrency(client.totalRevenue)}</strong></span>
                         {client.lastOrder && (
-                          <span>Dernière commande: <strong>{client.lastOrder}</strong></span>
+                          <span>{t('lastOrder') || 'Dernière commande'}: <strong>{client.lastOrder}</strong></span>
                         )}
                       </div>
                     </div>
@@ -359,7 +361,7 @@ const ClientManager = () => {
                       <TableCell className="font-medium">{order.clientName}</TableCell>
                       <TableCell>{order.productType}</TableCell>
                       <TableCell>{order.quantity}</TableCell>
-                      <TableCell>€{order.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)}>
                           {getStatusLabel(order.status)}

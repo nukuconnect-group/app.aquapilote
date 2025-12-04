@@ -23,7 +23,7 @@ interface AccountingDashboardProps {
 }
 
 const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) => {
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, t } = useSettings();
   const profitMargin = unitData.revenue > 0 ? (unitData.profit / unitData.revenue * 100).toFixed(1) : '0';
   
   const expenseCategories = [
@@ -157,11 +157,11 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
           <CardContent>
             <div className="space-y-3">
               <div className="text-sm">
-                <p className="font-medium">Prochaines échéances :</p>
+                <p className="font-medium">{t('upcomingDueDates') || 'Prochaines échéances'} :</p>
                 <ul className="mt-2 space-y-1 text-gray-600">
-                  <li>• Salaires : 28/01 (€3,200)</li>
-                  <li>• Fournisseur Biomar : 30/01 (€800)</li>
-                  <li>• Assurance : 15/02 (€450)</li>
+                  <li>• {t('salaries') || 'Salaires'} : 28/01 ({formatCurrency(3200)})</li>
+                  <li>• {t('supplierBiomar') || 'Fournisseur Biomar'} : 30/01 ({formatCurrency(800)})</li>
+                  <li>• {t('insurance') || 'Assurance'} : 15/02 ({formatCurrency(450)})</li>
                 </ul>
               </div>
             </div>

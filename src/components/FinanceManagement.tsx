@@ -23,8 +23,10 @@ import {
   Trash2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const FinanceManagement = () => {
+  const { formatCurrency, t } = useSettings();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [budgets, setBudgets] = useState([
     { id: 1, category: 'Alimentation', budget: 5000, spent: 4200, percentage: 84 },
@@ -58,10 +60,10 @@ const FinanceManagement = () => {
   ];
 
   const kpis = [
-    { title: 'Chiffre d\'Affaires', value: '€22,000', change: '+12%', trend: 'up', icon: DollarSign },
-    { title: 'Charges', value: '€13,000', change: '+5%', trend: 'up', icon: CreditCard },
-    { title: 'Bénéfice Net', value: '€9,000', change: '+28%', trend: 'up', icon: TrendingUp },
-    { title: 'Marge Brute', value: '40.9%', change: '+2.1%', trend: 'up', icon: Target }
+    { title: t('revenue'), value: formatCurrency(22000), change: '+12%', trend: 'up', icon: DollarSign },
+    { title: t('expenses'), value: formatCurrency(13000), change: '+5%', trend: 'up', icon: CreditCard },
+    { title: t('netProfit'), value: formatCurrency(9000), change: '+28%', trend: 'up', icon: TrendingUp },
+    { title: t('profitMargin'), value: '40.9%', change: '+2.1%', trend: 'up', icon: Target }
   ];
 
   return (
@@ -187,7 +189,7 @@ const FinanceManagement = () => {
                     <span className={`text-sm font-bold ${
                       transaction.type === 'revenue' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.type === 'revenue' ? '+' : ''}{transaction.amount}€
+                      {transaction.type === 'revenue' ? '+' : ''}{formatCurrency(Math.abs(transaction.amount))}
                     </span>
                   </div>
                 ))}
@@ -198,10 +200,10 @@ const FinanceManagement = () => {
 
         <TabsContent value="budget" className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <h3 className="text-lg font-semibold">Gestion des Budgets</h3>
+            <h3 className="text-lg font-semibold">{t('budget') || 'Gestion des Budgets'}</h3>
             <Button size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              Nouveau Budget
+              {t('add')}
             </Button>
           </div>
 
@@ -214,12 +216,12 @@ const FinanceManagement = () => {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium">{budget.category}</h4>
                         <span className="text-sm text-gray-600">
-                          {budget.spent}€ / {budget.budget}€
+                          {formatCurrency(budget.spent)} / {formatCurrency(budget.budget)}
                         </span>
                       </div>
                       <Progress value={budget.percentage} className="mb-2" />
                       <p className="text-xs text-gray-500">
-                        {budget.percentage}% utilisé • Reste: {budget.budget - budget.spent}€
+                        {budget.percentage}% {t('used') || 'utilisé'} • {t('remaining') || 'Reste'}: {formatCurrency(budget.budget - budget.spent)}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -267,7 +269,7 @@ const FinanceManagement = () => {
                       <span className={`font-bold ${
                         transaction.type === 'revenue' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {transaction.type === 'revenue' ? '+' : ''}{transaction.amount}€
+                        {transaction.type === 'revenue' ? '+' : ''}{formatCurrency(Math.abs(transaction.amount))}
                       </span>
                       <Button variant="outline" size="sm">
                         <Edit className="w-4 h-4" />
