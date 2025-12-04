@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale } from 'lucide-react';
+import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
 import farmBackground from '@/assets/aquaculture-cages-desktop.jpg';
+
+const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
 const IntelligentDashboard = () => {
   const {
     activeUnit,
@@ -25,12 +28,61 @@ const IntelligentDashboard = () => {
     t
   } = useSettings();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
   const unitEquipment = activeUnit ? getUnitEquipment(activeUnit.id) : [];
   const unitCycles = activeUnit ? getUnitCycles(activeUnit.id) : [];
   const unitFinancialData = activeUnit ? getUnitFinancialData(activeUnit.id) : null;
   const globalFinancialData = getGlobalFinancialData();
   const currentFinancialData = viewMode === 'global' ? globalFinancialData : unitFinancialData;
+
+  // Synchroniser l'heure de dernière mise à jour
+  useEffect(() => {
+    setLastUpdate(new Date());
+  }, [activeUnit, viewMode]);
+
+  const formatLastUpdate = () => {
+    const now = new Date();
+    const today = now.toDateString() === lastUpdate.toDateString();
+    const hours = lastUpdate.getHours().toString().padStart(2, '0');
+    const minutes = lastUpdate.getMinutes().toString().padStart(2, '0');
+    return today ? `Aujourd'hui, ${hours}:${minutes}` : `${lastUpdate.toLocaleDateString('fr-FR')}, ${hours}:${minutes}`;
+  };
+
+  // Données pour les graphiques supplémentaires
+  const feedingChartData = [
+    { jour: 'Lun', quantite: 45, cout: 15000 },
+    { jour: 'Mar', quantite: 52, cout: 17000 },
+    { jour: 'Mer', quantite: 48, cout: 16000 },
+    { jour: 'Jeu', quantite: 55, cout: 18500 },
+    { jour: 'Ven', quantite: 50, cout: 16500 },
+    { jour: 'Sam', quantite: 42, cout: 14000 },
+    { jour: 'Dim', quantite: 38, cout: 12500 },
+  ];
+
+  const mortalityData = [
+    { semaine: 'S1', mortalite: 12, objectif: 15 },
+    { semaine: 'S2', mortalite: 8, objectif: 15 },
+    { semaine: 'S3', mortalite: 15, objectif: 15 },
+    { semaine: 'S4', mortalite: 5, objectif: 15 },
+  ];
+
+  const waterQualityData = [
+    { heure: '06h', temperature: 24, ph: 7.2, oxygene: 6.5 },
+    { heure: '09h', temperature: 25, ph: 7.3, oxygene: 6.8 },
+    { heure: '12h', temperature: 27, ph: 7.4, oxygene: 7.0 },
+    { heure: '15h', temperature: 28, ph: 7.3, oxygene: 6.9 },
+    { heure: '18h', temperature: 26, ph: 7.2, oxygene: 6.7 },
+    { heure: '21h', temperature: 25, ph: 7.1, oxygene: 6.4 },
+  ];
+
+  const productionBySpecies = [
+    { name: 'Tilapia', value: 45 },
+    { name: 'Clarias', value: 30 },
+    { name: 'Carpe', value: 15 },
+    { name: 'Autres', value: 10 },
+  ];
   const getUnitSpecificData = () => {
     if (!activeUnit) return {
       metrics: [],
@@ -197,13 +249,13 @@ const IntelligentDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20">
-                <Clock className="w-5 h-5 text-white/90" />
-                <div className="text-left">
-                  <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                  <p className="font-bold text-sm">{t('today')}, 14:30</p>
-                </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20">
+              <Clock className="w-5 h-5 text-white/90" />
+              <div className="text-left">
+                <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                <p className="font-bold text-sm">{formatLastUpdate()}</p>
               </div>
+            </div>
             </div>
           </div>
 
@@ -258,7 +310,7 @@ const IntelligentDashboard = () => {
               <Clock className="w-5 h-5 text-white/90" />
               <div className="text-left">
                 <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                <p className="font-bold text-sm">{t('today')}, 14:30</p>
+                <p className="font-bold text-sm">{formatLastUpdate()}</p>
               </div>
             </div>
           </div>
@@ -391,7 +443,8 @@ const IntelligentDashboard = () => {
       {/* Données financières */}
       {currentFinancialData && <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
               Évolution Financière - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
             </CardTitle>
           </CardHeader>
@@ -408,6 +461,106 @@ const IntelligentDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>}
+
+      {/* Graphiques supplémentaires liés aux modules */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Graphique Alimentation */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <UtensilsCrossed className="h-4 w-4 text-orange-600" />
+              Alimentation - Semaine
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={feedingChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="jour" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip />
+                <Bar dataKey="quantite" fill="#f97316" name="Quantité (kg)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Graphique Qualité de l'eau */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Droplets className="h-4 w-4 text-blue-600" />
+              Qualité de l'Eau - Aujourd'hui
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={waterQualityData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="heure" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip />
+                <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name="Temp (°C)" />
+                <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name="O₂ (mg/L)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Graphique Mortalité */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-red-600" />
+              Mortalité - 4 Dernières Semaines
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={mortalityData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="semaine" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip />
+                <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="objectif" fill="#d1d5db" name="Objectif max" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Graphique Production par espèce */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Fish className="h-4 w-4 text-aqua-600" />
+              Production par Espèce
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={productionBySpecies}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {productionBySpecies.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Onglets pour données spécifiques à l'unité */}
       {viewMode === 'unit' && activeUnit && <Tabs defaultValue="cycles" className="space-y-4">

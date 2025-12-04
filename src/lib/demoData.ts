@@ -57,28 +57,28 @@ export const generateDemoProductionUnits = (): DemoProductionUnit[] => {
   return [
     {
       id: 'demo-unit-1',
-      name: 'Bassin Principal A',
+      name: 'Ferme Koumba Diallo',
       type: 'Bassin d\'élevage',
       capacity: 50000,
       status: 'active'
     },
     {
       id: 'demo-unit-2',
-      name: 'Étang B',
+      name: 'Étang Mamadou Traoré',
       type: 'Étang',
       capacity: 30000,
       status: 'active'
     },
     {
       id: 'demo-unit-3',
-      name: 'Nurserie C',
+      name: 'Nurserie Fatou Sow',
       type: 'Nurserie',
       capacity: 20000,
       status: 'active'
     },
     {
       id: 'demo-unit-4',
-      name: 'Cage Marine D',
+      name: 'Cage Ibrahima Ndiaye',
       type: 'Cage en mer',
       capacity: 40000,
       status: 'maintenance'
@@ -101,7 +101,7 @@ export const generateDemoProductionCycles = (units: DemoProductionUnit[]): DemoP
       unitId: units[0].id,
       unitName: units[0].name,
       unitType: units[0].type,
-      name: 'Cycle Tilapia 2024-Q1',
+      name: 'Cycle Tilapia Koumba',
       startDate: threeMonthsAgo.toISOString().split('T')[0],
       endDate: null,
       status: 'active',
@@ -115,21 +115,21 @@ export const generateDemoProductionCycles = (units: DemoProductionUnit[]): DemoP
       unitId: units[1].id,
       unitName: units[1].name,
       unitType: units[1].type,
-      name: 'Cycle Carpe 2024',
+      name: 'Cycle Clarias Mamadou',
       startDate: oneMonthAgo.toISOString().split('T')[0],
       endDate: null,
       status: 'active',
       initialQuantity: 3000,
       currentQuantity: 2950,
       targetQuantity: 2500,
-      species: 'Carpe commune'
+      species: 'Clarias (Silure africain)'
     },
     {
       id: 'demo-cycle-3',
       unitId: units[2].id,
       unitName: units[2].name,
       unitType: units[2].type,
-      name: 'Alevinage Printemps 2024',
+      name: 'Alevinage Fatou 2024',
       startDate: now.toISOString().split('T')[0],
       endDate: twoMonthsFromNow.toISOString().split('T')[0],
       status: 'planned',
