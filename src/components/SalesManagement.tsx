@@ -39,7 +39,7 @@ interface Sale {
 const SalesManagement = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, t, currency } = useSettings();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
@@ -201,21 +201,23 @@ const SalesManagement = () => {
       }))
     };
 
+    const currencySymbol = currency === 'XOF' ? 'CFA' : currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+    
     const csvContent = [
       ['Rapport de Ventes - ' + reportData.period],
       [''],
       ['Résumé Global'],
-      ['Chiffre d\'affaires total', reportData.revenue + '€'],
+      ['Chiffre d\'affaires total', reportData.revenue + ' ' + currencySymbol],
       ['Nombre de commandes', reportData.orders],
       ['Nombre de clients', reportData.clients],
       [''],
       ['Produits les plus vendus'],
       ['Produit', 'Quantité', 'Chiffre d\'affaires'],
-      ...reportData.products.map(p => [p.name, p.quantity, p.revenue + '€']),
+      ...reportData.products.map(p => [p.name, p.quantity, p.revenue + ' ' + currencySymbol]),
       [''],
       ['Ventes par unité'],
       ['Unité', 'Type', 'Chiffre d\'affaires'],
-      ...reportData.units.map(u => [u.name, u.type, u.revenue + '€'])
+      ...reportData.units.map(u => [u.name, u.type, u.revenue + ' ' + currencySymbol])
     ].map(row => Array.isArray(row) ? row.join(',') : row).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

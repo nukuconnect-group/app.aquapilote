@@ -10,6 +10,7 @@ import { Eye, EyeOff, Building, Users, Fish, Loader2, UserPlus, ChevronLeft, Che
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useSettings } from '@/contexts/SettingsContext';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 interface EnhancedRegistrationProps {
@@ -72,6 +73,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   const {
     toast
   } = useToast();
+  const { formatCurrency, t } = useSettings();
   const productionUnitOptions = ['Écloserie', 'Grossissement', 'Pré-grossissement', 'Nurserie', 'Reproduction', 'Quarantaine'];
   const sectorOptions = ['Pisciculture d\'eau douce', 'Aquaculture marine', 'Conchyliculture', 'Algaculture', 'Aquaponie', 'Autre'];
   const handleInputChange = (field: keyof FormData, value: string | boolean | string[]) => {
@@ -199,13 +201,13 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   const getPlanName = (planId: string) => {
     switch (planId) {
       case 'trial':
-        return 'Essai Gratuit (30 jours)';
+        return t('trialPlan') || 'Essai Gratuit (30 jours)';
       case 'monthly':
-        return 'Plan Mensuel (29€/mois)';
+        return `${t('monthlyPlan') || 'Plan Mensuel'} (${formatCurrency(29)}/${t('month') || 'mois'})`;
       case 'annual':
-        return 'Plan Annuel (290€/an)';
+        return `${t('annualPlan') || 'Plan Annuel'} (${formatCurrency(290)}/${t('year') || 'an'})`;
       default:
-        return 'Plan non sélectionné';
+        return t('noPlanSelected') || 'Plan non sélectionné';
     }
   };
   return <Dialog open={true} onOpenChange={onClose}>
