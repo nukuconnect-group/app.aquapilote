@@ -615,6 +615,107 @@ export type Database = {
         }
         Relationships: []
       }
+      reproduction_records: {
+        Row: {
+          broodstock_batch_id: string | null
+          broodstock_female_count: number | null
+          broodstock_male_count: number | null
+          created_at: string | null
+          egg_count: number | null
+          fertilization_rate: number | null
+          fry_count: number | null
+          hatching_date: string | null
+          hatching_rate: number | null
+          hormone_dose: number | null
+          hormone_used: string | null
+          id: string
+          incubation_start_date: string | null
+          incubation_temperature: number | null
+          larvae_count: number | null
+          larvae_transfer_date: string | null
+          notes: string | null
+          reproduction_date: string
+          reproduction_method: string
+          spawning_date: string | null
+          spawning_rate: number | null
+          species: string
+          status: string
+          survival_rate: number | null
+          unit_id: string
+          unit_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          broodstock_batch_id?: string | null
+          broodstock_female_count?: number | null
+          broodstock_male_count?: number | null
+          created_at?: string | null
+          egg_count?: number | null
+          fertilization_rate?: number | null
+          fry_count?: number | null
+          hatching_date?: string | null
+          hatching_rate?: number | null
+          hormone_dose?: number | null
+          hormone_used?: string | null
+          id?: string
+          incubation_start_date?: string | null
+          incubation_temperature?: number | null
+          larvae_count?: number | null
+          larvae_transfer_date?: string | null
+          notes?: string | null
+          reproduction_date: string
+          reproduction_method?: string
+          spawning_date?: string | null
+          spawning_rate?: number | null
+          species: string
+          status?: string
+          survival_rate?: number | null
+          unit_id: string
+          unit_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          broodstock_batch_id?: string | null
+          broodstock_female_count?: number | null
+          broodstock_male_count?: number | null
+          created_at?: string | null
+          egg_count?: number | null
+          fertilization_rate?: number | null
+          fry_count?: number | null
+          hatching_date?: string | null
+          hatching_rate?: number | null
+          hormone_dose?: number | null
+          hormone_used?: string | null
+          id?: string
+          incubation_start_date?: string | null
+          incubation_temperature?: number | null
+          larvae_count?: number | null
+          larvae_transfer_date?: string | null
+          notes?: string | null
+          reproduction_date?: string
+          reproduction_method?: string
+          spawning_date?: string | null
+          spawning_rate?: number | null
+          species?: string
+          status?: string
+          survival_rate?: number | null
+          unit_id?: string
+          unit_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reproduction_records_broodstock_batch_id_fkey"
+            columns: ["broodstock_batch_id"]
+            isOneToOne: false
+            referencedRelation: "livestock_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_files: {
         Row: {
           compressed_size: number | null

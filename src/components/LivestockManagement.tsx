@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Activity, BarChart3 } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Activity, BarChart3, Heart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import SmartAlerts from './alerts/SmartAlerts';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import ControlFishingForm from './ControlFishingForm';
+import ReproductionManagement from './reproduction/ReproductionManagement';
 
 interface LivestockBatch {
   id: string;
@@ -622,8 +623,12 @@ const LivestockManagement = () => {
 
       {/* Onglets de gestion */}
       <Tabs defaultValue="lots" className="space-y-3 sm:space-y-4">
-        <TabsList className="w-full grid grid-cols-3 h-auto">
+        <TabsList className="w-full grid grid-cols-4 h-auto">
           <TabsTrigger value="lots" className="text-xs sm:text-sm px-2 py-2">Lots</TabsTrigger>
+          <TabsTrigger value="reproduction" className="text-xs sm:text-sm px-2 py-2">
+            <Heart className="w-3 h-3 mr-1 hidden sm:inline" />
+            Reproduction
+          </TabsTrigger>
           <TabsTrigger value="control" className="text-xs sm:text-sm px-2 py-2">Pêche</TabsTrigger>
           <TabsTrigger value="charts" className="text-xs sm:text-sm px-2 py-2">Graphiques</TabsTrigger>
         </TabsList>
@@ -716,6 +721,11 @@ const LivestockManagement = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Onglet Reproduction (uniquement pour écloseries) */}
+        <TabsContent value="reproduction">
+          <ReproductionManagement selectedUnitId={selectedUnit} />
         </TabsContent>
 
         {/* Onglet Pêche de contrôle */}
