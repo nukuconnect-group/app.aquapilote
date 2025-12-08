@@ -3,6 +3,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset global pour éviter les espaces sur mobile */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 /* iOS Safari Specific Fixes */
