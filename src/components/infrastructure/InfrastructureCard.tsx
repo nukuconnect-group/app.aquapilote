@@ -1,11 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Building, Settings, Trash2, Power, PowerOff, Edit, MapPin, Fish, Plus } from 'lucide-react';
+import { Building, Trash2, Power, PowerOff, Edit, MapPin, Fish, Plus, Eye, X, Droplets, Thermometer, Ruler } from 'lucide-react';
 import { Infrastructure, useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import InfrastructureForm from './InfrastructureForm';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
@@ -16,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface InfrastructureCardProps {
   infrastructure: Infrastructure;
@@ -25,19 +25,16 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const { infrastructures, setInfrastructures, activeUnit } = useProductionUnits();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
   const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures();
   const { batches, createBatch } = useLivestockBatches(infrastructure.unitId);
   
-  // Trouver l'infrastructure de cycle associée
   const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
-  
-  // Trouver le lot de poisson rattaché
   const attachedBatch = cycleInfra?.livestock_batch_id 
     ? batches.find(b => b.id === cycleInfra.livestock_batch_id)
     : null;
 
-  // État du formulaire de création de lot
   const [batchFormData, setBatchFormData] = useState({
     species: '',
     variety: '',
@@ -55,16 +52,26 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade', 'Autre'];
 
   const getInfrastructureIcon = (type: string) => {
-    if (type.includes('bassin')) return Building;
+    if (type.includes('bassin')) return Droplets;
+    if (type.includes('chambre')) return Thermometer;
     return Building;
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'maintenance': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'inactive': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active': return 'Actif';
+      case 'maintenance': return 'Maintenance';
+      case 'inactive': return 'Inactif';
+      default: return status;
     }
   };
 
@@ -100,7 +107,6 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
   const handleEditSave = (updatedInfrastructure: any) => {
     console.log('Infrastructure updated:', updatedInfrastructure);
-    // The form component already handles the saving logic
   };
 
   const handleCreateAndAttachBatch = async () => {
@@ -123,13 +129,11 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
     }
 
     try {
-      // Calculer l'âge et le poids total
       const currentAge = batchFormData.acquisitionDate 
         ? Math.floor((Date.now() - new Date(batchFormData.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
       const totalWeight = batchFormData.quantity * batchFormData.averageWeight / 1000;
 
-      // Créer le lot
       const newBatch = await createBatch({
         species: batchFormData.species,
         variety: batchFormData.variety,
@@ -150,7 +154,6 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
         expected_survival_rate: 95
       });
 
-      // Si un cycle infra existe, rattacher le lot
       if (cycleInfra && newBatch) {
         await updateInfrastructure(cycleInfra.id, {
           livestock_batch_id: newBatch.id
@@ -162,7 +165,6 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
         description: "Lot créé et rattaché à l'infrastructure"
       });
 
-      // Réinitialiser le formulaire
       setBatchFormData({
         species: '',
         variety: '',
@@ -186,139 +188,139 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
   return (
     <>
-      <Card className="hover:shadow-sm transition-shadow">
-        <CardHeader className="pb-3 p-3 sm:p-4">
-          <div className="flex items-start sm:items-center justify-between gap-2">
-            <CardTitle className="text-sm sm:text-base md:text-lg flex items-start sm:items-center gap-2 min-w-0 flex-1">
-              <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0 mt-0.5 sm:mt-0" />
-              <span className="truncate">{infrastructure.name}</span>
-            </CardTitle>
-            <Badge className={`${getStatusColor(infrastructure.status)} text-xs sm:text-sm flex-shrink-0`}>
-              {infrastructure.status === 'active' ? 'Actif' : 
-               infrastructure.status === 'maintenance' ? 'Maintenance' : 'Inactif'}
+      <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 min-w-0 flex-1">
+              <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-sm sm:text-base font-semibold truncate">
+                  {infrastructure.name}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground truncate">
+                  {getInfrastructureTypeLabel(infrastructure.type)}
+                </p>
+              </div>
+            </div>
+            <Badge className={`${getStatusColor(infrastructure.status)} text-xs flex-shrink-0`}>
+              {getStatusLabel(infrastructure.status)}
             </Badge>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="text-xs sm:text-sm">
-            <p className="font-medium text-gray-700 break-words">
-              {getInfrastructureTypeLabel(infrastructure.type)}
-            </p>
-            <p className="text-gray-500">
-              Capacité: {infrastructure.capacity.toLocaleString()}
-            </p>
+        <CardContent className="flex-1 flex flex-col p-3 sm:p-4 pt-0">
+          {/* Infos principales */}
+          <div className="space-y-2 text-xs sm:text-sm flex-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Ruler className="w-3 h-3 flex-shrink-0" />
+              <span>Capacité: {infrastructure.capacity.toLocaleString()}</span>
+            </div>
+            
             {infrastructure.specifications?.location && (
-              <p className="text-gray-500 flex items-start sm:items-center gap-1 mt-1">
-                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5 sm:mt-0" />
-                <span className="break-words">{infrastructure.specifications.location}</span>
-              </p>
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                <span className="line-clamp-1">{infrastructure.specifications.location}</span>
+              </div>
             )}
-            {infrastructure.specifications?.usage && (
-              <p className="text-gray-500 mt-1 break-words">
-                Usage: {infrastructure.specifications.usage}
-              </p>
-            )}
-          </div>
-          
-          {infrastructure.specifications && (
-            <div className="space-y-1">
-              <h4 className="text-xs sm:text-sm font-medium text-gray-700">Spécifications:</h4>
-              <div className="flex flex-wrap gap-1">
+            
+            {/* Spécifications compactes */}
+            {infrastructure.specifications && Object.keys(infrastructure.specifications).filter(k => !['location', 'usage', 'description'].includes(k)).length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
                 {Object.entries(infrastructure.specifications)
                   .filter(([key]) => !['location', 'usage', 'description'].includes(key))
+                  .slice(0, 2)
                   .map(([key, value]) => (
                     <span 
                       key={key} 
-                      className="inline-block bg-gray-100 rounded px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs break-all"
+                      className="inline-block bg-muted rounded px-1.5 py-0.5 text-xs truncate max-w-[120px]"
                     >
                       {key}: {value}
                     </span>
                   ))}
+                {Object.entries(infrastructure.specifications).filter(([key]) => !['location', 'usage', 'description'].includes(key)).length > 2 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{Object.entries(infrastructure.specifications).filter(([key]) => !['location', 'usage', 'description'].includes(key)).length - 2}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Lot rattaché - compact */}
+          {attachedBatch && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <Fish className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium truncate">{attachedBatch.species}</p>
+                  <p className="text-xs text-muted-foreground">{attachedBatch.quantity} individus</p>
+                </div>
               </div>
             </div>
           )}
           
-          {/* Afficher le lot de poisson rattaché s'il existe */}
-          {attachedBatch ? (
-            <div className="pt-3 border-t">
-              <InfrastructureLivestockCard 
-                batch={attachedBatch} 
-                infrastructureId={infrastructure.id}
-              />
-            </div>
-          ) : cycleInfra && (
-            <div className="pt-3 border-t">
-              <div className="text-center py-4">
-                <Fish className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-3">
-                  Aucun lot rattaché à cette infrastructure
-                </p>
-                <Button 
-                  size="sm" 
-                  onClick={() => setIsCreateBatchOpen(true)}
-                  className="w-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Créer et rattacher un lot
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          <div className="pt-3 border-t flex flex-col sm:flex-row gap-2">
+          {/* Boutons d'action */}
+          <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setIsDetailsOpen(true)}
+              className="text-xs h-8"
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              Détails
+            </Button>
+            
             <Button 
               size="sm" 
               variant="outline" 
               onClick={() => setIsEditOpen(true)}
-              className="w-full sm:flex-1 text-xs sm:text-sm"
+              className="text-xs h-8"
             >
               <Edit className="w-3 h-3 mr-1" />
               Modifier
             </Button>
             
-            {infrastructure.status === 'active' ? (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => toggleStatus('inactive')}
-                className="w-full sm:w-auto text-xs sm:text-sm"
-              >
-                <PowerOff className="w-3 h-3 mr-1" />
-                Désactiver
-              </Button>
-            ) : (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => toggleStatus('active')}
-                className="w-full sm:w-auto text-xs sm:text-sm"
-              >
-                <Power className="w-3 h-3 mr-1" />
-                Activer
-              </Button>
-            )}
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => toggleStatus(infrastructure.status === 'active' ? 'inactive' : 'active')}
+              className="text-xs h-8"
+            >
+              {infrastructure.status === 'active' ? (
+                <>
+                  <PowerOff className="w-3 h-3 mr-1" />
+                  Désactiver
+                </>
+              ) : (
+                <>
+                  <Power className="w-3 h-3 mr-1" />
+                  Activer
+                </>
+              )}
+            </Button>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="destructive" className="w-full sm:w-auto text-xs sm:text-sm">
+                <Button size="sm" variant="destructive" className="text-xs h-8">
                   <Trash2 className="w-3 h-3 mr-1" />
                   Supprimer
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
+              <AlertDialogContent className="max-w-[90vw] sm:max-w-md mx-4">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-base sm:text-lg">
+                  <AlertDialogTitle className="text-base">
                     Confirmer la suppression
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-sm">
-                    Êtes-vous sûr de vouloir supprimer l'infrastructure "{infrastructure.name}" ? 
-                    Cette action est irréversible.
+                    Supprimer "{infrastructure.name}" ? Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                  <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={deleteInfrastructure} className="w-full sm:w-auto">
+                <AlertDialogFooter className="flex-row gap-2">
+                  <AlertDialogCancel className="flex-1">Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteInfrastructure} className="flex-1">
                     Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -328,9 +330,143 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
         </CardContent>
       </Card>
 
+      {/* Dialog Vue Détaillée */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] p-0">
+          <DialogHeader className="p-4 pb-0 sm:p-6 sm:pb-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 sm:p-3 bg-primary/10 rounded-xl flex-shrink-0">
+                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <DialogTitle className="text-lg sm:text-xl font-bold truncate">
+                    {infrastructure.name}
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {getInfrastructureTypeLabel(infrastructure.type)}
+                  </p>
+                </div>
+              </div>
+              <Badge className={`${getStatusColor(infrastructure.status)} text-sm flex-shrink-0`}>
+                {getStatusLabel(infrastructure.status)}
+              </Badge>
+            </div>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh] p-4 sm:p-6">
+            <div className="space-y-6">
+              {/* Informations générales */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Capacité</p>
+                  <p className="text-lg font-semibold">{infrastructure.capacity.toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Statut</p>
+                  <p className="text-lg font-semibold">{getStatusLabel(infrastructure.status)}</p>
+                </div>
+              </div>
+              
+              {/* Localisation */}
+              {infrastructure.specifications?.location && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Localisation
+                  </h4>
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                    {infrastructure.specifications.location}
+                  </p>
+                </div>
+              )}
+              
+              {/* Usage */}
+              {infrastructure.specifications?.usage && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Usage</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                    {infrastructure.specifications.usage}
+                  </p>
+                </div>
+              )}
+              
+              {/* Description */}
+              {infrastructure.specifications?.description && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Description</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                    {infrastructure.specifications.description}
+                  </p>
+                </div>
+              )}
+              
+              {/* Spécifications techniques */}
+              {infrastructure.specifications && Object.keys(infrastructure.specifications).filter(k => !['location', 'usage', 'description'].includes(k)).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Spécifications techniques</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Object.entries(infrastructure.specifications)
+                      .filter(([key]) => !['location', 'usage', 'description'].includes(key))
+                      .map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-center p-2 bg-muted/50 rounded-lg">
+                          <span className="text-sm text-muted-foreground capitalize">{key}</span>
+                          <span className="text-sm font-medium">{value}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Lot rattaché */}
+              {attachedBatch ? (
+                <div>
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Fish className="w-4 h-4" />
+                    Lot rattaché
+                  </h4>
+                  <InfrastructureLivestockCard 
+                    batch={attachedBatch} 
+                    infrastructureId={infrastructure.id}
+                  />
+                </div>
+              ) : cycleInfra && (
+                <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                  <Fish className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Aucun lot rattaché à cette infrastructure
+                  </p>
+                  <Button onClick={() => { setIsDetailsOpen(false); setIsCreateBatchOpen(true); }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer et rattacher un lot
+                  </Button>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          
+          <div className="flex gap-2 p-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDetailsOpen(false)}
+              className="flex-1"
+            >
+              Fermer
+            </Button>
+            <Button 
+              onClick={() => { setIsDetailsOpen(false); setIsEditOpen(true); }}
+              className="flex-1"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Modifier
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog de modification */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'infrastructure</DialogTitle>
           </DialogHeader>
@@ -344,156 +480,159 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
       {/* Dialog de création de lot */}
       <Dialog open={isCreateBatchOpen} onOpenChange={setIsCreateBatchOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] p-0">
+          <DialogHeader className="p-4 sm:p-6 pb-0">
             <DialogTitle>Créer un lot de poisson</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="max-h-[60vh] p-4 sm:p-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Espèce *</Label>
+                  <Select 
+                    value={batchFormData.species} 
+                    onValueChange={(value) => setBatchFormData({...batchFormData, species: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {species.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Souche/Variété</Label>
+                  <Input
+                    value={batchFormData.variety}
+                    onChange={(e) => setBatchFormData({...batchFormData, variety: e.target.value})}
+                    placeholder="Ex: Monosex, Red, etc."
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label>Espèce *</Label>
+                <Label>Type de lot *</Label>
                 <Select 
-                  value={batchFormData.species} 
-                  onValueChange={(value) => setBatchFormData({...batchFormData, species: value})}
+                  value={batchFormData.type} 
+                  onValueChange={(value) => setBatchFormData({...batchFormData, type: value})}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
+                    <SelectValue placeholder="Sélectionner le type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {species.map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
+                    <SelectItem value="alevins">Alevins</SelectItem>
+                    <SelectItem value="geniteurs">Géniteurs</SelectItem>
+                    <SelectItem value="juveniles">Juvéniles</SelectItem>
+                    <SelectItem value="adultes">Adultes</SelectItem>
+                    <SelectItem value="autres">Autres</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Quantité *</Label>
+                  <Input
+                    type="number"
+                    value={batchFormData.quantity || ''}
+                    onChange={(e) => setBatchFormData({...batchFormData, quantity: parseInt(e.target.value) || 0})}
+                    placeholder="Nombre d'individus"
+                  />
+                </div>
+                <div>
+                  <Label>Poids moyen (g)</Label>
+                  <Input
+                    type="number"
+                    value={batchFormData.averageWeight || ''}
+                    onChange={(e) => setBatchFormData({...batchFormData, averageWeight: parseInt(e.target.value) || 0})}
+                    placeholder="Poids en grammes"
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label>Souche/Variété</Label>
+                <Label>Date d'acquisition</Label>
                 <Input
-                  value={batchFormData.variety}
-                  onChange={(e) => setBatchFormData({...batchFormData, variety: e.target.value})}
-                  placeholder="Ex: Monosex, Red, etc."
+                  type="date"
+                  value={batchFormData.acquisitionDate}
+                  onChange={(e) => setBatchFormData({...batchFormData, acquisitionDate: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label>Source/Fournisseur</Label>
+                <Input
+                  value={batchFormData.source}
+                  onChange={(e) => setBatchFormData({...batchFormData, source: e.target.value})}
+                  placeholder="Nom du fournisseur"
+                />
+              </div>
+
+              <div>
+                <Label>Plan d'alimentation</Label>
+                <Input
+                  value={batchFormData.feedingPlan}
+                  onChange={(e) => setBatchFormData({...batchFormData, feedingPlan: e.target.value})}
+                  placeholder="Ex: Standard croissance"
+                />
+              </div>
+
+              <div>
+                <Label>Date de récolte prévue</Label>
+                <Input
+                  type="date"
+                  value={batchFormData.expectedHarvestDate}
+                  onChange={(e) => setBatchFormData({...batchFormData, expectedHarvestDate: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label>Statut</Label>
+                <Select 
+                  value={batchFormData.status} 
+                  onValueChange={(value) => setBatchFormData({...batchFormData, status: value as any})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="healthy">En bonne santé</SelectItem>
+                    <SelectItem value="sick">Malade</SelectItem>
+                    <SelectItem value="quarantine">Quarantaine</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Notes</Label>
+                <Textarea
+                  value={batchFormData.notes}
+                  onChange={(e) => setBatchFormData({...batchFormData, notes: e.target.value})}
+                  placeholder="Notes supplémentaires..."
+                  rows={3}
                 />
               </div>
             </div>
-
-            <div>
-              <Label>Type de lot *</Label>
-              <Select 
-                value={batchFormData.type} 
-                onValueChange={(value) => setBatchFormData({...batchFormData, type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="alevins">Alevins</SelectItem>
-                  <SelectItem value="geniteurs">Géniteurs</SelectItem>
-                  <SelectItem value="juveniles">Juvéniles</SelectItem>
-                  <SelectItem value="adultes">Adultes</SelectItem>
-                  <SelectItem value="autres">Autres</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Quantité *</Label>
-                <Input
-                  type="number"
-                  value={batchFormData.quantity || ''}
-                  onChange={(e) => setBatchFormData({...batchFormData, quantity: parseInt(e.target.value) || 0})}
-                  placeholder="Nombre d'individus"
-                />
-              </div>
-              <div>
-                <Label>Poids moyen (g)</Label>
-                <Input
-                  type="number"
-                  value={batchFormData.averageWeight || ''}
-                  onChange={(e) => setBatchFormData({...batchFormData, averageWeight: parseInt(e.target.value) || 0})}
-                  placeholder="Poids en grammes"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Date d'acquisition</Label>
-              <Input
-                type="date"
-                value={batchFormData.acquisitionDate}
-                onChange={(e) => setBatchFormData({...batchFormData, acquisitionDate: e.target.value})}
-              />
-            </div>
-
-            <div>
-              <Label>Source/Fournisseur</Label>
-              <Input
-                value={batchFormData.source}
-                onChange={(e) => setBatchFormData({...batchFormData, source: e.target.value})}
-                placeholder="Nom du fournisseur"
-              />
-            </div>
-
-            <div>
-              <Label>Plan d'alimentation</Label>
-              <Input
-                value={batchFormData.feedingPlan}
-                onChange={(e) => setBatchFormData({...batchFormData, feedingPlan: e.target.value})}
-                placeholder="Ex: Standard croissance"
-              />
-            </div>
-
-            <div>
-              <Label>Date de récolte prévue</Label>
-              <Input
-                type="date"
-                value={batchFormData.expectedHarvestDate}
-                onChange={(e) => setBatchFormData({...batchFormData, expectedHarvestDate: e.target.value})}
-              />
-            </div>
-
-            <div>
-              <Label>Statut</Label>
-              <Select 
-                value={batchFormData.status} 
-                onValueChange={(value) => setBatchFormData({...batchFormData, status: value as any})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="healthy">En bonne santé</SelectItem>
-                  <SelectItem value="sick">Malade</SelectItem>
-                  <SelectItem value="quarantine">Quarantaine</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Notes</Label>
-              <Textarea
-                value={batchFormData.notes}
-                onChange={(e) => setBatchFormData({...batchFormData, notes: e.target.value})}
-                placeholder="Notes supplémentaires..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button 
-                onClick={handleCreateAndAttachBatch}
-                className="flex-1"
-              >
-                <Fish className="w-4 h-4 mr-2" />
-                Créer et rattacher
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => setIsCreateBatchOpen(false)}
-              >
-                Annuler
-              </Button>
-            </div>
+          </ScrollArea>
+          
+          <div className="flex gap-2 p-4 border-t">
+            <Button 
+              variant="outline"
+              onClick={() => setIsCreateBatchOpen(false)}
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleCreateAndAttachBatch}
+              className="flex-1"
+            >
+              <Fish className="w-4 h-4 mr-2" />
+              Créer et rattacher
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
