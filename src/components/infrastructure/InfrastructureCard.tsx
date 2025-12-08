@@ -422,29 +422,35 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
               )}
               
               {/* Lot rattaché */}
-              {attachedBatch ? (
-                <div>
-                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Fish className="w-4 h-4" />
-                    Lot rattaché
-                  </h4>
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Fish className="w-4 h-4" />
+                  Lot de poissons rattaché
+                </h4>
+                {attachedBatch ? (
                   <InfrastructureLivestockCard 
                     batch={attachedBatch} 
                     infrastructureId={infrastructure.id}
                   />
-                </div>
-              ) : cycleInfra && (
-                <div className="text-center py-6 border-2 border-dashed rounded-lg">
-                  <Fish className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Aucun lot rattaché à cette infrastructure
-                  </p>
-                  <Button onClick={() => { setIsDetailsOpen(false); setIsCreateBatchOpen(true); }}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Créer et rattacher un lot
-                  </Button>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/30">
+                    <Fish className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Aucun lot rattaché
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Cette infrastructure n'a pas encore de lot de poissons associé
+                    </p>
+                    <Button 
+                      size="sm"
+                      onClick={() => { setIsDetailsOpen(false); setIsCreateBatchOpen(true); }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Créer et rattacher un lot
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </ScrollArea>
           
