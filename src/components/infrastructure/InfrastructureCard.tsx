@@ -251,13 +251,11 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
           {/* Lot rattaché - compact */}
           {attachedBatch && (
             <div className="mt-3 pt-3 border-t">
-              <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Fish className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium truncate">{attachedBatch.species}</p>
-                  <p className="text-xs text-muted-foreground">{attachedBatch.quantity} individus</p>
-                </div>
-              </div>
+              <InfrastructureLivestockCard 
+                batch={attachedBatch} 
+                infrastructureId={infrastructure.id}
+                compact={true}
+              />
             </div>
           )}
           
