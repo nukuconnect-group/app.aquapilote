@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, UserCheck, TrendingUp, Activity, Search, Key, Trash2, BarChart3, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, UserCheck, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,8 +16,12 @@ import { supabase } from '@/integrations/supabase/clientConfig';
 import { userCreationSchema } from '@/lib/validation';
 import { useLogs } from '@/contexts/LogsContext';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import AdminAlertNotification from './AdminAlertNotification';
+import DatabaseStatsPanel from './admin/DatabaseStatsPanel';
+import OnlineUsersPanel from './admin/OnlineUsersPanel';
+import UserSessionHistory from './admin/UserSessionHistory';
 
 interface UserProfile {
   id: string;
@@ -41,6 +45,8 @@ interface AdminUser {
   full_name: string;
   role: 'admin' | 'manager' | 'operator' | 'user';
   created_at: string;
+  lastLogin?: string;
+  isOnline?: boolean;
 }
 
 const AdminDashboard = () => {
@@ -55,6 +61,8 @@ const AdminDashboard = () => {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
@@ -69,6 +77,7 @@ const AdminDashboard = () => {
     managers: users.filter(u => u.role === 'manager').length,
     operators: users.filter(u => u.role === 'operator').length,
     regularUsers: users.filter(u => u.role === 'user').length,
+    onlineUsers: onlineUserIds.size,
     recentUsers: users.filter(u => {
       const userDate = new Date(u.created_at);
       const weekAgo = subDays(new Date(), 7);
@@ -120,6 +129,25 @@ const AdminDashboard = () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  const loadOnlineUsers = async () => {
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
+      const { data: sessions } = await supabase
+        .from('user_sessions')
+        .select('user_id, last_activity_at')
+        .eq('is_active', true)
+        .gte('last_activity_at', fiveMinutesAgo);
+
+      if (sessions) {
+        const onlineIds = new Set(sessions.map(s => s.user_id));
+        setOnlineUserIds(onlineIds);
+      }
+    } catch (error) {
+      console.error('Error loading online users:', error);
+    }
+  };
+
   const loadUsers = async () => {
     try {
       setIsLoading(true);
@@ -136,6 +164,19 @@ const AdminDashboard = () => {
 
       if (rolesError) throw rolesError;
 
+      // Récupérer les dernières sessions pour chaque utilisateur
+      const { data: lastSessions } = await supabase
+        .from('user_sessions')
+        .select('user_id, login_at')
+        .order('login_at', { ascending: false });
+
+      const lastLoginMap = new Map<string, string>();
+      lastSessions?.forEach(session => {
+        if (!lastLoginMap.has(session.user_id)) {
+          lastLoginMap.set(session.user_id, session.login_at);
+        }
+      });
+
       const usersData: AdminUser[] = (profiles || []).map(profile => {
         const userRole = roles?.find(r => r.user_id === profile.id);
         return {
@@ -143,7 +184,9 @@ const AdminDashboard = () => {
           email: profile.email,
           full_name: profile.full_name || profile.email,
           role: (userRole?.role || 'user') as 'admin' | 'manager' | 'operator' | 'user',
-          created_at: profile.created_at
+          created_at: profile.created_at,
+          lastLogin: lastLoginMap.get(profile.id),
+          isOnline: onlineUserIds.has(profile.id)
         };
       });
 
@@ -162,8 +205,21 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    loadOnlineUsers();
     loadUsers();
+
+    // Rafraîchir le statut en ligne toutes les 30 secondes
+    const interval = setInterval(loadOnlineUsers, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Mettre à jour le statut en ligne des utilisateurs
+    setUsers(prev => prev.map(u => ({
+      ...u,
+      isOnline: onlineUserIds.has(u.id)
+    })));
+  }, [onlineUserIds]);
 
   useEffect(() => {
     let filtered = users;
@@ -182,9 +238,30 @@ const AdminDashboard = () => {
     setFilteredUsers(filtered);
   }, [searchTerm, filterRole, users]);
 
+  // Écouter les changements de sessions en temps réel
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_sessions'
+        },
+        () => {
+          loadOnlineUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const handleAddUser = async () => {
     try {
-      // Client-side validation for immediate feedback
       const validation = userCreationSchema.safeParse(newUser);
       if (!validation.success) {
         toast({
@@ -195,7 +272,6 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Call Edge Function for server-side validation and user creation
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: newUser.email,
@@ -388,12 +464,18 @@ const AdminDashboard = () => {
               Supervision complète de l'application avec alertes en temps réel
             </p>
           </div>
-          <BarChart3 className="w-8 h-8 text-primary-foreground/80" />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
+              <Wifi className="w-4 h-4" />
+              <span className="text-sm font-medium">{stats.onlineUsers} en ligne</span>
+            </div>
+            <BarChart3 className="w-8 h-8 text-primary-foreground/80" />
+          </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -403,6 +485,11 @@ const AdminDashboard = () => {
             <Users className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Utilisateurs</span>
             <span className="sm:hidden">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="database">
+            <Database className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Base de données</span>
+            <span className="sm:hidden">DB</span>
           </TabsTrigger>
           <TabsTrigger value="activity">
             <Activity className="w-4 h-4 mr-2" />
@@ -417,7 +504,7 @@ const AdminDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -427,6 +514,19 @@ const AdminDashboard = () => {
                     <p className="text-xs text-muted-foreground mt-1">+{stats.recentUsers} cette semaine</p>
                   </div>
                   <Users className="w-8 h-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">En ligne maintenant</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.onlineUsers}</p>
+                    <p className="text-xs text-green-600 mt-1">Actifs dernières 5 min</p>
+                  </div>
+                  <Wifi className="w-8 h-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
@@ -468,13 +568,13 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Distribution des rôles</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={roleDistribution}
@@ -501,10 +601,10 @@ const AdminDashboard = () => {
                 <CardTitle>Modules les plus utilisés</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={moduleData}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={moduleData.slice(0, 5)}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={10} />
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="count" fill="hsl(var(--primary))" />
@@ -512,6 +612,8 @@ const AdminDashboard = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+
+            <OnlineUsersPanel />
           </div>
 
           <Card>
@@ -629,9 +731,11 @@ const AdminDashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Statut</TableHead>
                       <TableHead>Nom</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Rôle</TableHead>
+                      <TableHead>Dernière connexion</TableHead>
                       <TableHead>Créé le</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -639,19 +743,33 @@ const AdminDashboard = () => {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8">
+                        <TableCell colSpan={7} className="text-center py-8">
                           Chargement...
                         </TableCell>
                       </TableRow>
                     ) : filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           Aucun utilisateur trouvé
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredUsers.map(user => (
                         <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {onlineUserIds.has(user.id) ? (
+                                <Badge variant="default" className="bg-green-500 text-white">
+                                  <Wifi className="w-3 h-3 mr-1" />
+                                  En ligne
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Hors ligne
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="font-medium">{user.full_name}</TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
@@ -673,14 +791,35 @@ const AdminDashboard = () => {
                             </Select>
                           </TableCell>
                           <TableCell>
-                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                            {user.lastLogin ? (
+                              <div className="text-sm">
+                                <p>{format(new Date(user.lastLogin), 'dd/MM/yyyy')}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true, locale: fr })}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Jamais</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(user.created_at), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => setSelectedUserForHistory({ id: user.id, name: user.full_name })}
+                                title="Historique des connexions"
+                              >
+                                <Clock className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleResetPassword(user.id, user.email)}
+                                title="Réinitialiser le mot de passe"
                               >
                                 <Key className="w-4 h-4" />
                               </Button>
@@ -688,6 +827,7 @@ const AdminDashboard = () => {
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => handleDeleteUser(user.id, user.email)}
+                                title="Supprimer l'utilisateur"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -701,6 +841,13 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="database" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DatabaseStatsPanel />
+            <OnlineUsersPanel />
+          </div>
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
@@ -764,7 +911,7 @@ const AdminDashboard = () => {
                       className={`p-4 border-l-4 rounded-lg ${
                         log.severity === 'error' 
                           ? 'border-destructive bg-destructive/5' 
-                          : 'border-yellow-500 bg-yellow-50'
+                          : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -804,6 +951,16 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog pour l'historique des sessions */}
+      {selectedUserForHistory && (
+        <UserSessionHistory
+          userId={selectedUserForHistory.id}
+          userName={selectedUserForHistory.name}
+          isOpen={!!selectedUserForHistory}
+          onClose={() => setSelectedUserForHistory(null)}
+        />
+      )}
     </div>
   );
 };
