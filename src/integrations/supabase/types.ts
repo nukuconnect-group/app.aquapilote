@@ -731,10 +731,49 @@ export type Database = {
           },
         ]
       }
+      team_member_units: {
+        Row: {
+          created_at: string
+          id: string
+          permissions: Json
+          team_member_id: string
+          unit_id: string
+          unit_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permissions?: Json
+          team_member_id: string
+          unit_id: string
+          unit_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permissions?: Json
+          team_member_id?: string
+          unit_id?: string
+          unit_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_units_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
           created_at: string
+          custom_role: string | null
           department: string | null
           id: string
           invited_at: string
@@ -749,6 +788,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           created_at?: string
+          custom_role?: string | null
           department?: string | null
           id?: string
           invited_at?: string
@@ -763,6 +803,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           created_at?: string
+          custom_role?: string | null
           department?: string | null
           id?: string
           invited_at?: string

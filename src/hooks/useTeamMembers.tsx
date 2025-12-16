@@ -9,6 +9,7 @@ export interface TeamMember {
   member_email: string;
   member_name: string;
   role: string;
+  custom_role: string | null;
   department: string | null;
   status: 'active' | 'inactive' | 'pending';
   permissions: Record<string, boolean>;
@@ -22,6 +23,7 @@ export interface NewTeamMember {
   member_email: string;
   member_name: string;
   role: string;
+  custom_role?: string;
   department: string;
   permissions: Record<string, boolean>;
 }
@@ -48,7 +50,8 @@ export const useTeamMembers = () => {
       setTeamMembers((data || []).map(item => ({
         ...item,
         permissions: item.permissions as Record<string, boolean>,
-        status: item.status as 'active' | 'inactive' | 'pending'
+        status: item.status as 'active' | 'inactive' | 'pending',
+        custom_role: (item as any).custom_role || null
       })));
     } catch (error: any) {
       console.error('Error fetching team members:', error);
@@ -73,6 +76,7 @@ export const useTeamMembers = () => {
           member_email: member.member_email.toLowerCase().trim(),
           member_name: member.member_name.trim(),
           role: member.role,
+          custom_role: member.custom_role || null,
           department: member.department,
           permissions: member.permissions,
           status: 'pending'
@@ -90,7 +94,8 @@ export const useTeamMembers = () => {
       setTeamMembers(prev => [{
         ...data,
         permissions: data.permissions as Record<string, boolean>,
-        status: data.status as 'active' | 'inactive' | 'pending'
+        status: data.status as 'active' | 'inactive' | 'pending',
+        custom_role: (data as any).custom_role || null
       }, ...prev]);
       
       return { success: true, data };
@@ -118,7 +123,8 @@ export const useTeamMembers = () => {
         m.id === id ? {
           ...data,
           permissions: data.permissions as Record<string, boolean>,
-          status: data.status as 'active' | 'inactive' | 'pending'
+          status: data.status as 'active' | 'inactive' | 'pending',
+          custom_role: (data as any).custom_role || null
         } : m
       ));
       
