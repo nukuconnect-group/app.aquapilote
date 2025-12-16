@@ -51,6 +51,7 @@ const TeamManagement = () => {
   const [inviteData, setInviteData] = useState<{
     name: string;
     email: string;
+    password: string;
     role: string;
     customRole: string;
     department: string;
@@ -59,6 +60,7 @@ const TeamManagement = () => {
   }>({
     name: '',
     email: '',
+    password: '',
     role: '',
     customRole: '',
     department: '',
@@ -267,7 +269,8 @@ const TeamManagement = () => {
           body: {
             email: inviteData.email,
             full_name: inviteData.name,
-            team_member_id: result.data.id
+            team_member_id: result.data.id,
+            password: inviteData.password || undefined
           }
         });
 
@@ -313,6 +316,7 @@ const TeamManagement = () => {
       setInviteData({
         name: '',
         email: '',
+        password: '',
         role: '',
         customRole: '',
         department: '',
@@ -689,7 +693,7 @@ const TeamManagement = () => {
                 />
               </div>
               <div>
-                <Label>Email *</Label>
+                <Label>Email (identifiant de connexion) *</Label>
                 <Input
                   type="email"
                   value={inviteData.email}
@@ -697,6 +701,19 @@ const TeamManagement = () => {
                   placeholder="email@exemple.com"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label>Mot de passe (optionnel)</Label>
+              <Input
+                type="password"
+                value={inviteData.password}
+                onChange={(e) => setInviteData({...inviteData, password: e.target.value})}
+                placeholder="Laisser vide pour générer automatiquement"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Min. 8 caractères avec majuscule, minuscule et chiffre. Si vide, un mot de passe sécurisé sera généré.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
