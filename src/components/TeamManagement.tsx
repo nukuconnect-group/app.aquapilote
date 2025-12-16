@@ -39,6 +39,7 @@ const TeamManagement = () => {
   const { units } = useProductionUnits();
 
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showSummaryStep, setShowSummaryStep] = useState(false);
   const [showMemberDetails, setShowMemberDetails] = useState(false);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<CreatedCredentials | null>(null);
@@ -47,6 +48,7 @@ const TeamManagement = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUnits, setIsLoadingUnits] = useState(false);
   const [selectedUnitsForInvite, setSelectedUnitsForInvite] = useState<Set<string>>(new Set());
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
 
   const [inviteData, setInviteData] = useState<{
     name: string;
@@ -200,7 +202,28 @@ const TeamManagement = () => {
     }));
   };
 
-  const handleInviteMember = async () => {
+  // Helper to generate password client-side for preview
+  const generatePasswordLocal = () => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%&*';
+    
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+    
+    const allChars = uppercase + lowercase + numbers + special;
+    for (let i = 0; i < 8; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
+
+  const handleProceedToSummary = () => {
     if (!inviteData.name || !inviteData.email || !inviteData.department) {
       toast({
         title: "Erreur",
@@ -229,6 +252,14 @@ const TeamManagement = () => {
       return;
     }
 
+    // Generate password if not provided
+    const finalPassword = inviteData.password || generatePasswordLocal();
+    setGeneratedPassword(finalPassword);
+    setInviteData(prev => ({ ...prev, password: finalPassword }));
+    setShowSummaryStep(true);
+  };
+
+  const handleConfirmAndCreate = async (sendEmail: boolean) => {
     setIsSubmitting(true);
     
     const finalRole = inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role;
@@ -270,7 +301,8 @@ const TeamManagement = () => {
             email: inviteData.email,
             full_name: inviteData.name,
             team_member_id: result.data.id,
-            password: inviteData.password || undefined
+            password: generatedPassword,
+            sendEmail: sendEmail
           }
         });
 
@@ -278,27 +310,40 @@ const TeamManagement = () => {
           throw new Error(response.error.message);
         }
 
+        const loginUrl = `${window.location.origin}/auth`;
+        
         if (response.data?.credentials) {
           setCreatedCredentials({
             email: response.data.credentials.email,
-            password: response.data.credentials.password,
-            loginUrl: response.data.credentials.loginUrl,
+            password: response.data.credentials.password || generatedPassword,
+            loginUrl: response.data.credentials.loginUrl || loginUrl,
             memberName: inviteData.name,
             emailSent: response.data.emailSent || false,
             emailError: response.data.emailError
           });
           setShowCredentialsDialog(true);
+        } else {
+          // If no credentials in response, use local data
+          setCreatedCredentials({
+            email: inviteData.email,
+            password: generatedPassword,
+            loginUrl: loginUrl,
+            memberName: inviteData.name,
+            emailSent: sendEmail && response.data?.emailSent,
+            emailError: response.data?.emailError
+          });
+          setShowCredentialsDialog(true);
         }
 
-        const emailStatus = response.data.emailSent 
+        const emailStatus = response.data?.emailSent 
           ? 'Email envoyé automatiquement' 
           : 'Compte créé (email non envoyé)';
         
         addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé - ${emailStatus}`, 'success');
         
         toast({
-          title: response.data.emailSent ? "Membre ajouté et email envoyé" : "Membre ajouté",
-          description: response.data.emailSent 
+          title: response.data?.emailSent ? "Membre ajouté et email envoyé" : "Membre ajouté",
+          description: response.data?.emailSent 
             ? `Un email avec les identifiants a été envoyé à ${inviteData.email}`
             : `Un compte a été créé pour ${inviteData.name}`
         });
@@ -324,6 +369,8 @@ const TeamManagement = () => {
         unitPermissions: []
       });
       setSelectedUnitsForInvite(new Set());
+      setGeneratedPassword('');
+      setShowSummaryStep(false);
       setShowInviteForm(false);
     } else {
       toast({
@@ -854,9 +901,168 @@ const TeamManagement = () => {
             <Button variant="outline" onClick={() => setShowInviteForm(false)}>
               Annuler
             </Button>
-            <Button onClick={handleInviteMember} disabled={isSubmitting}>
+            <Button onClick={handleProceedToSummary} disabled={isSubmitting}>
+              Continuer vers le résumé
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Résumé avant création */}
+      <Dialog open={showSummaryStep} onOpenChange={(open) => {
+        if (!open) setShowSummaryStep(false);
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              Résumé du compte à créer
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Nom</span>
+                <span className="font-medium">{inviteData.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Rôle</span>
+                <Badge variant="secondary">
+                  {inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role || 'Membre'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Département</span>
+                <span>{inviteData.department}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Unités assignées</span>
+                <span>{inviteData.unitPermissions.length} unité(s)</span>
+              </div>
+            </div>
+
+            {/* Identifiants de connexion */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Identifiants de connexion
+              </h4>
+              
+              <div>
+                <Label className="text-muted-foreground text-xs">Email (identifiant)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={inviteData.email} 
+                    readOnly 
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteData.email);
+                      toast({ title: "Email copié" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Mot de passe</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={generatedPassword} 
+                    readOnly 
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedPassword);
+                      toast({ title: "Mot de passe copié" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Lien de connexion</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={`${window.location.origin}/auth`} 
+                    readOnly 
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/auth`);
+                      toast({ title: "Lien copié" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      window.open(`${window.location.origin}/auth`, '_blank');
+                    }}
+                  >
+                    <Link className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Copy all button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                const message = `Bonjour ${inviteData.name},\n\nVotre compte AquaPilote a été créé.\n\nLien de connexion: ${window.location.origin}/auth\nEmail: ${inviteData.email}\nMot de passe: ${generatedPassword}\n\nVeuillez changer votre mot de passe après votre première connexion.`;
+                navigator.clipboard.writeText(message);
+                toast({ title: "Message complet copié", description: "Vous pouvez le coller dans un email ou message" });
+              }}
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copier tous les identifiants
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-4">
+            <Button 
+              onClick={() => handleConfirmAndCreate(true)} 
+              disabled={isSubmitting}
+              className="w-full"
+            >
               {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Ajouter le membre
+              <Mail className="w-4 h-4 mr-2" />
+              Créer et envoyer par email
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={() => handleConfirmAndCreate(false)} 
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Créer sans envoyer d'email
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSummaryStep(false)}
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              Retour
             </Button>
           </div>
         </DialogContent>

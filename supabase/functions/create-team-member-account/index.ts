@@ -59,7 +59,9 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, full_name, team_member_id, password: providedPassword } = body;
+    const { email, full_name, team_member_id, password: providedPassword, sendEmail: shouldSendEmail } = body;
+
+    console.log('Creating team member account:', { email, full_name, team_member_id, shouldSendEmail });
 
     if (!email || !full_name) {
       return new Response(
@@ -150,12 +152,12 @@ serve(async (req) => {
     const appUrl = req.headers.get('origin') || 'https://hhsvraqchtqqgaezhnzn.lovableproject.com';
     const loginUrl = `${appUrl}/auth`;
 
-    // Send email with credentials via Resend
+    // Send email with credentials via Resend (only if shouldSendEmail is true or undefined)
     let emailSent = false;
     let emailError = null;
     
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (resendApiKey) {
+    if (resendApiKey && shouldSendEmail !== false) {
       try {
         const resend = new Resend(resendApiKey);
         
@@ -222,7 +224,7 @@ serve(async (req) => {
         emailError = e.message;
       }
     } else {
-      console.log('RESEND_API_KEY not configured, skipping email');
+      console.log('Email not sent: shouldSendEmail =', shouldSendEmail, ', resendApiKey configured:', !!resendApiKey);
     }
 
     console.log('Team member account created:', authData.user.id);
