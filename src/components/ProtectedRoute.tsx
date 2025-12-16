@@ -1,8 +1,9 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, WifiOff } from 'lucide-react';
 import { useIOSNetworkStatus } from '@/hooks/useIOSDetection';
+import SuspensionNotice from './SuspensionNotice';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,10 +13,11 @@ interface ProtectedRouteProps {
  * Composant de protection de route
  * Redirige vers la page d'authentification si l'utilisateur n'est pas connecté
  * Affiche un loader pendant la vérification de la session
+ * Affiche un écran de suspension si l'utilisateur est suspendu
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading, isDemoMode } = useAuth();
-  const { isOnline, showReconnecting } = useIOSNetworkStatus();
+  const { showReconnecting } = useIOSNetworkStatus();
 
   // Afficher un loader pendant la vérification de la session
   if (isLoading) {
@@ -40,6 +42,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Rediriger vers /auth si non connecté et pas en mode démo
   if (!user && !isDemoMode) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Afficher l'écran de suspension si l'utilisateur est suspendu (sauf admin)
+  if (user?.isSuspended && user?.role !== 'admin') {
+    return (
+      <SuspensionNotice 
+        reason={user.suspensionReason} 
+        suspendedAt={user.suspendedAt} 
+      />
+    );
   }
 
   // Afficher le contenu protégé

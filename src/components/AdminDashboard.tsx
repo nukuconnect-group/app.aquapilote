@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +57,11 @@ interface AdminUser {
   lastLogin?: string;
   isOnline?: boolean;
   units?: UserUnit[];
+  isSuspended?: boolean;
+  suspensionReason?: string;
+  suspendedAt?: string;
+  country?: string;
+  countryCode?: string;
 }
 
 const AdminDashboard = () => {
@@ -183,7 +188,7 @@ const AdminDashboard = () => {
         }
       });
 
-      const usersData: AdminUser[] = (profiles || []).map(profile => {
+      const usersData: AdminUser[] = (profiles || []).map((profile: any) => {
         const userRole = roles?.find(r => r.user_id === profile.id);
         return {
           id: profile.id,
@@ -192,7 +197,12 @@ const AdminDashboard = () => {
           role: (userRole?.role || 'user') as 'admin' | 'manager' | 'operator' | 'user',
           created_at: profile.created_at,
           lastLogin: lastLoginMap.get(profile.id),
-          isOnline: onlineUserIds.has(profile.id)
+          isOnline: onlineUserIds.has(profile.id),
+          isSuspended: profile.is_suspended || false,
+          suspensionReason: profile.suspension_reason,
+          suspendedAt: profile.suspended_at,
+          country: profile.country,
+          countryCode: profile.country_code
         };
       });
 
@@ -312,6 +322,51 @@ const AdminDashboard = () => {
       toast({
         title: t('error'),
         description: 'Erreur lors de la suppression',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleSuspendUser = async (userId: string, userName: string, suspend: boolean, reason?: string) => {
+    const action = suspend ? 'suspendre' : 'réactiver';
+    if (!confirm(`Êtes-vous sûr de vouloir ${action} l'utilisateur ${userName} ?`)) {
+      return;
+    }
+
+    try {
+      const updateData: any = {
+        is_suspended: suspend,
+        suspension_reason: suspend ? (reason || 'Non-paiement') : null,
+        suspended_at: suspend ? new Date().toISOString() : null
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: suspend 
+          ? `Utilisateur ${userName} suspendu avec succès` 
+          : `Utilisateur ${userName} réactivé avec succès`
+      });
+
+      loadUsers();
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Error suspending user:', error);
+      toast({
+        title: t('error'),
+        description: `Erreur lors de la ${suspend ? 'suspension' : 'réactivation'}`,
         variant: 'destructive'
       });
     }
@@ -630,6 +685,7 @@ const AdminDashboard = () => {
                       <TableHead>Statut</TableHead>
                       <TableHead>Nom</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Pays</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Unités</TableHead>
                       <TableHead>Dernière connexion</TableHead>
@@ -640,28 +696,33 @@ const AdminDashboard = () => {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           Chargement...
                         </TableCell>
                       </TableRow>
                     ) : filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                           Aucun utilisateur trouvé
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredUsers.map(user => (
-                        <TableRow key={user.id}>
+                        <TableRow key={user.id} className={user.isSuspended ? 'bg-destructive/5' : ''}>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              {onlineUserIds.has(user.id) ? (
-                                <Badge variant="default" className="bg-green-500 text-white">
+                            <div className="flex flex-col gap-1">
+                              {user.isSuspended ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  <Ban className="w-3 h-3 mr-1" />
+                                  Suspendu
+                                </Badge>
+                              ) : onlineUserIds.has(user.id) ? (
+                                <Badge variant="default" className="bg-green-500 text-white text-xs">
                                   <Wifi className="w-3 h-3 mr-1" />
                                   En ligne
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-muted-foreground">
+                                <Badge variant="outline" className="text-muted-foreground text-xs">
                                   Hors ligne
                                 </Badge>
                               )}
@@ -669,6 +730,21 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell className="font-medium">{user.full_name}</TableCell>
                           <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            {user.country ? (
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-sm">{user.country}</span>
+                                {user.countryCode && (
+                                  <Badge variant="outline" className="text-xs ml-1">
+                                    {user.countryCode}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Select 
                               value={user.role} 
@@ -731,6 +807,27 @@ const AdminDashboard = () => {
                               >
                                 <Key className="w-4 h-4" />
                               </Button>
+                              {user.isSuspended ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSuspendUser(user.id, user.full_name, false)}
+                                  title="Réactiver l'utilisateur"
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  <PlayCircle className="w-4 h-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSuspendUser(user.id, user.full_name, true, 'Non-paiement')}
+                                  title="Suspendre l'utilisateur"
+                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="destructive"
                                 size="sm"

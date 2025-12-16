@@ -15,6 +15,11 @@ interface User {
   capaciteProduction?: string;
   lastLogin?: string;
   subscriptionPlan?: string;
+  isSuspended?: boolean;
+  suspensionReason?: string;
+  suspendedAt?: string;
+  country?: string;
+  countryCode?: string;
   notifications: {
     email: boolean;
     desktop: boolean;
@@ -97,6 +102,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: role as 'admin' | 'manager' | 'operator' | 'user',
         avatar: profile?.avatar_url || undefined,
         lastLogin: new Date().toISOString(),
+        isSuspended: profile?.is_suspended || false,
+        suspensionReason: profile?.suspension_reason || undefined,
+        suspendedAt: profile?.suspended_at || undefined,
+        country: profile?.country || undefined,
+        countryCode: profile?.country_code || undefined,
         notifications: {
           email: true,
           desktop: true,
