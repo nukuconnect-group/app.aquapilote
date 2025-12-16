@@ -263,6 +263,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user && data.session) {
+        // Effacer les données de démonstration pour un utilisateur réel
+        clearDemoData();
+        setIsDemoMode(false);
+        
         // La session est automatiquement persistée par Supabase
         await fetchUserData(data.user);
         

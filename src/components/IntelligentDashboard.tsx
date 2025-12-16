@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
@@ -27,6 +28,7 @@ const IntelligentDashboard = () => {
     formatCurrency,
     t
   } = useSettings();
+  const { isDemoMode } = useAuth();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   
@@ -50,8 +52,8 @@ const IntelligentDashboard = () => {
     return today ? `Aujourd'hui, ${hours}:${minutes}` : `${lastUpdate.toLocaleDateString('fr-FR')}, ${hours}:${minutes}`;
   };
 
-  // Données pour les graphiques supplémentaires
-  const feedingChartData = [
+  // Données pour les graphiques - uniquement en mode démo
+  const feedingChartData = isDemoMode ? [
     { jour: 'Lun', quantite: 45, cout: 15000 },
     { jour: 'Mar', quantite: 52, cout: 17000 },
     { jour: 'Mer', quantite: 48, cout: 16000 },
@@ -59,30 +61,30 @@ const IntelligentDashboard = () => {
     { jour: 'Ven', quantite: 50, cout: 16500 },
     { jour: 'Sam', quantite: 42, cout: 14000 },
     { jour: 'Dim', quantite: 38, cout: 12500 },
-  ];
+  ] : [];
 
-  const mortalityData = [
+  const mortalityData = isDemoMode ? [
     { semaine: 'S1', mortalite: 12, objectif: 15 },
     { semaine: 'S2', mortalite: 8, objectif: 15 },
     { semaine: 'S3', mortalite: 15, objectif: 15 },
     { semaine: 'S4', mortalite: 5, objectif: 15 },
-  ];
+  ] : [];
 
-  const waterQualityData = [
+  const waterQualityData = isDemoMode ? [
     { heure: '06h', temperature: 24, ph: 7.2, oxygene: 6.5 },
     { heure: '09h', temperature: 25, ph: 7.3, oxygene: 6.8 },
     { heure: '12h', temperature: 27, ph: 7.4, oxygene: 7.0 },
     { heure: '15h', temperature: 28, ph: 7.3, oxygene: 6.9 },
     { heure: '18h', temperature: 26, ph: 7.2, oxygene: 6.7 },
     { heure: '21h', temperature: 25, ph: 7.1, oxygene: 6.4 },
-  ];
+  ] : [];
 
-  const productionBySpecies = [
+  const productionBySpecies = isDemoMode ? [
     { name: 'Tilapia', value: 45 },
     { name: 'Clarias', value: 30 },
     { name: 'Carpe', value: 15 },
     { name: 'Autres', value: 10 },
-  ];
+  ] : [];
   const getUnitSpecificData = () => {
     if (!activeUnit) return {
       metrics: [],

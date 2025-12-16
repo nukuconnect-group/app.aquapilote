@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -185,256 +186,230 @@ export const useProductionUnits = () => {
   return context;
 };
 
+// Données de démonstration
+const getDemoUnits = (): ProductionUnit[] => [
+  {
+    id: 'ECLO001',
+    name: 'Écloserie Principale',
+    type: 'ecloserie',
+    description: 'Production d\'alevins de tilapia et carpe',
+    isActive: true,
+    capacity: 100000,
+    currentStock: 85000,
+    manager: 'Dr. Marie Dubois',
+    createdAt: '2024-01-15',
+    financialData: {
+      unitId: 'ECLO001',
+      revenue: 25000,
+      expenses: 15000,
+      profit: 10000,
+      monthlyData: [
+        { month: 'Jan', revenue: 20000, expenses: 12000, profit: 8000 },
+        { month: 'Fév', revenue: 22000, expenses: 13000, profit: 9000 },
+        { month: 'Mar', revenue: 25000, expenses: 15000, profit: 10000 }
+      ]
+    }
+  },
+  {
+    id: 'GROSS001',
+    name: 'Unité de Grossissement A',
+    type: 'grossissement',
+    description: 'Élevage jusqu\'à maturité commerciale',
+    isActive: true,
+    capacity: 50000,
+    currentStock: 42000,
+    manager: 'Jean Martin',
+    createdAt: '2024-02-01',
+    financialData: {
+      unitId: 'GROSS001',
+      revenue: 45000,
+      expenses: 28000,
+      profit: 17000,
+      monthlyData: [
+        { month: 'Jan', revenue: 40000, expenses: 25000, profit: 15000 },
+        { month: 'Fév', revenue: 42000, expenses: 26000, profit: 16000 },
+        { month: 'Mar', revenue: 45000, expenses: 28000, profit: 17000 }
+      ]
+    }
+  },
+  {
+    id: 'TRANSF001',
+    name: 'Unité de Transformation',
+    type: 'transformation',
+    description: 'Découpe et préparation des poissons',
+    isActive: true,
+    capacity: 2000,
+    currentStock: 1500,
+    manager: 'Sarah Laurent',
+    createdAt: '2024-03-10',
+    financialData: {
+      unitId: 'TRANSF001',
+      revenue: 35000,
+      expenses: 22000,
+      profit: 13000,
+      monthlyData: [
+        { month: 'Jan', revenue: 30000, expenses: 18000, profit: 12000 },
+        { month: 'Fév', revenue: 32000, expenses: 20000, profit: 12000 },
+        { month: 'Mar', revenue: 35000, expenses: 22000, profit: 13000 }
+      ]
+    }
+  }
+];
+
+const getDemoInfrastructures = (): Infrastructure[] => [
+  {
+    id: 'INF001',
+    name: 'Bassin d\'incubation 1',
+    unitId: 'ECLO001',
+    type: 'bassin_incubation',
+    capacity: 20000,
+    status: 'active',
+    specifications: { temperature: 26, ph: 7.2, oxygenLevel: 8.5 }
+  },
+  {
+    id: 'INF002',
+    name: 'Bassin de grossissement A1',
+    unitId: 'GROSS001',
+    type: 'bassin_grossissement',
+    capacity: 15000,
+    status: 'active',
+    specifications: { volume: 15000, profondeur: 2.5 }
+  },
+  {
+    id: 'INF003',
+    name: 'Chambre froide principale',
+    unitId: 'TRANSF001',
+    type: 'chambre_froide',
+    capacity: 1000,
+    status: 'active',
+    specifications: { temperature: -18, humidity: 85 }
+  }
+];
+
 export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) => {
+  const { isDemoMode, isAuthenticated, user } = useAuth();
   const [currency, setCurrency] = useState<'XOF' | 'EUR' | 'USD' | 'MAD'>('XOF');
   
-  const [units, setUnits] = useState<ProductionUnit[]>([
-    {
-      id: 'ECLO001',
-      name: 'Écloserie Principale',
-      type: 'ecloserie',
-      description: 'Production d\'alevins de tilapia et carpe',
-      isActive: true,
-      capacity: 100000,
-      currentStock: 85000,
-      manager: 'Dr. Marie Dubois',
-      createdAt: '2024-01-15',
-      financialData: {
-        unitId: 'ECLO001',
-        revenue: 25000,
-        expenses: 15000,
-        profit: 10000,
-        monthlyData: [
-          { month: 'Jan', revenue: 20000, expenses: 12000, profit: 8000 },
-          { month: 'Fév', revenue: 22000, expenses: 13000, profit: 9000 },
-          { month: 'Mar', revenue: 25000, expenses: 15000, profit: 10000 }
-        ]
-      }
-    },
-    {
-      id: 'GROSS001',
-      name: 'Unité de Grossissement A',
-      type: 'grossissement',
-      description: 'Élevage jusqu\'à maturité commerciale',
-      isActive: true,
-      capacity: 50000,
-      currentStock: 42000,
-      manager: 'Jean Martin',
-      createdAt: '2024-02-01',
-      financialData: {
-        unitId: 'GROSS001',
-        revenue: 45000,
-        expenses: 28000,
-        profit: 17000,
-        monthlyData: [
-          { month: 'Jan', revenue: 40000, expenses: 25000, profit: 15000 },
-          { month: 'Fév', revenue: 42000, expenses: 26000, profit: 16000 },
-          { month: 'Mar', revenue: 45000, expenses: 28000, profit: 17000 }
-        ]
-      }
-    },
-    {
-      id: 'TRANSF001',
-      name: 'Unité de Transformation',
-      type: 'transformation',
-      description: 'Découpe et préparation des poissons',
-      isActive: true,
-      capacity: 2000,
-      currentStock: 1500,
-      manager: 'Sarah Laurent',
-      createdAt: '2024-03-10',
-      financialData: {
-        unitId: 'TRANSF001',
-        revenue: 35000,
-        expenses: 22000,
-        profit: 13000,
-        monthlyData: [
-          { month: 'Jan', revenue: 30000, expenses: 18000, profit: 12000 },
-          { month: 'Fév', revenue: 32000, expenses: 20000, profit: 12000 },
-          { month: 'Mar', revenue: 35000, expenses: 22000, profit: 13000 }
-        ]
-      }
-    }
-  ]);
+  // Initialiser avec des tableaux vides - les données démo seront ajoutées via useEffect
+  const [units, setUnits] = useState<ProductionUnit[]>([]);
+  const [infrastructures, setInfrastructures] = useState<Infrastructure[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [cycles, setCycles] = useState<ProductionCycle[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [depreciableAssets, setDepreciableAssets] = useState<DepreciableAsset[]>([]);
+  const [activeUnit, setActiveUnit] = useState<ProductionUnit | null>(null);
 
-  const [infrastructures, setInfrastructures] = useState<Infrastructure[]>([
-    {
-      id: 'INF001',
-      name: 'Bassin d\'incubation 1',
-      unitId: 'ECLO001',
-      type: 'bassin_incubation',
-      capacity: 20000,
-      status: 'active',
-      specifications: { temperature: 26, ph: 7.2, oxygenLevel: 8.5 }
-    },
-    {
-      id: 'INF002',
-      name: 'Bassin de grossissement A1',
-      unitId: 'GROSS001',
-      type: 'bassin_grossissement',
-      capacity: 15000,
-      status: 'active',
-      specifications: { volume: 15000, profondeur: 2.5 }
-    },
-    {
-      id: 'INF003',
-      name: 'Chambre froide principale',
-      unitId: 'TRANSF001',
-      type: 'chambre_froide',
-      capacity: 1000,
-      status: 'active',
-      specifications: { temperature: -18, humidity: 85 }
+  // Charger les données démo uniquement en mode démonstration
+  useEffect(() => {
+    if (isDemoMode) {
+      // Mode démo: charger les données de démonstration
+      const demoUnits = getDemoUnits();
+      const demoInfrastructures = getDemoInfrastructures();
+      
+      setUnits(demoUnits);
+      setInfrastructures(demoInfrastructures);
+      setActiveUnit(demoUnits[0] || null);
+      
+      // Données démo pour équipements
+      setEquipment([
+        {
+          id: 'EQ001',
+          name: 'Four électrique principal',
+          type: 'four_electrique',
+          unitId: 'TRANSF001',
+          status: 'active',
+          specifications: { power: '15kW', capacity: '500kg/h', temperature_max: 200 },
+          purchasePrice: 2500000,
+          purchaseDate: '2024-01-15',
+          depreciationRate: 10,
+          currentValue: 2250000
+        }
+      ]);
+      
+      // Données démo pour cycles
+      setCycles([
+        {
+          id: 'CY001',
+          unitId: 'ECLO001',
+          name: 'Cycle Tilapia Q1 2024',
+          startDate: '2024-01-15',
+          status: 'active',
+          targetQuantity: 50000,
+          currentQuantity: 45000,
+          notes: 'Excellente croissance observée'
+        }
+      ]);
+      
+      // Données démo pour achats
+      setPurchases([
+        {
+          id: '1',
+          date: '2024-01-18',
+          category: 'Aliments',
+          subcategory: 'Granulés flottants',
+          description: 'Aliment poisson croissance 25kg',
+          supplier: 'Biomar France',
+          amount: 425000,
+          currency: 'XOF',
+          quantity: 10,
+          unit: 'sacs',
+          paymentMethod: 'Virement',
+          reference: 'CMD-2024-001',
+          unitId: 'GROSS001',
+          unitName: 'Unité de Grossissement A',
+          status: 'received'
+        }
+      ]);
+      
+      // Données démo pour transactions
+      setTransactions([
+        {
+          id: '1',
+          date: '2024-01-18',
+          type: 'revenue',
+          category: 'Vente de poissons',
+          description: 'Vente carpes - Restaurant Les Saveurs',
+          amount: 1250000,
+          currency: 'XOF',
+          paymentMethod: 'Virement',
+          client: 'Restaurant Les Saveurs',
+          status: 'confirmed',
+          unitId: 'GROSS001',
+          unitName: 'Unité de Grossissement A'
+        }
+      ]);
+      
+      // Données démo pour amortissements
+      setDepreciableAssets([
+        {
+          id: '1',
+          name: 'Four électrique principal',
+          category: 'Équipements de transformation',
+          purchasePrice: 2500000,
+          currency: 'XOF',
+          purchaseDate: '2024-01-15',
+          depreciationMethod: 'linear',
+          usefulLife: 10,
+          currentValue: 2250000,
+          accumulatedDepreciation: 250000,
+          unitId: 'TRANSF001',
+          status: 'active'
+        }
+      ]);
+    } else if (isAuthenticated && user) {
+      // Utilisateur connecté: commencer avec des données vides
+      // Les vraies données viendront de la base de données via les hooks appropriés
+      setUnits([]);
+      setInfrastructures([]);
+      setEquipment([]);
+      setCycles([]);
+      setPurchases([]);
+      setTransactions([]);
+      setDepreciableAssets([]);
+      setActiveUnit(null);
     }
-  ]);
-
-  const [equipment, setEquipment] = useState<Equipment[]>([
-    {
-      id: 'EQ001',
-      name: 'Four électrique principal',
-      type: 'four_electrique',
-      unitId: 'TRANSF001',
-      status: 'active',
-      specifications: { power: '15kW', capacity: '500kg/h', temperature_max: 200 },
-      purchasePrice: 2500000,
-      purchaseDate: '2024-01-15',
-      depreciationRate: 10,
-      currentValue: 2250000
-    },
-    {
-      id: 'EQ002',
-      name: 'Chambre froide positive A',
-      type: 'chambre_froide_positive',
-      unitId: 'CONSERVATION001',
-      status: 'active',
-      specifications: { temperature: '0-4°C', capacity: '2000kg', humidity: '85%' },
-      purchasePrice: 1800000,
-      purchaseDate: '2024-02-01',
-      depreciationRate: 8,
-      currentValue: 1680000
-    }
-  ]);
-
-  const [cycles, setCycles] = useState<ProductionCycle[]>([
-    {
-      id: 'CY001',
-      unitId: 'ECLO001',
-      name: 'Cycle Tilapia Q1 2024',
-      startDate: '2024-01-15',
-      status: 'active',
-      targetQuantity: 50000,
-      currentQuantity: 45000,
-      notes: 'Excellente croissance observée'
-    },
-    {
-      id: 'CY002',
-      unitId: 'GROSS001',
-      name: 'Cycle Grossissement Batch A',
-      startDate: '2024-02-01',
-      status: 'active',
-      targetQuantity: 30000,
-      currentQuantity: 25000,
-      notes: 'Alimentation renforcée en cours'
-    }
-  ]);
-
-  const [purchases, setPurchases] = useState<Purchase[]>([
-    {
-      id: '1',
-      date: '2024-01-18',
-      category: 'Aliments',
-      subcategory: 'Granulés flottants',
-      description: 'Aliment poisson croissance 25kg',
-      supplier: 'Biomar France',
-      amount: 425000,
-      currency: 'XOF',
-      quantity: 10,
-      unit: 'sacs',
-      paymentMethod: 'Virement',
-      reference: 'CMD-2024-001',
-      unitId: 'GROSS001',
-      unitName: 'Unité de Grossissement A',
-      status: 'received'
-    },
-    {
-      id: '2',
-      date: '2024-01-17',
-      category: 'Équipements et matériels',
-      subcategory: 'Pompes',
-      description: 'Pompe à eau submersible 2000L/h',
-      supplier: 'AquaTech Pro',
-      amount: 225000,
-      currency: 'XOF',
-      quantity: 1,
-      unit: 'unité',
-      paymentMethod: 'Carte bancaire',
-      status: 'received'
-    }
-  ]);
-
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      date: '2024-01-18',
-      type: 'revenue',
-      category: 'Vente de poissons',
-      description: 'Vente carpes - Restaurant Les Saveurs',
-      amount: 1250000,
-      currency: 'XOF',
-      paymentMethod: 'Virement',
-      client: 'Restaurant Les Saveurs',
-      status: 'confirmed',
-      unitId: 'GROSS001',
-      unitName: 'Unité de Grossissement A'
-    },
-    {
-      id: '2',
-      date: '2024-01-17',
-      type: 'expense',
-      category: 'Alimentation',
-      description: 'Achat aliments Biomar',
-      amount: 400000,
-      currency: 'XOF',
-      paymentMethod: 'Carte bancaire',
-      supplier: 'Biomar',
-      status: 'confirmed',
-      unitId: 'GROSS001',
-      unitName: 'Unité de Grossissement A',
-      purchaseId: '1'
-    }
-  ]);
-
-  const [depreciableAssets, setDepreciableAssets] = useState<DepreciableAsset[]>([
-    {
-      id: '1',
-      name: 'Four électrique principal',
-      category: 'Équipements de transformation',
-      purchasePrice: 2500000,
-      currency: 'XOF',
-      purchaseDate: '2024-01-15',
-      depreciationMethod: 'linear',
-      usefulLife: 10,
-      currentValue: 2250000,
-      accumulatedDepreciation: 250000,
-      unitId: 'TRANSF001',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Système de filtration',
-      category: 'Équipements de traitement',
-      purchasePrice: 1800000,
-      currency: 'XOF',
-      purchaseDate: '2024-02-01',
-      depreciationMethod: 'linear',
-      usefulLife: 8,
-      currentValue: 1680000,
-      accumulatedDepreciation: 120000,
-      unitId: 'GROSS001',
-      status: 'active'
-    }
-  ]);
-
-  const [activeUnit, setActiveUnit] = useState<ProductionUnit | null>(units[0]);
+  }, [isDemoMode, isAuthenticated, user]);
 
   const formatCurrency = (amount: number): string => {
     const currencySymbols = {

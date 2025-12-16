@@ -14,6 +14,7 @@ import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
@@ -63,6 +64,7 @@ const LivestockManagement = () => {
   const { toast } = useToast();
   const { units } = useProductionUnits();
   const { t } = useSettings();
+  const { isDemoMode } = useAuth();
   
   const [selectedUnit, setSelectedUnit] = useState('all');
   const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch } = useLivestockBatches();
@@ -90,7 +92,9 @@ const LivestockManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<LivestockBatch | null>(null);
   const [showControlForm, setShowControlForm] = useState(false);
-  const [controlRecords, setControlRecords] = useState<ControlFishing[]>([
+  
+  // Données de contrôle de pêche - vides par défaut, remplies en mode démo
+  const getDemoControlRecords = (): ControlFishing[] => isDemoMode ? [
     {
       id: '1',
       date: '2024-03-15',
@@ -125,7 +129,15 @@ const LivestockManagement = () => {
       averageWeight: 110,
       rendementM2: 13.8
     }
-  ]);
+  ] : [];
+  
+  const [controlRecords, setControlRecords] = useState<ControlFishing[]>(getDemoControlRecords());
+  
+  // Mettre à jour les données de contrôle quand le mode démo change
+  useEffect(() => {
+    setControlRecords(getDemoControlRecords());
+  }, [isDemoMode]);
+  
   const [controlFormData, setControlFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     bassinId: '',
@@ -569,7 +581,7 @@ const LivestockManagement = () => {
             </CardContent>
           </Card>
           
-          {/* Version Mobile - Bouton flottant */}
+          {/* Version Mobile - Bouton flottant (sans animation) */}
           <div className="sm:hidden fixed bottom-20 right-4 z-50">
             <Dialog>
               <DialogTrigger asChild>

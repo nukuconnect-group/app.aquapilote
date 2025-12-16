@@ -51,7 +51,7 @@ const demoNotifications: Notification[] = [
 ];
 
 const NotificationsPanel = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isDemoMode } = useAuth();
   const {
     notifications: realNotifications,
     loading,
@@ -62,39 +62,40 @@ const NotificationsPanel = () => {
     deleteNotification
   } = useNotifications();
 
-  // Use demo data if not authenticated
+  // Use demo data ONLY in demo mode (not just when not authenticated)
   const [localDemoNotifications, setLocalDemoNotifications] = useState(demoNotifications);
   
-  const notifications = isAuthenticated ? realNotifications : localDemoNotifications;
-  const unreadCount = isAuthenticated 
-    ? realUnreadCount 
-    : localDemoNotifications.filter(n => !n.is_read).length;
+  // Afficher les données démo uniquement en mode démo, sinon les vraies données ou rien
+  const notifications = isDemoMode ? localDemoNotifications : (isAuthenticated ? realNotifications : []);
+  const unreadCount = isDemoMode 
+    ? localDemoNotifications.filter(n => !n.is_read).length
+    : (isAuthenticated ? realUnreadCount : 0);
 
   const handleMarkAsRead = (id: string) => {
-    if (isAuthenticated) {
-      markAsRead(id);
-    } else {
+    if (isDemoMode) {
       setLocalDemoNotifications(prev => 
         prev.map(n => n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n)
       );
+    } else if (isAuthenticated) {
+      markAsRead(id);
     }
   };
 
   const handleMarkAllAsRead = () => {
-    if (isAuthenticated) {
-      markAllAsRead();
-    } else {
+    if (isDemoMode) {
       setLocalDemoNotifications(prev => 
         prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
+    } else if (isAuthenticated) {
+      markAllAsRead();
     }
   };
 
   const handleDelete = (id: string) => {
-    if (isAuthenticated) {
-      deleteNotification(id);
-    } else {
+    if (isDemoMode) {
       setLocalDemoNotifications(prev => prev.filter(n => n.id !== id));
+    } else if (isAuthenticated) {
+      deleteNotification(id);
     }
   };
 
