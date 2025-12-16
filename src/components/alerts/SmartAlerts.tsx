@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/contexts/AuthContext';
+import { createNotification } from '@/lib/notificationService';
 
 export interface Alert {
   id: string;
@@ -61,6 +63,7 @@ interface AlertThresholds {
 
 const SmartAlerts: React.FC<SmartAlertsProps> = ({ data, unitId, onDismiss }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [enabledCategories, setEnabledCategories] = useState({
@@ -71,6 +74,9 @@ const SmartAlerts: React.FC<SmartAlertsProps> = ({ data, unitId, onDismiss }) =>
     production: true,
     anomaly: true
   });
+  
+  // Track sent notifications to avoid duplicates
+  const sentNotificationsRef = useRef<Set<string>>(new Set());
   
   const [thresholds, setThresholds] = useState<AlertThresholds>({
     mortalityRate: 2.5,
@@ -238,13 +244,69 @@ const SmartAlerts: React.FC<SmartAlertsProps> = ({ data, unitId, onDismiss }) =>
       return [...prev, ...filtered].slice(-20); // Garder les 20 dernières alertes
     });
 
-    // Notification toast pour les alertes critiques
-    newAlerts.forEach(alert => {
+    // Notification toast et push pour les alertes critiques
+    newAlerts.forEach(async (alert) => {
       if (alert.type === 'critical') {
         toast({
           title: '🚨 ' + alert.title,
           description: alert.description,
           variant: 'destructive'
+        });
+        
+        // Send push notification to database (only once per alert)
+        if (user?.id && !sentNotificationsRef.current.has(alert.id)) {
+          sentNotificationsRef.current.add(alert.id);
+          
+          const categoryModules: Record<string, string> = {
+            mortality: 'Santé',
+            growth: 'Production',
+            water_quality: 'Surveillance',
+            feeding: 'Alimentation',
+            production: 'Production',
+            anomaly: 'Système'
+          };
+          
+          await createNotification({
+            userId: user.id,
+            title: alert.title,
+            message: alert.description + (alert.suggestion ? ` 💡 ${alert.suggestion}` : ''),
+            type: 'error',
+            module: categoryModules[alert.category] || 'Système',
+            isCritical: true,
+            metadata: {
+              alertId: alert.id,
+              category: alert.category,
+              metrics: alert.metrics,
+              unitName: alert.unitName
+            }
+          });
+        }
+      } else if (alert.type === 'warning' && user?.id && !sentNotificationsRef.current.has(alert.id)) {
+        // Also send warnings to database
+        sentNotificationsRef.current.add(alert.id);
+        
+        const categoryModules: Record<string, string> = {
+          mortality: 'Santé',
+          growth: 'Production',
+          water_quality: 'Surveillance',
+          feeding: 'Alimentation',
+          production: 'Production',
+          anomaly: 'Système'
+        };
+        
+        await createNotification({
+          userId: user.id,
+          title: alert.title,
+          message: alert.description + (alert.suggestion ? ` 💡 ${alert.suggestion}` : ''),
+          type: 'warning',
+          module: categoryModules[alert.category] || 'Système',
+          isCritical: false,
+          metadata: {
+            alertId: alert.id,
+            category: alert.category,
+            metrics: alert.metrics,
+            unitName: alert.unitName
+          }
         });
       }
     });
