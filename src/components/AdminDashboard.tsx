@@ -2,26 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, UserCheck, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/clientConfig';
-import { userCreationSchema } from '@/lib/validation';
 import { useLogs } from '@/contexts/LogsContext';
+import { useProductionUnits, ProductionUnitType } from '@/contexts/ProductionUnitsContext';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AdminAlertNotification from './AdminAlertNotification';
 import DatabaseStatsPanel from './admin/DatabaseStatsPanel';
+import DatabaseStoragePanel from './admin/DatabaseStoragePanel';
 import OnlineUsersPanel from './admin/OnlineUsersPanel';
 import UserSessionHistory from './admin/UserSessionHistory';
+import UserUnitsDisplay from './admin/UserUnitsDisplay';
+import AddUserWithUnitsDialog from './admin/AddUserWithUnitsDialog';
 
 interface UserProfile {
   id: string;
@@ -39,6 +41,13 @@ interface UserRole {
   created_at: string;
 }
 
+interface UserUnit {
+  id: string;
+  name: string;
+  type: ProductionUnitType;
+  isActive: boolean;
+}
+
 interface AdminUser {
   id: string;
   email: string;
@@ -47,6 +56,7 @@ interface AdminUser {
   created_at: string;
   lastLogin?: string;
   isOnline?: boolean;
+  units?: UserUnit[];
 }
 
 const AdminDashboard = () => {
@@ -54,6 +64,7 @@ const AdminDashboard = () => {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const { logs } = useLogs();
+  const { units: productionUnits } = useProductionUnits();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,13 +73,8 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
-  const [newUser, setNewUser] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    role: 'user' as 'admin' | 'manager' | 'operator' | 'user'
-  });
 
   // Statistiques calculées
   const stats = {
@@ -260,62 +266,6 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  const handleAddUser = async () => {
-    try {
-      const validation = userCreationSchema.safeParse(newUser);
-      if (!validation.success) {
-        toast({
-          title: t('error'),
-          description: validation.error.issues[0].message,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: {
-          email: newUser.email,
-          password: newUser.password,
-          full_name: newUser.full_name,
-          role: newUser.role
-        }
-      });
-
-      if (error) {
-        toast({
-          title: t('error'),
-          description: error.message || 'Erreur lors de la création de l\'utilisateur',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      if (!data?.success) {
-        toast({
-          title: t('error'),
-          description: data?.error || 'Erreur lors de la création de l\'utilisateur',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      toast({
-        title: t('success'),
-        description: 'Utilisateur créé avec succès'
-      });
-
-      setIsAddUserDialogOpen(false);
-      setNewUser({ email: '', password: '', full_name: '', role: 'user' });
-      loadUsers();
-    } catch (error) {
-      if (import.meta.env.DEV) console.error('Error creating user:', error);
-      toast({
-        title: t('error'),
-        description: 'Erreur lors de la création de l\'utilisateur',
-        variant: 'destructive'
-      });
-    }
-  };
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userEmail} ?`)) {
@@ -642,64 +592,10 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle>Gestion des utilisateurs</CardTitle>
-                <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Ajouter
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Nouvel utilisateur</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div>
-                        <Label htmlFor="full_name">Nom complet</Label>
-                        <Input 
-                          id="full_name" 
-                          value={newUser.full_name} 
-                          onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input 
-                          id="email" 
-                          type="email"
-                          value={newUser.email} 
-                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="password">Mot de passe</Label>
-                        <Input 
-                          id="password" 
-                          type="password"
-                          value={newUser.password} 
-                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="role">Rôle</Label>
-                        <Select value={newUser.role} onValueChange={(value: any) => setNewUser({ ...newUser, role: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">Utilisateur</SelectItem>
-                            <SelectItem value="operator">Opérateur</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="admin">Administrateur</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddUser}>Ajouter</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button onClick={() => setIsAddUserDialogOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Ajouter
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -735,6 +631,7 @@ const AdminDashboard = () => {
                       <TableHead>Nom</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Rôle</TableHead>
+                      <TableHead>Unités</TableHead>
                       <TableHead>Dernière connexion</TableHead>
                       <TableHead>Créé le</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -743,13 +640,13 @@ const AdminDashboard = () => {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                           Chargement...
                         </TableCell>
                       </TableRow>
                     ) : filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           Aucun utilisateur trouvé
                         </TableCell>
                       </TableRow>
@@ -789,6 +686,17 @@ const AdminDashboard = () => {
                                 <SelectItem value="admin">Administrateur</SelectItem>
                               </SelectContent>
                             </Select>
+                          </TableCell>
+                          <TableCell>
+                            <UserUnitsDisplay 
+                              units={user.units || productionUnits.map(u => ({
+                                id: u.id,
+                                name: u.name,
+                                type: u.type,
+                                isActive: u.isActive
+                              }))}
+                              compact
+                            />
                           </TableCell>
                           <TableCell>
                             {user.lastLogin ? (
@@ -845,9 +753,10 @@ const AdminDashboard = () => {
 
         <TabsContent value="database" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <DatabaseStoragePanel />
             <DatabaseStatsPanel />
-            <OnlineUsersPanel />
           </div>
+          <OnlineUsersPanel />
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
@@ -939,7 +848,7 @@ const AdminDashboard = () => {
                   ))}
                 {logs.filter(log => log.severity === 'error' || log.severity === 'warning').length === 0 && (
                   <div className="text-center py-12">
-                    <UserCheck className="w-12 h-12 mx-auto text-green-500 mb-3" />
+                    <Activity className="w-12 h-12 mx-auto text-green-500 mb-3" />
                     <p className="text-lg font-medium text-green-600">Aucune erreur détectée</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       L'application fonctionne normalement
@@ -961,6 +870,13 @@ const AdminDashboard = () => {
           onClose={() => setSelectedUserForHistory(null)}
         />
       )}
+
+      {/* Dialog pour ajouter un utilisateur avec unités */}
+      <AddUserWithUnitsDialog
+        open={isAddUserDialogOpen}
+        onOpenChange={setIsAddUserDialogOpen}
+        onUserAdded={loadUsers}
+      />
     </div>
   );
 };
