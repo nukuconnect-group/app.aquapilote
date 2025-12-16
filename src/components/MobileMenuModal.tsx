@@ -18,10 +18,13 @@ import {
   Settings,
   Truck,
   UserCog,
-  Database
+  Database,
+  Shield
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { Badge } from '@/components/ui/badge';
 
 interface MobileMenuModalProps {
   isOpen: boolean;
@@ -33,6 +36,36 @@ interface MobileMenuModalProps {
 const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenuModalProps) => {
   const { t, language } = useSettings();
   const { user } = useAuth();
+  const { isTeamMember, teamMemberInfo } = useTeamMemberAccess();
+
+  // Obtenir les onglets autorisés pour les membres d'équipe
+  const getAllowedTabs = () => {
+    if (!isTeamMember || !teamMemberInfo) return null;
+    
+    const allowedTabs = new Set<string>(['dashboard', 'settings']);
+    
+    teamMemberInfo.assignedUnits.forEach(unit => {
+      const perms = unit.permissions;
+      if (perms.canView) {
+        allowedTabs.add('units');
+        allowedTabs.add('infrastructures');
+      }
+      if (perms.canManageFeeding) {
+        allowedTabs.add('feeding');
+      }
+      if (perms.canManageHealth) {
+        allowedTabs.add('health');
+      }
+      if (perms.canManageProduction) {
+        allowedTabs.add('production');
+        allowedTabs.add('livestock');
+      }
+    });
+    
+    return allowedTabs;
+  };
+
+  const allowedTabs = getAllowedTabs();
   
   const menuItems = [
     // Production & Élevage
@@ -82,8 +115,8 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     }
   ];
 
-  // Ajouter section Admin si l'utilisateur est admin
-  if (user?.role === 'admin') {
+  // Ajouter section Admin si l'utilisateur est admin et non membre d'équipe
+  if (user?.role === 'admin' && !isTeamMember) {
     menuItems.push({
       category: language === 'fr' ? 'Administration' : 'Administration',
       items: [
@@ -91,6 +124,15 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       ]
     });
   }
+
+  // Filtrer les items selon les permissions
+  const filteredMenuItems = menuItems.map(category => ({
+    ...category,
+    items: category.items.filter(item => {
+      if (!allowedTabs) return true;
+      return allowedTabs.has(item.id);
+    })
+  })).filter(category => category.items.length > 0);
 
   const handleItemClick = (tabId: string) => {
     onTabChange(tabId);
@@ -104,11 +146,21 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
           <DialogTitle className="text-responsive-title">
             {language === 'fr' ? 'Menu principal' : 'Main Menu'}
           </DialogTitle>
+          
+          {/* Indicateur membre d'équipe */}
+          {isTeamMember && teamMemberInfo && (
+            <div className="flex items-center gap-2 mt-2">
+              <Shield className="w-4 h-4 text-primary" />
+              <Badge variant="outline" className="text-xs">
+                {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
+              </Badge>
+            </div>
+          )}
         </DialogHeader>
         
         <ScrollArea className="flex-1 px-4 pb-4">
           <div className="space-y-4 sm:space-y-6">
-            {menuItems.map((category) => (
+            {filteredMenuItems.map((category) => (
               <div key={category.category}>
                 <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3 uppercase tracking-wide">
                   {category.category}

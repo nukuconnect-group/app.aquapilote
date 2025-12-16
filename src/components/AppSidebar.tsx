@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/sidebar';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { Badge } from '@/components/ui/badge';
 
 interface AppSidebarProps {
   activeTab: string;
@@ -23,6 +25,40 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const { open } = useSidebar();
   const { t, language } = useSettings();
   const { user } = useAuth();
+  const { isTeamMember, teamMemberInfo } = useTeamMemberAccess();
+
+  // Modules accessibles aux membres d'équipe selon leurs permissions
+  const getTeamMemberAllowedTabs = () => {
+    if (!isTeamMember || !teamMemberInfo) return null;
+    
+    const allowedTabs = new Set<string>();
+    allowedTabs.add('dashboard'); // Toujours accès au dashboard
+    
+    teamMemberInfo.assignedUnits.forEach(unit => {
+      const perms = unit.permissions;
+      if (perms.canView) {
+        allowedTabs.add('units');
+        allowedTabs.add('infrastructures');
+      }
+      if (perms.canManageFeeding) {
+        allowedTabs.add('feeding');
+      }
+      if (perms.canManageHealth) {
+        allowedTabs.add('health');
+      }
+      if (perms.canManageProduction) {
+        allowedTabs.add('production');
+        allowedTabs.add('livestock');
+      }
+    });
+    
+    // Toujours accès aux paramètres de base
+    allowedTabs.add('settings');
+    
+    return allowedTabs;
+  };
+
+  const allowedTabs = getTeamMemberAllowedTabs();
 
   const navigationGroups = [
     {
@@ -76,7 +112,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   ];
 
   // Ajouter l'option admin si l'utilisateur est admin
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' && !isTeamMember) {
     navigationGroups.push({
       label: language === 'fr' ? 'Administration' : 'Administration',
       items: [
@@ -85,10 +121,32 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     });
   }
 
+  // Filtrer les groupes et items selon les permissions du membre d'équipe
+  const filteredGroups = navigationGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (!allowedTabs) return true; // Non membre = accès complet
+      return allowedTabs.has(item.id);
+    })
+  })).filter(group => group.items.length > 0);
+
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent className="overflow-y-auto">
-        {navigationGroups.map((group) => (
+        {/* Indicateur membre d'équipe */}
+        {isTeamMember && teamMemberInfo && open && (
+          <div className="px-3 py-2 border-b border-border">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Shield className="w-3 h-3" />
+              <span>Membre d'équipe</span>
+            </div>
+            <Badge variant="outline" className="mt-1 text-xs">
+              {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
+            </Badge>
+          </div>
+        )}
+        
+        {filteredGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
