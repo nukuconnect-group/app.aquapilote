@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +22,28 @@ interface Category {
   color: string;
   suggestions: string[];
 }
+
+interface Language {
+  id: string;
+  label: string;
+  code: string; // BCP 47 language code for speech recognition
+  flag: string;
+}
+
+const languages: Language[] = [
+  { id: 'fr', label: 'Français', code: 'fr-FR', flag: '🇫🇷' },
+  { id: 'en', label: 'English', code: 'en-US', flag: '🇺🇸' },
+  { id: 'ewe', label: 'Eʋegbe (Ewe)', code: 'ee-GH', flag: '🇬🇭' },
+  { id: 'kabye', label: 'Kabɩyɛ', code: 'fr-TG', flag: '🇹🇬' },
+  { id: 'adja', label: 'Adja', code: 'fr-BJ', flag: '🇧🇯' },
+  { id: 'lingala', label: 'Lingála', code: 'ln-CD', flag: '🇨🇩' },
+  { id: 'wolof', label: 'Wolof', code: 'wo-SN', flag: '🇸🇳' },
+  { id: 'bambara', label: 'Bambara', code: 'bm-ML', flag: '🇲🇱' },
+  { id: 'hausa', label: 'Hausa', code: 'ha-NG', flag: '🇳🇬' },
+  { id: 'yoruba', label: 'Yorùbá', code: 'yo-NG', flag: '🇳🇬' },
+  { id: 'swahili', label: 'Kiswahili', code: 'sw-KE', flag: '🇰🇪' },
+  { id: 'fon', label: 'Fɔngbè', code: 'fr-BJ', flag: '🇧🇯' },
+];
 
 const categories: Category[] = [
   {
@@ -97,7 +119,9 @@ const AquaAssistant = () => {
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -109,13 +133,15 @@ const AquaAssistant = () => {
 
 
   // Initialize speech recognition
+  const currentLang = languages.find(l => l.id === selectedLanguage);
+  
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'fr-FR';
+      recognitionRef.current.lang = currentLang?.code || 'fr-FR';
 
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
@@ -136,7 +162,7 @@ const AquaAssistant = () => {
         setIsListening(false);
       };
     }
-  }, []);
+  }, [selectedLanguage, currentLang?.code]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -160,7 +186,7 @@ const AquaAssistant = () => {
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
+      utterance.lang = currentLang?.code || 'fr-FR';
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     }
@@ -221,7 +247,8 @@ const AquaAssistant = () => {
         body: JSON.stringify({ 
           messages: enrichedMessages,
           category: selectedCategory,
-          unitId: selectedUnitId
+          unitId: selectedUnitId,
+          language: currentLang?.label || 'Français'
         }),
       });
 
@@ -338,37 +365,66 @@ const AquaAssistant = () => {
             </div>
 
             {/* Unit selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUnitSelector(!showUnitSelector)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>{currentUnit?.name || 'Toutes les unités'}</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showUnitSelector ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {showUnitSelector && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-10">
-                  <button
-                    onClick={() => { setSelectedUnitId(null); setShowUnitSelector(false); }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${!selectedUnitId ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
-                  >
-                    Toutes les unités
-                  </button>
-                  {units.map(unit => (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <button
+                  onClick={() => { setShowUnitSelector(!showUnitSelector); setShowLanguageSelector(false); }}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    <span className="truncate">{currentUnit?.name || 'Toutes unités'}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showUnitSelector ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showUnitSelector && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto">
                     <button
-                      key={unit.id}
-                      onClick={() => { setSelectedUnitId(unit.id); setShowUnitSelector(false); }}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${selectedUnitId === unit.id ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+                      onClick={() => { setSelectedUnitId(null); setShowUnitSelector(false); }}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${!selectedUnitId ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
                     >
-                      {unit.name}
+                      Toutes les unités
                     </button>
-                  ))}
-                </div>
-              )}
+                    {units.map(unit => (
+                      <button
+                        key={unit.id}
+                        onClick={() => { setSelectedUnitId(unit.id); setShowUnitSelector(false); }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${selectedUnitId === unit.id ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+                      >
+                        {unit.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Language selector */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowLanguageSelector(!showLanguageSelector); setShowUnitSelector(false); }}
+                  className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>{currentLang?.flag}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showLanguageSelector ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showLanguageSelector && (
+                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px] max-h-64 overflow-y-auto">
+                    {languages.map(lang => (
+                      <button
+                        key={lang.id}
+                        onClick={() => { setSelectedLanguage(lang.id); setShowLanguageSelector(false); }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2 ${selectedLanguage === lang.id ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+                      >
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
