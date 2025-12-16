@@ -255,8 +255,15 @@ const TeamManagement = () => {
 
       // Create user account
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('Session expirée. Veuillez vous reconnecter.');
+        }
+
         const response = await supabase.functions.invoke('create-team-member-account', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          },
           body: {
             email: inviteData.email,
             full_name: inviteData.name,
