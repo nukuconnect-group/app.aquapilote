@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -23,6 +23,13 @@ interface UnitPermissions {
   permissions: Record<string, boolean>;
 }
 
+interface CreatedCredentials {
+  email: string;
+  password: string;
+  loginUrl: string;
+  memberName: string;
+}
+
 const TeamManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
@@ -31,10 +38,13 @@ const TeamManagement = () => {
 
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [showMemberDetails, setShowMemberDetails] = useState(false);
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<CreatedCredentials | null>(null);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [selectedMemberUnits, setSelectedMemberUnits] = useState<TeamMemberUnit[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUnits, setIsLoadingUnits] = useState(false);
+  const [selectedUnitsForInvite, setSelectedUnitsForInvite] = useState<Set<string>>(new Set());
 
   const [inviteData, setInviteData] = useState<{
     name: string;
@@ -115,6 +125,35 @@ const TeamManagement = () => {
     }
   };
 
+  const toggleUnitSelection = (unitId: string) => {
+    const unit = units.find(u => u.id === unitId);
+    if (!unit) return;
+
+    setSelectedUnitsForInvite(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(unitId)) {
+        newSet.delete(unitId);
+        // Remove from unitPermissions
+        setInviteData(prevData => ({
+          ...prevData,
+          unitPermissions: prevData.unitPermissions.filter(up => up.unitId !== unitId)
+        }));
+      } else {
+        newSet.add(unitId);
+        // Add to unitPermissions
+        setInviteData(prevData => ({
+          ...prevData,
+          unitPermissions: [...prevData.unitPermissions, {
+            unitId: unit.id,
+            unitName: unit.name,
+            permissions: {}
+          }]
+        }));
+      }
+      return newSet;
+    });
+  };
+
   const addUnitToInvite = (unitId: string) => {
     const unit = units.find(u => u.id === unitId);
     if (!unit || inviteData.unitPermissions.some(up => up.unitId === unitId)) return;
@@ -127,6 +166,7 @@ const TeamManagement = () => {
         permissions: {}
       }]
     }));
+    setSelectedUnitsForInvite(prev => new Set(prev).add(unitId));
   };
 
   const removeUnitFromInvite = (unitId: string) => {
@@ -134,6 +174,11 @@ const TeamManagement = () => {
       ...prev,
       unitPermissions: prev.unitPermissions.filter(up => up.unitId !== unitId)
     }));
+    setSelectedUnitsForInvite(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(unitId);
+      return newSet;
+    });
   };
 
   const toggleUnitPermission = (unitId: string, permissionId: string) => {
@@ -206,12 +251,47 @@ const TeamManagement = () => {
         });
       }
 
-      addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec ${inviteData.unitPermissions.length} unité(s)`, 'success');
-      
-      toast({
-        title: "Membre ajouté",
-        description: `${inviteData.name} a été ajouté avec accès à ${inviteData.unitPermissions.length} unité(s)`
-      });
+      // Create user account
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const response = await supabase.functions.invoke('create-team-member-account', {
+          body: {
+            email: inviteData.email,
+            full_name: inviteData.name,
+            team_member_id: result.data.id
+          }
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        if (response.data?.credentials) {
+          setCreatedCredentials({
+            email: response.data.credentials.email,
+            password: response.data.credentials.password,
+            loginUrl: response.data.credentials.loginUrl,
+            memberName: inviteData.name
+          });
+          setShowCredentialsDialog(true);
+        }
+
+        addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé`, 'success');
+        
+        toast({
+          title: "Membre ajouté avec succès",
+          description: `Un compte a été créé pour ${inviteData.name}`
+        });
+      } catch (error: any) {
+        console.error('Error creating user account:', error);
+        addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte utilisateur`, 'warning');
+        
+        toast({
+          title: "Membre ajouté",
+          description: `${inviteData.name} a été ajouté mais le compte n'a pas pu être créé: ${error.message}`,
+          variant: "destructive"
+        });
+      }
 
       setInviteData({
         name: '',
@@ -222,6 +302,7 @@ const TeamManagement = () => {
         permissions: {},
         unitPermissions: []
       });
+      setSelectedUnitsForInvite(new Set());
       setShowInviteForm(false);
     } else {
       toast({
@@ -640,25 +721,38 @@ const TeamManagement = () => {
               </div>
             </div>
 
-            {/* Sélection des unités */}
+            {/* Sélection des unités avec checkboxes */}
             <div>
-              <Label className="mb-3 block">Unités de production assignées *</Label>
-              <div className="flex gap-2 mb-3">
-                <Select onValueChange={addUnitToInvite}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Ajouter une unité" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units.filter(u => !inviteData.unitPermissions.some(up => up.unitId === u.id)).map(unit => (
-                      <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Label className="mb-3 block">Unités de production assignées * (sélectionnez plusieurs)</Label>
+              <div className="border rounded-lg p-3 mb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {units.map(unit => (
+                    <div key={unit.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`select-unit-${unit.id}`}
+                        checked={selectedUnitsForInvite.has(unit.id)}
+                        onCheckedChange={() => toggleUnitSelection(unit.id)}
+                      />
+                      <label 
+                        htmlFor={`select-unit-${unit.id}`}
+                        className="text-sm cursor-pointer flex items-center gap-2"
+                      >
+                        <Building2 className="w-4 h-4 text-primary" />
+                        {unit.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {units.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Aucune unité disponible. Créez d'abord une unité de production.
+                  </p>
+                )}
               </div>
 
               {inviteData.unitPermissions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">
-                  Aucune unité assignée. Sélectionnez au moins une unité.
+                <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg bg-muted/50">
+                  Cochez les unités ci-dessus pour définir les permissions par unité.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -904,6 +998,116 @@ const TeamManagement = () => {
             <Button onClick={handleUpdateMemberPermissions} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Credentials du nouveau membre */}
+      <Dialog open={showCredentialsDialog} onOpenChange={setShowCredentialsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Compte créé avec succès
+            </DialogTitle>
+          </DialogHeader>
+          {createdCredentials && (
+            <div className="space-y-4">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                  Un compte a été créé pour <strong>{createdCredentials.memberName}</strong>. 
+                  Envoyez-lui les informations de connexion ci-dessous.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-muted-foreground">Lien de connexion</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={createdCredentials.loginUrl} 
+                      readOnly 
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCredentials.loginUrl);
+                        toast({ title: "Lien copié" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground">Email</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={createdCredentials.email} 
+                      readOnly 
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCredentials.email);
+                        toast({ title: "Email copié" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground">Mot de passe temporaire</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={createdCredentials.password} 
+                      readOnly 
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCredentials.password);
+                        toast({ title: "Mot de passe copié" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    const message = `Bonjour ${createdCredentials.memberName},\n\nVotre compte AquaPilote a été créé.\n\nLien de connexion: ${createdCredentials.loginUrl}\nEmail: ${createdCredentials.email}\nMot de passe: ${createdCredentials.password}\n\nVeuillez changer votre mot de passe après votre première connexion.`;
+                    navigator.clipboard.writeText(message);
+                    toast({ title: "Message complet copié", description: "Vous pouvez le coller dans un email ou message" });
+                  }}
+                >
+                  <Link className="w-4 h-4 mr-2" />
+                  Copier tout le message d'invitation
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Conseil: Demandez au membre de changer son mot de passe après la première connexion.
+              </p>
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setShowCredentialsDialog(false)}>
+              Fermer
             </Button>
           </div>
         </DialogContent>
