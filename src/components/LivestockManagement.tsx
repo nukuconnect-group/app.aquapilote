@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, AlertTriangle, Activity, BarChart3, Heart } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import SmartAlerts from './alerts/SmartAlerts';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
@@ -564,50 +562,6 @@ const LivestockManagement = () => {
         </div>
       </div>
 
-      {/* Alertes intelligentes - Desktop: carte complète, Mobile: icône seulement */}
-      {alertsData && (
-        <>
-          {/* Version Desktop */}
-          <Card className="hidden sm:block">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Alertes intelligentes
-              </CardTitle>
-              <CardDescription>Surveillance automatique des performances</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
-            </CardContent>
-          </Card>
-          
-          {/* Version Mobile - Bouton flottant (sans animation) */}
-          <div className="sm:hidden fixed bottom-20 right-4 z-50">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  size="icon" 
-                  className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 shadow-lg"
-                >
-                  <AlertTriangle className="w-6 h-6 text-white" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-orange-500" />
-                    Alertes intelligentes
-                  </DialogTitle>
-                  <DialogDescription>Surveillance automatique des performances</DialogDescription>
-                </DialogHeader>
-                <div className="mt-4">
-                  <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </>
-      )}
 
       {/* Statistiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
@@ -787,13 +741,13 @@ const LivestockManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Alert className="bg-blue-50 border-blue-200">
-                <Fish className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <Fish className="h-4 w-4 text-blue-600 mt-0.5" />
+                <p className="text-sm text-blue-800">
                   Les données de pêche de contrôle sont rattachées aux infrastructures des cycles actifs. 
                   Sélectionnez un cycle, puis une infrastructure pour enregistrer les données.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

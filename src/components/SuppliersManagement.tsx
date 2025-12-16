@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ProductionUnitSelector from './ProductionUnitSelector';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
-  Users, 
+  Users,
   Plus,
   Search,
   Phone,
@@ -57,6 +58,7 @@ interface Order {
 
 const SuppliersManagement = () => {
   const { addLog } = useLogs();
+  const { isDemoMode } = useAuth();
   
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
@@ -66,7 +68,8 @@ const SuppliersManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
+  // Données de démonstration
+  const getDemoSuppliers = (): Supplier[] => isDemoMode ? [
     {
       id: '1',
       name: 'AquaFeed Solutions',
@@ -106,9 +109,9 @@ const SuppliersManagement = () => {
       rating: 4.0,
       notes: 'En cours de vérification'
     }
-  ]);
+  ] : [];
 
-  const [orders, setOrders] = useState<Order[]>([
+  const getDemoOrders = (): Order[] => isDemoMode ? [
     {
       id: '1',
       supplierId: '1',
@@ -129,7 +132,16 @@ const SuppliersManagement = () => {
       status: 'pending',
       deliveryDate: '2024-03-20'
     }
-  ]);
+  ] : [];
+
+  const [suppliers, setSuppliers] = useState<Supplier[]>(getDemoSuppliers());
+  const [orders, setOrders] = useState<Order[]>(getDemoOrders());
+
+  // Mettre à jour les données quand le mode démo change
+  useEffect(() => {
+    setSuppliers(getDemoSuppliers());
+    setOrders(getDemoOrders());
+  }, [isDemoMode]);
 
   const [newSupplier, setNewSupplier] = useState({
     name: '',
