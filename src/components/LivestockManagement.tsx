@@ -552,20 +552,49 @@ const LivestockManagement = () => {
         </div>
       </div>
 
-      {/* Alertes intelligentes */}
+      {/* Alertes intelligentes - Desktop: carte complète, Mobile: icône seulement */}
       {alertsData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Alertes intelligentes
-            </CardTitle>
-            <CardDescription>Surveillance automatique des performances</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
-          </CardContent>
-        </Card>
+        <>
+          {/* Version Desktop */}
+          <Card className="hidden sm:block">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Alertes intelligentes
+              </CardTitle>
+              <CardDescription>Surveillance automatique des performances</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
+            </CardContent>
+          </Card>
+          
+          {/* Version Mobile - Bouton flottant */}
+          <div className="sm:hidden fixed bottom-20 right-4 z-50">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  size="icon" 
+                  className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 shadow-lg"
+                >
+                  <AlertTriangle className="w-6 h-6 text-white" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    Alertes intelligentes
+                  </DialogTitle>
+                  <DialogDescription>Surveillance automatique des performances</DialogDescription>
+                </DialogHeader>
+                <div className="mt-4">
+                  <SmartAlerts data={alertsData} unitId={selectedUnit !== 'all' ? selectedUnit : undefined} />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </>
       )}
 
       {/* Statistiques */}

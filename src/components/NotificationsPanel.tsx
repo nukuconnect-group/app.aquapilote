@@ -99,49 +99,56 @@ const NotificationsPanel = () => {
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span className="flex items-center gap-2">
               <Bell className="w-5 h-5" />
               Notifications
+              {notifications.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {notifications.length}
+                </Badge>
+              )}
             </span>
             {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+              <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
                 Tout marquer comme lu
               </Button>
             )}
           </DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="h-96">
+        <ScrollArea className="h-[60vh] sm:h-96 pr-2">
           <div className="space-y-3">
             {notifications.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Bell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Bell className="w-12 h-12 mx-auto mb-4 opacity-30" />
                 <p>Aucune notification</p>
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`border-l-4 p-3 rounded-r-lg ${getTypeColor(notification.type)} ${
+                  className={`border-l-4 p-3 rounded-r-lg transition-all ${getTypeColor(notification.type)} ${
                     !notification.read ? 'bg-opacity-100' : 'bg-opacity-50'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      {getIcon(notification.type)}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="shrink-0 mt-0.5">
+                        {getIcon(notification.type)}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className={`text-sm font-medium ${!notification.read ? 'font-semibold' : ''}`}>
+                        <h4 className={`text-sm ${!notification.read ? 'font-semibold' : 'font-medium'}`}>
                           {notification.title}
                         </h4>
-                        <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                        <div className="flex items-center gap-2 mt-2">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notification.message}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                           <Badge variant="outline" className="text-xs">
                             {notification.module}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(notification.timestamp).toLocaleString('fr-FR', {
                               hour: '2-digit',
                               minute: '2-digit',
@@ -152,24 +159,26 @@ const NotificationsPanel = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1 ml-2">
+                    <div className="flex flex-col sm:flex-row gap-1 shrink-0">
                       {!notification.read && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => markAsRead(notification.id)}
-                          className="h-6 w-6 p-0"
+                          className="h-7 w-7 p-0 hover:bg-green-100"
+                          title="Marquer comme lu"
                         >
-                          <Check className="w-3 h-3" />
+                          <Check className="w-4 h-4 text-green-600" />
                         </Button>
                       )}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteNotification(notification.id)}
-                        className="h-6 w-6 p-0 text-red-600"
+                        className="h-7 w-7 p-0 hover:bg-red-100"
+                        title="Supprimer"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4 text-red-600" />
                       </Button>
                     </div>
                   </div>
@@ -178,6 +187,17 @@ const NotificationsPanel = () => {
             )}
           </div>
         </ScrollArea>
+        
+        {notifications.length > 0 && (
+          <div className="pt-3 border-t">
+            <p className="text-xs text-center text-muted-foreground">
+              {unreadCount > 0 
+                ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`
+                : 'Toutes les notifications sont lues'
+              }
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
