@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '@/components/Header';
@@ -27,24 +27,113 @@ import TeamManagement from '@/components/TeamManagement';
 import ReportsManagement from '@/components/ReportsManagement';
 import SettingsManagement from '@/components/SettingsManagement';
 import AquaAssistant from '@/components/AquaAssistant';
+import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, Building2, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Page principale du dashboard
  * Accessible uniquement aux utilisateurs authentifiés
+ * Les membres d'équipe ont un accès restreint selon leurs permissions
  */
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess } = useTeamMemberAccess();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setShowMobileMenu(false);
   };
 
+  // Vérifier si le membre d'équipe a accès à l'onglet actuel
+  useEffect(() => {
+    if (isTeamMember && teamMemberInfo && !isLoadingAccess) {
+      const allowedTabs = new Set<string>(['dashboard', 'settings']);
+      
+      teamMemberInfo.assignedUnits.forEach(unit => {
+        const perms = unit.permissions;
+        if (perms.canView) {
+          allowedTabs.add('units');
+          allowedTabs.add('infrastructures');
+        }
+        if (perms.canManageFeeding) {
+          allowedTabs.add('feeding');
+        }
+        if (perms.canManageHealth) {
+          allowedTabs.add('health');
+        }
+        if (perms.canManageProduction) {
+          allowedTabs.add('production');
+          allowedTabs.add('livestock');
+        }
+      });
+
+      // Si l'onglet actuel n'est pas autorisé, rediriger vers dashboard
+      if (!allowedTabs.has(activeTab)) {
+        setActiveTab('dashboard');
+      }
+    }
+  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess]);
+
+  const renderTeamMemberWelcome = () => {
+    if (!isTeamMember || !teamMemberInfo) return null;
+
+    return (
+      <Card className="mb-6 border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Shield className="w-5 h-5 text-primary" />
+            Bienvenue, {teamMemberInfo.memberName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
+              </Badge>
+              {teamMemberInfo.department && (
+                <Badge variant="secondary">{teamMemberInfo.department}</Badge>
+              )}
+            </div>
+            
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Vous avez accès aux unités de production assignées par votre responsable.
+              </span>
+            </div>
+
+            {teamMemberInfo.assignedUnits.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-medium mb-2">Unités assignées :</p>
+                <div className="flex flex-wrap gap-2">
+                  {teamMemberInfo.assignedUnits.map(unit => (
+                    <Badge key={unit.unitId} variant="default" className="flex items-center gap-1">
+                      <Building2 className="w-3 h-3" />
+                      {unit.unitName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <IntelligentDashboard />;
+        return (
+          <>
+            {renderTeamMemberWelcome()}
+            <IntelligentDashboard />
+          </>
+        );
       case 'iot-control':
         return <IoTControlCenter />;
       case 'units':
@@ -86,7 +175,12 @@ const Dashboard: React.FC = () => {
       case 'admin':
         return <AdminDashboard />;
       default:
-        return <IntelligentDashboard />;
+        return (
+          <>
+            {renderTeamMemberWelcome()}
+            <IntelligentDashboard />
+          </>
+        );
     }
   };
 

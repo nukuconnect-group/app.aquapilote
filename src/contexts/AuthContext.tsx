@@ -20,6 +20,8 @@ interface User {
   suspendedAt?: string;
   country?: string;
   countryCode?: string;
+  isTeamMember?: boolean;
+  teamMemberOwnerId?: string;
   notifications: {
     email: boolean;
     desktop: boolean;
@@ -93,6 +95,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (import.meta.env.DEV) console.error('Error fetching roles:', rolesError);
       }
 
+      // Check if user is a team member (by email)
+      let isTeamMember = false;
+      let teamMemberOwnerId: string | undefined;
+      
+      if (supabaseUser.email) {
+        const { data: teamMember } = await supabase
+          .from('team_members')
+          .select('owner_id, status')
+          .eq('member_email', supabaseUser.email.toLowerCase())
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        if (teamMember) {
+          isTeamMember = true;
+          teamMemberOwnerId = teamMember.owner_id;
+        }
+      }
+
       const role = userRoles && userRoles.length > 0 ? userRoles[0].role : 'user';
 
       const userData: User = {
@@ -107,6 +127,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         suspendedAt: profile?.suspended_at || undefined,
         country: profile?.country || undefined,
         countryCode: profile?.country_code || undefined,
+        isTeamMember,
+        teamMemberOwnerId,
         notifications: {
           email: true,
           desktop: true,
