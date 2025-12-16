@@ -68,11 +68,17 @@ export const useTeamMembers = () => {
   const addTeamMember = async (member: NewTeamMember) => {
     if (!user?.id) return { success: false, error: 'Non authentifié' };
 
+    // Ensure we have a real Supabase session (prevents RLS errors in demo/expired sessions)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      return { success: false, error: 'Session expirée. Veuillez vous reconnecter.' };
+    }
+
     try {
       const { data, error } = await supabase
         .from('team_members')
         .insert({
-          owner_id: user.id,
+          owner_id: session.user.id,
           member_email: member.member_email.toLowerCase().trim(),
           member_name: member.member_name.trim(),
           role: member.role,
