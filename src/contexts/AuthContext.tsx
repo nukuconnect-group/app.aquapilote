@@ -350,6 +350,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        // Detect country automatically
+        try {
+          const { data: countryData } = await supabase.functions.invoke('detect-country');
+          if (countryData?.country) {
+            await supabase
+              .from('profiles')
+              .update({
+                country: countryData.country,
+                country_code: countryData.countryCode
+              })
+              .eq('id', data.user.id);
+          }
+        } catch (countryError) {
+          console.error('Country detection failed:', countryError);
+        }
+        
         setIsLoading(false);
         return { success: true };
       }
