@@ -731,6 +731,51 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          department: string | null
+          id: string
+          invited_at: string
+          member_email: string
+          member_name: string
+          owner_id: string
+          permissions: Json
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          invited_at?: string
+          member_email: string
+          member_name: string
+          owner_id: string
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          invited_at?: string
+          member_email?: string
+          member_name?: string
+          owner_id?: string
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_files: {
         Row: {
           compressed_size: number | null
