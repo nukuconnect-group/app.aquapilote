@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,33 +9,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
+import { useTeamMemberUnits, TeamMemberUnit, NewTeamMemberUnit } from '@/hooks/useTeamMemberUnits';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface UnitPermissions {
+  unitId: string;
+  unitName: string;
+  permissions: Record<string, boolean>;
+}
 
 const TeamManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { teamMembers, isLoading, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamMembers();
+  const { units } = useProductionUnits();
 
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [showMemberDetails, setShowMemberDetails] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [selectedMemberUnits, setSelectedMemberUnits] = useState<TeamMemberUnit[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false);
 
   const [inviteData, setInviteData] = useState<{
     name: string;
     email: string;
     role: string;
+    customRole: string;
     department: string;
     permissions: Record<string, boolean>;
+    unitPermissions: UnitPermissions[];
   }>({
     name: '',
     email: '',
     role: '',
+    customRole: '',
     department: '',
-    permissions: {}
+    permissions: {},
+    unitPermissions: []
   });
 
   const roles = [
@@ -46,7 +62,8 @@ const TeamManagement = () => {
     'Technicien Aquacole',
     'Ouvrier Aquacole',
     'Comptable',
-    'Stagiaire'
+    'Stagiaire',
+    'Personnalisé'
   ];
 
   const departments = [
@@ -78,6 +95,62 @@ const TeamManagement = () => {
     { id: 'settings', label: 'Paramètres', description: 'Configuration de l\'application' }
   ];
 
+  const loadMemberUnits = async (memberId: string) => {
+    setIsLoadingUnits(true);
+    try {
+      const { data, error } = await supabase
+        .from('team_member_units')
+        .select('*')
+        .eq('team_member_id', memberId);
+
+      if (error) throw error;
+      setSelectedMemberUnits((data || []).map(item => ({
+        ...item,
+        permissions: item.permissions as Record<string, boolean>
+      })));
+    } catch (error) {
+      console.error('Error loading member units:', error);
+    } finally {
+      setIsLoadingUnits(false);
+    }
+  };
+
+  const addUnitToInvite = (unitId: string) => {
+    const unit = units.find(u => u.id === unitId);
+    if (!unit || inviteData.unitPermissions.some(up => up.unitId === unitId)) return;
+
+    setInviteData(prev => ({
+      ...prev,
+      unitPermissions: [...prev.unitPermissions, {
+        unitId: unit.id,
+        unitName: unit.name,
+        permissions: {}
+      }]
+    }));
+  };
+
+  const removeUnitFromInvite = (unitId: string) => {
+    setInviteData(prev => ({
+      ...prev,
+      unitPermissions: prev.unitPermissions.filter(up => up.unitId !== unitId)
+    }));
+  };
+
+  const toggleUnitPermission = (unitId: string, permissionId: string) => {
+    setInviteData(prev => ({
+      ...prev,
+      unitPermissions: prev.unitPermissions.map(up => 
+        up.unitId === unitId ? {
+          ...up,
+          permissions: {
+            ...up.permissions,
+            [permissionId]: !up.permissions[permissionId]
+          }
+        } : up
+      )
+    }));
+  };
+
   const handleInviteMember = async () => {
     if (!inviteData.name || !inviteData.email || !inviteData.department) {
       toast({
@@ -88,7 +161,15 @@ const TeamManagement = () => {
       return;
     }
 
-    // Validate email format
+    if (inviteData.unitPermissions.length === 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez assigner au moins une unité de production",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteData.email)) {
       toast({
@@ -101,30 +182,45 @@ const TeamManagement = () => {
 
     setIsSubmitting(true);
     
+    const finalRole = inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role;
+    
     const newMember: NewTeamMember = {
       member_name: inviteData.name,
       member_email: inviteData.email,
-      role: inviteData.role || 'Membre',
+      role: finalRole || 'Membre',
+      custom_role: inviteData.role === 'Personnalisé' ? inviteData.customRole : undefined,
       department: inviteData.department,
       permissions: inviteData.permissions
     };
 
     const result = await addTeamMember(newMember);
     
-    if (result.success) {
-      addLog('Membre invité', 'Équipe', `${inviteData.name} invité dans le département ${inviteData.department}`, 'success');
+    if (result.success && result.data) {
+      // Add unit associations
+      for (const unitPerm of inviteData.unitPermissions) {
+        await supabase.from('team_member_units').insert({
+          team_member_id: result.data.id,
+          unit_id: unitPerm.unitId,
+          unit_name: unitPerm.unitName,
+          permissions: unitPerm.permissions
+        });
+      }
+
+      addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec ${inviteData.unitPermissions.length} unité(s)`, 'success');
       
       toast({
         title: "Membre ajouté",
-        description: `${inviteData.name} a été ajouté à votre équipe`
+        description: `${inviteData.name} a été ajouté avec accès à ${inviteData.unitPermissions.length} unité(s)`
       });
 
       setInviteData({
         name: '',
         email: '',
         role: '',
+        customRole: '',
         department: '',
-        permissions: {}
+        permissions: {},
+        unitPermissions: []
       });
       setShowInviteForm(false);
     } else {
@@ -142,13 +238,29 @@ const TeamManagement = () => {
     if (!selectedMember) return;
     
     setIsSubmitting(true);
+    
     const result = await updateTeamMember(selectedMember.id, {
       permissions: selectedMember.permissions,
       role: selectedMember.role,
+      custom_role: selectedMember.custom_role,
       department: selectedMember.department
     });
     
     if (result.success) {
+      // Update unit permissions
+      await supabase.from('team_member_units')
+        .delete()
+        .eq('team_member_id', selectedMember.id);
+
+      for (const unitPerm of selectedMemberUnits) {
+        await supabase.from('team_member_units').insert({
+          team_member_id: selectedMember.id,
+          unit_id: unitPerm.unit_id,
+          unit_name: unitPerm.unit_name,
+          permissions: unitPerm.permissions
+        });
+      }
+
       toast({
         title: "Permissions mises à jour",
         description: `Les permissions de ${selectedMember.member_name} ont été mises à jour`
@@ -217,6 +329,37 @@ const TeamManagement = () => {
     } : null);
   };
 
+  const addUnitToMember = (unitId: string) => {
+    const unit = units.find(u => u.id === unitId);
+    if (!unit || selectedMemberUnits.some(mu => mu.unit_id === unitId)) return;
+
+    setSelectedMemberUnits(prev => [...prev, {
+      id: `temp-${Date.now()}`,
+      team_member_id: selectedMember?.id || '',
+      unit_id: unit.id,
+      unit_name: unit.name,
+      permissions: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }]);
+  };
+
+  const removeUnitFromMember = (unitId: string) => {
+    setSelectedMemberUnits(prev => prev.filter(mu => mu.unit_id !== unitId));
+  };
+
+  const toggleMemberUnitPermission = (unitId: string, permissionId: string) => {
+    setSelectedMemberUnits(prev => prev.map(mu => 
+      mu.unit_id === unitId ? {
+        ...mu,
+        permissions: {
+          ...mu.permissions,
+          [permissionId]: !mu.permissions[permissionId]
+        }
+      } : mu
+    ));
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
@@ -239,6 +382,12 @@ const TeamManagement = () => {
     return Object.values(permissions).filter(Boolean).length;
   };
 
+  const openMemberDetails = async (member: TeamMember) => {
+    setSelectedMember(member);
+    await loadMemberUnits(member.id);
+    setShowMemberDetails(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -254,7 +403,7 @@ const TeamManagement = () => {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-2xl font-bold mb-2">Gestion d'Équipe</h2>
-            <p className="text-blue-100">Ajoutez des membres et gérez leurs permissions par module</p>
+            <p className="text-blue-100">Ajoutez des membres et gérez leurs permissions par unité et module</p>
           </div>
           <Button 
             variant="outline" 
@@ -296,10 +445,10 @@ const TeamManagement = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Award className="w-8 h-8 text-yellow-600" />
+              <Building2 className="w-8 h-8 text-purple-600" />
               <div>
-                <p className="text-2xl font-bold">{teamMembers.filter(m => m.status === 'pending').length}</p>
-                <p className="text-sm text-muted-foreground">En attente</p>
+                <p className="text-2xl font-bold">{units.length}</p>
+                <p className="text-sm text-muted-foreground">Unités</p>
               </div>
             </div>
           </CardContent>
@@ -308,7 +457,7 @@ const TeamManagement = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <MessageSquare className="w-8 h-8 text-purple-600" />
+              <MessageSquare className="w-8 h-8 text-orange-600" />
               <div>
                 <p className="text-2xl font-bold">{modulePermissions.length}</p>
                 <p className="text-sm text-muted-foreground">Modules</p>
@@ -351,7 +500,9 @@ const TeamManagement = () => {
                           <h4 className="font-medium">{member.member_name}</h4>
                           <p className="text-sm text-muted-foreground">{member.member_email}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{member.role}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {member.custom_role || member.role}
+                            </Badge>
                             {member.department && (
                               <Badge variant="secondary" className="text-xs">{member.department}</Badge>
                             )}
@@ -371,10 +522,7 @@ const TeamManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setShowMemberDetails(true);
-                          }}
+                          onClick={() => openMemberDetails(member)}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -428,7 +576,7 @@ const TeamManagement = () => {
 
       {/* Dialog Ajouter un membre */}
       <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ajouter un nouveau membre</DialogTitle>
           </DialogHeader>
@@ -467,6 +615,16 @@ const TeamManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {inviteData.role === 'Personnalisé' && (
+                <div>
+                  <Label>Rôle personnalisé *</Label>
+                  <Input
+                    value={inviteData.customRole}
+                    onChange={(e) => setInviteData({...inviteData, customRole: e.target.value})}
+                    placeholder="Ex: Responsable logistique"
+                  />
+                </div>
+              )}
               <div>
                 <Label>Département *</Label>
                 <Select value={inviteData.department} onValueChange={(value) => setInviteData({...inviteData, department: value})}>
@@ -482,9 +640,70 @@ const TeamManagement = () => {
               </div>
             </div>
 
+            {/* Sélection des unités */}
             <div>
-              <Label className="mb-3 block">Permissions par module</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+              <Label className="mb-3 block">Unités de production assignées *</Label>
+              <div className="flex gap-2 mb-3">
+                <Select onValueChange={addUnitToInvite}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Ajouter une unité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.filter(u => !inviteData.unitPermissions.some(up => up.unitId === u.id)).map(unit => (
+                      <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {inviteData.unitPermissions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">
+                  Aucune unité assignée. Sélectionnez au moins une unité.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {inviteData.unitPermissions.map((unitPerm) => (
+                    <div key={unitPerm.unitId} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-primary" />
+                          <span className="font-medium">{unitPerm.unitName}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeUnitFromInvite(unitPerm.unitId)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {modulePermissions.map((module) => (
+                          <div key={module.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`unit-${unitPerm.unitId}-${module.id}`}
+                              checked={unitPerm.permissions[module.id] || false}
+                              onCheckedChange={() => toggleUnitPermission(unitPerm.unitId, module.id)}
+                            />
+                            <label 
+                              htmlFor={`unit-${unitPerm.unitId}-${module.id}`} 
+                              className="text-xs cursor-pointer"
+                            >
+                              {module.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Permissions globales */}
+            <div>
+              <Label className="mb-3 block">Permissions globales (toutes unités)</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-3">
                 {modulePermissions.map((module) => (
                   <div key={module.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -501,9 +720,6 @@ const TeamManagement = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {Object.values(inviteData.permissions).filter(Boolean).length} module(s) sélectionné(s)
-              </p>
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -520,9 +736,9 @@ const TeamManagement = () => {
 
       {/* Dialog Détails du membre */}
       <Dialog open={showMemberDetails} onOpenChange={setShowMemberDetails}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifier les permissions - {selectedMember?.member_name}</DialogTitle>
+            <DialogTitle>Modifier - {selectedMember?.member_name}</DialogTitle>
           </DialogHeader>
           {selectedMember && (
             <div className="space-y-4">
@@ -543,8 +759,14 @@ const TeamManagement = () => {
                 <div>
                   <Label>Rôle</Label>
                   <Select 
-                    value={selectedMember.role} 
-                    onValueChange={(value) => setSelectedMember({...selectedMember, role: value})}
+                    value={selectedMember.custom_role ? 'Personnalisé' : selectedMember.role} 
+                    onValueChange={(value) => {
+                      if (value === 'Personnalisé') {
+                        setSelectedMember({...selectedMember, role: value});
+                      } else {
+                        setSelectedMember({...selectedMember, role: value, custom_role: null});
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -556,6 +778,16 @@ const TeamManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {(selectedMember.role === 'Personnalisé' || selectedMember.custom_role) && (
+                  <div>
+                    <Label>Rôle personnalisé</Label>
+                    <Input
+                      value={selectedMember.custom_role || ''}
+                      onChange={(e) => setSelectedMember({...selectedMember, custom_role: e.target.value})}
+                      placeholder="Ex: Responsable logistique"
+                    />
+                  </div>
+                )}
                 <div>
                   <Label>Département</Label>
                   <Select 
@@ -574,9 +806,78 @@ const TeamManagement = () => {
                 </div>
               </div>
 
+              {/* Unités assignées */}
               <div>
-                <Label className="mb-3 block">Permissions par module</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+                <Label className="mb-3 block">Unités de production assignées</Label>
+                {isLoadingUnits ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2 mb-3">
+                      <Select onValueChange={addUnitToMember}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Ajouter une unité" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {units.filter(u => !selectedMemberUnits.some(mu => mu.unit_id === u.id)).map(unit => (
+                            <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedMemberUnits.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">
+                        Aucune unité assignée
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {selectedMemberUnits.map((memberUnit) => (
+                          <div key={memberUnit.unit_id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-primary" />
+                                <span className="font-medium">{memberUnit.unit_name}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeUnitFromMember(memberUnit.unit_id)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {modulePermissions.map((module) => (
+                                <div key={module.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`member-unit-${memberUnit.unit_id}-${module.id}`}
+                                    checked={memberUnit.permissions[module.id] || false}
+                                    onCheckedChange={() => toggleMemberUnitPermission(memberUnit.unit_id, module.id)}
+                                  />
+                                  <label 
+                                    htmlFor={`member-unit-${memberUnit.unit_id}-${module.id}`} 
+                                    className="text-xs cursor-pointer"
+                                  >
+                                    {module.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Permissions globales */}
+              <div>
+                <Label className="mb-3 block">Permissions globales</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-3">
                   {modulePermissions.map((module) => (
                     <div key={module.id} className="flex items-center space-x-2">
                       <Checkbox
@@ -593,9 +894,6 @@ const TeamManagement = () => {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {getPermissionCount(selectedMember.permissions)} module(s) autorisé(s)
-                </p>
               </div>
             </div>
           )}
