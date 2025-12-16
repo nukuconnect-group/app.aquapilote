@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, full_name, team_member_id } = body;
+    const { email, full_name, team_member_id, password: providedPassword } = body;
 
     if (!email || !full_name) {
       return new Response(
@@ -77,7 +77,24 @@ serve(async (req) => {
       );
     }
 
-    const password = generatePassword();
+    // Use provided password if present, else generate one
+    let password = (typeof providedPassword === 'string' && providedPassword.trim().length > 0)
+      ? providedPassword
+      : generatePassword();
+
+    // Basic password validation (server-side)
+    if (password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: 'Mot de passe trop court (min 8 caractères)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      return new Response(
+        JSON.stringify({ error: 'Mot de passe invalide (maj/min/chiffre requis)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create admin client
     const supabaseAdmin = createClient(
