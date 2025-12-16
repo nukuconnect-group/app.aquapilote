@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -28,6 +28,8 @@ interface CreatedCredentials {
   password: string;
   loginUrl: string;
   memberName: string;
+  emailSent: boolean;
+  emailError?: string | null;
 }
 
 const TeamManagement = () => {
@@ -271,16 +273,24 @@ const TeamManagement = () => {
             email: response.data.credentials.email,
             password: response.data.credentials.password,
             loginUrl: response.data.credentials.loginUrl,
-            memberName: inviteData.name
+            memberName: inviteData.name,
+            emailSent: response.data.emailSent || false,
+            emailError: response.data.emailError
           });
           setShowCredentialsDialog(true);
         }
 
-        addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé`, 'success');
+        const emailStatus = response.data.emailSent 
+          ? 'Email envoyé automatiquement' 
+          : 'Compte créé (email non envoyé)';
+        
+        addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé - ${emailStatus}`, 'success');
         
         toast({
-          title: "Membre ajouté avec succès",
-          description: `Un compte a été créé pour ${inviteData.name}`
+          title: response.data.emailSent ? "Membre ajouté et email envoyé" : "Membre ajouté",
+          description: response.data.emailSent 
+            ? `Un email avec les identifiants a été envoyé à ${inviteData.email}`
+            : `Un compte a été créé pour ${inviteData.name}`
         });
       } catch (error: any) {
         console.error('Error creating user account:', error);
@@ -1014,12 +1024,28 @@ const TeamManagement = () => {
           </DialogHeader>
           {createdCredentials && (
             <div className="space-y-4">
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                  Un compte a été créé pour <strong>{createdCredentials.memberName}</strong>. 
-                  Envoyez-lui les informations de connexion ci-dessous.
-                </p>
-              </div>
+              {createdCredentials.emailSent ? (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mail className="w-5 h-5 text-green-600" />
+                    <span className="font-medium text-green-800 dark:text-green-200">Email envoyé avec succès!</span>
+                  </div>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Un email avec les identifiants de connexion a été envoyé à <strong>{createdCredentials.email}</strong>.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    <span className="font-medium text-amber-800 dark:text-amber-200">Email non envoyé</span>
+                  </div>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Le compte a été créé mais l'email n'a pas pu être envoyé{createdCredentials.emailError ? `: ${createdCredentials.emailError}` : ''}.
+                    Envoyez manuellement les informations ci-dessous à <strong>{createdCredentials.memberName}</strong>.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div>

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -132,6 +133,81 @@ serve(async (req) => {
     const appUrl = req.headers.get('origin') || 'https://hhsvraqchtqqgaezhnzn.lovableproject.com';
     const loginUrl = `${appUrl}/auth`;
 
+    // Send email with credentials via Resend
+    let emailSent = false;
+    let emailError = null;
+    
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey) {
+      try {
+        const resend = new Resend(resendApiKey);
+        
+        const emailResponse = await resend.emails.send({
+          from: "AquaPilote <onboarding@resend.dev>",
+          to: [email.trim()],
+          subject: "Bienvenue sur AquaPilote - Vos identifiants de connexion",
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
+                .credentials { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0ea5e9; }
+                .credential-item { margin: 10px 0; }
+                .label { font-weight: bold; color: #64748b; }
+                .value { font-family: monospace; background: #e2e8f0; padding: 8px 12px; border-radius: 4px; display: inline-block; margin-top: 5px; }
+                .btn { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+                .footer { text-align: center; color: #64748b; font-size: 12px; margin-top: 30px; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h1>🐟 Bienvenue sur AquaPilote!</h1>
+              </div>
+              <div class="content">
+                <p>Bonjour <strong>${full_name.trim()}</strong>,</p>
+                <p>Vous avez été ajouté en tant que membre d'équipe sur AquaPilote. Voici vos identifiants de connexion:</p>
+                
+                <div class="credentials">
+                  <div class="credential-item">
+                    <span class="label">📧 Email:</span><br>
+                    <span class="value">${email.trim()}</span>
+                  </div>
+                  <div class="credential-item">
+                    <span class="label">🔐 Mot de passe:</span><br>
+                    <span class="value">${password}</span>
+                  </div>
+                </div>
+                
+                <p><strong>Important:</strong> Nous vous recommandons de changer votre mot de passe après votre première connexion.</p>
+                
+                <center>
+                  <a href="${loginUrl}" class="btn">Se connecter à AquaPilote</a>
+                </center>
+                
+                <div class="footer">
+                  <p>Si vous n'êtes pas à l'origine de cette invitation, veuillez ignorer cet email.</p>
+                  <p>© ${new Date().getFullYear()} AquaPilote - Gestion aquacole intelligente</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        });
+        
+        console.log('Email sent successfully:', emailResponse);
+        emailSent = true;
+      } catch (e) {
+        console.error('Error sending email:', e);
+        emailError = e.message;
+      }
+    } else {
+      console.log('RESEND_API_KEY not configured, skipping email');
+    }
+
     console.log('Team member account created:', authData.user.id);
     
     return new Response(
@@ -146,7 +222,9 @@ serve(async (req) => {
           email: email.trim(),
           password: password,
           loginUrl: loginUrl
-        }
+        },
+        emailSent,
+        emailError
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
