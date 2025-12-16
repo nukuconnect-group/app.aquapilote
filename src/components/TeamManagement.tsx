@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle, Key } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -49,6 +49,10 @@ const TeamManagement = () => {
   const [isLoadingUnits, setIsLoadingUnits] = useState(false);
   const [selectedUnitsForInvite, setSelectedUnitsForInvite] = useState<Set<string>>(new Set());
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetPasswordMember, setResetPasswordMember] = useState<TeamMember | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; loginUrl: string; emailSent: boolean } | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const [inviteData, setInviteData] = useState<{
     name: string;
@@ -457,6 +461,67 @@ const TeamManagement = () => {
     }
   };
 
+  const handleResetPassword = async (member: TeamMember, sendEmail: boolean) => {
+    setIsResettingPassword(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      const response = await supabase.functions.invoke('reset-team-member-password', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: {
+          email: member.member_email,
+          member_name: member.member_name,
+          sendEmail
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.success) {
+        setResetPasswordResult({
+          password: response.data.newPassword,
+          loginUrl: response.data.loginUrl,
+          emailSent: response.data.emailSent
+        });
+
+        addLog('Mot de passe réinitialisé', 'Équipe', `Mot de passe de ${member.member_name} réinitialisé`, 'info');
+        
+        toast({
+          title: response.data.emailSent ? "Mot de passe réinitialisé et email envoyé" : "Mot de passe réinitialisé",
+          description: response.data.emailSent 
+            ? `Un email avec le nouveau mot de passe a été envoyé à ${member.member_email}`
+            : `Le mot de passe de ${member.member_name} a été réinitialisé`
+        });
+      } else {
+        throw new Error(response.data?.error || 'Erreur inconnue');
+      }
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de réinitialiser le mot de passe",
+        variant: "destructive"
+      });
+      setShowResetPasswordDialog(false);
+    }
+    
+    setIsResettingPassword(false);
+  };
+
+  const openResetPasswordDialog = (member: TeamMember) => {
+    setResetPasswordMember(member);
+    setResetPasswordResult(null);
+    setShowResetPasswordDialog(true);
+  };
+
   const toggleInvitePermission = (permissionId: string) => {
     setInviteData(prev => ({
       ...prev,
@@ -681,6 +746,14 @@ const TeamManagement = () => {
                           onClick={() => handleToggleStatus(member)}
                         >
                           <Settings className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openResetPasswordDialog(member)}
+                          title="Réinitialiser le mot de passe"
+                        >
+                          <Key className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="destructive"
@@ -1366,6 +1439,159 @@ const TeamManagement = () => {
               Fermer
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Réinitialisation mot de passe */}
+      <Dialog open={showResetPasswordDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowResetPasswordDialog(false);
+          setResetPasswordResult(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-amber-600" />
+              Réinitialiser le mot de passe
+            </DialogTitle>
+          </DialogHeader>
+          
+          {resetPasswordMember && (
+            <div className="space-y-4">
+              {!resetPasswordResult ? (
+                <>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm">
+                      Vous allez réinitialiser le mot de passe de <strong>{resetPasswordMember.member_name}</strong> ({resetPasswordMember.member_email}).
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Un nouveau mot de passe sécurisé sera généré.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      onClick={() => handleResetPassword(resetPasswordMember, true)} 
+                      disabled={isResettingPassword}
+                      className="w-full"
+                    >
+                      {isResettingPassword && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      <Mail className="w-4 h-4 mr-2" />
+                      Réinitialiser et envoyer par email
+                    </Button>
+                    <Button 
+                      variant="secondary"
+                      onClick={() => handleResetPassword(resetPasswordMember, false)} 
+                      disabled={isResettingPassword}
+                      className="w-full"
+                    >
+                      {isResettingPassword && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Réinitialiser sans envoyer d'email
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowResetPasswordDialog(false)}
+                      disabled={isResettingPassword}
+                      className="w-full"
+                    >
+                      Annuler
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {resetPasswordResult.emailSent ? (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mail className="w-5 h-5 text-green-600" />
+                        <span className="font-medium text-green-800 dark:text-green-200">Email envoyé avec succès!</span>
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Le nouveau mot de passe a été envoyé à <strong>{resetPasswordMember.member_email}</strong>.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                        <span className="font-medium text-amber-800 dark:text-amber-200">Mot de passe réinitialisé</span>
+                      </div>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        Partagez manuellement les informations ci-dessous à <strong>{resetPasswordMember.member_name}</strong>.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Nouveau mot de passe</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input 
+                          value={resetPasswordResult.password} 
+                          readOnly 
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            navigator.clipboard.writeText(resetPasswordResult.password);
+                            toast({ title: "Mot de passe copié" });
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Lien de connexion</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input 
+                          value={resetPasswordResult.loginUrl} 
+                          readOnly 
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            navigator.clipboard.writeText(resetPasswordResult.loginUrl);
+                            toast({ title: "Lien copié" });
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const message = `Bonjour ${resetPasswordMember.member_name},\n\nVotre mot de passe AquaPilote a été réinitialisé.\n\nLien de connexion: ${resetPasswordResult.loginUrl}\nEmail: ${resetPasswordMember.member_email}\nNouveau mot de passe: ${resetPasswordResult.password}\n\nVeuillez changer votre mot de passe après votre connexion.`;
+                      navigator.clipboard.writeText(message);
+                      toast({ title: "Message complet copié" });
+                    }}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copier tous les identifiants
+                  </Button>
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => {
+                      setShowResetPasswordDialog(false);
+                      setResetPasswordResult(null);
+                    }}>
+                      Fermer
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
