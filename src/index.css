@@ -1,5 +1,29 @@
 
 @tailwind base;
+
+/* Accessibility Classes */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html.high-contrast {
+  filter: contrast(1.25);
+}
+
+html.large-text {
+  font-size: 18px;
+}
+
+html.large-text .text-xs { font-size: 0.875rem; }
+html.large-text .text-sm { font-size: 1rem; }
+html.large-text .text-base { font-size: 1.125rem; }
+html.large-text .text-lg { font-size: 1.25rem; }
+html.large-text .text-xl { font-size: 1.5rem; }
+html.large-text .text-2xl { font-size: 1.75rem; }
 @tailwind components;
 @tailwind utilities;
 
