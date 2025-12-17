@@ -320,7 +320,6 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       }
 
       if (data) {
-        // Convertir les données de la DB au format du contexte
         const convertedUnits: ProductionUnit[] = data.map((unit: any) => ({
           id: unit.id,
           name: unit.name,
@@ -344,6 +343,193 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       console.error('Error loading units:', err);
     } finally {
       setIsLoadingUnits(false);
+    }
+  }, [user?.id]);
+
+  // Charger les infrastructures depuis la base de données
+  const fetchInfrastructuresFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('unit_infrastructures')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching infrastructures:', error);
+        return;
+      }
+
+      if (data) {
+        const convertedInfrastructures: Infrastructure[] = data.map((inf: any) => ({
+          id: inf.id,
+          name: inf.name,
+          unitId: inf.unit_id,
+          type: inf.type,
+          customTypeName: inf.custom_type_name,
+          capacity: inf.capacity || 0,
+          status: inf.status || 'active',
+          specifications: inf.specifications || {},
+        }));
+        setInfrastructures(convertedInfrastructures);
+      }
+    } catch (err) {
+      console.error('Error loading infrastructures:', err);
+    }
+  }, [user?.id]);
+
+  // Charger les équipements depuis la base de données
+  const fetchEquipmentFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('unit_equipment')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching equipment:', error);
+        return;
+      }
+
+      if (data) {
+        const convertedEquipment: Equipment[] = data.map((eq: any) => ({
+          id: eq.id,
+          name: eq.name,
+          type: eq.type,
+          unitId: eq.unit_id,
+          specifications: eq.specifications || {},
+          status: eq.status || 'active',
+          purchasePrice: eq.purchase_price,
+          purchaseDate: eq.purchase_date,
+          depreciationRate: eq.depreciation_rate,
+          currentValue: eq.current_value,
+        }));
+        setEquipment(convertedEquipment);
+      }
+    } catch (err) {
+      console.error('Error loading equipment:', err);
+    }
+  }, [user?.id]);
+
+  // Charger les achats depuis la base de données
+  const fetchPurchasesFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('purchases')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching purchases:', error);
+        return;
+      }
+
+      if (data) {
+        const convertedPurchases: Purchase[] = data.map((p: any) => ({
+          id: p.id,
+          date: p.date,
+          category: p.category,
+          subcategory: p.subcategory,
+          description: p.description,
+          supplier: p.supplier,
+          amount: p.amount,
+          currency: p.currency || 'XOF',
+          quantity: p.quantity,
+          unit: p.unit,
+          paymentMethod: p.payment_method,
+          reference: p.reference,
+          unitId: p.unit_id,
+          unitName: p.unit_name,
+          status: p.status || 'pending',
+          deliveryDate: p.delivery_date,
+          notes: p.notes,
+        }));
+        setPurchases(convertedPurchases);
+      }
+    } catch (err) {
+      console.error('Error loading purchases:', err);
+    }
+  }, [user?.id]);
+
+  // Charger les transactions depuis la base de données
+  const fetchTransactionsFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('accounting_transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return;
+      }
+
+      if (data) {
+        const convertedTransactions: Transaction[] = data.map((t: any) => ({
+          id: t.id,
+          date: t.date,
+          type: t.type,
+          category: t.category,
+          description: t.description,
+          amount: t.amount,
+          currency: t.currency || 'XOF',
+          paymentMethod: t.payment_method,
+          reference: t.reference,
+          supplier: t.supplier,
+          client: t.client,
+          status: t.status || 'pending',
+          unitId: t.unit_id,
+          unitName: t.unit_name,
+          purchaseId: t.purchase_id,
+        }));
+        setTransactions(convertedTransactions);
+      }
+    } catch (err) {
+      console.error('Error loading transactions:', err);
+    }
+  }, [user?.id]);
+
+  // Charger les actifs amortissables depuis la base de données
+  const fetchDepreciableAssetsFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('depreciable_assets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching depreciable assets:', error);
+        return;
+      }
+
+      if (data) {
+        const convertedAssets: DepreciableAsset[] = data.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          category: a.category,
+          purchasePrice: a.purchase_price,
+          currency: a.currency || 'XOF',
+          purchaseDate: a.purchase_date,
+          depreciationMethod: a.depreciation_method || 'linear',
+          usefulLife: a.useful_life || 5,
+          currentValue: a.current_value,
+          accumulatedDepreciation: a.accumulated_depreciation,
+          unitId: a.unit_id,
+          status: a.status || 'active',
+        }));
+        setDepreciableAssets(convertedAssets);
+      }
+    } catch (err) {
+      console.error('Error loading depreciable assets:', err);
     }
   }, [user?.id]);
 
@@ -447,13 +633,11 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     } else if (isAuthenticated && user?.id) {
       // Utilisateur connecté: charger depuis la base de données
       fetchUnitsFromDB();
-      // Réinitialiser les autres données locales
-      setInfrastructures([]);
-      setEquipment([]);
-      setCycles([]);
-      setPurchases([]);
-      setTransactions([]);
-      setDepreciableAssets([]);
+      fetchInfrastructuresFromDB();
+      fetchEquipmentFromDB();
+      fetchPurchasesFromDB();
+      fetchTransactionsFromDB();
+      fetchDepreciableAssetsFromDB();
     } else {
       // Non connecté: données vides
       setUnits([]);
@@ -465,7 +649,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       setDepreciableAssets([]);
       setActiveUnit(null);
     }
-  }, [isDemoMode, isAuthenticated, user?.id, fetchUnitsFromDB]);
+  }, [isDemoMode, isAuthenticated, user?.id, fetchUnitsFromDB, fetchInfrastructuresFromDB, fetchEquipmentFromDB, fetchPurchasesFromDB, fetchTransactionsFromDB, fetchDepreciableAssetsFromDB]);
 
   const formatCurrency = (amount: number): string => {
     const currencySymbols = {
@@ -634,40 +818,190 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     return infrastructures.filter(inf => inf.unitId === unitId);
   };
 
-  const addInfrastructure = (infraData: Omit<Infrastructure, 'id'>) => {
-    const newInfrastructure: Infrastructure = {
-      ...infraData,
-      id: `INF${Date.now()}`
-    };
-    setInfrastructures([...infrastructures, newInfrastructure]);
+  const addInfrastructure = async (infraData: Omit<Infrastructure, 'id'>) => {
+    if (isDemoMode) {
+      const newInfrastructure: Infrastructure = {
+        ...infraData,
+        id: `INF${Date.now()}`
+      };
+      setInfrastructures([...infrastructures, newInfrastructure]);
+      return;
+    }
+
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('unit_infrastructures')
+        .insert({
+          user_id: user.id,
+          unit_id: infraData.unitId,
+          name: infraData.name,
+          type: infraData.type,
+          custom_type_name: infraData.customTypeName,
+          capacity: infraData.capacity || 0,
+          status: infraData.status || 'active',
+          specifications: infraData.specifications || {},
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newInfrastructure: Infrastructure = {
+        id: data.id,
+        name: data.name,
+        unitId: data.unit_id,
+        type: data.type,
+        customTypeName: data.custom_type_name,
+        capacity: data.capacity,
+        status: data.status,
+        specifications: data.specifications,
+      };
+      setInfrastructures([newInfrastructure, ...infrastructures]);
+    } catch (err) {
+      console.error('Error adding infrastructure:', err);
+    }
   };
 
-  const updateInfrastructure = (id: string, updates: Partial<Infrastructure>) => {
-    setInfrastructures(infrastructures.map(inf => 
-      inf.id === id ? { ...inf, ...updates } : inf
-    ));
+  const updateInfrastructure = async (id: string, updates: Partial<Infrastructure>) => {
+    if (isDemoMode) {
+      setInfrastructures(infrastructures.map(inf => 
+        inf.id === id ? { ...inf, ...updates } : inf
+      ));
+      return;
+    }
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.customTypeName !== undefined) dbUpdates.custom_type_name = updates.customTypeName;
+      if (updates.capacity !== undefined) dbUpdates.capacity = updates.capacity;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.specifications !== undefined) dbUpdates.specifications = updates.specifications;
+
+      const { error } = await (supabase as any)
+        .from('unit_infrastructures')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInfrastructures(infrastructures.map(inf => 
+        inf.id === id ? { ...inf, ...updates } : inf
+      ));
+    } catch (err) {
+      console.error('Error updating infrastructure:', err);
+    }
   };
 
-  const deleteInfrastructure = (id: string) => {
-    setInfrastructures(infrastructures.filter(inf => inf.id !== id));
+  const deleteInfrastructure = async (id: string) => {
+    if (isDemoMode) {
+      setInfrastructures(infrastructures.filter(inf => inf.id !== id));
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('unit_infrastructures')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInfrastructures(infrastructures.filter(inf => inf.id !== id));
+    } catch (err) {
+      console.error('Error deleting infrastructure:', err);
+    }
   };
 
   const getUnitEquipment = (unitId: string) => {
     return equipment.filter(eq => eq.unitId === unitId);
   };
 
-  const addEquipment = (equipData: Omit<Equipment, 'id'>) => {
-    const newEquipment: Equipment = {
-      ...equipData,
-      id: `EQ${Date.now()}`
-    };
-    setEquipment([...equipment, newEquipment]);
+  const addEquipment = async (equipData: Omit<Equipment, 'id'>) => {
+    if (isDemoMode) {
+      const newEquipment: Equipment = {
+        ...equipData,
+        id: `EQ${Date.now()}`
+      };
+      setEquipment([...equipment, newEquipment]);
+      return;
+    }
+
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('unit_equipment')
+        .insert({
+          user_id: user.id,
+          unit_id: equipData.unitId,
+          name: equipData.name,
+          type: equipData.type,
+          specifications: equipData.specifications || {},
+          status: equipData.status || 'active',
+          purchase_price: equipData.purchasePrice || 0,
+          purchase_date: equipData.purchaseDate,
+          depreciation_rate: equipData.depreciationRate || 0,
+          current_value: equipData.currentValue || 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newEquipment: Equipment = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        unitId: data.unit_id,
+        specifications: data.specifications,
+        status: data.status,
+        purchasePrice: data.purchase_price,
+        purchaseDate: data.purchase_date,
+        depreciationRate: data.depreciation_rate,
+        currentValue: data.current_value,
+      };
+      setEquipment([newEquipment, ...equipment]);
+    } catch (err) {
+      console.error('Error adding equipment:', err);
+    }
   };
 
-  const updateEquipment = (id: string, updates: Partial<Equipment>) => {
-    setEquipment(equipment.map(eq => 
-      eq.id === id ? { ...eq, ...updates } : eq
-    ));
+  const updateEquipment = async (id: string, updates: Partial<Equipment>) => {
+    if (isDemoMode) {
+      setEquipment(equipment.map(eq => 
+        eq.id === id ? { ...eq, ...updates } : eq
+      ));
+      return;
+    }
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.specifications !== undefined) dbUpdates.specifications = updates.specifications;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.purchasePrice !== undefined) dbUpdates.purchase_price = updates.purchasePrice;
+      if (updates.purchaseDate !== undefined) dbUpdates.purchase_date = updates.purchaseDate;
+      if (updates.depreciationRate !== undefined) dbUpdates.depreciation_rate = updates.depreciationRate;
+      if (updates.currentValue !== undefined) dbUpdates.current_value = updates.currentValue;
+
+      const { error } = await (supabase as any)
+        .from('unit_equipment')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setEquipment(equipment.map(eq => 
+        eq.id === id ? { ...eq, ...updates } : eq
+      ));
+    } catch (err) {
+      console.error('Error updating equipment:', err);
+    }
   };
 
   const getUnitCycles = (unitId: string) => {
@@ -729,76 +1063,316 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     };
   };
 
-  const addTransaction = (transactionData: Omit<Transaction, 'id'>) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: Date.now().toString(),
-      currency: transactionData.currency || currency
-    };
-    setTransactions([...transactions, newTransaction]);
+  const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
+    if (isDemoMode) {
+      const newTransaction: Transaction = {
+        ...transactionData,
+        id: Date.now().toString(),
+        currency: transactionData.currency || currency
+      };
+      setTransactions([...transactions, newTransaction]);
+      return newTransaction.id;
+    }
+
+    if (!user?.id) return null;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('accounting_transactions')
+        .insert({
+          user_id: user.id,
+          date: transactionData.date,
+          type: transactionData.type,
+          category: transactionData.category,
+          description: transactionData.description,
+          amount: transactionData.amount,
+          currency: transactionData.currency || currency,
+          payment_method: transactionData.paymentMethod,
+          reference: transactionData.reference,
+          supplier: transactionData.supplier,
+          client: transactionData.client,
+          status: transactionData.status || 'pending',
+          unit_id: transactionData.unitId,
+          unit_name: transactionData.unitName,
+          purchase_id: transactionData.purchaseId,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newTransaction: Transaction = {
+        id: data.id,
+        date: data.date,
+        type: data.type,
+        category: data.category,
+        description: data.description,
+        amount: data.amount,
+        currency: data.currency,
+        paymentMethod: data.payment_method,
+        reference: data.reference,
+        supplier: data.supplier,
+        client: data.client,
+        status: data.status,
+        unitId: data.unit_id,
+        unitName: data.unit_name,
+        purchaseId: data.purchase_id,
+      };
+      setTransactions([newTransaction, ...transactions]);
+      return data.id;
+    } catch (err) {
+      console.error('Error adding transaction:', err);
+      return null;
+    }
   };
 
-  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
-    setTransactions(transactions.map(t => 
-      t.id === id ? { ...t, ...updates } : t
-    ));
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    if (isDemoMode) {
+      setTransactions(transactions.map(t => 
+        t.id === id ? { ...t, ...updates } : t
+      ));
+      return;
+    }
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.date !== undefined) dbUpdates.date = updates.date;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+      if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+      if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
+      if (updates.reference !== undefined) dbUpdates.reference = updates.reference;
+      if (updates.supplier !== undefined) dbUpdates.supplier = updates.supplier;
+      if (updates.client !== undefined) dbUpdates.client = updates.client;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+
+      const { error } = await (supabase as any)
+        .from('accounting_transactions')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTransactions(transactions.map(t => 
+        t.id === id ? { ...t, ...updates } : t
+      ));
+    } catch (err) {
+      console.error('Error updating transaction:', err);
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+  const deleteTransaction = async (id: string) => {
+    if (isDemoMode) {
+      setTransactions(transactions.filter(t => t.id !== id));
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('accounting_transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTransactions(transactions.filter(t => t.id !== id));
+    } catch (err) {
+      console.error('Error deleting transaction:', err);
+    }
   };
 
   const getUnitTransactions = (unitId: string) => {
     return transactions.filter(t => t.unitId === unitId);
   };
 
-  const addPurchase = (purchaseData: Omit<Purchase, 'id'>) => {
-    const newPurchase: Purchase = {
-      ...purchaseData,
-      id: Date.now().toString(),
-      currency: purchaseData.currency || currency
-    };
-    setPurchases([...purchases, newPurchase]);
-
-    if (newPurchase.status === 'received') {
-      const correspondingTransaction: Omit<Transaction, 'id'> = {
-        date: newPurchase.date,
-        type: 'expense',
-        category: newPurchase.category,
-        description: newPurchase.description,
-        amount: newPurchase.amount,
-        currency: newPurchase.currency,
-        paymentMethod: newPurchase.paymentMethod,
-        supplier: newPurchase.supplier,
-        status: 'confirmed',
-        unitId: newPurchase.unitId,
-        unitName: newPurchase.unitName,
-        purchaseId: newPurchase.id,
-        reference: newPurchase.reference
+  const addPurchase = async (purchaseData: Omit<Purchase, 'id'>) => {
+    if (isDemoMode) {
+      const newPurchase: Purchase = {
+        ...purchaseData,
+        id: Date.now().toString(),
+        currency: purchaseData.currency || currency
       };
-      addTransaction(correspondingTransaction);
+      setPurchases([...purchases, newPurchase]);
+
+      if (newPurchase.status === 'received') {
+        addTransaction({
+          date: newPurchase.date,
+          type: 'expense',
+          category: newPurchase.category,
+          description: newPurchase.description,
+          amount: newPurchase.amount,
+          currency: newPurchase.currency,
+          paymentMethod: newPurchase.paymentMethod,
+          supplier: newPurchase.supplier,
+          status: 'confirmed',
+          unitId: newPurchase.unitId,
+          unitName: newPurchase.unitName,
+          purchaseId: newPurchase.id,
+          reference: newPurchase.reference
+        });
+      }
+      return;
+    }
+
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('purchases')
+        .insert({
+          user_id: user.id,
+          date: purchaseData.date,
+          category: purchaseData.category,
+          subcategory: purchaseData.subcategory,
+          description: purchaseData.description,
+          supplier: purchaseData.supplier,
+          amount: purchaseData.amount,
+          currency: purchaseData.currency || currency,
+          quantity: purchaseData.quantity,
+          unit: purchaseData.unit,
+          payment_method: purchaseData.paymentMethod,
+          reference: purchaseData.reference,
+          unit_id: purchaseData.unitId,
+          unit_name: purchaseData.unitName,
+          status: purchaseData.status || 'pending',
+          delivery_date: purchaseData.deliveryDate,
+          notes: purchaseData.notes,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newPurchase: Purchase = {
+        id: data.id,
+        date: data.date,
+        category: data.category,
+        subcategory: data.subcategory,
+        description: data.description,
+        supplier: data.supplier,
+        amount: data.amount,
+        currency: data.currency,
+        quantity: data.quantity,
+        unit: data.unit,
+        paymentMethod: data.payment_method,
+        reference: data.reference,
+        unitId: data.unit_id,
+        unitName: data.unit_name,
+        status: data.status,
+        deliveryDate: data.delivery_date,
+        notes: data.notes,
+      };
+      setPurchases([newPurchase, ...purchases]);
+
+      // Create corresponding transaction if purchase is received
+      if (newPurchase.status === 'received') {
+        await addTransaction({
+          date: newPurchase.date,
+          type: 'expense',
+          category: newPurchase.category,
+          description: newPurchase.description,
+          amount: newPurchase.amount,
+          currency: newPurchase.currency,
+          paymentMethod: newPurchase.paymentMethod,
+          supplier: newPurchase.supplier,
+          status: 'confirmed',
+          unitId: newPurchase.unitId,
+          unitName: newPurchase.unitName,
+          purchaseId: newPurchase.id,
+          reference: newPurchase.reference
+        });
+      }
+    } catch (err) {
+      console.error('Error adding purchase:', err);
     }
   };
 
-  const updatePurchase = (id: string, updates: Partial<Purchase>) => {
-    setPurchases(purchases.map(p => 
-      p.id === id ? { ...p, ...updates } : p
-    ));
+  const updatePurchase = async (id: string, updates: Partial<Purchase>) => {
+    if (isDemoMode) {
+      setPurchases(purchases.map(p => 
+        p.id === id ? { ...p, ...updates } : p
+      ));
 
-    const correspondingTransaction = transactions.find(t => t.purchaseId === id);
-    if (correspondingTransaction && updates.status === 'received') {
-      updateTransaction(correspondingTransaction.id, {
-        status: 'confirmed',
-        amount: updates.amount || correspondingTransaction.amount
-      });
+      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+      if (correspondingTransaction && updates.status === 'received') {
+        updateTransaction(correspondingTransaction.id, {
+          status: 'confirmed',
+          amount: updates.amount || correspondingTransaction.amount
+        });
+      }
+      return;
+    }
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.date !== undefined) dbUpdates.date = updates.date;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.subcategory !== undefined) dbUpdates.subcategory = updates.subcategory;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.supplier !== undefined) dbUpdates.supplier = updates.supplier;
+      if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+      if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
+      if (updates.unit !== undefined) dbUpdates.unit = updates.unit;
+      if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
+      if (updates.reference !== undefined) dbUpdates.reference = updates.reference;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+      const { error } = await (supabase as any)
+        .from('purchases')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPurchases(purchases.map(p => 
+        p.id === id ? { ...p, ...updates } : p
+      ));
+
+      // Update corresponding transaction if status changed to received
+      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+      if (correspondingTransaction && updates.status === 'received') {
+        await updateTransaction(correspondingTransaction.id, {
+          status: 'confirmed',
+          amount: updates.amount || correspondingTransaction.amount
+        });
+      }
+    } catch (err) {
+      console.error('Error updating purchase:', err);
     }
   };
 
-  const deletePurchase = (id: string) => {
-    setPurchases(purchases.filter(p => p.id !== id));
-    const correspondingTransaction = transactions.find(t => t.purchaseId === id);
-    if (correspondingTransaction) {
-      deleteTransaction(correspondingTransaction.id);
+  const deletePurchase = async (id: string) => {
+    if (isDemoMode) {
+      setPurchases(purchases.filter(p => p.id !== id));
+      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+      if (correspondingTransaction) {
+        deleteTransaction(correspondingTransaction.id);
+      }
+      return;
+    }
+
+    try {
+      // Delete corresponding transaction first
+      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+      if (correspondingTransaction) {
+        await deleteTransaction(correspondingTransaction.id);
+      }
+
+      const { error } = await (supabase as any)
+        .from('purchases')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPurchases(purchases.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('Error deleting purchase:', err);
     }
   };
 
@@ -806,23 +1380,115 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     return purchases.filter(p => p.unitId === unitId);
   };
 
-  const addDepreciableAsset = (assetData: Omit<DepreciableAsset, 'id'>) => {
-    const newAsset: DepreciableAsset = {
-      ...assetData,
-      id: Date.now().toString(),
-      currency: assetData.currency || (currency === 'XOF' ? 'XOF' : currency)
-    };
-    setDepreciableAssets([...depreciableAssets, newAsset]);
+  const addDepreciableAsset = async (assetData: Omit<DepreciableAsset, 'id'>) => {
+    if (isDemoMode) {
+      const newAsset: DepreciableAsset = {
+        ...assetData,
+        id: Date.now().toString(),
+        currency: assetData.currency || (currency === 'XOF' ? 'XOF' : currency)
+      };
+      setDepreciableAssets([...depreciableAssets, newAsset]);
+      return;
+    }
+
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('depreciable_assets')
+        .insert({
+          user_id: user.id,
+          name: assetData.name,
+          category: assetData.category,
+          purchase_price: assetData.purchasePrice,
+          currency: assetData.currency || currency,
+          purchase_date: assetData.purchaseDate,
+          depreciation_method: assetData.depreciationMethod || 'linear',
+          useful_life: assetData.usefulLife || 5,
+          current_value: assetData.currentValue || assetData.purchasePrice,
+          accumulated_depreciation: assetData.accumulatedDepreciation || 0,
+          unit_id: assetData.unitId,
+          status: assetData.status || 'active',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newAsset: DepreciableAsset = {
+        id: data.id,
+        name: data.name,
+        category: data.category,
+        purchasePrice: data.purchase_price,
+        currency: data.currency,
+        purchaseDate: data.purchase_date,
+        depreciationMethod: data.depreciation_method,
+        usefulLife: data.useful_life,
+        currentValue: data.current_value,
+        accumulatedDepreciation: data.accumulated_depreciation,
+        unitId: data.unit_id,
+        status: data.status,
+      };
+      setDepreciableAssets([newAsset, ...depreciableAssets]);
+    } catch (err) {
+      console.error('Error adding depreciable asset:', err);
+    }
   };
 
-  const updateDepreciableAsset = (id: string, updates: Partial<DepreciableAsset>) => {
-    setDepreciableAssets(depreciableAssets.map(asset => 
-      asset.id === id ? { ...asset, ...updates } : asset
-    ));
+  const updateDepreciableAsset = async (id: string, updates: Partial<DepreciableAsset>) => {
+    if (isDemoMode) {
+      setDepreciableAssets(depreciableAssets.map(asset => 
+        asset.id === id ? { ...asset, ...updates } : asset
+      ));
+      return;
+    }
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.purchasePrice !== undefined) dbUpdates.purchase_price = updates.purchasePrice;
+      if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+      if (updates.purchaseDate !== undefined) dbUpdates.purchase_date = updates.purchaseDate;
+      if (updates.depreciationMethod !== undefined) dbUpdates.depreciation_method = updates.depreciationMethod;
+      if (updates.usefulLife !== undefined) dbUpdates.useful_life = updates.usefulLife;
+      if (updates.currentValue !== undefined) dbUpdates.current_value = updates.currentValue;
+      if (updates.accumulatedDepreciation !== undefined) dbUpdates.accumulated_depreciation = updates.accumulatedDepreciation;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+
+      const { error } = await (supabase as any)
+        .from('depreciable_assets')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setDepreciableAssets(depreciableAssets.map(asset => 
+        asset.id === id ? { ...asset, ...updates } : asset
+      ));
+    } catch (err) {
+      console.error('Error updating depreciable asset:', err);
+    }
   };
 
-  const deleteDepreciableAsset = (id: string) => {
-    setDepreciableAssets(depreciableAssets.filter(asset => asset.id !== id));
+  const deleteDepreciableAsset = async (id: string) => {
+    if (isDemoMode) {
+      setDepreciableAssets(depreciableAssets.filter(asset => asset.id !== id));
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('depreciable_assets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setDepreciableAssets(depreciableAssets.filter(asset => asset.id !== id));
+    } catch (err) {
+      console.error('Error deleting depreciable asset:', err);
+    }
   };
 
   const getUnitDepreciableAssets = (unitId: string) => {
