@@ -52,6 +52,35 @@ const InfrastructureLivestockCard = ({ batch, infrastructureId, compact = false 
     }
   };
 
+  // Calculs automatiques de prévision
+  const calculateForecast = () => {
+    const survivalRate = batch.expected_survival_rate / 100;
+    const expectedQuantity = Math.round(batch.quantity * survivalRate);
+    const currentBiomass = (batch.quantity * batch.average_weight) / 1000; // en kg
+    
+    // Estimation du poids final basé sur l'âge et le type
+    let targetWeight = batch.average_weight;
+    if (batch.type === 'alevins') {
+      targetWeight = 300; // poids cible adulte en grammes
+    } else if (batch.type === 'juveniles') {
+      targetWeight = 350;
+    } else if (batch.type === 'adultes') {
+      targetWeight = batch.average_weight * 1.2;
+    }
+    
+    const expectedBiomass = (expectedQuantity * targetWeight) / 1000; // en kg
+    
+    return {
+      expectedQuantity,
+      currentBiomass,
+      expectedBiomass,
+      targetWeight,
+      survivalRate: batch.expected_survival_rate
+    };
+  };
+
+  const forecast = calculateForecast();
+
   // Vue compacte pour la carte
   if (compact) {
     return (
@@ -78,7 +107,7 @@ const InfrastructureLivestockCard = ({ batch, infrastructureId, compact = false 
           </div>
           <div className="flex items-center gap-1.5">
             <Scale className="w-3 h-3 text-muted-foreground" />
-            <span>{batch.average_weight}g moy.</span>
+            <span className="font-semibold text-green-600">{batch.average_weight}g/ind.</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Leaf className="w-3 h-3 text-muted-foreground" />
@@ -90,14 +119,21 @@ const InfrastructureLivestockCard = ({ batch, infrastructureId, compact = false 
           </div>
         </div>
         
-        {batch.total_weight > 0 && (
-          <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
-            <p className="text-xs text-center">
-              <span className="text-muted-foreground">Biomasse: </span>
-              <span className="font-semibold">{batch.total_weight.toFixed(1)} kg</span>
-            </p>
+        {/* Prévisions automatiques */}
+        <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700 space-y-1">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">Biomasse actuelle:</span>
+            <span className="font-semibold">{forecast.currentBiomass.toFixed(1)} kg</span>
           </div>
-        )}
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">Prévision survie ({forecast.survivalRate}%):</span>
+            <span className="font-semibold text-blue-600">{forecast.expectedQuantity.toLocaleString()} ind.</span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">Biomasse prévue:</span>
+            <span className="font-semibold text-green-600">{forecast.expectedBiomass.toFixed(1)} kg</span>
+          </div>
+        </div>
       </div>
     );
   }
