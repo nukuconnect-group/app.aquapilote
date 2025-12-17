@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Building, Trash2, Power, PowerOff, Edit, MapPin, Fish, Plus, Eye, X, Droplets, Thermometer, Ruler } from 'lucide-react';
+import { Building, Trash2, Power, PowerOff, Edit, MapPin, Fish, Plus, Eye, X, Droplets, Thermometer, Ruler, RefreshCw } from 'lucide-react';
 import { Infrastructure, useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import InfrastructureForm from './InfrastructureForm';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
 import InfrastructureLivestockCard from './InfrastructureLivestockCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,11 +31,17 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   // Fetch all cycle infrastructures for this user to find attached batches
   const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures(undefined, true);
   const { batches, createBatch } = useLivestockBatches(infrastructure.unitId);
+  const { cycles } = useProductionCycles();
   
   // Find cycle infrastructure matching this infrastructure by name
   const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
   const attachedBatch = cycleInfra?.livestock_batch_id 
     ? batches.find(b => b.id === cycleInfra.livestock_batch_id)
+    : null;
+  
+  // Find the associated production cycle
+  const associatedCycle = cycleInfra?.cycle_id 
+    ? cycles.find(c => c.id === cycleInfra.cycle_id)
     : null;
 
   const [batchFormData, setBatchFormData] = useState({
@@ -250,8 +257,24 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
             )}
           </div>
           
+          {/* Cycle de production associé */}
+          {associatedCycle && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
+                <RefreshCw className="w-4 h-4 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Cycle de production</p>
+                  <p className="text-sm font-medium truncate">{associatedCycle.name}</p>
+                </div>
+                <Badge variant="outline" className="text-xs flex-shrink-0">
+                  {associatedCycle.status === 'active' ? 'Actif' : associatedCycle.status === 'completed' ? 'Terminé' : associatedCycle.status}
+                </Badge>
+              </div>
+            </div>
+          )}
+          
           {/* Lot rattaché */}
-          <div className="mt-3 pt-3 border-t">
+          <div className={associatedCycle ? "mt-2" : "mt-3 pt-3 border-t"}>
             {attachedBatch ? (
               <InfrastructureLivestockCard 
                 batch={attachedBatch} 
@@ -372,6 +395,38 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                   <p className="text-lg font-semibold">{getStatusLabel(infrastructure.status)}</p>
                 </div>
               </div>
+              
+              {/* Cycle de production associé */}
+              {associatedCycle && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-primary" />
+                    Cycle de production associé
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nom du cycle</p>
+                      <p className="text-sm font-medium">{associatedCycle.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Statut</p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {associatedCycle.status === 'active' ? 'Actif' : associatedCycle.status === 'completed' ? 'Terminé' : associatedCycle.status}
+                      </Badge>
+                    </div>
+                    {associatedCycle.species && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Espèce</p>
+                        <p className="text-sm font-medium">{associatedCycle.species}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground">Quantité actuelle</p>
+                      <p className="text-sm font-medium">{associatedCycle.current_quantity.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Localisation */}
               {infrastructure.specifications?.location && (
