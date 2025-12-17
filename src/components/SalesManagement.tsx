@@ -44,23 +44,7 @@ const SalesManagement = () => {
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
-  const [sales, setSales] = useState<Sale[]>([
-    {
-      id: 'V001',
-      date: '2024-03-15',
-      clientName: 'Restaurant Le Poisson Doré',
-      clientContact: '0123456789',
-      unitId: 'GROSS001',
-      products: [
-        { name: 'Carpes matures', quantity: 50, unitPrice: 15, total: 750 },
-        { name: 'Tilapias 500g+', quantity: 30, unitPrice: 18, total: 540 }
-      ],
-      totalAmount: 1290,
-      status: 'delivered',
-      paymentMethod: 'Virement',
-      notes: 'Livraison hebdomadaire'
-    }
-  ]);
+  const [sales, setSales] = useState<Sale[]>([]);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -71,18 +55,15 @@ const SalesManagement = () => {
     notes: ''
   });
 
-  const [salesData] = useState({
-    totalRevenue: 125000,
-    totalOrders: 89,
-    totalClients: 24,
-    avgOrderValue: 1400,
-    monthlyGrowth: 12.5,
-    topProducts: [
-      { name: 'Carpes matures', quantity: 2500, revenue: 37500 },
-      { name: 'Tilapias 500g+', quantity: 1800, revenue: 32400 },
-      { name: 'Alevins carpe', quantity: 5000, revenue: 12500 }
-    ]
-  });
+  // Calcul des stats basées sur les ventes réelles
+  const salesData = {
+    totalRevenue: sales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+    totalOrders: sales.length,
+    totalClients: [...new Set(sales.map(s => s.clientName))].length,
+    avgOrderValue: sales.length > 0 ? sales.reduce((sum, sale) => sum + sale.totalAmount, 0) / sales.length : 0,
+    monthlyGrowth: 0,
+    topProducts: [] as { name: string; quantity: number; revenue: number }[]
+  };
 
   const handlePreviewReceipt = () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
@@ -487,61 +468,69 @@ const SalesManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
-              <div className="space-y-3 sm:space-y-4">
-                {sales.map(sale => (
-                  <div key={sale.id} className="border rounded-lg p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm sm:text-base truncate">{sale.clientName}</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {new Date(sale.date).toLocaleDateString('fr-FR')} - {sale.clientContact}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
-                        <Badge className={getStatusColor(sale.status)}>
-                          {getStatusText(sale.status)}
-                        </Badge>
-                        <p className="text-base sm:text-lg font-bold text-green-600">
-                          {formatCurrency(sale.totalAmount)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-muted rounded p-2 sm:p-3 mb-3">
-                      <p className="text-xs sm:text-sm font-medium mb-2">Produits vendus:</p>
-                      {sale.products.map((product, idx) => (
-                        <div key={idx} className="flex justify-between text-xs sm:text-sm gap-2">
-                          <span className="truncate">{product.name} x {product.quantity}</span>
-                          <span className="flex-shrink-0 font-medium">{formatCurrency(product.total)}</span>
+              {sales.length === 0 ? (
+                <div className="p-8 text-center">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Aucune vente enregistrée</p>
+                  <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Nouvelle Vente" pour enregistrer votre première vente</p>
+                </div>
+              ) : (
+                <div className="space-y-3 sm:space-y-4">
+                  {sales.map(sale => (
+                    <div key={sale.id} className="border rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm sm:text-base truncate">{sale.clientName}</h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {new Date(sale.date).toLocaleDateString('fr-FR')} - {sale.clientContact}
+                          </p>
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                          <Badge className={getStatusColor(sale.status)}>
+                            {getStatusText(sale.status)}
+                          </Badge>
+                          <p className="text-base sm:text-lg font-bold text-green-600">
+                            {formatCurrency(sale.totalAmount)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-muted rounded p-2 sm:p-3 mb-3">
+                        <p className="text-xs sm:text-sm font-medium mb-2">Produits vendus:</p>
+                        {sale.products.map((product, idx) => (
+                          <div key={idx} className="flex justify-between text-xs sm:text-sm gap-2">
+                            <span className="truncate">{product.name} x {product.quantity}</span>
+                            <span className="flex-shrink-0 font-medium">{formatCurrency(product.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Unité:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {units.find(u => u.id === sale.unitId)?.name}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Paiement:</span>
+                          <span className="font-medium">{sale.paymentMethod}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Réf:</span>
+                          <span className="font-mono">{sale.id}</span>
+                        </div>
+                      </div>
+                      
+                      {sale.notes && (
+                        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs sm:text-sm">
+                          <strong>Notes:</strong> {sale.notes}
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Unité:</span>
-                        <Badge variant="outline" className="text-xs">
-                          {units.find(u => u.id === sale.unitId)?.name}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Paiement:</span>
-                        <span className="font-medium">{sale.paymentMethod}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Réf:</span>
-                        <span className="font-mono">{sale.id}</span>
-                      </div>
-                    </div>
-                    
-                    {sale.notes && (
-                      <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs sm:text-sm">
-                        <strong>Notes:</strong> {sale.notes}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

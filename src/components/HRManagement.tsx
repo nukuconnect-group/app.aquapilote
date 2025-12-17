@@ -50,77 +50,9 @@ const HRManagement = () => {
   const { units } = useProductionUnits();
   const { formatCurrency } = useSettings();
 
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: '1',
-      firstName: 'Jean',
-      lastName: 'Martin',
-      email: 'jean.martin@aqua-ferme.fr',
-      phone: '06.12.34.56.78',
-      position: 'Responsable Grossissement',
-      unitId: 'GROSS001',
-      unitName: 'Unité de Grossissement A',
-      salary: 2800,
-      hireDate: '2023-03-15',
-      status: 'active',
-      contractType: 'CDI'
-    },
-    {
-      id: '2',
-      firstName: 'Marie',
-      lastName: 'Dubois',
-      email: 'marie.dubois@aqua-ferme.fr',
-      phone: '06.87.65.43.21',
-      position: 'Technicienne Écloserie',
-      unitId: 'ECLO001',
-      unitName: 'Écloserie Principale',
-      salary: 2200,
-      hireDate: '2023-06-01',
-      status: 'active',
-      contractType: 'CDI'
-    },
-    {
-      id: '3',
-      firstName: 'Pierre',
-      lastName: 'Durand',
-      email: 'pierre.durand@aqua-ferme.fr',
-      phone: '06.55.44.33.22',
-      position: 'Ouvrier Aquacole',
-      unitId: 'GROSS001',
-      unitName: 'Unité de Grossissement A',
-      salary: 1800,
-      hireDate: '2024-01-10',
-      status: 'active',
-      contractType: 'CDD'
-    }
-  ]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const [paySlips, setPaySlips] = useState<PaySlip[]>([
-    {
-      id: '1',
-      employeeId: '1',
-      employeeName: 'Jean Martin',
-      period: '2024-03',
-      baseSalary: 2800,
-      overtime: 200,
-      bonuses: 150,
-      deductions: 680,
-      netSalary: 2470,
-      generatedAt: '2024-03-31'
-    },
-    {
-      id: '2',
-      employeeId: '2',
-      employeeName: 'Marie Dubois',
-      period: '2024-03',
-      baseSalary: 2200,
-      overtime: 0,
-      bonuses: 100,
-      deductions: 530,
-      netSalary: 1770,
-      generatedAt: '2024-03-31'
-    }
-  ]);
+  const [paySlips, setPaySlips] = useState<PaySlip[]>([]);
 
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [showPaySlipGenerator, setShowPaySlipGenerator] = useState(false);
@@ -447,75 +379,85 @@ const HRManagement = () => {
               <CardTitle className="text-base sm:text-lg">Liste des Employés</CardTitle>
             </CardHeader>
             <CardContent className="p-0 sm:p-3 md:p-6">
-              {/* Desktop Table */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs lg:text-sm">Nom</TableHead>
-                      <TableHead className="text-xs lg:text-sm">Poste</TableHead>
-                      <TableHead className="text-xs lg:text-sm">Unité</TableHead>
-                      <TableHead className="text-xs lg:text-sm">Salaire</TableHead>
-                      <TableHead className="text-xs lg:text-sm">Statut</TableHead>
-                      <TableHead className="text-xs lg:text-sm">Contrat</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-xs lg:text-sm">{employee.firstName} {employee.lastName}</p>
-                            <p className="text-xs text-gray-600">{employee.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs lg:text-sm">{employee.position}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {employee.unitName}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs lg:text-sm">{formatCurrency(employee.salary)}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(employee.status) + " text-xs"}>
-                            {employee.status === 'active' ? 'Actif' : 
-                             employee.status === 'inactive' ? 'Inactif' : 'Congés'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              {employees.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Aucun employé enregistré</p>
+                  <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Nouvel Employé" pour ajouter votre premier employé</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs lg:text-sm">Nom</TableHead>
+                          <TableHead className="text-xs lg:text-sm">Poste</TableHead>
+                          <TableHead className="text-xs lg:text-sm">Unité</TableHead>
+                          <TableHead className="text-xs lg:text-sm">Salaire</TableHead>
+                          <TableHead className="text-xs lg:text-sm">Statut</TableHead>
+                          <TableHead className="text-xs lg:text-sm">Contrat</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {employees.map((employee) => (
+                          <TableRow key={employee.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-xs lg:text-sm">{employee.firstName} {employee.lastName}</p>
+                                <p className="text-xs text-muted-foreground">{employee.email}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm">{employee.position}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {employee.unitName}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs lg:text-sm">{formatCurrency(employee.salary)}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(employee.status) + " text-xs"}>
+                                {employee.status === 'active' ? 'Actif' : 
+                                 employee.status === 'inactive' ? 'Inactif' : 'Congés'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
 
-              {/* Mobile Cards */}
-              <div className="md:hidden space-y-3 p-3">
-                {employees.map((employee) => (
-                  <Card key={employee.id} className="border">
-                    <CardContent className="p-3">
-                      <div className="space-y-2">
-                        <div>
-                          <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
-                          <p className="text-xs text-gray-600">{employee.email}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 items-center">
-                          <Badge variant="outline" className="text-xs">{employee.position}</Badge>
-                          <Badge variant="outline" className="text-xs">{employee.unitName}</Badge>
-                          <Badge className={getStatusColor(employee.status) + " text-xs"}>
-                            {employee.status === 'active' ? 'Actif' : 
-                             employee.status === 'inactive' ? 'Inactif' : 'Congés'}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
-                        </div>
-                        <p className="text-sm font-medium">{formatCurrency(employee.salary)}/mois</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  {/* Mobile Cards */}
+                  <div className="md:hidden space-y-3 p-3">
+                    {employees.map((employee) => (
+                      <Card key={employee.id} className="border">
+                        <CardContent className="p-3">
+                          <div className="space-y-2">
+                            <div>
+                              <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{employee.email}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <Badge variant="outline" className="text-xs">{employee.position}</Badge>
+                              <Badge variant="outline" className="text-xs">{employee.unitName}</Badge>
+                              <Badge className={getStatusColor(employee.status) + " text-xs"}>
+                                {employee.status === 'active' ? 'Actif' : 
+                                 employee.status === 'inactive' ? 'Inactif' : 'Congés'}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">{employee.contractType}</Badge>
+                            </div>
+                            <p className="text-sm font-medium">{formatCurrency(employee.salary)}/mois</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -526,43 +468,51 @@ const HRManagement = () => {
               <CardTitle>Historique des Bulletins de Paie</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employé</TableHead>
-                    <TableHead>Période</TableHead>
-                    <TableHead>Salaire Base</TableHead>
-                    <TableHead>Heures Sup.</TableHead>
-                    <TableHead>Primes</TableHead>
-                    <TableHead>Cotisations</TableHead>
-                    <TableHead>Net</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paySlips.map((paySlip) => (
-                    <TableRow key={paySlip.id}>
-                      <TableCell>{paySlip.employeeName}</TableCell>
-                      <TableCell>{paySlip.period}</TableCell>
-                       <TableCell>{formatCurrency(paySlip.baseSalary)}</TableCell>
-                      <TableCell>{formatCurrency(paySlip.overtime)}</TableCell>
-                      <TableCell>{formatCurrency(paySlip.bonuses)}</TableCell>
-                      <TableCell>{formatCurrency(paySlip.deductions)}</TableCell>
-                      <TableCell className="font-bold">{formatCurrency(paySlip.netSalary)}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => downloadPaySlip(paySlip)}
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          PDF
-                        </Button>
-                      </TableCell>
+              {paySlips.length === 0 ? (
+                <div className="p-8 text-center">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Aucun bulletin de paie généré</p>
+                  <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Générer Bulletin" pour créer un bulletin de paie</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employé</TableHead>
+                      <TableHead>Période</TableHead>
+                      <TableHead>Salaire Base</TableHead>
+                      <TableHead>Heures Sup.</TableHead>
+                      <TableHead>Primes</TableHead>
+                      <TableHead>Cotisations</TableHead>
+                      <TableHead>Net</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paySlips.map((paySlip) => (
+                      <TableRow key={paySlip.id}>
+                        <TableCell>{paySlip.employeeName}</TableCell>
+                        <TableCell>{paySlip.period}</TableCell>
+                        <TableCell>{formatCurrency(paySlip.baseSalary)}</TableCell>
+                        <TableCell>{formatCurrency(paySlip.overtime)}</TableCell>
+                        <TableCell>{formatCurrency(paySlip.bonuses)}</TableCell>
+                        <TableCell>{formatCurrency(paySlip.deductions)}</TableCell>
+                        <TableCell className="font-bold">{formatCurrency(paySlip.netSalary)}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => downloadPaySlip(paySlip)}
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            PDF
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
