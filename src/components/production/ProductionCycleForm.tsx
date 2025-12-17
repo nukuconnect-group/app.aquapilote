@@ -41,6 +41,8 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
     targetQuantity: '',
     initialWeight: '',
     targetWeight: '',
+    expectedSurvivalRate: '85', // Taux de survie attendu en %
+    targetAverageWeight: '', // Poids moyen individuel visé en g
     feedType: '',
     notes: '',
     infrastructures: [] as string[],
@@ -61,13 +63,42 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         sum + (b.quantity * (b.average_weight || 0)), 0
       );
       
+      // Récupérer le taux de survie attendu moyen des lots (si disponible)
+      const avgSurvivalRate = selectedBatches.length > 0
+        ? selectedBatches.reduce((sum, b) => sum + (b.expected_survival_rate || 85), 0) / selectedBatches.length
+        : 85;
+      
       setFormData(prev => ({
         ...prev,
         initialQuantity: totalQuantity.toString(),
-        initialWeight: totalWeight.toFixed(2)
+        initialWeight: totalWeight.toFixed(2),
+        expectedSurvivalRate: avgSurvivalRate.toFixed(0)
       }));
     }
   }, [formData.infrastructureBatches, batches]);
+
+  // Auto-calculer objectif quantité et poids objectif (biomasse)
+  React.useEffect(() => {
+    const initialQty = parseFloat(formData.initialQuantity) || 0;
+    const survivalRate = parseFloat(formData.expectedSurvivalRate) || 85;
+    const targetAvgWeight = parseFloat(formData.targetAverageWeight) || 0;
+    
+    if (initialQty > 0 && survivalRate > 0) {
+      // Objectif quantité = Quantité initiale × (taux de survie / 100)
+      const targetQty = Math.round(initialQty * (survivalRate / 100));
+      
+      // Poids objectif (biomasse en kg) = Quantité finale × Poids moyen individuel visé / 1000
+      const targetBiomass = targetAvgWeight > 0 
+        ? (targetQty * targetAvgWeight / 1000).toFixed(2)
+        : '';
+      
+      setFormData(prev => ({
+        ...prev,
+        targetQuantity: targetQty.toString(),
+        targetWeight: targetBiomass
+      }));
+    }
+  }, [formData.initialQuantity, formData.expectedSurvivalRate, formData.targetAverageWeight]);
 
   // Calcul automatique de la date de fin
   const calculateEndDate = () => {
@@ -163,6 +194,8 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
         targetQuantity: '',
         initialWeight: '',
         targetWeight: '',
+        expectedSurvivalRate: '85',
+        targetAverageWeight: '',
         feedType: '',
         notes: '',
         infrastructures: [],
@@ -390,6 +423,7 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
               <CardTitle className="text-sm">Objectifs de production</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Données initiales calculées */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="initialQuantity">Quantité initiale</Label>
@@ -409,18 +443,6 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                 </div>
                 
                 <div>
-                  <Label htmlFor="targetQuantity">Objectif quantité</Label>
-                  <Input
-                    id="targetQuantity"
-                    type="number"
-                    value={formData.targetQuantity}
-                    onChange={(e) => setFormData({...formData, targetQuantity: e.target.value})}
-                    placeholder="800"
-                    required
-                  />
-                </div>
-                
-                <div>
                   <Label htmlFor="initialWeight">Poids initial total (g)</Label>
                   <Input
                     id="initialWeight"
@@ -436,17 +458,83 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                     <p className="text-xs text-muted-foreground mt-1">✓ Calculé automatiquement</p>
                   )}
                 </div>
+              </div>
+
+              {/* Paramètres de calcul des objectifs */}
+              <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                <p className="text-sm font-medium text-primary">📊 Paramètres pour calcul automatique des objectifs</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="expectedSurvivalRate">Taux de survie attendu (%)</Label>
+                    <Input
+                      id="expectedSurvivalRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={formData.expectedSurvivalRate}
+                      onChange={(e) => setFormData({...formData, expectedSurvivalRate: e.target.value})}
+                      placeholder="85"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ex: 85% = 15% de mortalité attendue
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="targetAverageWeight">Poids moyen individuel visé (g)</Label>
+                    <Input
+                      id="targetAverageWeight"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.targetAverageWeight}
+                      onChange={(e) => setFormData({...formData, targetAverageWeight: e.target.value})}
+                      placeholder="350"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Poids moyen par individu à la récolte
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Objectifs calculés automatiquement */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="targetQuantity">🎯 Objectif quantité (individus)</Label>
+                  <Input
+                    id="targetQuantity"
+                    type="number"
+                    value={formData.targetQuantity}
+                    onChange={(e) => setFormData({...formData, targetQuantity: e.target.value})}
+                    placeholder="Calculé automatiquement"
+                    required
+                    className="bg-primary/5 border-primary/30"
+                  />
+                  {formData.initialQuantity && formData.expectedSurvivalRate && (
+                    <p className="text-xs text-primary mt-1">
+                      ✓ = {formData.initialQuantity} × {formData.expectedSurvivalRate}%
+                    </p>
+                  )}
+                </div>
                 
                 <div>
-                  <Label htmlFor="targetWeight">Poids objectif (kg)</Label>
+                  <Label htmlFor="targetWeight">🎯 Biomasse finale visée (kg)</Label>
                   <Input
                     id="targetWeight"
                     type="number"
                     step="0.1"
                     value={formData.targetWeight}
                     onChange={(e) => setFormData({...formData, targetWeight: e.target.value})}
-                    placeholder="2000"
+                    placeholder="Calculé automatiquement"
+                    className="bg-primary/5 border-primary/30"
                   />
+                  {formData.targetQuantity && formData.targetAverageWeight && (
+                    <p className="text-xs text-primary mt-1">
+                      ✓ = {formData.targetQuantity} × {formData.targetAverageWeight}g / 1000
+                    </p>
+                  )}
                 </div>
               </div>
               
