@@ -27,14 +27,12 @@ import {
 import { useProductionUnits, ProductionUnitType } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useOfflineFileUpload } from '@/hooks/useOfflineFileUpload';
 import { toast } from 'sonner';
 
 const ProductionUnitsManagement = () => {
   const { units, addUnit, updateUnit, deleteUnit } = useProductionUnits();
   const { addLog } = useLogs();
   const isMobile = useIsMobile();
-  const { uploadFiles } = useOfflineFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -75,14 +73,36 @@ const ProductionUnitsManagement = () => {
 
     setUploadingPhoto(true);
     try {
-      const results = await uploadFiles([file], {
-        module: 'production-units',
-        compress: true,
-      });
+      // Import supabase client for direct upload to public avatars bucket
+      const { supabase } = await import('@/integrations/supabase/clientConfig');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
 
-      if (results.length > 0 && results[0].publicUrl) {
-        setSelectedPhoto(results[0].publicUrl);
-        setNewUnit(prev => ({ ...prev, photoUrl: results[0].publicUrl }));
+      const fileName = `unit_${Date.now()}_${file.name}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload to avatars bucket (public)
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL from avatars bucket
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(uploadData.path);
+
+      if (urlData?.publicUrl) {
+        setSelectedPhoto(urlData.publicUrl);
+        setNewUnit(prev => ({ ...prev, photoUrl: urlData.publicUrl }));
         toast.success('Photo uploadée avec succès');
       }
     } catch (error) {
