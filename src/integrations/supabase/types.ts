@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_transactions: {
+        Row: {
+          amount: number
+          category: string
+          client: string | null
+          created_at: string | null
+          currency: string | null
+          date: string
+          description: string | null
+          id: string
+          payment_method: string | null
+          purchase_id: string | null
+          reference: string | null
+          status: string | null
+          supplier: string | null
+          type: string
+          unit_id: string | null
+          unit_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          client?: string | null
+          created_at?: string | null
+          currency?: string | null
+          date: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          purchase_id?: string | null
+          reference?: string | null
+          status?: string | null
+          supplier?: string | null
+          type: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          client?: string | null
+          created_at?: string | null
+          currency?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          purchase_id?: string | null
+          reference?: string | null
+          status?: string | null
+          supplier?: string | null
+          type?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_transactions_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_logs: {
         Row: {
           action: string
@@ -189,6 +260,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      depreciable_assets: {
+        Row: {
+          accumulated_depreciation: number | null
+          category: string
+          created_at: string | null
+          currency: string | null
+          current_value: number | null
+          depreciation_method: string | null
+          id: string
+          name: string
+          purchase_date: string
+          purchase_price: number
+          status: string | null
+          unit_id: string | null
+          updated_at: string | null
+          useful_life: number | null
+          user_id: string
+        }
+        Insert: {
+          accumulated_depreciation?: number | null
+          category: string
+          created_at?: string | null
+          currency?: string | null
+          current_value?: number | null
+          depreciation_method?: string | null
+          id?: string
+          name: string
+          purchase_date: string
+          purchase_price?: number
+          status?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+          useful_life?: number | null
+          user_id: string
+        }
+        Update: {
+          accumulated_depreciation?: number | null
+          category?: string
+          created_at?: string | null
+          currency?: string | null
+          current_value?: number | null
+          depreciation_method?: string | null
+          id?: string
+          name?: string
+          purchase_date?: string
+          purchase_price?: number
+          status?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+          useful_life?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       feed_stocks: {
         Row: {
@@ -717,6 +842,75 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          currency: string | null
+          date: string
+          delivery_date: string | null
+          description: string | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          quantity: number | null
+          reference: string | null
+          status: string | null
+          subcategory: string | null
+          supplier: string | null
+          unit: string | null
+          unit_id: string | null
+          unit_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          created_at?: string | null
+          currency?: string | null
+          date: string
+          delivery_date?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          quantity?: number | null
+          reference?: string | null
+          status?: string | null
+          subcategory?: string | null
+          supplier?: string | null
+          unit?: string | null
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          currency?: string | null
+          date?: string
+          delivery_date?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          quantity?: number | null
+          reference?: string | null
+          status?: string | null
+          subcategory?: string | null
+          supplier?: string | null
+          unit?: string | null
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reproduction_records: {
         Row: {
           broodstock_batch_id: string | null
@@ -901,6 +1095,96 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      unit_equipment: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          depreciation_rate: number | null
+          id: string
+          name: string
+          purchase_date: string | null
+          purchase_price: number | null
+          specifications: Json | null
+          status: string | null
+          type: string
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          depreciation_rate?: number | null
+          id?: string
+          name: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          specifications?: Json | null
+          status?: string | null
+          type: string
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          depreciation_rate?: number | null
+          id?: string
+          name?: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          specifications?: Json | null
+          status?: string | null
+          type?: string
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      unit_infrastructures: {
+        Row: {
+          capacity: number | null
+          created_at: string | null
+          custom_type_name: string | null
+          id: string
+          name: string
+          specifications: Json | null
+          status: string | null
+          type: string
+          unit_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string | null
+          custom_type_name?: string | null
+          id?: string
+          name: string
+          specifications?: Json | null
+          status?: string | null
+          type: string
+          unit_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string | null
+          custom_type_name?: string | null
+          id?: string
+          name?: string
+          specifications?: Json | null
+          status?: string | null
+          type?: string
+          unit_id?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
