@@ -77,13 +77,13 @@ const AccountingManagement = () => {
     monthlyData: []
   };
 
-  // Données de trésorerie simulées
+  // Données de trésorerie basées sur les transactions réelles
   const cashFlowData = {
-    totalInflow: 14200,
-    totalOutflow: 9500,
-    currentBalance: 15420,
-    pendingInvoices: 3,
-    overdueInvoices: 1
+    totalInflow: currentData.revenue || 0,
+    totalOutflow: currentData.expenses || 0,
+    currentBalance: (currentData.revenue || 0) - (currentData.expenses || 0),
+    pendingInvoices: 0,
+    overdueInvoices: 0
   };
 
   return (

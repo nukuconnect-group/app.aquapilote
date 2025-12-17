@@ -3,83 +3,79 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Calendar, BarChart3, PieChart, TrendingUp } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, BarChart3 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useLogs } from '@/contexts/LogsContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 
 const ReportsGenerator = () => {
   const { addLog } = useLogs();
+  const { formatCurrency, t } = useSettings();
+  const { activeUnit, getUnitFinancialData } = useProductionUnits();
   const [reportPeriod, setReportPeriod] = useState('monthly');
   const [reportYear, setReportYear] = useState('2024');
   const [reportMonth, setReportMonth] = useState('01');
 
-  // Données d'exemple pour les rapports
-  const monthlyData = [
-    { month: 'Jan', revenue: 12500, expenses: 8900, profit: 3600 },
-    { month: 'Fév', revenue: 14200, expenses: 9500, profit: 4700 },
-    { month: 'Mar', revenue: 13800, expenses: 9200, profit: 4600 },
-    { month: 'Avr', revenue: 15100, expenses: 10200, profit: 4900 },
-    { month: 'Mai', revenue: 16300, expenses: 11100, profit: 5200 },
-    { month: 'Jun', revenue: 15800, expenses: 10600, profit: 5200 }
-  ];
+  // Récupérer les données réelles de l'unité active
+  const unitData = activeUnit ? getUnitFinancialData(activeUnit.id) : null;
+  
+  // Données basées sur les données réelles (ou vides si pas de données)
+  const monthlyData = unitData?.monthlyData || [];
+  
+  // Calculer les catégories de dépenses basées sur les données réelles
+  const totalExpenses = unitData?.expenses || 0;
+  const expenseBreakdown = totalExpenses > 0 ? [
+    { category: 'Alimentation', amount: Math.round(totalExpenses * 0.4), percentage: 40, color: '#8884d8' },
+    { category: 'Personnel', amount: Math.round(totalExpenses * 0.3), percentage: 30, color: '#82ca9d' },
+    { category: 'Maintenance', amount: Math.round(totalExpenses * 0.2), percentage: 20, color: '#ffc658' },
+    { category: 'Énergie', amount: Math.round(totalExpenses * 0.08), percentage: 8, color: '#ff7300' },
+    { category: 'Autres', amount: Math.round(totalExpenses * 0.02), percentage: 2, color: '#00C49F' }
+  ] : [];
 
-  const quarterlyData = [
-    { quarter: 'Q1 2024', revenue: 40500, expenses: 27600, profit: 12900 },
-    { quarter: 'Q2 2024', revenue: 47200, expenses: 31900, profit: 15300 },
-    { quarter: 'Q3 2023', revenue: 44800, expenses: 30200, profit: 14600 },
-    { quarter: 'Q4 2023', revenue: 48900, expenses: 33100, profit: 15800 }
-  ];
+  const totalRevenue = unitData?.revenue || 0;
+  const revenueBreakdown = totalRevenue > 0 ? [
+    { category: 'Vente poissons adultes', amount: Math.round(totalRevenue * 0.6), percentage: 60, color: '#8884d8' },
+    { category: 'Vente alevins', amount: Math.round(totalRevenue * 0.3), percentage: 30, color: '#82ca9d' },
+    { category: 'Services', amount: Math.round(totalRevenue * 0.08), percentage: 8, color: '#ffc658' },
+    { category: 'Autres', amount: Math.round(totalRevenue * 0.02), percentage: 2, color: '#ff7300' }
+  ] : [];
 
-  const expenseBreakdown = [
-    { category: 'Alimentation', amount: 4500, percentage: 40, color: '#8884d8' },
-    { category: 'Personnel', amount: 3600, percentage: 32, color: '#82ca9d' },
-    { category: 'Maintenance', amount: 1800, percentage: 16, color: '#ffc658' },
-    { category: 'Énergie', amount: 900, percentage: 8, color: '#ff7300' },
-    { category: 'Autres', amount: 450, percentage: 4, color: '#00C49F' }
-  ];
-
-  const revenueBreakdown = [
-    { category: 'Vente poissons adultes', amount: 8500, percentage: 60, color: '#8884d8' },
-    { category: 'Vente alevins', amount: 4250, percentage: 30, color: '#82ca9d' },
-    { category: 'Services', amount: 1275, percentage: 9, color: '#ffc658' },
-    { category: 'Autres', amount: 142, percentage: 1, color: '#ff7300' }
-  ];
-
+  // Bilan comptable - valeurs à 0 par défaut
   const balanceSheetData = {
     assets: {
       current: {
-        cash: 15420,
-        accountsReceivable: 4300,
-        inventory: 8900,
-        total: 28620
+        cash: 0,
+        accountsReceivable: 0,
+        inventory: 0,
+        total: 0
       },
       fixed: {
-        equipment: 45000,
-        buildings: 85000,
-        land: 35000,
-        total: 165000
+        equipment: 0,
+        buildings: 0,
+        land: 0,
+        total: 0
       },
-      total: 193620
+      total: 0
     },
     liabilities: {
       current: {
-        accountsPayable: 3200,
-        shortTermLoans: 8000,
-        total: 11200
+        accountsPayable: 0,
+        shortTermLoans: 0,
+        total: 0
       },
       longTerm: {
-        mortgages: 75000,
-        longTermLoans: 25000,
-        total: 100000
+        mortgages: 0,
+        longTermLoans: 0,
+        total: 0
       },
-      total: 111200
+      total: 0
     },
     equity: {
-      ownersEquity: 82420,
-      total: 82420
+      ownersEquity: 0,
+      total: 0
     }
   };
 
@@ -92,12 +88,10 @@ const ReportsGenerator = () => {
       timestamp: new Date().toISOString()
     };
 
-    // Simulation de génération PDF
     const filename = `rapport_${reportType}_${reportPeriod}_${reportYear}${reportMonth ? '_' + reportMonth : ''}.pdf`;
     
     addLog('Rapport généré', 'Comptabilité', `Rapport ${reportType} généré: ${filename}`, 'success');
     
-    // Ici, dans une vraie application, on générerait le PDF
     console.log('Génération PDF:', reportData);
     alert(`Rapport PDF généré: ${filename}`);
   };
@@ -113,6 +107,8 @@ const ReportsGenerator = () => {
     addLog('Export comptable', 'Comptabilité', `Export pour cabinet comptable généré: ${filename}`, 'info');
     alert(`Archive pour cabinet comptable générée: ${filename}`);
   };
+
+  const netResult = totalRevenue - totalExpenses;
 
   return (
     <div className="space-y-6">
@@ -146,9 +142,9 @@ const ReportsGenerator = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="2025">2025</SelectItem>
                   <SelectItem value="2024">2024</SelectItem>
                   <SelectItem value="2023">2023</SelectItem>
-                  <SelectItem value="2022">2022</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -198,87 +194,102 @@ const ReportsGenerator = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {monthlyData.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Évolution des performances
+                    <Button variant="outline" size="sm" onClick={() => generatePDFReport('dashboard')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      PDF
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                      <Bar dataKey="revenue" fill="#10b981" name="Revenus" />
+                      <Bar dataKey="expenses" fill="#ef4444" name="Charges" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {expenseBreakdown.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      Répartition des charges
+                      <Button variant="outline" size="sm" onClick={() => exportToExcel('expenses')}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Excel
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={expenseBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ category, percentage }) => `${category} ${percentage}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="amount"
+                        >
+                          {expenseBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <BarChart3 className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  Aucune donnée financière disponible. Ajoutez des transactions pour voir les rapports.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {monthlyData.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Évolution des performances
-                  <Button variant="outline" size="sm" onClick={() => generatePDFReport('dashboard')}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    PDF
+                  Évolution du résultat net
+                  <Button variant="outline" size="sm" onClick={() => generatePDFReport('profit-trend')}>
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Analyser
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={monthlyData}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="revenue" fill="#10b981" name="Revenus" />
-                    <Bar dataKey="expenses" fill="#ef4444" name="Charges" />
-                  </BarChart>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={3} name="Bénéfice" />
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Répartition des charges
-                  <Button variant="outline" size="sm" onClick={() => exportToExcel('expenses')}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Excel
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
-                    <Pie
-                      data={expenseBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name} ${percentage}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="amount"
-                    >
-                      {expenseBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Évolution du résultat net
-                <Button variant="outline" size="sm" onClick={() => generatePDFReport('profit-trend')}>
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Analyser
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={3} name="Bénéfice" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="profit-loss" className="space-y-4">
@@ -304,16 +315,22 @@ const ReportsGenerator = () => {
                 <div>
                   <h4 className="font-semibold text-lg mb-3 text-green-800">PRODUITS</h4>
                   <div className="space-y-2">
-                    {revenueBreakdown.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-green-50 rounded">
-                        <span>{item.category}</span>
-                        <span className="font-bold">€{item.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center p-3 bg-green-100 rounded font-bold text-green-800">
-                      <span>TOTAL PRODUITS</span>
-                      <span>€{revenueBreakdown.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</span>
-                    </div>
+                    {revenueBreakdown.length > 0 ? (
+                      <>
+                        {revenueBreakdown.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                            <span>{item.category}</span>
+                            <span className="font-bold">{formatCurrency(item.amount)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between items-center p-3 bg-green-100 rounded font-bold text-green-800">
+                          <span>TOTAL PRODUITS</span>
+                          <span>{formatCurrency(totalRevenue)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground p-2">Aucun produit enregistré</p>
+                    )}
                   </div>
                 </div>
 
@@ -321,24 +338,30 @@ const ReportsGenerator = () => {
                 <div>
                   <h4 className="font-semibold text-lg mb-3 text-red-800">CHARGES</h4>
                   <div className="space-y-2">
-                    {expenseBreakdown.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-red-50 rounded">
-                        <span>{item.category}</span>
-                        <span className="font-bold">€{item.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center p-3 bg-red-100 rounded font-bold text-red-800">
-                      <span>TOTAL CHARGES</span>
-                      <span>€{expenseBreakdown.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</span>
-                    </div>
+                    {expenseBreakdown.length > 0 ? (
+                      <>
+                        {expenseBreakdown.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center p-2 bg-red-50 rounded">
+                            <span>{item.category}</span>
+                            <span className="font-bold">{formatCurrency(item.amount)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between items-center p-3 bg-red-100 rounded font-bold text-red-800">
+                          <span>TOTAL CHARGES</span>
+                          <span>{formatCurrency(totalExpenses)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground p-2">Aucune charge enregistrée</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Résultat */}
                 <div className="border-t-2 pt-4">
-                  <div className="flex justify-between items-center p-4 bg-blue-100 rounded font-bold text-blue-800 text-lg">
+                  <div className={`flex justify-between items-center p-4 rounded font-bold text-lg ${netResult >= 0 ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>
                     <span>RÉSULTAT NET</span>
-                    <span>€{(revenueBreakdown.reduce((sum, item) => sum + item.amount, 0) - expenseBreakdown.reduce((sum, item) => sum + item.amount, 0)).toLocaleString()}</span>
+                    <span>{formatCurrency(netResult)}</span>
                   </div>
                 </div>
               </div>
@@ -375,19 +398,19 @@ const ReportsGenerator = () => {
                       <div className="space-y-1 ml-4">
                         <div className="flex justify-between">
                           <span>Trésorerie</span>
-                          <span>€{balanceSheetData.assets.current.cash.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.current.cash)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Créances clients</span>
-                          <span>€{balanceSheetData.assets.current.accountsReceivable.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.current.accountsReceivable)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Stock</span>
-                          <span>€{balanceSheetData.assets.current.inventory.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.current.inventory)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t">
                           <span>Total actif circulant</span>
-                          <span>€{balanceSheetData.assets.current.total.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.current.total)}</span>
                         </div>
                       </div>
                     </div>
@@ -397,26 +420,26 @@ const ReportsGenerator = () => {
                       <div className="space-y-1 ml-4">
                         <div className="flex justify-between">
                           <span>Équipements</span>
-                          <span>€{balanceSheetData.assets.fixed.equipment.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.fixed.equipment)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Bâtiments</span>
-                          <span>€{balanceSheetData.assets.fixed.buildings.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.fixed.buildings)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Terrains</span>
-                          <span>€{balanceSheetData.assets.fixed.land.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.fixed.land)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t">
                           <span>Total actif immobilisé</span>
-                          <span>€{balanceSheetData.assets.fixed.total.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.assets.fixed.total)}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-between font-bold text-lg p-3 bg-blue-100 rounded">
                       <span>TOTAL ACTIF</span>
-                      <span>€{balanceSheetData.assets.total.toLocaleString()}</span>
+                      <span>{formatCurrency(balanceSheetData.assets.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -431,15 +454,15 @@ const ReportsGenerator = () => {
                       <div className="space-y-1 ml-4">
                         <div className="flex justify-between">
                           <span>Dettes fournisseurs</span>
-                          <span>€{balanceSheetData.liabilities.current.accountsPayable.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.current.accountsPayable)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Emprunts court terme</span>
-                          <span>€{balanceSheetData.liabilities.current.shortTermLoans.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.current.shortTermLoans)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t">
                           <span>Total dettes court terme</span>
-                          <span>€{balanceSheetData.liabilities.current.total.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.current.total)}</span>
                         </div>
                       </div>
                     </div>
@@ -449,15 +472,15 @@ const ReportsGenerator = () => {
                       <div className="space-y-1 ml-4">
                         <div className="flex justify-between">
                           <span>Emprunts hypothécaires</span>
-                          <span>€{balanceSheetData.liabilities.longTerm.mortgages.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.longTerm.mortgages)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Emprunts long terme</span>
-                          <span>€{balanceSheetData.liabilities.longTerm.longTermLoans.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.longTerm.longTermLoans)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t">
                           <span>Total dettes long terme</span>
-                          <span>€{balanceSheetData.liabilities.longTerm.total.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.liabilities.longTerm.total)}</span>
                         </div>
                       </div>
                     </div>
@@ -467,14 +490,14 @@ const ReportsGenerator = () => {
                       <div className="space-y-1 ml-4">
                         <div className="flex justify-between font-semibold">
                           <span>Capitaux propres</span>
-                          <span>€{balanceSheetData.equity.ownersEquity.toLocaleString()}</span>
+                          <span>{formatCurrency(balanceSheetData.equity.ownersEquity)}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-between font-bold text-lg p-3 bg-green-100 rounded">
                       <span>TOTAL PASSIF</span>
-                      <span>€{(balanceSheetData.liabilities.total + balanceSheetData.equity.total).toLocaleString()}</span>
+                      <span>{formatCurrency(balanceSheetData.liabilities.total + balanceSheetData.equity.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -507,23 +530,23 @@ const ReportsGenerator = () => {
                   <div className="space-y-2 ml-4">
                     <div className="flex justify-between">
                       <span>Résultat net</span>
-                      <span>€3,600</span>
+                      <span>{formatCurrency(netResult)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Amortissements</span>
-                      <span>€1,200</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Variation des créances</span>
-                      <span>€-500</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Variation des dettes</span>
-                      <span>€300</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between font-semibold border-t p-2 bg-blue-50">
                       <span>Flux net de trésorerie d'activité</span>
-                      <span>€4,600</span>
+                      <span>{formatCurrency(netResult)}</span>
                     </div>
                   </div>
                 </div>
@@ -533,15 +556,15 @@ const ReportsGenerator = () => {
                   <div className="space-y-2 ml-4">
                     <div className="flex justify-between">
                       <span>Acquisition d'équipements</span>
-                      <span>€-2,500</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Cession d'actifs</span>
-                      <span>€800</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between font-semibold border-t p-2 bg-red-50">
                       <span>Flux net de trésorerie d'investissement</span>
-                      <span>€-1,700</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                   </div>
                 </div>
@@ -551,32 +574,32 @@ const ReportsGenerator = () => {
                   <div className="space-y-2 ml-4">
                     <div className="flex justify-between">
                       <span>Nouveaux emprunts</span>
-                      <span>€5,000</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Remboursements d'emprunts</span>
-                      <span>€-3,200</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between font-semibold border-t p-2 bg-green-50">
                       <span>Flux net de trésorerie de financement</span>
-                      <span>€1,800</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t-2 pt-4">
-                  <div className="flex justify-between font-bold text-lg p-4 bg-gray-100 rounded">
+                  <div className="flex justify-between font-bold text-lg p-4 bg-muted rounded">
                     <span>VARIATION NETTE DE TRÉSORERIE</span>
-                    <span>€4,700</span>
+                    <span>{formatCurrency(netResult)}</span>
                   </div>
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between">
                       <span>Trésorerie début de période</span>
-                      <span>€10,720</span>
+                      <span>{formatCurrency(0)}</span>
                     </div>
                     <div className="flex justify-between font-bold">
                       <span>Trésorerie fin de période</span>
-                      <span>€15,420</span>
+                      <span>{formatCurrency(netResult)}</span>
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreditCard, Plus, AlertTriangle, Calendar, Eye, Edit, Trash2, Download } from 'lucide-react';
+import { CreditCard, Plus, AlertTriangle, Calendar, Eye, Edit, Trash2, Download, FileText } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { useLogs } from '@/contexts/LogsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -38,47 +38,9 @@ const CashFlowManager = () => {
   const { addLog } = useLogs();
   const { formatCurrency, t } = useSettings();
 
-  const [accounts, setAccounts] = useState<BankAccount[]>([
-    { id: '1', name: 'Compte courant principal', type: 'checking', balance: 15420, currency: 'EUR' },
-    { id: '2', name: 'Compte épargne', type: 'savings', balance: 8500, currency: 'EUR' },
-    { id: '3', name: 'Caisse', type: 'cash', balance: 450, currency: 'EUR' }
-  ]);
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
 
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    {
-      id: '1',
-      type: 'receivable',
-      number: 'FAC-2024-001',
-      client: 'Restaurant Les Saveurs',
-      amount: 2500,
-      dueDate: '2024-02-15',
-      status: 'pending',
-      description: 'Vente carpes fraîches',
-      issueDate: '2024-01-15'
-    },
-    {
-      id: '2',
-      type: 'payable',
-      number: 'FOUR-001',
-      supplier: 'Biomar Alimentation',
-      amount: 1200,
-      dueDate: '2024-01-30',
-      status: 'overdue',
-      description: 'Aliments poissons - Janvier',
-      issueDate: '2024-01-10'
-    },
-    {
-      id: '3',
-      type: 'receivable',
-      number: 'FAC-2024-002',
-      client: 'Aquarium Municipal',
-      amount: 1800,
-      dueDate: '2024-02-01',
-      status: 'pending',
-      description: 'Vente alevins diverses espèces',
-      issueDate: '2024-01-18'
-    }
-  ]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
@@ -101,14 +63,8 @@ const CashFlowManager = () => {
     description: ''
   });
 
-  // Données pour les graphiques de flux de trésorerie
-  const cashFlowData = [
-    { month: 'Nov', inflow: 4200, outflow: 3800, net: 400 },
-    { month: 'Déc', inflow: 5100, outflow: 4200, net: 900 },
-    { month: 'Jan', inflow: 4800, outflow: 4500, net: 300 },
-    { month: 'Fév', inflow: 5300, outflow: 3900, net: 1400 },
-    { month: 'Mar', inflow: 4900, outflow: 4100, net: 800 }
-  ];
+  // Données pour les graphiques de flux de trésorerie (vides par défaut)
+  const cashFlowData: { month: string; inflow: number; outflow: number; net: number }[] = [];
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const receivables = invoices.filter(inv => inv.type === 'receivable' && inv.status === 'pending');
@@ -122,7 +78,7 @@ const CashFlowManager = () => {
     const account: BankAccount = {
       id: Date.now().toString(),
       ...newAccount,
-      currency: 'EUR'
+      currency: 'XOF'
     };
     
     setAccounts([...accounts, account]);
@@ -246,27 +202,37 @@ const CashFlowManager = () => {
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accounts.map((account) => (
-              <Card key={account.id}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-semibold">{account.name}</h4>
-                      <p className="text-sm text-gray-600">{getAccountTypeLabel(account.type)}</p>
+          {accounts.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">Aucun compte bancaire configuré</p>
+                <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Nouveau compte" pour ajouter votre premier compte</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {accounts.map((account) => (
+                <Card key={account.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold">{account.name}</h4>
+                        <p className="text-sm text-muted-foreground">{getAccountTypeLabel(account.type)}</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
-                    <p className="text-sm text-gray-500">{account.currency}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">{formatCurrency(account.balance)}</p>
+                      <p className="text-sm text-muted-foreground">{account.currency}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="invoices" className="space-y-4">
@@ -278,49 +244,59 @@ const CashFlowManager = () => {
             </Button>
           </div>
           
-          <div className="space-y-4">
-            {invoices.map((invoice) => (
-              <Card key={invoice.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Badge className={invoice.type === 'receivable' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                          {invoice.type === 'receivable' ? 'À recevoir' : 'À payer'}
-                        </Badge>
-                        {getStatusBadge(invoice.status)}
-                        <span className="text-sm text-gray-500">Échéance: {invoice.dueDate}</span>
+          {invoices.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">Aucune facture enregistrée</p>
+                <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Nouvelle facture" pour ajouter une facture</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {invoices.map((invoice) => (
+                <Card key={invoice.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Badge className={invoice.type === 'receivable' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                            {invoice.type === 'receivable' ? 'À recevoir' : 'À payer'}
+                          </Badge>
+                          {getStatusBadge(invoice.status)}
+                          <span className="text-sm text-muted-foreground">Échéance: {invoice.dueDate}</span>
+                        </div>
+                        <h4 className="font-semibold">{invoice.number}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {invoice.client || invoice.supplier} • {invoice.description}
+                        </p>
                       </div>
-                      <h4 className="font-semibold">{invoice.number}</h4>
-                      <p className="text-sm text-gray-600">
-                        {invoice.client || invoice.supplier} • {invoice.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-lg font-bold">{formatCurrency(invoice.amount)}</span>
-                      <div className="flex space-x-1">
-                        {invoice.status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePayInvoice(invoice.id)}
-                          >
-                            Marquer payée
+                      <div className="flex items-center space-x-4">
+                        <span className="text-lg font-bold">{formatCurrency(invoice.amount)}</span>
+                        <div className="flex space-x-1">
+                          {invoice.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePayInvoice(invoice.id)}
+                            >
+                              Marquer payée
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4" />
                           </Button>
-                        )}
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="cashflow" className="space-y-4">
@@ -440,7 +416,7 @@ const CashFlowManager = () => {
               </Select>
             </div>
             <div>
-              <Label>Solde initial (€)</Label>
+              <Label>Solde initial (F CFA)</Label>
               <Input
                 type="number"
                 step="0.01"
