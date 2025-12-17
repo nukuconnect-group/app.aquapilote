@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/clientConfig';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -61,6 +62,7 @@ export interface ProductionUnit {
   customEquipment?: Equipment[];
   activeCycles?: ProductionCycle[];
   financialData?: UnitFinancialData;
+  userId?: string;
 }
 
 export interface Infrastructure {
@@ -289,6 +291,7 @@ const getDemoInfrastructures = (): Infrastructure[] => [
 export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) => {
   const { isDemoMode, isAuthenticated, user } = useAuth();
   const [currency, setCurrency] = useState<'XOF' | 'EUR' | 'USD' | 'MAD'>('XOF');
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false);
   
   // Initialiser avec des tableaux vides - les données démo seront ajoutées via useEffect
   const [units, setUnits] = useState<ProductionUnit[]>([]);
@@ -300,7 +303,51 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
   const [depreciableAssets, setDepreciableAssets] = useState<DepreciableAsset[]>([]);
   const [activeUnit, setActiveUnit] = useState<ProductionUnit | null>(null);
 
-  // Charger les données démo uniquement en mode démonstration
+  // Fonction pour charger les unités depuis la base de données
+  const fetchUnitsFromDB = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoadingUnits(true);
+      const { data, error } = await (supabase as any)
+        .from('production_units')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching production units:', error);
+        return;
+      }
+
+      if (data) {
+        // Convertir les données de la DB au format du contexte
+        const convertedUnits: ProductionUnit[] = data.map((unit: any) => ({
+          id: unit.id,
+          name: unit.name,
+          type: unit.type as ProductionUnitType,
+          description: unit.description || '',
+          isActive: unit.is_active,
+          capacity: unit.capacity,
+          currentStock: unit.current_stock,
+          manager: unit.manager || '',
+          createdAt: unit.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          photoUrl: unit.photo_url || undefined,
+          userId: unit.user_id,
+        }));
+        
+        setUnits(convertedUnits);
+        if (convertedUnits.length > 0 && !activeUnit) {
+          setActiveUnit(convertedUnits[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading units:', err);
+    } finally {
+      setIsLoadingUnits(false);
+    }
+  }, [user?.id]);
+
+  // Charger les données démo ou de la DB
   useEffect(() => {
     if (isDemoMode) {
       // Mode démo: charger les données de démonstration
@@ -397,9 +444,18 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
           status: 'active'
         }
       ]);
-    } else if (isAuthenticated && user) {
-      // Utilisateur connecté: commencer avec des données vides
-      // Les vraies données viendront de la base de données via les hooks appropriés
+    } else if (isAuthenticated && user?.id) {
+      // Utilisateur connecté: charger depuis la base de données
+      fetchUnitsFromDB();
+      // Réinitialiser les autres données locales
+      setInfrastructures([]);
+      setEquipment([]);
+      setCycles([]);
+      setPurchases([]);
+      setTransactions([]);
+      setDepreciableAssets([]);
+    } else {
+      // Non connecté: données vides
       setUnits([]);
       setInfrastructures([]);
       setEquipment([]);
@@ -409,7 +465,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       setDepreciableAssets([]);
       setActiveUnit(null);
     }
-  }, [isDemoMode, isAuthenticated, user]);
+  }, [isDemoMode, isAuthenticated, user?.id, fetchUnitsFromDB]);
 
   const formatCurrency = (amount: number): string => {
     const currencySymbols = {
@@ -446,26 +502,132 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     return toCurrency === 'XOF' ? xofAmount : xofAmount / exchangeRates[toCurrency as keyof typeof exchangeRates];
   };
 
-  const addUnit = (unitData: Omit<ProductionUnit, 'id' | 'createdAt'>) => {
-    const newUnit: ProductionUnit = {
-      ...unitData,
-      id: `UNIT${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setUnits([...units, newUnit]);
+  const addUnit = async (unitData: Omit<ProductionUnit, 'id' | 'createdAt'>) => {
+    // Mode démo: ajout local uniquement
+    if (isDemoMode) {
+      const newUnit: ProductionUnit = {
+        ...unitData,
+        id: `UNIT${Date.now()}`,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      setUnits(prev => [...prev, newUnit]);
+      return;
+    }
+
+    // Mode connecté: sauvegarder dans la base de données
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('production_units')
+        .insert({
+          user_id: user.id,
+          name: unitData.name,
+          type: unitData.type,
+          description: unitData.description || null,
+          is_active: unitData.isActive ?? true,
+          capacity: unitData.capacity || 0,
+          current_stock: unitData.currentStock || 0,
+          manager: unitData.manager || null,
+          photo_url: unitData.photoUrl || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating unit:', error);
+        throw error;
+      }
+
+      // Convertir et ajouter au state
+      const newUnit: ProductionUnit = {
+        id: data.id,
+        name: data.name,
+        type: data.type as ProductionUnitType,
+        description: data.description || '',
+        isActive: data.is_active,
+        capacity: data.capacity,
+        currentStock: data.current_stock,
+        manager: data.manager || '',
+        createdAt: data.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        photoUrl: data.photo_url || undefined,
+        userId: data.user_id,
+      };
+      
+      setUnits(prev => [newUnit, ...prev]);
+    } catch (err) {
+      console.error('Error adding unit:', err);
+    }
   };
 
-  const updateUnit = (id: string, updates: Partial<ProductionUnit>) => {
-    setUnits(units.map(unit => 
-      unit.id === id ? { ...unit, ...updates } : unit
-    ));
+  const updateUnit = async (id: string, updates: Partial<ProductionUnit>) => {
+    // Mode démo: mise à jour locale uniquement
+    if (isDemoMode) {
+      setUnits(units.map(unit => 
+        unit.id === id ? { ...unit, ...updates } : unit
+      ));
+      return;
+    }
+
+    // Mode connecté: sauvegarder dans la base de données
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+      if (updates.capacity !== undefined) dbUpdates.capacity = updates.capacity;
+      if (updates.currentStock !== undefined) dbUpdates.current_stock = updates.currentStock;
+      if (updates.manager !== undefined) dbUpdates.manager = updates.manager;
+      if (updates.photoUrl !== undefined) dbUpdates.photo_url = updates.photoUrl;
+
+      const { error } = await (supabase as any)
+        .from('production_units')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating unit:', error);
+        throw error;
+      }
+
+      setUnits(units.map(unit => 
+        unit.id === id ? { ...unit, ...updates } : unit
+      ));
+    } catch (err) {
+      console.error('Error updating unit:', err);
+    }
   };
 
-  const deleteUnit = (id: string) => {
-    setUnits(units.filter(unit => unit.id !== id));
-    setInfrastructures(infrastructures.filter(inf => inf.unitId !== id));
-    setEquipment(equipment.filter(eq => eq.unitId !== id));
-    setCycles(cycles.filter(cy => cy.unitId !== id));
+  const deleteUnit = async (id: string) => {
+    // Mode démo: suppression locale uniquement
+    if (isDemoMode) {
+      setUnits(units.filter(unit => unit.id !== id));
+      setInfrastructures(infrastructures.filter(inf => inf.unitId !== id));
+      setEquipment(equipment.filter(eq => eq.unitId !== id));
+      setCycles(cycles.filter(cy => cy.unitId !== id));
+      return;
+    }
+
+    // Mode connecté: supprimer de la base de données
+    try {
+      const { error } = await (supabase as any)
+        .from('production_units')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting unit:', error);
+        throw error;
+      }
+
+      setUnits(units.filter(unit => unit.id !== id));
+      setInfrastructures(infrastructures.filter(inf => inf.unitId !== id));
+      setEquipment(equipment.filter(eq => eq.unitId !== id));
+      setCycles(cycles.filter(cy => cy.unitId !== id));
+    } catch (err) {
+      console.error('Error deleting unit:', err);
+    }
   };
 
   const getUnitInfrastructures = (unitId: string) => {

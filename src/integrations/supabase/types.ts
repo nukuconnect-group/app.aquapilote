@@ -630,6 +630,51 @@ export type Database = {
         }
         Relationships: []
       }
+      production_units: {
+        Row: {
+          capacity: number
+          created_at: string
+          current_stock: number
+          description: string | null
+          id: string
+          is_active: boolean
+          manager: string | null
+          name: string
+          photo_url: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manager?: string | null
+          name: string
+          photo_url?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          manager?: string | null
+          name?: string
+          photo_url?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

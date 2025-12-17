@@ -98,35 +98,40 @@ const ProductionUnitsManagement = () => {
     setNewUnit(prev => ({ ...prev, photoUrl: '' }));
   };
 
-  const handleSaveUnit = () => {
+  const handleSaveUnit = async () => {
     const unitToSave = {
       ...newUnit,
       photoUrl: selectedPhoto || newUnit.photoUrl || ''
     };
     
-    if (editingUnit) {
-      updateUnit(editingUnit.id, unitToSave);
-      addLog('Unité modifiée', 'Infrastructures', `Unité ${unitToSave.name} mise à jour`, 'info');
-      setEditingUnit(null);
-      toast.success('Unité modifiée avec succès');
-    } else {
-      addUnit(unitToSave);
-      addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${unitToSave.name} ajoutée`, 'success');
-      toast.success('Unité créée avec succès');
+    try {
+      if (editingUnit) {
+        await updateUnit(editingUnit.id, unitToSave);
+        addLog('Unité modifiée', 'Infrastructures', `Unité ${unitToSave.name} mise à jour`, 'info');
+        setEditingUnit(null);
+        toast.success('Unité modifiée avec succès');
+      } else {
+        await addUnit(unitToSave);
+        addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${unitToSave.name} ajoutée`, 'success');
+        toast.success('Unité créée avec succès');
+      }
+      
+      setNewUnit({
+        name: '',
+        type: '' as ProductionUnitType,
+        description: '',
+        capacity: 0,
+        currentStock: 0,
+        manager: '',
+        isActive: true,
+        photoUrl: ''
+      });
+      setSelectedPhoto(null);
+      setShowAddDialog(false);
+    } catch (error) {
+      console.error('Error saving unit:', error);
+      toast.error('Erreur lors de la sauvegarde de l\'unité');
     }
-    
-    setNewUnit({
-      name: '',
-      type: '' as ProductionUnitType,
-      description: '',
-      capacity: 0,
-      currentStock: 0,
-      manager: '',
-      isActive: true,
-      photoUrl: ''
-    });
-    setSelectedPhoto(null);
-    setShowAddDialog(false);
   };
 
   const handleEditUnit = (unit: any) => {
@@ -145,19 +150,30 @@ const ProductionUnitsManagement = () => {
     setShowAddDialog(true);
   };
 
-  const handleDeleteUnit = (unitId: string, unitName: string) => {
-    deleteUnit(unitId);
-    addLog('Unité supprimée', 'Infrastructures', `Unité ${unitName} supprimée définitivement`, 'warning');
+  const handleDeleteUnit = async (unitId: string, unitName: string) => {
+    try {
+      await deleteUnit(unitId);
+      addLog('Unité supprimée', 'Infrastructures', `Unité ${unitName} supprimée définitivement`, 'warning');
+      toast.success('Unité supprimée avec succès');
+    } catch (error) {
+      console.error('Error deleting unit:', error);
+      toast.error('Erreur lors de la suppression de l\'unité');
+    }
   };
 
-  const handleToggleUnit = (unitId: string, unitName: string, isActive: boolean) => {
-    updateUnit(unitId, { isActive: !isActive });
-    addLog(
-      isActive ? 'Unité désactivée' : 'Unité activée', 
-      'Infrastructures', 
-      `Unité ${unitName} ${isActive ? 'désactivée' : 'activée'}`, 
-      'info'
-    );
+  const handleToggleUnit = async (unitId: string, unitName: string, isActive: boolean) => {
+    try {
+      await updateUnit(unitId, { isActive: !isActive });
+      addLog(
+        isActive ? 'Unité désactivée' : 'Unité activée', 
+        'Infrastructures', 
+        `Unité ${unitName} ${isActive ? 'désactivée' : 'activée'}`, 
+        'info'
+      );
+    } catch (error) {
+      console.error('Error toggling unit:', error);
+      toast.error('Erreur lors de la modification de l\'unité');
+    }
   };
 
   const openConfigDialog = (unit: any) => {
