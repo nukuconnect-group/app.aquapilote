@@ -246,7 +246,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         <div>
           <h3 className="text-lg font-semibold">Gestion des Stocks d'Aliment</h3>
           <p className="text-sm text-gray-600">
-            Valeur totale: {getTotalValue().toFixed(2)} €
+            Valeur totale: {getTotalValue().toLocaleString('fr-FR')} F CFA
           </p>
         </div>
         <div className="flex gap-2">
@@ -376,7 +376,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
               <TabsContent value="advanced" className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm">Coût unitaire (€)</Label>
+                    <Label className="text-sm">Coût unitaire (F CFA)</Label>
                     <Input 
                       type="number"
                       step="0.01"
@@ -595,7 +595,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     </div>
                     <div>
                       <span className="text-gray-600">Coût:</span>
-                      <span className="ml-1 font-medium">{stock.cost || 0}€/{stock.unit}</span>
+                      <span className="ml-1 font-medium">{(stock.cost || 0).toLocaleString('fr-FR')} F CFA/{stock.unit}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Protéines:</span>

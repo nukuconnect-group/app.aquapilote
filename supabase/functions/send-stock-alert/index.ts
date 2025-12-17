@@ -217,8 +217,9 @@ const handler = async (req: Request): Promise<Response> => {
       console.error(`Error sending email to ${userEmail}:`, error);
     }
 
-    // Record alert history for each stock
+    // Record alert history and create notifications for each stock
     for (const stock of lowStocks) {
+      // Save to alert_history
       const { error: historyError } = await supabase
         .from('alert_history')
         .insert({
@@ -239,6 +240,29 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (historyError) {
         console.error('Error saving alert history:', historyError);
+      }
+
+      // Create notification for in-app display
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          title: '⚠️ Stock faible',
+          message: `${stock.custom_name || stock.feed_type} est en dessous du seuil minimum (${stock.quantity} ${stock.unit})`,
+          type: 'warning',
+          module: 'Stock',
+          is_critical: stock.quantity <= (stock.min_threshold || 50) / 2, // Critical if below half threshold
+          metadata: {
+            stock_id: stock.id,
+            feed_type: stock.feed_type,
+            quantity: stock.quantity,
+            unit: stock.unit,
+            min_threshold: stock.min_threshold
+          }
+        });
+
+      if (notifError) {
+        console.error('Error creating notification:', notifError);
       }
     }
 

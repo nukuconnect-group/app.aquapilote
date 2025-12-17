@@ -62,57 +62,46 @@ const FeedingManagement = () => {
     );
   }
 
+  // Calculer les données réelles à partir des enregistrements
   const getFeedingData = () => {
-    switch (activeUnit.type) {
-      case 'ecloserie':
-        return {
-          title: 'Alimentation - Écloserie',
-          subtitle: 'Nourriture spécialisée pour alevins et géniteurs',
-          dailyQuantity: '15 kg',
-          feedType: 'Aliment starter + Reproducteurs',
-          feedingTimes: 6,
-          lastFeeding: '14:30',
-          nextFeeding: '17:00',
-          notes: 'Alimentation renforcée pour la reproduction'
-        };
-      
-      case 'grossissement':
-        return {
-          title: 'Alimentation - Grossissement',
-          subtitle: 'Programme d\'alimentation pour la croissance',
-          dailyQuantity: '250 kg',
-          feedType: 'Aliment croissance premium',
-          feedingTimes: 4,
-          lastFeeding: '13:45',
-          nextFeeding: '18:00',
-          notes: 'Ajustement selon la biomasse'
-        };
-      
-      case 'fabrication_aliment':
-        return {
-          title: 'Production d\'Aliment',
-          subtitle: 'Fabrication et formulation',
-          dailyQuantity: '2,500 kg',
-          feedType: 'Mix protéine 32%',
-          feedingTimes: 'Production continue',
-          lastFeeding: 'En cours',
-          nextFeeding: 'Batch suivant: 16:00',
-          notes: 'Contrôle qualité en cours'
-        };
-      
-      default:
-        return {
-          title: `Alimentation - ${activeUnit.name}`,
-          subtitle: 'Gestion de l\'alimentation',
-          dailyQuantity: 'N/A',
-          feedType: 'Non applicable',
-          feedingTimes: 0,
-          lastFeeding: 'N/A',
-          nextFeeding: 'N/A',
-          notes: 'Unité sans alimentation directe'
-        };
-    }
+    const today = new Date().toISOString().split('T')[0];
+    const todayRecords = unitRecords.filter(r => r.date === today);
+    const dailyQuantity = todayRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
+    
+    // Trouver le dernier et prochain repas
+    const sortedRecords = [...unitRecords].sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
+      const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    const lastRecord = sortedRecords[0];
+    const lastFeeding = lastRecord ? (lastRecord.time || 'N/A') : '-';
+    
+    const unitTypeLabels: Record<string, { title: string; subtitle: string }> = {
+      ecloserie: { title: 'Alimentation - Écloserie', subtitle: 'Nourriture spécialisée pour alevins et géniteurs' },
+      grossissement: { title: 'Alimentation - Grossissement', subtitle: 'Programme d\'alimentation pour la croissance' },
+      fabrication_aliment: { title: 'Production d\'Aliment', subtitle: 'Fabrication et formulation' }
+    };
+    
+    const typeInfo = unitTypeLabels[activeUnit.type] || { 
+      title: `Alimentation - ${activeUnit.name}`, 
+      subtitle: 'Gestion de l\'alimentation' 
+    };
+    
+    return {
+      title: typeInfo.title,
+      subtitle: typeInfo.subtitle,
+      dailyQuantity: dailyQuantity > 0 ? `${dailyQuantity} kg` : '-',
+      feedType: lastRecord?.feed_type || '-',
+      feedingTimes: todayRecords.length,
+      lastFeeding,
+      nextFeeding: '-',
+      notes: activeCycle?.notes || ''
+    };
   };
+
+  const unitRecords = feedingRecords.filter(record => record.unit_id === activeUnit.id);
 
   const feedingData = getFeedingData();
 
@@ -143,8 +132,6 @@ const FeedingManagement = () => {
       </div>
     );
   }
-
-  const unitRecords = feedingRecords.filter(record => record.unit_id === activeUnit.id);
 
   const handleSaveFeedingRecord = async (record: any) => {
     try {
