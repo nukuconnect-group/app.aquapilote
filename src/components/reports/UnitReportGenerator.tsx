@@ -4,17 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Download, TrendingUp, DollarSign, Package, Users } from 'lucide-react';
+import { Download, TrendingUp, DollarSign, Package } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const UnitReportGenerator = () => {
   const { units, getUnitFinancialData, getGlobalFinancialData } = useProductionUnits();
+  const { formatCurrency } = useSettings();
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [reportType, setReportType] = useState<string>('financial');
 
   const generateReport = () => {
     console.log(`Génération du rapport ${reportType} pour l'unité ${selectedUnit}`);
-    // Logique de génération de rapport
   };
 
   const getReportData = () => {
@@ -74,9 +75,9 @@ const UnitReportGenerator = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold text-green-600">
-                    €{reportData.revenue.toLocaleString()}
+                    {formatCurrency(reportData.revenue)}
                   </p>
-                  <p className="text-sm text-gray-600">Revenus totaux</p>
+                  <p className="text-sm text-muted-foreground">Revenus totaux</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-green-600" />
               </div>
@@ -88,9 +89,9 @@ const UnitReportGenerator = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold text-red-600">
-                    €{reportData.expenses.toLocaleString()}
+                    {formatCurrency(reportData.expenses)}
                   </p>
-                  <p className="text-sm text-gray-600">Dépenses totales</p>
+                  <p className="text-sm text-muted-foreground">Dépenses totales</p>
                 </div>
                 <Package className="w-8 h-8 text-red-600" />
               </div>
@@ -102,9 +103,9 @@ const UnitReportGenerator = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold text-blue-600">
-                    €{reportData.profit.toLocaleString()}
+                    {formatCurrency(reportData.profit)}
                   </p>
-                  <p className="text-sm text-gray-600">Bénéfice net</p>
+                  <p className="text-sm text-muted-foreground">Bénéfice net</p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-blue-600" />
               </div>

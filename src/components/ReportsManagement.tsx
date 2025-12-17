@@ -18,7 +18,7 @@ const ReportsManagement = () => {
       title: 'Rapport de Production',
       description: 'Analyse détaillée de la production piscicole',
       icon: BarChart3,
-      lastGenerated: '2024-06-15',
+      lastGenerated: '-',
       frequency: 'Hebdomadaire',
       status: 'ready'
     },
@@ -27,7 +27,7 @@ const ReportsManagement = () => {
       title: 'Rapport Financier',
       description: 'Revenus, dépenses et bénéfices',
       icon: TrendingUp,
-      lastGenerated: '2024-06-14',
+      lastGenerated: '-',
       frequency: 'Mensuel',
       status: 'ready'
     },
@@ -36,55 +36,22 @@ const ReportsManagement = () => {
       title: 'Rapport Sanitaire',
       description: 'État de santé des poissons et traitements',
       icon: PieChart,
-      lastGenerated: '2024-06-13',
+      lastGenerated: '-',
       frequency: 'Bi-hebdomadaire',
-      status: 'processing'
+      status: 'ready'
     },
     {
       id: 'quality',
       title: 'Qualité de l\'Eau',
       description: 'Paramètres physicochimiques de l\'eau',
       icon: FileText,
-      lastGenerated: '2024-06-12',
+      lastGenerated: '-',
       frequency: 'Quotidien',
       status: 'ready'
     }
   ];
 
-  const recentReports = [
-    {
-      id: 1,
-      name: 'Production_Juin_2024.pdf',
-      type: 'Production',
-      date: '2024-06-15',
-      size: '2.4 MB',
-      downloads: 12
-    },
-    {
-      id: 2,
-      name: 'Finances_Mai_2024.xlsx',
-      type: 'Financier',
-      date: '2024-06-01',
-      size: '1.8 MB',
-      downloads: 8
-    },
-    {
-      id: 3,
-      name: 'Sante_Poissons_S24.pdf',
-      type: 'Sanitaire',
-      date: '2024-05-28',
-      size: '3.1 MB',
-      downloads: 15
-    },
-    {
-      id: 4,
-      name: 'Qualite_Eau_Mai_2024.pdf',
-      type: 'Qualité',
-      date: '2024-05-30',
-      size: '1.2 MB',
-      downloads: 6
-    }
-  ];
+  const recentReports: { id: number; name: string; type: string; date: string; size: string; downloads: number }[] = [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -145,8 +112,8 @@ const ReportsManagement = () => {
           <CardContent className="flex items-center p-4 md:p-6">
             <FileText className="h-6 w-6 md:h-8 md:w-8 text-blue-600 mr-2 md:mr-3" />
             <div>
-              <p className="text-lg md:text-2xl font-bold">24</p>
-              <p className="text-xs text-gray-600">Rapports ce mois</p>
+              <p className="text-lg md:text-2xl font-bold">{recentReports.length}</p>
+              <p className="text-xs text-muted-foreground">Rapports ce mois</p>
             </div>
           </CardContent>
         </Card>
@@ -154,8 +121,8 @@ const ReportsManagement = () => {
           <CardContent className="flex items-center p-4 md:p-6">
             <Download className="h-6 w-6 md:h-8 md:w-8 text-green-600 mr-2 md:mr-3" />
             <div>
-              <p className="text-lg md:text-2xl font-bold">156</p>
-              <p className="text-xs text-gray-600">Téléchargements</p>
+              <p className="text-lg md:text-2xl font-bold">{recentReports.reduce((sum, r) => sum + r.downloads, 0)}</p>
+              <p className="text-xs text-muted-foreground">Téléchargements</p>
             </div>
           </CardContent>
         </Card>
@@ -163,8 +130,8 @@ const ReportsManagement = () => {
           <CardContent className="flex items-center p-4 md:p-6">
             <Calendar className="h-6 w-6 md:h-8 md:w-8 text-purple-600 mr-2 md:mr-3" />
             <div>
-              <p className="text-lg md:text-2xl font-bold">8</p>
-              <p className="text-xs text-gray-600">Rapports programmés</p>
+              <p className="text-lg md:text-2xl font-bold">0</p>
+              <p className="text-xs text-muted-foreground">Rapports programmés</p>
             </div>
           </CardContent>
         </Card>
@@ -172,8 +139,8 @@ const ReportsManagement = () => {
           <CardContent className="flex items-center p-4 md:p-6">
             <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-orange-600 mr-2 md:mr-3" />
             <div>
-              <p className="text-lg md:text-2xl font-bold">4</p>
-              <p className="text-xs text-gray-600">Types de rapports</p>
+              <p className="text-lg md:text-2xl font-bold">{reportTypes.length}</p>
+              <p className="text-xs text-muted-foreground">Types de rapports</p>
             </div>
           </CardContent>
         </Card>
@@ -255,34 +222,42 @@ const ReportsManagement = () => {
           </div>
           
           <Card>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {recentReports.map((report) => (
-                  <div key={report.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          <FileText className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{report.name}</p>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                            <span>Type: {report.type}</span>
-                            <span>Taille: {report.size}</span>
-                            <span>Téléchargé {report.downloads} fois</span>
+            <CardContent className={recentReports.length === 0 ? "p-8" : "p-0"}>
+              {recentReports.length === 0 ? (
+                <div className="text-center text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4" />
+                  <p>Aucun rapport généré récemment</p>
+                  <p className="text-sm mt-2">Les rapports que vous générez apparaîtront ici</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentReports.map((report) => (
+                    <div key={report.id} className="p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center space-x-4 flex-1">
+                          <div className="p-2 bg-muted rounded-lg">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{report.name}</p>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                              <span>Type: {report.type}</span>
+                              <span>Taille: {report.size}</span>
+                              <span>Téléchargé {report.downloads} fois</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">{report.date}</span>
-                        <Button size="sm" variant="ghost">
-                          <Download className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{report.date}</span>
+                          <Button size="sm" variant="ghost">
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

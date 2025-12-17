@@ -158,11 +158,9 @@ const AccountingDashboard = ({ unitData, cashFlow }: AccountingDashboardProps) =
             <div className="space-y-3">
               <div className="text-sm">
                 <p className="font-medium">{t('upcomingDueDates') || 'Prochaines échéances'} :</p>
-                <ul className="mt-2 space-y-1 text-gray-600">
-                  <li>• {t('salaries') || 'Salaires'} : 28/01 ({formatCurrency(3200)})</li>
-                  <li>• {t('supplierBiomar') || 'Fournisseur Biomar'} : 30/01 ({formatCurrency(800)})</li>
-                  <li>• {t('insurance') || 'Assurance'} : 15/02 ({formatCurrency(450)})</li>
-                </ul>
+                <p className="mt-2 text-muted-foreground">
+                  {t('noDueDates') || 'Aucune échéance à venir. Ajoutez des factures pour voir les échéances.'}
+                </p>
               </div>
             </div>
           </CardContent>
