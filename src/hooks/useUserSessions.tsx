@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 interface UserSession {
   id: string;
@@ -15,12 +15,12 @@ interface UserSession {
 }
 
 export const useUserSessions = () => {
-  const { user } = useAuth();
+  const { isReady, isAuthenticated, user } = useAuthReady();
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // Créer une nouvelle session lors de la connexion
   const createSession = useCallback(async () => {
-    if (!user?.id) return;
+    if (!isReady || !isAuthenticated || !user?.id) return;
 
     try {
       const { data, error } = await supabase
@@ -45,7 +45,7 @@ export const useUserSessions = () => {
     } catch (error) {
       console.error('Error creating session:', error);
     }
-  }, [user?.id]);
+  }, [isReady, isAuthenticated, user?.id]);
 
   // Mettre à jour l'activité de la session
   const updateActivity = useCallback(async () => {
@@ -136,25 +136,25 @@ export const useUserSessions = () => {
     }
   }, []);
 
-  // Initialiser la session au montage
+  // Initialiser la session au montage quand l'auth est prête
   useEffect(() => {
-    if (user?.id) {
-      const existingSessionId = localStorage.getItem('current_session_id');
-      if (existingSessionId) {
-        setCurrentSessionId(existingSessionId);
-        updateActivity();
-      } else {
-        createSession();
-      }
-
-      // Mettre à jour l'activité toutes les 2 minutes
-      const activityInterval = setInterval(updateActivity, 2 * 60 * 1000);
-
-      return () => {
-        clearInterval(activityInterval);
-      };
+    if (!isReady || !isAuthenticated || !user?.id) return;
+    
+    const existingSessionId = localStorage.getItem('current_session_id');
+    if (existingSessionId) {
+      setCurrentSessionId(existingSessionId);
+      updateActivity();
+    } else {
+      createSession();
     }
-  }, [user?.id, createSession, updateActivity]);
+
+    // Mettre à jour l'activité toutes les 2 minutes
+    const activityInterval = setInterval(updateActivity, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(activityInterval);
+    };
+  }, [isReady, isAuthenticated, user?.id, createSession, updateActivity]);
 
   // Écouter les événements de déconnexion
   useEffect(() => {

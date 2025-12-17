@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface CycleInfrastructure {
   id: string;
@@ -18,10 +19,14 @@ export interface CycleInfrastructure {
 export const useCycleInfrastructures = (cycleId?: string) => {
   const [infrastructures, setInfrastructures] = useState<CycleInfrastructure[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
 
-  const fetchInfrastructures = async () => {
-    if (!cycleId) {
+  const fetchInfrastructures = useCallback(async () => {
+    if (!isReady) return;
+    
+    if (!cycleId || !isAuthenticated) {
       setInfrastructures([]);
       setLoading(false);
       return;
@@ -29,18 +34,24 @@ export const useCycleInfrastructures = (cycleId?: string) => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase
         .from('cycle_infrastructures')
         .select('*')
         .eq('cycle_id', cycleId as any)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       if (data) {
         setInfrastructures(data as unknown as CycleInfrastructure[]);
       }
-    } catch (error: any) {
-      console.error('Error fetching infrastructures:', error);
+    } catch (err: any) {
+      console.error('Error fetching infrastructures:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les infrastructures',
@@ -49,11 +60,13 @@ export const useCycleInfrastructures = (cycleId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, cycleId, toast]);
 
   useEffect(() => {
-    fetchInfrastructures();
-  }, [cycleId]);
+    if (isReady) {
+      fetchInfrastructures();
+    }
+  }, [isReady, isAuthenticated, cycleId, fetchInfrastructures]);
 
   const createInfrastructures = async (
     cycleId: string, 
@@ -154,6 +167,7 @@ export const useCycleInfrastructures = (cycleId?: string) => {
   return {
     infrastructures,
     loading,
+    error,
     createInfrastructures,
     updateInfrastructure,
     deleteInfrastructure,

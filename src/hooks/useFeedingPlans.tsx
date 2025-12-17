@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface FeedingPlan {
   id: string;
@@ -22,11 +23,23 @@ export interface FeedingPlan {
 export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
   const [plans, setPlans] = useState<FeedingPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
+    if (!isReady) return;
+    
+    if (!isAuthenticated) {
+      setPlans([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
+      
       let query = supabase
         .from('feeding_plans')
         .select('*')
@@ -39,14 +52,18 @@ export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
         query = query.eq('cycle_id', cycleId);
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       if (data) {
         setPlans(data as FeedingPlan[]);
       }
-    } catch (error: any) {
-      console.error('Error fetching feeding plans:', error);
+    } catch (err: any) {
+      console.error('Error fetching feeding plans:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les planifications',
@@ -55,11 +72,13 @@ export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, unitId, cycleId, toast]);
 
   useEffect(() => {
-    fetchPlans();
-  }, [unitId, cycleId]);
+    if (isReady) {
+      fetchPlans();
+    }
+  }, [isReady, isAuthenticated, unitId, cycleId, fetchPlans]);
 
   const createPlan = async (plan: Omit<FeedingPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -147,6 +166,7 @@ export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
   return {
     plans,
     loading,
+    error,
     createPlan,
     updatePlan,
     deletePlan,

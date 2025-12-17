@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface ReproductionRecord {
   id: string;
@@ -36,11 +37,23 @@ export interface ReproductionRecord {
 export const useReproductionRecords = (unitId?: string) => {
   const [records, setRecords] = useState<ReproductionRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
 
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
+    if (!isReady) return;
+    
+    if (!isAuthenticated) {
+      setRecords([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
+      
       let query = supabase
         .from('reproduction_records')
         .select('*')
@@ -50,12 +63,16 @@ export const useReproductionRecords = (unitId?: string) => {
         query = query.eq('unit_id', unitId);
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       setRecords((data || []) as ReproductionRecord[]);
-    } catch (error: any) {
-      console.error('Error fetching reproduction records:', error);
+    } catch (err: any) {
+      console.error('Error fetching reproduction records:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les enregistrements de reproduction',
@@ -64,7 +81,7 @@ export const useReproductionRecords = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, unitId, toast]);
 
   const createRecord = async (record: Omit<ReproductionRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -150,12 +167,15 @@ export const useReproductionRecords = (unitId?: string) => {
   };
 
   useEffect(() => {
-    fetchRecords();
-  }, [unitId]);
+    if (isReady) {
+      fetchRecords();
+    }
+  }, [isReady, isAuthenticated, unitId, fetchRecords]);
 
   return {
     records,
     loading,
+    error,
     createRecord,
     updateRecord,
     deleteRecord,

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface HealthRecord {
   id: string;
@@ -25,11 +26,25 @@ export interface HealthRecord {
 export const useHealthRecords = (cycleId?: string, unitId?: string) => {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
 
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
+    // Attendre que l'auth soit prête
+    if (!isReady) return;
+    
+    // Ne pas charger si non authentifié
+    if (!isAuthenticated) {
+      setRecords([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
+      
       let query = supabase
         .from('health_records')
         .select('*')
@@ -43,14 +58,18 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
         query = query.eq('unit_id', unitId as any);
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       if (data) {
         setRecords(data as unknown as HealthRecord[]);
       }
-    } catch (error: any) {
-      console.error('Error fetching health records:', error);
+    } catch (err: any) {
+      console.error('Error fetching health records:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les enregistrements de santé',
@@ -59,11 +78,14 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, cycleId, unitId, toast]);
 
+  // Charger les données quand l'auth est prête
   useEffect(() => {
-    fetchRecords();
-  }, [cycleId, unitId]);
+    if (isReady) {
+      fetchRecords();
+    }
+  }, [isReady, isAuthenticated, cycleId, unitId, fetchRecords]);
 
   const createRecord = async (record: Omit<HealthRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -151,6 +173,7 @@ export const useHealthRecords = (cycleId?: string, unitId?: string) => {
   return {
     records,
     loading,
+    error,
     createRecord,
     updateRecord,
     deleteRecord,
