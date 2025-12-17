@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Plus, CheckCircle2, ClipboardList } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -30,32 +29,8 @@ const TaskScheduler = () => {
   const { units } = useProductionUnits();
   const { t } = useSettings();
   
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Nourrissage matinal',
-      type: 'feeding',
-      description: 'Alimentation des carpes - Bassin A',
-      assignedTo: 'Jean Martin',
-      dueDate: '2024-07-04',
-      dueTime: '08:00',
-      priority: 'high',
-      status: 'pending',
-      unitId: 'GROSS001'
-    },
-    {
-      id: '2',
-      title: 'Contrôle qualité eau',
-      type: 'monitoring',
-      description: 'Vérification pH et oxygène dissous',
-      assignedTo: 'Marie Dubois',
-      dueDate: '2024-07-04',
-      dueTime: '10:00',
-      priority: 'medium',
-      status: 'completed',
-      unitId: 'ECLO001'
-    }
-  ]);
+  // Initialisation avec un tableau vide - pas de données de démo
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const [showAddTask, setShowAddTask] = useState(false);
   const [taskForm, setTaskForm] = useState({
@@ -70,6 +45,8 @@ const TaskScheduler = () => {
   });
 
   const addTask = () => {
+    if (!taskForm.title.trim()) return;
+    
     const task: Task = {
       id: Date.now().toString(),
       ...taskForm,
@@ -96,6 +73,18 @@ const TaskScheduler = () => {
     ));
   };
 
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'feeding': return 'Nourrissage';
+      case 'purchase': return 'Achat';
+      case 'sale': return 'Vente';
+      case 'monitoring': return 'Surveillance';
+      case 'maintenance': return 'Maintenance';
+      case 'health': return 'Santé';
+      default: return type;
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'feeding': return 'bg-green-100 text-green-800';
@@ -108,6 +97,16 @@ const TaskScheduler = () => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'in-progress': return 'En cours';
+      case 'completed': return 'Terminé';
+      case 'overdue': return 'En retard';
+      default: return status;
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -115,6 +114,15 @@ const TaskScheduler = () => {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'overdue': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'Élevée';
+      case 'medium': return 'Moyenne';
+      case 'low': return 'Faible';
+      default: return priority;
     }
   };
 
@@ -262,65 +270,79 @@ const TaskScheduler = () => {
         </Card>
       )}
 
-      <div className="grid gap-4">
-        {tasks.map((task) => (
-          <Card key={task.id}>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <h4 className="font-semibold">{task.title}</h4>
-                    <Badge className={getTypeColor(task.type)}>
-                      {task.type}
-                    </Badge>
-                    <Badge className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </Badge>
+      {tasks.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            <ClipboardList className="w-12 h-12 mx-auto mb-4" />
+            <p>Aucune tâche planifiée</p>
+            <p className="text-sm mt-2">Créez votre première tâche en cliquant sur "Nouvelle Tâche"</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {tasks.map((task) => (
+            <Card key={task.id}>
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h4 className="font-semibold">{task.title}</h4>
+                      <Badge className={getTypeColor(task.type)}>
+                        {getTypeLabel(task.type)}
+                      </Badge>
+                      <Badge className={getPriorityColor(task.priority)}>
+                        {getPriorityLabel(task.priority)}
+                      </Badge>
+                    </div>
+                    
+                    {task.description && (
+                      <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                    )}
+                    
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {task.dueDate} à {task.dueTime}
+                      </div>
+                      {task.assignedTo && (
+                        <span>Assigné à: <strong>{task.assignedTo}</strong></span>
+                      )}
+                      {task.unitId && (
+                        <span>Unité: <strong>{units.find(u => u.id === task.unitId)?.name}</strong></span>
+                      )}
+                    </div>
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {task.dueDate} à {task.dueTime}
-                    </div>
-                    <span>Assigné à: <strong>{task.assignedTo}</strong></span>
-                    {task.unitId && (
-                      <span>Unité: <strong>{units.find(u => u.id === task.unitId)?.name}</strong></span>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={getStatusColor(task.status)}>
+                      {getStatusLabel(task.status)}
+                    </Badge>
+                    
+                    {task.status !== 'completed' && (
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateTaskStatus(task.id, 'in-progress')}
+                        >
+                          En cours
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => updateTaskStatus(task.id, 'completed')}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
-                
-                <div className="flex flex-col items-end gap-2">
-                  <Badge className={getStatusColor(task.status)}>
-                    {task.status}
-                  </Badge>
-                  
-                  {task.status !== 'completed' && (
-                    <div className="flex gap-1">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => updateTaskStatus(task.id, 'in-progress')}
-                      >
-                        En cours
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => updateTaskStatus(task.id, 'completed')}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
