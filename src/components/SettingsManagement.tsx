@@ -19,6 +19,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import BackupManagement from '@/components/BackupManagement';
 
 const SettingsManagement = () => {
   const { 
@@ -964,78 +965,7 @@ const SettingsManagement = () => {
 
         {/* Sauvegarde */}
         <TabsContent value="backup" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                <Download className="w-5 h-5 text-aqua-600" />
-                {language === 'fr' ? 'Sauvegarde et restauration' : 'Backup and restore'}
-              </CardTitle>
-              <CardDescription>
-                {language === 'fr' ? 'Gérez vos sauvegardes de données' : 'Manage your data backups'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-3">{language === 'fr' ? 'Sauvegarde automatique' : 'Automatic backup'}</h4>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{language === 'fr' ? 'Sauvegarde quotidienne à 02:00' : 'Daily backup at 02:00'}</p>
-                      <p className="text-sm text-muted-foreground">{language === 'fr' ? 'Dernière sauvegarde: Aujourd\'hui à 02:00' : 'Last backup: Today at 02:00'}</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <h4 className="font-medium">{language === 'fr' ? 'Actions manuelles' : 'Manual actions'}</h4>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button className="flex-1 sm:flex-none">
-                      <Download className="w-4 h-4 mr-2" />
-                      {language === 'fr' ? 'Créer une sauvegarde' : 'Create backup'}
-                    </Button>
-                    <Button variant="outline" className="flex-1 sm:flex-none">
-                      <Upload className="w-4 h-4 mr-2" />
-                      {language === 'fr' ? 'Restaurer' : 'Restore'}
-                    </Button>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <h4 className="font-medium">{language === 'fr' ? 'Historique des sauvegardes' : 'Backup history'}</h4>
-                  <div className="space-y-2">
-                    {[
-                      { date: '16 Déc 2024, 02:00', size: '2.4 MB', type: 'auto' },
-                      { date: '15 Déc 2024, 02:00', size: '2.3 MB', type: 'auto' },
-                      { date: '14 Déc 2024, 14:30', size: '2.3 MB', type: 'manual' }
-                    ].map((backup, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">{backup.date}</p>
-                            <p className="text-xs text-muted-foreground">{backup.size}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={backup.type === 'auto' ? 'secondary' : 'default'}>
-                            {backup.type === 'auto' ? (language === 'fr' ? 'Auto' : 'Auto') : (language === 'fr' ? 'Manuel' : 'Manual')}
-                          </Badge>
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <BackupManagement />
         </TabsContent>
       </Tabs>
     </div>
