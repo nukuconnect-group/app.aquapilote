@@ -875,6 +875,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     try {
       const dbUpdates: Record<string, any> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.unitId !== undefined) dbUpdates.unit_id = updates.unitId;
       if (updates.type !== undefined) dbUpdates.type = updates.type;
       if (updates.customTypeName !== undefined) dbUpdates.custom_type_name = updates.customTypeName;
       if (updates.capacity !== undefined) dbUpdates.capacity = updates.capacity;

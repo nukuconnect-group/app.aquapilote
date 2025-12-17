@@ -19,7 +19,7 @@ interface InfrastructureFormProps {
 }
 
 const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: InfrastructureFormProps) => {
-  const { units, infrastructures, setInfrastructures, addUnit, updateInfrastructure, addInfrastructure } = useProductionUnits();
+  const { units, addInfrastructure, updateInfrastructure } = useProductionUnits();
   const { addLog } = useLogs();
   const { batches } = useLivestockBatches();
   
@@ -131,56 +131,55 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
     }
   };
 
-  const handleSave = () => {
-    const infrastructureData = {
-      ...newInfrastructure,
-      id: infrastructure?.id || Date.now().toString(),
+  const handleSave = async () => {
+    const infrastructurePayload = {
+      name: newInfrastructure.name,
+      unitId: newInfrastructure.unitId,
+      type: newInfrastructure.type,
+      customTypeName: newInfrastructure.customTypeName || undefined,
+      capacity: newInfrastructure.capacity,
+      status: newInfrastructure.status,
       specifications: Object.fromEntries(
         Object.entries(newInfrastructure.specifications).filter(([_, value]) => value !== '')
-      )
+      ),
     };
-    
-    if (infrastructure) {
-      // Update existing infrastructure
-      const updatedInfrastructures = infrastructures.map(inf =>
-        inf.id === infrastructure.id ? infrastructureData : inf
-      );
-      setInfrastructures(updatedInfrastructures);
-      addLog('Infrastructure modifiée', 'Infrastructures', `${infrastructureData.name} mise à jour`, 'success');
-    } else {
-      // Create new infrastructure
-      setInfrastructures([...infrastructures, infrastructureData]);
-      addLog('Infrastructure créée', 'Infrastructures', `${infrastructureData.name} ajoutée`, 'success');
-    }
-    
-    if (onSave) {
-      onSave(infrastructureData);
-    }
-    
-    // Reset form if creating new
-    if (!infrastructure) {
-      setNewInfrastructure({
-        name: '',
-        unitId: units.length > 0 ? units[0].id : '',
-        type: '',
-        customTypeName: '',
-        capacity: 0,
-        status: 'active',
-        suggestedBatchId: '',
-        specifications: {
-          volume: '',
-          profondeur: '',
-          materiau: '',
-          temperature: '',
-          ph: '',
-          oxygenLevel: ''
-        }
-      });
-    }
-    
-    setShowDialog(false);
-    if (onClose) {
-      onClose();
+
+    try {
+      if (infrastructure) {
+        await updateInfrastructure(infrastructure.id, infrastructurePayload);
+        addLog('Infrastructure modifiée', 'Infrastructures', `${infrastructurePayload.name} mise à jour`, 'success');
+      } else {
+        await addInfrastructure(infrastructurePayload);
+        addLog('Infrastructure créée', 'Infrastructures', `${infrastructurePayload.name} ajoutée`, 'success');
+      }
+
+      onSave?.(infrastructure ? { ...infrastructure, ...infrastructurePayload } : infrastructurePayload);
+
+      if (!infrastructure) {
+        setNewInfrastructure({
+          name: '',
+          unitId: units.length > 0 ? units[0].id : '',
+          type: '',
+          customTypeName: '',
+          capacity: 0,
+          status: 'active',
+          suggestedBatchId: '',
+          specifications: {
+            volume: '',
+            profondeur: '',
+            materiau: '',
+            temperature: '',
+            ph: '',
+            oxygenLevel: ''
+          }
+        });
+      }
+
+      setShowDialog(false);
+      onClose?.();
+    } catch (e) {
+      console.error('Erreur sauvegarde infrastructure:', e);
+      addLog('Erreur', 'Infrastructures', 'Impossible de sauvegarder l\'infrastructure', 'error');
     }
   };
 
