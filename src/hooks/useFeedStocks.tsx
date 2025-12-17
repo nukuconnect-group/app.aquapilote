@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface FeedStock {
   id: string;
@@ -24,11 +25,25 @@ export interface FeedStock {
 export const useFeedStocks = (unitId?: string) => {
   const [stocks, setStocks] = useState<FeedStock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
 
-  const fetchStocks = async () => {
+  const fetchStocks = useCallback(async () => {
+    // Attendre que l'auth soit prête
+    if (!isReady) return;
+    
+    // Ne pas charger si non authentifié
+    if (!isAuthenticated) {
+      setStocks([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
+      
       let query = supabase
         .from('feed_stocks')
         .select('*')
@@ -38,14 +53,18 @@ export const useFeedStocks = (unitId?: string) => {
         query = query.eq('unit_id', unitId);
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       if (data) {
         setStocks(data as FeedStock[]);
       }
-    } catch (error: any) {
-      console.error('Error fetching feed stocks:', error);
+    } catch (err: any) {
+      console.error('Error fetching feed stocks:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les stocks d\'aliments',
@@ -54,11 +73,14 @@ export const useFeedStocks = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, unitId, toast]);
 
+  // Charger les données quand l'auth est prête
   useEffect(() => {
-    fetchStocks();
-  }, [unitId]);
+    if (isReady) {
+      fetchStocks();
+    }
+  }, [isReady, isAuthenticated, unitId, fetchStocks]);
 
   const createStock = async (stock: Omit<FeedStock, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -146,6 +168,7 @@ export const useFeedStocks = (unitId?: string) => {
   return {
     stocks,
     loading,
+    error,
     createStock,
     updateStock,
     deleteStock,

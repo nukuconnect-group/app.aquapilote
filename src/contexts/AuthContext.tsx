@@ -142,16 +142,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Set up auth state listener
+  // Set up auth state listener with improved session persistence
   useEffect(() => {
     let mounted = true;
+    let refreshInterval: NodeJS.Timeout | null = null;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
         
+        console.log('Auth state changed:', event);
         setSession(session);
+        
         if (session?.user) {
           // Utiliser setTimeout pour éviter les deadlocks
           setTimeout(async () => {
@@ -164,19 +167,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setIsLoading(false);
         }
+
+        // Gérer les événements spécifiques
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setSession(null);
+          setIsDemoMode(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      
-      setSession(session);
-      if (session?.user) {
-        await fetchUserData(session.user);
+    const initializeSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!mounted) return;
+        
+        setSession(session);
+        
+        if (session?.user) {
+          await fetchUserData(session.user);
+          
+          // Vérifier si le token doit être rafraîchi
+          if (session.expires_at) {
+            const expiresAt = new Date(session.expires_at * 1000);
+            const now = new Date();
+            const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+            
+            // Si le token expire dans moins de 10 minutes, le rafraîchir
+            if (timeUntilExpiry < 10 * 60 * 1000) {
+              console.log('Token expiring soon, refreshing...');
+              await supabase.auth.refreshSession();
+            }
+          }
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Session initialization error:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
-    });
+    };
+
+    initializeSession();
+
+    // Rafraîchir la session périodiquement (toutes les 10 minutes)
+    refreshInterval = setInterval(async () => {
+      if (session?.user) {
+        try {
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.error('Session refresh error:', error);
+          }
+        } catch (err) {
+          console.error('Failed to refresh session:', err);
+        }
+      }
+    }, 10 * 60 * 1000);
 
     // Set up realtime subscription for profile updates
     let profileChannel: ReturnType<typeof supabase.channel> | null = null;
@@ -209,12 +267,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setupRealtimeSubscription();
 
+    // Écouter les événements de visibilité pour restaurer la session
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && session?.user) {
+        // Vérifier et rafraîchir la session quand l'app revient au premier plan
+        try {
+          const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+          if (error || !currentSession) {
+            console.log('Session lost, user needs to re-authenticate');
+          }
+        } catch (err) {
+          console.error('Error checking session on visibility change:', err);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
       if (profileChannel) {
         supabase.removeChannel(profileChannel);
       }
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

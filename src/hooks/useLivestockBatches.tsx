@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface LivestockBatch {
   id: string;
@@ -29,11 +30,25 @@ export interface LivestockBatch {
 export const useLivestockBatches = (unitId?: string) => {
   const [batches, setBatches] = useState<LivestockBatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated, getUserId } = useAuthReady();
 
-  const fetchBatches = async () => {
+  const fetchBatches = useCallback(async () => {
+    // Attendre que l'auth soit prête
+    if (!isReady) return;
+    
+    // Ne pas charger si non authentifié
+    if (!isAuthenticated) {
+      setBatches([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
+      
       let query = supabase
         .from('livestock_batches')
         .select('*')
@@ -43,12 +58,16 @@ export const useLivestockBatches = (unitId?: string) => {
         query = query.eq('unit_id', unitId);
       }
 
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
 
-      if (error) throw error;
+      if (fetchError) {
+        setError(fetchError.message);
+        throw fetchError;
+      }
+      
       setBatches(data || []);
-    } catch (error: any) {
-      console.error('Error fetching livestock batches:', error);
+    } catch (err: any) {
+      console.error('Error fetching livestock batches:', err);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les lots de poissons',
@@ -57,7 +76,7 @@ export const useLivestockBatches = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isReady, isAuthenticated, unitId, toast]);
 
   const createBatch = async (batch: Omit<LivestockBatch, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -142,13 +161,17 @@ export const useLivestockBatches = (unitId?: string) => {
     }
   };
 
+  // Charger les données quand l'auth est prête
   useEffect(() => {
-    fetchBatches();
-  }, [unitId]);
+    if (isReady) {
+      fetchBatches();
+    }
+  }, [isReady, isAuthenticated, unitId, fetchBatches]);
 
   return {
     batches,
     loading,
+    error,
     createBatch,
     updateBatch,
     deleteBatch,
