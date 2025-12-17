@@ -27,9 +27,11 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
-  const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures();
+  // Fetch all cycle infrastructures for this user to find attached batches
+  const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures(undefined, true);
   const { batches, createBatch } = useLivestockBatches(infrastructure.unitId);
   
+  // Find cycle infrastructure matching this infrastructure by name
   const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
   const attachedBatch = cycleInfra?.livestock_batch_id 
     ? batches.find(b => b.id === cycleInfra.livestock_batch_id)

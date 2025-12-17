@@ -16,7 +16,7 @@ export interface CycleInfrastructure {
   user_id: string;
 }
 
-export const useCycleInfrastructures = (cycleId?: string) => {
+export const useCycleInfrastructures = (cycleId?: string, fetchAll: boolean = false) => {
   const [infrastructures, setInfrastructures] = useState<CycleInfrastructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,14 @@ export const useCycleInfrastructures = (cycleId?: string) => {
   const fetchInfrastructures = useCallback(async () => {
     if (!isReady) return;
     
-    if (!cycleId || !isAuthenticated) {
+    if (!isAuthenticated) {
+      setInfrastructures([]);
+      setLoading(false);
+      return;
+    }
+
+    // If no cycleId and not fetchAll, return empty
+    if (!cycleId && !fetchAll) {
       setInfrastructures([]);
       setLoading(false);
       return;
@@ -36,11 +43,17 @@ export const useCycleInfrastructures = (cycleId?: string) => {
       setLoading(true);
       setError(null);
       
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('cycle_infrastructures')
         .select('*')
-        .eq('cycle_id', cycleId as any)
         .order('created_at', { ascending: true });
+      
+      // Only filter by cycle_id if provided
+      if (cycleId) {
+        query = query.eq('cycle_id', cycleId as any);
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (fetchError) {
         setError(fetchError.message);
@@ -60,13 +73,13 @@ export const useCycleInfrastructures = (cycleId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, cycleId, toast]);
+  }, [isReady, isAuthenticated, cycleId, fetchAll, toast]);
 
   useEffect(() => {
     if (isReady) {
       fetchInfrastructures();
     }
-  }, [isReady, isAuthenticated, cycleId, fetchInfrastructures]);
+  }, [isReady, isAuthenticated, cycleId, fetchAll, fetchInfrastructures]);
 
   const createInfrastructures = async (
     cycleId: string, 
