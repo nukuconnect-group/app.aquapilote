@@ -30,13 +30,17 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const { toast } = useToast();
   // Fetch all cycle infrastructures for this user to find attached batches
   const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures(undefined, true);
-  const { batches, createBatch } = useLivestockBatches(infrastructure.unitId);
+  // Fetch ALL batches (not filtered by unit) to find attached batch by ID
+  const { batches: allBatches, createBatch } = useLivestockBatches();
   const { cycles } = useProductionCycles();
   
-  // Find cycle infrastructure matching this infrastructure by name
-  const cycleInfra = cycleInfras.find(ci => ci.infrastructure_name === infrastructure.name);
+  // Find cycle infrastructure matching this infrastructure by name or ID
+  const cycleInfra = cycleInfras.find(ci => 
+    ci.infrastructure_name === infrastructure.name || ci.id === infrastructure.id
+  );
+  // Find attached batch from ALL batches (not just unit-filtered ones)
   const attachedBatch = cycleInfra?.livestock_batch_id 
-    ? batches.find(b => b.id === cycleInfra.livestock_batch_id)
+    ? allBatches.find(b => b.id === cycleInfra.livestock_batch_id)
     : null;
   
   // Find the associated production cycle
