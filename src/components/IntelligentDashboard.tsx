@@ -12,6 +12,10 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
 import farmBackground from '@/assets/aquaculture-cages-desktop.jpg';
+import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useReproductionRecords } from '@/hooks/useReproductionRecords';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 
 const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -32,12 +36,32 @@ const IntelligentDashboard = () => {
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   
+  // Hooks pour récupérer les vraies données
+  const { records: feedingRecords } = useFeedingRecords();
+  const { records: healthRecords } = useHealthRecords();
+  const { records: reproductionRecords } = useReproductionRecords();
+  const { batches } = useLivestockBatches();
+  
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
   const unitEquipment = activeUnit ? getUnitEquipment(activeUnit.id) : [];
   const unitCycles = activeUnit ? getUnitCycles(activeUnit.id) : [];
   const unitFinancialData = activeUnit ? getUnitFinancialData(activeUnit.id) : null;
   const globalFinancialData = getGlobalFinancialData();
   const currentFinancialData = viewMode === 'global' ? globalFinancialData : unitFinancialData;
+
+  // Filtrer les données par unité active
+  const unitFeedingRecords = activeUnit 
+    ? feedingRecords.filter(r => r.unit_id === activeUnit.id) 
+    : [];
+  const unitHealthRecords = activeUnit 
+    ? healthRecords.filter(r => r.unit_id === activeUnit.id) 
+    : [];
+  const unitReproductionRecords = activeUnit 
+    ? reproductionRecords.filter(r => r.unit_id === activeUnit.id) 
+    : [];
+  const unitBatches = activeUnit 
+    ? batches.filter(b => b.unit_id === activeUnit.id) 
+    : [];
 
   // Synchroniser l'heure de dernière mise à jour
   useEffect(() => {
@@ -52,170 +76,251 @@ const IntelligentDashboard = () => {
     return today ? `Aujourd'hui, ${hours}:${minutes}` : `${lastUpdate.toLocaleDateString('fr-FR')}, ${hours}:${minutes}`;
   };
 
-  // Données pour les graphiques - uniquement en mode démo
-  const feedingChartData = isDemoMode ? [
-    { jour: 'Lun', quantite: 45, cout: 15000 },
-    { jour: 'Mar', quantite: 52, cout: 17000 },
-    { jour: 'Mer', quantite: 48, cout: 16000 },
-    { jour: 'Jeu', quantite: 55, cout: 18500 },
-    { jour: 'Ven', quantite: 50, cout: 16500 },
-    { jour: 'Sam', quantite: 42, cout: 14000 },
-    { jour: 'Dim', quantite: 38, cout: 12500 },
-  ] : [];
+  // Calculer les données d'alimentation des 7 derniers jours (vraies données)
+  const feedingChartData = React.useMemo(() => {
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date;
+    });
 
-  const mortalityData = isDemoMode ? [
-    { semaine: 'S1', mortalite: 12, objectif: 15 },
-    { semaine: 'S2', mortalite: 8, objectif: 15 },
-    { semaine: 'S3', mortalite: 15, objectif: 15 },
-    { semaine: 'S4', mortalite: 5, objectif: 15 },
-  ] : [];
+    return last7Days.map(date => {
+      const dayRecords = unitFeedingRecords.filter(r => {
+        const recordDate = new Date(r.date);
+        return recordDate.toDateString() === date.toDateString();
+      });
+      const totalQuantity = dayRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
+      return {
+        jour: days[date.getDay()],
+        quantite: Math.round(totalQuantity * 100) / 100,
+        cout: 0
+      };
+    });
+  }, [unitFeedingRecords]);
 
-  const waterQualityData = isDemoMode ? [
-    { heure: '06h', temperature: 24, ph: 7.2, oxygene: 6.5 },
-    { heure: '09h', temperature: 25, ph: 7.3, oxygene: 6.8 },
-    { heure: '12h', temperature: 27, ph: 7.4, oxygene: 7.0 },
-    { heure: '15h', temperature: 28, ph: 7.3, oxygene: 6.9 },
-    { heure: '18h', temperature: 26, ph: 7.2, oxygene: 6.7 },
-    { heure: '21h', temperature: 25, ph: 7.1, oxygene: 6.4 },
-  ] : [];
+  // Calculer les données de mortalité des 4 dernières semaines (vraies données)
+  const mortalityData = React.useMemo(() => {
+    const weeks: { semaine: string; mortalite: number; objectif: number }[] = [];
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - (i * 7 + 7));
+      const weekEnd = new Date();
+      weekEnd.setDate(weekEnd.getDate() - (i * 7));
+      
+      const weekRecords = unitHealthRecords.filter(r => {
+        const recordDate = new Date(r.date);
+        return recordDate >= weekStart && recordDate < weekEnd;
+      });
+      
+      const totalMortality = weekRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
+      weeks.push({
+        semaine: `S${4 - i}`,
+        mortalite: totalMortality,
+        objectif: 15
+      });
+    }
+    return weeks;
+  }, [unitHealthRecords]);
 
-  const productionBySpecies = isDemoMode ? [
-    { name: 'Tilapia', value: 45 },
-    { name: 'Clarias', value: 30 },
-    { name: 'Carpe', value: 15 },
-    { name: 'Autres', value: 10 },
-  ] : [];
+  // Calculer les données de qualité de l'eau (vraies données du jour)
+  const waterQualityData = React.useMemo(() => {
+    const today = new Date().toDateString();
+    const todayRecords = unitHealthRecords.filter(r => 
+      new Date(r.date).toDateString() === today
+    );
+    
+    if (todayRecords.length === 0) return [];
+    
+    // Prendre les derniers enregistrements disponibles
+    return todayRecords.slice(-6).map((r, i) => ({
+      heure: `${(6 + i * 3).toString().padStart(2, '0')}h`,
+      temperature: r.temperature || 0,
+      ph: r.ph || 0,
+      oxygene: r.oxygen || 0
+    }));
+  }, [unitHealthRecords]);
+
+  // Calculer la production par espèce (vraies données)
+  const productionBySpecies = React.useMemo(() => {
+    const speciesCount: Record<string, number> = {};
+    
+    unitBatches.forEach(batch => {
+      const species = batch.species || 'Autres';
+      speciesCount[species] = (speciesCount[species] || 0) + (batch.quantity || 0);
+    });
+    
+    return Object.entries(speciesCount).map(([name, value]) => ({ name, value }));
+  }, [unitBatches]);
+
+  // Vérifier si on a des données réelles pour afficher les graphiques
+  const hasFeedingData = feedingChartData.some(d => d.quantite > 0);
+  const hasMortalityData = mortalityData.some(d => d.mortalite > 0);
+  const hasWaterQualityData = waterQualityData.length > 0;
+  const hasProductionData = productionBySpecies.length > 0;
+
   const getUnitSpecificData = () => {
     if (!activeUnit) return {
       metrics: [],
       livestock: null
     };
+
+    // Calculer les vraies métriques à partir des données
+    const activeCycles = unitCycles.filter(c => c.status === 'active');
+    const totalBatchQuantity = unitBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+    
     const baseMetrics = [{
       title: t('current_stock'),
-      value: activeUnit.currentStock.toLocaleString(),
+      value: totalBatchQuantity > 0 ? totalBatchQuantity.toLocaleString() : activeUnit.currentStock.toLocaleString(),
       subtitle: `${(activeUnit.currentStock / activeUnit.capacity * 100).toFixed(1)}% ${t('capacity_percent')}`,
       icon: Fish,
       color: "aqua"
     }, {
       title: t('active_cycles_label'),
-      value: unitCycles.filter(c => c.status === 'active').length.toString(),
+      value: activeCycles.length.toString(),
       subtitle: `${unitCycles.length} ${t('total_label')}`,
       icon: Activity,
       color: "green"
     }];
 
-    // unit-specific data logic
-    switch (activeUnit.type) {
-      case 'ecloserie':
-        return {
-          // ecloserie data
-          metrics: [...baseMetrics, {
-            title: t('male_breeders'),
-            value: "45",
-            subtitle: t('mature_breeding'),
-            icon: Fish,
-            color: "blue"
-          }, {
-            title: t('female_breeders'),
-            value: "38",
-            subtitle: t('spawning_period'),
-            icon: Heart,
-            color: "pink"
-          }, {
-            title: t('fertility_rate'),
-            value: "89%",
-            subtitle: `+3% ${t('vs_previous_cycle')}`,
-            icon: Egg,
-            color: "yellow"
-          }, {
-            title: t('fry_produced'),
-            value: "125,000",
-            subtitle: t('this_cycle'),
-            icon: Activity,
-            color: "green"
-          }],
-          livestock: {
-            geniteurs_males: 45,
-            geniteurs_femelles: 38,
-            alevins_total: 125000,
-            larves_stade1: 45000,
-            larves_stade2: 35000,
-            larves_stade3: 25000,
-            taux_fecondite: 89,
-            taux_eclosion: 92,
-            prochaine_eclosion: "2024-04-15"
-          }
-        };
-      case 'transformation':
-        return {
-          metrics: [...baseMetrics, {
-            title: t('fish_transformed'),
-            value: "2,450 kg",
-            subtitle: t('this_week'),
-            icon: Scale,
-            color: "orange"
-          }, {
-            title: t('active_equipment_label'),
-            value: unitEquipment.filter(eq => eq.status === 'active').length.toString(),
-            subtitle: `${unitEquipment.length} ${t('total_label')}`,
-            icon: Factory,
-            color: "purple"
-          }, {
-            title: t('yield_label'),
-            value: "78%",
-            subtitle: t('cutting_rate'),
-            icon: TrendingUp,
-            color: "green"
-          }],
-          livestock: null
-        };
-      case 'conservation':
-        return {
-          metrics: [...baseMetrics, {
-            title: t('cold_rooms'),
-            value: unitEquipment.filter(eq => eq.type.includes('chambre_froide')).length.toString(),
-            subtitle: t('all_operational'),
-            icon: Thermometer,
-            color: "blue"
-          }, {
-            title: t('avg_temperature'),
-            value: "-2.5°C",
-            subtitle: t('within_standards'),
-            icon: Thermometer,
-            color: "cyan"
-          }, {
-            title: t('capacity_used'),
-            value: "85%",
-            subtitle: "1,700/2,000 kg",
-            icon: Factory,
-            color: "purple"
-          }],
-          livestock: null
-        };
-      case 'grossissement':
-        return {
-          metrics: [...baseMetrics, {
-            title: t('avg_growth'),
-            value: "125g",
-            subtitle: t('current_avg_weight'),
-            icon: TrendingUp,
-            color: "green"
-          }, {
-            title: t('mortality_label'),
-            value: "2.1%",
-            subtitle: t('acceptable_rate'),
-            icon: Activity,
-            color: "red"
-          }],
-          livestock: null
-        };
-      default:
-        return {
-          metrics: baseMetrics,
-          livestock: null
-        };
+    // Calculer les vraies données pour écloserie
+    if (activeUnit.type === 'ecloserie') {
+      const maleCount = unitBatches.filter(b => b.type === 'geniteurs' || b.species?.toLowerCase().includes('male')).reduce((sum, b) => sum + (b.quantity || 0), 0);
+      const femaleCount = unitBatches.filter(b => b.type === 'geniteurs' || b.species?.toLowerCase().includes('femelle')).reduce((sum, b) => sum + (b.quantity || 0), 0);
+      const alevinsCount = unitBatches.filter(b => b.type === 'alevins').reduce((sum, b) => sum + (b.quantity || 0), 0);
+      
+      // Données de reproduction
+      const latestRepro = unitReproductionRecords.length > 0 ? unitReproductionRecords[0] : null;
+      const fertilityRate = latestRepro?.fertilization_rate || 0;
+      const fryCount = latestRepro?.fry_count || alevinsCount;
+
+      return {
+        metrics: [...baseMetrics, {
+          title: t('male_breeders'),
+          value: maleCount > 0 ? maleCount.toLocaleString() : "0",
+          subtitle: maleCount > 0 ? t('mature_breeding') : "Aucun enregistré",
+          icon: Fish,
+          color: "blue"
+        }, {
+          title: t('female_breeders'),
+          value: femaleCount > 0 ? femaleCount.toLocaleString() : "0",
+          subtitle: femaleCount > 0 ? t('spawning_period') : "Aucun enregistré",
+          icon: Heart,
+          color: "pink"
+        }, {
+          title: t('fertility_rate'),
+          value: fertilityRate > 0 ? `${fertilityRate}%` : "0%",
+          subtitle: fertilityRate > 0 ? `${t('vs_previous_cycle')}` : "Aucune donnée",
+          icon: Egg,
+          color: "yellow"
+        }, {
+          title: t('fry_produced'),
+          value: fryCount > 0 ? fryCount.toLocaleString() : "0",
+          subtitle: fryCount > 0 ? t('this_cycle') : "Aucune production",
+          icon: Activity,
+          color: "green"
+        }],
+        livestock: unitBatches.length > 0 ? {
+          geniteurs_males: maleCount,
+          geniteurs_femelles: femaleCount,
+          alevins_total: alevinsCount,
+          larves_stade1: latestRepro?.larvae_count || 0,
+          larves_stade2: 0,
+          larves_stade3: 0,
+          taux_fecondite: fertilityRate,
+          taux_eclosion: latestRepro?.hatching_rate || 0,
+          prochaine_eclosion: latestRepro?.hatching_date || null
+        } : null
+      };
     }
+
+    // Données pour transformation
+    if (activeUnit.type === 'transformation') {
+      const activeEquipment = unitEquipment.filter(eq => eq.status === 'active').length;
+      return {
+        metrics: [...baseMetrics, {
+          title: t('fish_transformed'),
+          value: "0 kg",
+          subtitle: "Cette semaine",
+          icon: Scale,
+          color: "orange"
+        }, {
+          title: t('active_equipment_label'),
+          value: activeEquipment.toString(),
+          subtitle: `${unitEquipment.length} ${t('total_label')}`,
+          icon: Factory,
+          color: "purple"
+        }, {
+          title: t('yield_label'),
+          value: "0%",
+          subtitle: "Aucune donnée",
+          icon: TrendingUp,
+          color: "green"
+        }],
+        livestock: null
+      };
+    }
+
+    // Données pour conservation
+    if (activeUnit.type === 'conservation') {
+      const coldRooms = unitEquipment.filter(eq => eq.type.includes('chambre_froide')).length;
+      return {
+        metrics: [...baseMetrics, {
+          title: t('cold_rooms'),
+          value: coldRooms.toString(),
+          subtitle: coldRooms > 0 ? t('all_operational') : "Aucune configurée",
+          icon: Thermometer,
+          color: "blue"
+        }, {
+          title: t('avg_temperature'),
+          value: "--°C",
+          subtitle: "Aucune donnée",
+          icon: Thermometer,
+          color: "cyan"
+        }, {
+          title: t('capacity_used'),
+          value: "0%",
+          subtitle: "0/0 kg",
+          icon: Factory,
+          color: "purple"
+        }],
+        livestock: null
+      };
+    }
+
+    // Données pour grossissement
+    if (activeUnit.type === 'grossissement') {
+      const avgWeight = unitBatches.length > 0 
+        ? Math.round(unitBatches.reduce((sum, b) => sum + (b.average_weight || 0), 0) / unitBatches.length)
+        : 0;
+      const totalMortality = unitHealthRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
+      const totalStock = unitBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+      const mortalityRate = totalStock > 0 ? ((totalMortality / totalStock) * 100).toFixed(1) : "0";
+      
+      return {
+        metrics: [...baseMetrics, {
+          title: t('avg_growth'),
+          value: avgWeight > 0 ? `${avgWeight}g` : "0g",
+          subtitle: avgWeight > 0 ? t('current_avg_weight') : "Aucune donnée",
+          icon: TrendingUp,
+          color: "green"
+        }, {
+          title: t('mortality_label'),
+          value: `${mortalityRate}%`,
+          subtitle: parseFloat(mortalityRate) <= 5 ? t('acceptable_rate') : "À surveiller",
+          icon: Activity,
+          color: "red"
+        }],
+        livestock: null
+      };
+    }
+
+    return {
+      metrics: baseMetrics,
+      livestock: null
+    };
   };
+
   const {
     metrics,
     livestock
@@ -373,7 +478,7 @@ const IntelligentDashboard = () => {
         icon: Fish
       }, {
         title: t('profit_margin'),
-        value: `${(globalFinancialData.profit / globalFinancialData.revenue * 100).toFixed(1)}%`,
+        value: globalFinancialData.revenue > 0 ? `${(globalFinancialData.profit / globalFinancialData.revenue * 100).toFixed(1)}%` : "0%",
         subtitle: t('profit_margin'),
         icon: Factory
       }].map((metric, index) => {
@@ -391,59 +496,47 @@ const IntelligentDashboard = () => {
       })}
       </div>
 
-      {/* Données spécifiques à l'écloserie */}
-      {viewMode === 'unit' && activeUnit?.type === 'ecloserie' && livestock && <Card>
+      {/* Données spécifiques à l'écloserie - uniquement si données réelles */}
+      {viewMode === 'unit' && activeUnit?.type === 'ecloserie' && livestock && (livestock.geniteurs_males > 0 || livestock.geniteurs_femelles > 0 || livestock.alevins_total > 0) && <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base">Cheptel - Écloserie</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* livestock display */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-1">Géniteurs</h4>
-                <p className="text-xs text-blue-600">♂ {livestock.geniteurs_males} | ♀ {livestock.geniteurs_femelles}</p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Géniteurs</h4>
+                <p className="text-xs text-blue-600 dark:text-blue-400">♂ {livestock.geniteurs_males} | ♀ {livestock.geniteurs_femelles}</p>
               </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-1">Production</h4>
-                <p className="text-xs text-green-600">{livestock.alevins_total.toLocaleString()} alevins</p>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <h4 className="font-medium text-green-800 dark:text-green-300 mb-1">Production</h4>
+                <p className="text-xs text-green-600 dark:text-green-400">{livestock.alevins_total.toLocaleString()} alevins</p>
               </div>
-              <div className="bg-yellow-50 p-3 rounded-lg">
-                <h4 className="font-medium text-yellow-800 mb-1">Performances</h4>
-                <p className="text-xs text-yellow-600">Fécondité: {livestock.taux_fecondite}%</p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-300 mb-1">Performances</h4>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">Fécondité: {livestock.taux_fecondite}%</p>
               </div>
             </div>
             
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm">Stades Larvaires</h4>
+            {livestock.larves_stade1 > 0 && (
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs">Stade 1</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={60} className="w-16 h-2" />
-                    <span className="text-xs">{livestock.larves_stade1.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs">Stade 2</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={45} className="w-16 h-2" />
-                    <span className="text-xs">{livestock.larves_stade2.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs">Stade 3</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={30} className="w-16 h-2" />
-                    <span className="text-xs">{livestock.larves_stade3.toLocaleString()}</span>
+                <h4 className="font-medium text-sm">Stades Larvaires</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs">Larves</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={100} className="w-16 h-2" />
+                      <span className="text-xs">{livestock.larves_stade1.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>}
 
-      {/* Données financières */}
-      {currentFinancialData && <Card>
+      {/* Données financières - uniquement si données réelles */}
+      {currentFinancialData && currentFinancialData.monthlyData && currentFinancialData.monthlyData.some((d: any) => d.revenue > 0 || d.profit > 0) && <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
@@ -464,105 +557,128 @@ const IntelligentDashboard = () => {
           </CardContent>
         </Card>}
 
-      {/* Graphiques supplémentaires liés aux modules */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Graphique Alimentation */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <UtensilsCrossed className="h-4 w-4 text-orange-600" />
-              Alimentation - Semaine
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={feedingChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="jour" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip />
-                <Bar dataKey="quantite" fill="#f97316" name="Quantité (kg)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Graphiques supplémentaires liés aux modules - uniquement si données réelles */}
+      {(hasFeedingData || hasMortalityData || hasWaterQualityData || hasProductionData) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Graphique Alimentation - uniquement si données */}
+          {hasFeedingData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <UtensilsCrossed className="h-4 w-4 text-orange-600" />
+                  Alimentation - Semaine
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={feedingChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="jour" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Bar dataKey="quantite" fill="#f97316" name="Quantité (kg)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Graphique Qualité de l'eau */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <Droplets className="h-4 w-4 text-blue-600" />
-              Qualité de l'Eau - Aujourd'hui
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={waterQualityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="heure" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip />
-                <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name="Temp (°C)" />
-                <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name="O₂ (mg/L)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          {/* Graphique Qualité de l'eau - uniquement si données */}
+          {hasWaterQualityData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Droplets className="h-4 w-4 text-blue-600" />
+                  Qualité de l'Eau - Aujourd'hui
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={waterQualityData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="heure" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name="Temp (°C)" />
+                    <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name="O₂ (mg/L)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Graphique Mortalité */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <Activity className="h-4 w-4 text-red-600" />
-              Mortalité - 4 Dernières Semaines
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={mortalityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="semaine" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip />
-                <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="objectif" fill="#d1d5db" name="Objectif max" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          {/* Graphique Mortalité - uniquement si données */}
+          {hasMortalityData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-red-600" />
+                  Mortalité - 4 Dernières Semaines
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={mortalityData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="semaine" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="objectif" fill="#d1d5db" name="Objectif max" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Graphique Production par espèce */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <Fish className="h-4 w-4 text-aqua-600" />
-              Production par Espèce
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={productionBySpecies}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {productionBySpecies.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          {/* Graphique Production par espèce - uniquement si données */}
+          {hasProductionData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Fish className="h-4 w-4 text-aqua-600" />
+                  Production par Espèce
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={productionBySpecies}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {productionBySpecies.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Message si aucune donnée */}
+      {!hasFeedingData && !hasMortalityData && !hasWaterQualityData && !hasProductionData && viewMode === 'unit' && activeUnit && (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center">
+            <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+            <h4 className="font-medium text-sm mb-1">Aucune donnée enregistrée</h4>
+            <p className="text-xs text-muted-foreground">
+              Commencez à enregistrer des données d'alimentation, santé et lots pour voir les graphiques
+            </p>
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Onglets pour données spécifiques à l'unité */}
       {viewMode === 'unit' && activeUnit && <Tabs defaultValue="cycles" className="space-y-4">
