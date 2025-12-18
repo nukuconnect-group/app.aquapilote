@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,8 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 const DepreciationManager = () => {
   const { 
     depreciableAssets, 
-    units, 
+    units,
+    activeUnit,
     currency,
     addDepreciableAsset, 
     updateDepreciableAsset, 
@@ -36,9 +37,14 @@ const DepreciationManager = () => {
     purchaseDate: '',
     depreciationMethod: 'linear' as 'linear' | 'accelerated',
     usefulLife: 5,
-    unitId: '',
+    unitId: activeUnit?.id || '',
     status: 'active' as 'active' | 'disposed' | 'inactive'
   });
+
+  useEffect(() => {
+    if (!activeUnit?.id) return;
+    setNewAsset((prev) => ({ ...prev, unitId: activeUnit.id }));
+  }, [activeUnit?.id]);
 
   const assetCategories = [
     'Équipements de production',
@@ -108,7 +114,7 @@ const DepreciationManager = () => {
       purchaseDate: '',
       depreciationMethod: 'linear',
       usefulLife: 5,
-      unitId: '',
+      unitId: activeUnit?.id || '',
       status: 'active'
     });
     setShowAssetForm(false);

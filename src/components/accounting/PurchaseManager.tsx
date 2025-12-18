@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,8 @@ const PurchaseManager = () => {
   const { addLog } = useLogs();
   const { 
     purchases, 
-    units, 
+    units,
+    activeUnit,
     currency,
     setCurrency,
     addPurchase, 
@@ -37,7 +38,7 @@ const PurchaseManager = () => {
     dateFrom: '',
     dateTo: '',
     search: '',
-    unitId: '',
+    unitId: activeUnit?.id || 'all',
     status: ''
   });
 
@@ -52,10 +53,16 @@ const PurchaseManager = () => {
     unit: '',
     paymentMethod: '',
     reference: '',
-    unitId: '',
+    unitId: activeUnit?.id || '',
     deliveryDate: '',
     notes: ''
   });
+
+  useEffect(() => {
+    if (!activeUnit?.id) return;
+    setFilters((prev) => ({ ...prev, unitId: activeUnit.id }));
+    setNewPurchase((prev) => ({ ...prev, unitId: activeUnit.id }));
+  }, [activeUnit?.id]);
 
   const purchaseCategories = {
     'Aliments': ['Granulés flottants', 'Granulés coulants', 'Farine de poisson', 'Aliment croissance', 'Aliment finition', 'Compléments nutritionnels'],
@@ -147,7 +154,7 @@ const PurchaseManager = () => {
       unit: '',
       paymentMethod: '',
       reference: '',
-      unitId: '',
+      unitId: activeUnit?.id || '',
       deliveryDate: '',
       notes: ''
     });
