@@ -60,12 +60,25 @@ interface ControlFishing {
 const LivestockManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
-  const { units } = useProductionUnits();
+  const { units, activeUnit, setActiveUnit } = useProductionUnits();
   const { t } = useSettings();
   const { isDemoMode } = useAuth();
   
-  const [selectedUnit, setSelectedUnit] = useState('all');
-  const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch } = useLivestockBatches();
+  // Utiliser l'unité active du contexte
+  const selectedUnit = activeUnit?.id || 'all';
+  
+  // Filtrer par unité active
+  const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch, updateBatch } = useLivestockBatches(activeUnit?.id);
+  
+  // Fonction pour changer l'unité sélectionnée
+  const handleUnitChange = (unitId: string) => {
+    if (unitId === 'all') {
+      setActiveUnit(null);
+    } else {
+      const unit = units.find(u => u.id === unitId);
+      setActiveUnit(unit || null);
+    }
+  };
   
   // Convertir les lots de la DB au format local pour compatibilité
   const livestockBatches: LivestockBatch[] = dbBatches.map(batch => ({
@@ -295,13 +308,12 @@ const LivestockManagement = () => {
     }
   };
 
-  const filteredBatches = selectedUnit === 'all' 
-    ? livestockBatches 
-    : livestockBatches.filter(batch => batch.unitId === selectedUnit);
+  // Les données sont déjà filtrées par le hook via activeUnit.id
+  const filteredBatches = livestockBatches;
 
-  const filteredControlRecords = selectedUnit === 'all'
-    ? controlRecords
-    : controlRecords.filter(record => record.bassinId === selectedUnit);
+  const filteredControlRecords = activeUnit
+    ? controlRecords.filter(record => record.bassinId === activeUnit.id)
+    : controlRecords;
 
   const totalQuantity = filteredBatches.reduce((sum, batch) => sum + batch.quantity, 0);
   const totalWeight = filteredBatches.reduce((sum, batch) => sum + batch.totalWeight, 0);
@@ -375,9 +387,9 @@ const LivestockManagement = () => {
             <p className="text-green-100 text-xs sm:text-sm">Suivi et gestion des lots de poissons par unité</p>
           </div>
           <div className="flex flex-col gap-2">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedUnit} onValueChange={handleUnitChange}>
               <SelectTrigger className="w-full bg-white/20 border-white/30 text-white text-sm">
-                <SelectValue />
+                <SelectValue placeholder="Sélectionner une unité" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les unités</SelectItem>

@@ -27,12 +27,14 @@ const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
   const { t } = useSettings();
   const { toast } = useToast();
-  const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords();
+  
+  // Filtrer les enregistrements par unité active
+  const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords(undefined, activeUnit?.id);
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { stocks } = useFeedStocks(activeUnit?.id);
-  const { infrastructures } = useCycleInfrastructures(cycles.find(c => c.status === 'active')?.id || '');
   
   const activeCycle = cycles.find(c => c.status === 'active');
+  const { infrastructures } = useCycleInfrastructures(activeCycle?.id || '');
 
   if (!activeUnit) {
     return (
@@ -61,6 +63,9 @@ const FeedingManagement = () => {
       </div>
     );
   }
+
+  // Les enregistrements sont déjà filtrés par l'unité active via le hook
+  const unitRecords = feedingRecords;
 
   // Calculer les données réelles à partir des enregistrements
   const getFeedingData = () => {
@@ -100,8 +105,6 @@ const FeedingManagement = () => {
       notes: activeCycle?.notes || ''
     };
   };
-
-  const unitRecords = feedingRecords.filter(record => record.unit_id === activeUnit.id);
 
   const feedingData = getFeedingData();
 

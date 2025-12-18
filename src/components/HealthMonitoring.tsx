@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,55 +25,17 @@ import {
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
-
-interface ZootechnicalRecord {
-  id: string;
-  date: string;
-  unitId: string;
-  basinId: string;
-  temperature: number;
-  ph: number;
-  oxygen: number;
-  density: number;
-  mortality: number;
-  feeding: number;
-  notes: string;
-}
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import ProductionUnitSelector from './ProductionUnitSelector';
 
 const HealthMonitoring = () => {
-  const { activeUnit, units } = useProductionUnits();
+  const { activeUnit, units, setActiveUnit } = useProductionUnits();
   const { addLog } = useLogs();
   
-  const [selectedUnitFilter, setSelectedUnitFilter] = useState<string>('all');
+  // Utiliser le hook pour récupérer les données filtrées par unité
+  const { records: healthRecords, loading, createRecord } = useHealthRecords(undefined, activeUnit?.id);
+  
   const [showRecordDialog, setShowRecordDialog] = useState(false);
-  const [records, setRecords] = useState<ZootechnicalRecord[]>([
-    {
-      id: '1',
-      date: '2024-03-15',
-      unitId: 'GROSS001',
-      basinId: 'BAS001',
-      temperature: 25.5,
-      ph: 7.2,
-      oxygen: 6.8,
-      density: 15.2,
-      mortality: 0.5,
-      feeding: 2.1,
-      notes: 'Conditions normales, poissons actifs'
-    },
-    {
-      id: '2',
-      date: '2024-03-14',
-      unitId: 'TRANS001',
-      basinId: 'BAS002',
-      temperature: 24.8,
-      ph: 7.0,
-      oxygen: 7.2,
-      density: 18.5,
-      mortality: 0.3,
-      feeding: 1.8,
-      notes: 'Transformation en cours, surveillance renforcée'
-    }
-  ]);
 
   const [newRecord, setNewRecord] = useState({
     unitId: activeUnit?.id || '',
@@ -87,55 +49,71 @@ const HealthMonitoring = () => {
     notes: ''
   });
 
-  // Filtrer les enregistrements par unité
-  const filteredRecords = selectedUnitFilter === 'all' 
-    ? records 
-    : records.filter(record => record.unitId === selectedUnitFilter);
+  // Mettre à jour le formulaire quand l'unité active change
+  useEffect(() => {
+    if (activeUnit) {
+      setNewRecord(prev => ({ ...prev, unitId: activeUnit.id }));
+    }
+  }, [activeUnit]);
 
-  // Calculer les moyennes par unité
+  // Fonction pour changer l'unité
+  const handleUnitChange = (unitId: string) => {
+    if (unitId === 'all') {
+      setActiveUnit(null);
+    } else {
+      const unit = units.find(u => u.id === unitId);
+      setActiveUnit(unit || null);
+    }
+  };
+
+  // Calculer les moyennes à partir des enregistrements de la DB
   const getUnitStats = (unitId: string) => {
-    const unitRecords = records.filter(r => r.unitId === unitId);
+    const unitRecords = healthRecords.filter(r => r.unit_id === unitId);
     if (unitRecords.length === 0) return null;
     
     return {
-      avgTemp: (unitRecords.reduce((sum, r) => sum + r.temperature, 0) / unitRecords.length).toFixed(1),
-      avgPh: (unitRecords.reduce((sum, r) => sum + r.ph, 0) / unitRecords.length).toFixed(1),
-      avgOxygen: (unitRecords.reduce((sum, r) => sum + r.oxygen, 0) / unitRecords.length).toFixed(1),
-      avgMortality: (unitRecords.reduce((sum, r) => sum + r.mortality, 0) / unitRecords.length).toFixed(1),
+      avgTemp: (unitRecords.reduce((sum, r) => sum + (r.temperature || 0), 0) / unitRecords.length).toFixed(1),
+      avgPh: (unitRecords.reduce((sum, r) => sum + (r.ph || 0), 0) / unitRecords.length).toFixed(1),
+      avgOxygen: (unitRecords.reduce((sum, r) => sum + (r.oxygen || 0), 0) / unitRecords.length).toFixed(1),
+      avgMortality: (unitRecords.reduce((sum, r) => sum + (r.mortality || 0), 0) / unitRecords.length).toFixed(1),
       recordCount: unitRecords.length
     };
   };
 
-  const handleSaveRecord = () => {
-    const record: ZootechnicalRecord = {
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      unitId: newRecord.unitId,
-      basinId: newRecord.basinId,
-      temperature: parseFloat(newRecord.temperature),
-      ph: parseFloat(newRecord.ph),
-      oxygen: parseFloat(newRecord.oxygen),
-      density: parseFloat(newRecord.density),
-      mortality: parseFloat(newRecord.mortality),
-      feeding: parseFloat(newRecord.feeding),
-      notes: newRecord.notes
-    };
-
-    setRecords(prev => [record, ...prev]);
-    addLog('Enregistrement zootechnique', 'Prophylaxie', `Données enregistrées pour ${record.basinId}`, 'info');
+  const handleSaveRecord = async () => {
+    if (!activeUnit) return;
     
-    setNewRecord({
-      unitId: activeUnit?.id || '',
-      basinId: '',
-      temperature: '',
-      ph: '',
-      oxygen: '',
-      density: '',
-      mortality: '',
-      feeding: '',
-      notes: ''
-    });
-    setShowRecordDialog(false);
+    try {
+      await createRecord({
+        unit_id: activeUnit.id,
+        basin_id: newRecord.basinId,
+        date: new Date().toISOString().split('T')[0],
+        temperature: parseFloat(newRecord.temperature) || undefined,
+        ph: parseFloat(newRecord.ph) || undefined,
+        oxygen: parseFloat(newRecord.oxygen) || undefined,
+        density: parseFloat(newRecord.density) || undefined,
+        mortality: parseFloat(newRecord.mortality) || undefined,
+        feeding: parseFloat(newRecord.feeding) || undefined,
+        notes: newRecord.notes || undefined
+      });
+
+      addLog('Enregistrement zootechnique', 'Prophylaxie', `Données enregistrées pour ${newRecord.basinId}`, 'info');
+      
+      setNewRecord({
+        unitId: activeUnit?.id || '',
+        basinId: '',
+        temperature: '',
+        ph: '',
+        oxygen: '',
+        density: '',
+        mortality: '',
+        feeding: '',
+        notes: ''
+      });
+      setShowRecordDialog(false);
+    } catch (error) {
+      console.error('Error saving health record:', error);
+    }
   };
 
   const getStatusColor = (value: number, type: string) => {
@@ -278,25 +256,15 @@ const HealthMonitoring = () => {
         </div>
       </div>
 
-      {/* Filtre par unité */}
+      {/* Sélecteur d'unité */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Filter className="w-4 h-4" />
-              Filtrer par unité :
+              Unité de production :
             </Label>
-            <Select value={selectedUnitFilter} onValueChange={setSelectedUnitFilter}>
-              <SelectTrigger className="w-full sm:w-64 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les unités</SelectItem>
-                {units.map(unit => (
-                  <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ProductionUnitSelector />
           </div>
         </CardContent>
       </Card>
@@ -363,68 +331,76 @@ const HealthMonitoring = () => {
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 Enregistrements Zootechniques
-                {selectedUnitFilter !== 'all' && (
+                {activeUnit && (
                   <Badge className="bg-blue-100 text-blue-800 text-xs">
-                    {units.find(u => u.id === selectedUnitFilter)?.name}
+                    {activeUnit.name}
                   </Badge>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredRecords.map(record => (
-                  <div key={record.id} className="border rounded-lg p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row items-start justify-between mb-3 gap-2">
-                      <div>
-                        <h4 className="font-medium text-sm sm:text-base">Bassin {record.basinId}</h4>
-                        <p className="text-xs sm:text-sm text-gray-600">{new Date(record.date).toLocaleDateString('fr-FR')}</p>
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">Chargement...</div>
+              ) : healthRecords.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {activeUnit ? 'Aucun enregistrement pour cette unité' : 'Sélectionnez une unité pour voir les enregistrements'}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {healthRecords.map(record => (
+                    <div key={record.id} className="border rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row items-start justify-between mb-3 gap-2">
+                        <div>
+                          <h4 className="font-medium text-sm sm:text-base">Bassin {record.basin_id || 'N/A'}</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">{new Date(record.date).toLocaleDateString('fr-FR')}</p>
+                        </div>
+                        <Badge className="bg-blue-100 text-blue-800 text-xs">
+                          {units.find(u => u.id === record.unit_id)?.name || 'N/A'}
+                        </Badge>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-800 text-xs">
-                        {units.find(u => u.id === record.unitId)?.name}
-                      </Badge>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <div>
+                          <span className="text-gray-600">Temp:</span>
+                          <span className={`ml-1 font-medium ${getStatusColor(record.temperature || 0, 'temperature')}`}>
+                            {record.temperature || '-'}°C
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">pH:</span>
+                          <span className={`ml-1 font-medium ${getStatusColor(record.ph || 0, 'ph')}`}>
+                            {record.ph || '-'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">O₂:</span>
+                          <span className={`ml-1 font-medium ${getStatusColor(record.oxygen || 0, 'oxygen')}`}>
+                            {record.oxygen || '-'} mg/L
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Densité:</span>
+                          <span className="ml-1 font-medium">{record.density || '-'} kg/m³</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Mortalité:</span>
+                          <span className={`ml-1 font-medium ${getStatusColor(record.mortality || 0, 'mortality')}`}>
+                            {record.mortality || '-'}%
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Aliment:</span>
+                          <span className="ml-1 font-medium">{record.feeding || '-'} kg</span>
+                        </div>
+                      </div>
+                      {record.notes && (
+                        <div className="mt-3 p-2 bg-gray-50 rounded text-xs sm:text-sm">
+                          <strong>Notes:</strong> {record.notes}
+                        </div>
+                      )}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 text-xs sm:text-sm">
-                      <div>
-                        <span className="text-gray-600">Temp:</span>
-                        <span className={`ml-1 font-medium ${getStatusColor(record.temperature, 'temperature')}`}>
-                          {record.temperature}°C
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">pH:</span>
-                        <span className={`ml-1 font-medium ${getStatusColor(record.ph, 'ph')}`}>
-                          {record.ph}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">O₂:</span>
-                        <span className={`ml-1 font-medium ${getStatusColor(record.oxygen, 'oxygen')}`}>
-                          {record.oxygen} mg/L
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Densité:</span>
-                        <span className="ml-1 font-medium">{record.density} kg/m³</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Mortalité:</span>
-                        <span className={`ml-1 font-medium ${getStatusColor(record.mortality, 'mortality')}`}>
-                          {record.mortality}%
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Aliment:</span>
-                        <span className="ml-1 font-medium">{record.feeding} kg</span>
-                      </div>
-                    </div>
-                    {record.notes && (
-                      <div className="mt-3 p-2 bg-gray-50 rounded text-xs sm:text-sm">
-                        <strong>Notes:</strong> {record.notes}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
