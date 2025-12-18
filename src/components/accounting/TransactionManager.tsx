@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 const TransactionManager = () => {
   const { 
     transactions, 
-    units, 
+    units,
+    activeUnit,
     currency,
     setCurrency,
     addTransaction, 
@@ -35,7 +36,7 @@ const TransactionManager = () => {
     dateFrom: '',
     dateTo: '',
     search: '',
-    unitId: '',
+    unitId: activeUnit?.id || 'all',
     status: ''
   });
 
@@ -49,9 +50,15 @@ const TransactionManager = () => {
     reference: '',
     supplier: '',
     client: '',
-    unitId: '',
+    unitId: activeUnit?.id || '',
     status: 'confirmed' as 'pending' | 'confirmed' | 'cancelled'
   });
+
+  useEffect(() => {
+    if (!activeUnit?.id) return;
+    setFilters((prev) => ({ ...prev, unitId: activeUnit.id }));
+    setNewTransaction((prev) => ({ ...prev, unitId: activeUnit.id }));
+  }, [activeUnit?.id]);
 
   const transactionCategories = {
     revenue: [
@@ -147,7 +154,7 @@ const TransactionManager = () => {
       reference: '',
       supplier: '',
       client: '',
-      unitId: '',
+      unitId: activeUnit?.id || '',
       status: 'confirmed'
     });
     setShowTransactionForm(false);
