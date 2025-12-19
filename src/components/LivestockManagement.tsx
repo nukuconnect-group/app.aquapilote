@@ -628,14 +628,16 @@ const LivestockManagement = () => {
         </Card>
       </div>
 
-      {/* Onglets de gestion */}
+      {/* Onglets de gestion - Reproduction visible uniquement pour écloserie */}
       <Tabs defaultValue="lots" className="space-y-3 sm:space-y-4">
-        <TabsList className="w-full grid grid-cols-4 h-auto">
+        <TabsList className={`w-full grid h-auto ${activeUnit?.type === 'ecloserie' ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="lots" className="text-xs sm:text-sm px-2 py-2">Lots</TabsTrigger>
-          <TabsTrigger value="reproduction" className="text-xs sm:text-sm px-2 py-2">
-            <Heart className="w-3 h-3 mr-1 hidden sm:inline" />
-            Reproduction
-          </TabsTrigger>
+          {activeUnit?.type === 'ecloserie' && (
+            <TabsTrigger value="reproduction" className="text-xs sm:text-sm px-2 py-2">
+              <Heart className="w-3 h-3 mr-1 hidden sm:inline" />
+              Reproduction
+            </TabsTrigger>
+          )}
           <TabsTrigger value="control" className="text-xs sm:text-sm px-2 py-2">Pêche</TabsTrigger>
           <TabsTrigger value="charts" className="text-xs sm:text-sm px-2 py-2">Graphiques</TabsTrigger>
         </TabsList>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ interface PaySlip {
 const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
-  const { units } = useProductionUnits();
+  const { units, activeUnit } = useProductionUnits();
   const { formatCurrency } = useSettings();
 
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -64,11 +64,30 @@ const HRManagement = () => {
     email: '',
     phone: '',
     position: '',
-    unitId: '',
+    unitId: activeUnit?.id || '',
     salary: 0,
     hireDate: '',
     contractType: 'CDI' as 'CDI' | 'CDD' | 'Stage' | 'Freelance'
   });
+
+  // Synchroniser avec l'unité active
+  useEffect(() => {
+    if (activeUnit?.id) {
+      setEmployeeFormData(prev => ({ ...prev, unitId: activeUnit.id }));
+    }
+  }, [activeUnit?.id]);
+
+  // Filtrer par unité active
+  const filteredEmployees = useMemo(() => {
+    if (!activeUnit?.id) return employees;
+    return employees.filter(emp => emp.unitId === activeUnit.id);
+  }, [employees, activeUnit?.id]);
+
+  const filteredPaySlips = useMemo(() => {
+    if (!activeUnit?.id) return paySlips;
+    const unitEmployeeIds = employees.filter(emp => emp.unitId === activeUnit.id).map(emp => emp.id);
+    return paySlips.filter(slip => unitEmployeeIds.includes(slip.employeeId));
+  }, [paySlips, employees, activeUnit?.id]);
 
   const [paySlipData, setPaySlipData] = useState({
     employeeId: '',
@@ -271,10 +290,10 @@ const HRManagement = () => {
   };
 
   const hrStats = {
-    totalEmployees: employees.length,
-    activeEmployees: employees.filter(e => e.status === 'active').length,
-    totalPayroll: employees.reduce((sum, emp) => sum + emp.salary, 0),
-    avgSalary: employees.reduce((sum, emp) => sum + emp.salary, 0) / employees.length
+    totalEmployees: filteredEmployees.length,
+    activeEmployees: filteredEmployees.filter(e => e.status === 'active').length,
+    totalPayroll: filteredEmployees.reduce((sum, emp) => sum + emp.salary, 0),
+    avgSalary: filteredEmployees.length > 0 ? filteredEmployees.reduce((sum, emp) => sum + emp.salary, 0) / filteredEmployees.length : 0
   };
 
   return (
@@ -379,10 +398,10 @@ const HRManagement = () => {
               <CardTitle className="text-base sm:text-lg">Liste des Employés</CardTitle>
             </CardHeader>
             <CardContent className="p-0 sm:p-3 md:p-6">
-              {employees.length === 0 ? (
+              {filteredEmployees.length === 0 ? (
                 <div className="p-8 text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Aucun employé enregistré</p>
+                  <p className="text-muted-foreground">Aucun employé enregistré{activeUnit ? ` pour ${activeUnit.name}` : ''}</p>
                   <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Nouvel Employé" pour ajouter votre premier employé</p>
                 </div>
               ) : (
@@ -401,7 +420,7 @@ const HRManagement = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {employees.map((employee) => (
+                        {filteredEmployees.map((employee) => (
                           <TableRow key={employee.id}>
                             <TableCell>
                               <div>
@@ -433,7 +452,7 @@ const HRManagement = () => {
 
                   {/* Mobile Cards */}
                   <div className="md:hidden space-y-3 p-3">
-                    {employees.map((employee) => (
+                    {filteredEmployees.map((employee) => (
                       <Card key={employee.id} className="border">
                         <CardContent className="p-3">
                           <div className="space-y-2">
@@ -468,10 +487,10 @@ const HRManagement = () => {
               <CardTitle>Historique des Bulletins de Paie</CardTitle>
             </CardHeader>
             <CardContent>
-              {paySlips.length === 0 ? (
+              {filteredPaySlips.length === 0 ? (
                 <div className="p-8 text-center">
                   <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Aucun bulletin de paie généré</p>
+                  <p className="text-muted-foreground">Aucun bulletin de paie généré{activeUnit ? ` pour ${activeUnit.name}` : ''}</p>
                   <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Générer Bulletin" pour créer un bulletin de paie</p>
                 </div>
               ) : (
@@ -489,7 +508,7 @@ const HRManagement = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paySlips.map((paySlip) => (
+                    {filteredPaySlips.map((paySlip) => (
                       <TableRow key={paySlip.id}>
                         <TableCell>{paySlip.employeeName}</TableCell>
                         <TableCell>{paySlip.period}</TableCell>
