@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,12 +55,27 @@ const SalesManagement = () => {
     notes: ''
   });
 
-  // Calcul des stats basées sur les ventes réelles
+  // Synchroniser la vente avec l’unité active (module = unité sélectionnée)
+  useEffect(() => {
+    if (!activeUnit?.id) return;
+    setNewSale((prev) => ({ ...prev, unitId: activeUnit.id }));
+  }, [activeUnit?.id]);
+
+  // Les données affichées dans le module sont filtrées par unité active
+  const filteredSales = useMemo(() => {
+    if (!activeUnit?.id) return sales;
+    return sales.filter((s) => s.unitId === activeUnit.id);
+  }, [sales, activeUnit?.id]);
+
+  // Calcul des stats basées sur les ventes de l’unité active
   const salesData = {
-    totalRevenue: sales.reduce((sum, sale) => sum + sale.totalAmount, 0),
-    totalOrders: sales.length,
-    totalClients: [...new Set(sales.map(s => s.clientName))].length,
-    avgOrderValue: sales.length > 0 ? sales.reduce((sum, sale) => sum + sale.totalAmount, 0) / sales.length : 0,
+    totalRevenue: filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+    totalOrders: filteredSales.length,
+    totalClients: [...new Set(filteredSales.map((s) => s.clientName))].length,
+    avgOrderValue:
+      filteredSales.length > 0
+        ? filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0) / filteredSales.length
+        : 0,
     monthlyGrowth: 0,
     topProducts: [] as { name: string; quantity: number; revenue: number }[]
   };
@@ -73,7 +88,7 @@ const SalesManagement = () => {
 
     const receiptData: ReceiptData = {
       type: 'receipt',
-      number: `REC-${new Date().getFullYear()}-${String(sales.length + 1).padStart(3, '0')}`,
+      number: `REC-${new Date().getFullYear()}-${String(filteredSales.length + 1).padStart(3, '0')}`,
       date: new Date().toISOString(),
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
@@ -468,7 +483,7 @@ const SalesManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
-              {sales.length === 0 ? (
+              {filteredSales.length === 0 ? (
                 <div className="p-8 text-center">
                   <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-muted-foreground">Aucune vente enregistrée</p>
@@ -476,7 +491,7 @@ const SalesManagement = () => {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {sales.map(sale => (
+                  {filteredSales.map(sale => (
                     <div key={sale.id} className="border rounded-lg p-3 sm:p-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
                         <div className="flex-1 min-w-0">
