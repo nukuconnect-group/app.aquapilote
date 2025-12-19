@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ interface Task {
 
 const TaskScheduler = () => {
   const { addLog } = useLogs();
-  const { units } = useProductionUnits();
+  const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
   
   // Initialisation avec un tableau vide - pas de données de démo
@@ -41,8 +41,21 @@ const TaskScheduler = () => {
     dueDate: new Date().toISOString().split('T')[0],
     dueTime: '09:00',
     priority: 'medium' as Task['priority'],
-    unitId: ''
+    unitId: activeUnit?.id || ''
   });
+
+  // Synchroniser avec l'unité active
+  useEffect(() => {
+    if (activeUnit?.id) {
+      setTaskForm(prev => ({ ...prev, unitId: activeUnit.id }));
+    }
+  }, [activeUnit?.id]);
+
+  // Filtrer les tâches par unité active
+  const filteredTasks = useMemo(() => {
+    if (!activeUnit?.id) return tasks;
+    return tasks.filter(task => task.unitId === activeUnit.id);
+  }, [tasks, activeUnit?.id]);
 
   const addTask = () => {
     if (!taskForm.title.trim()) return;
@@ -270,17 +283,17 @@ const TaskScheduler = () => {
         </Card>
       )}
 
-      {tasks.length === 0 ? (
+      {filteredTasks.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
             <ClipboardList className="w-12 h-12 mx-auto mb-4" />
-            <p>Aucune tâche planifiée</p>
+            <p>Aucune tâche planifiée{activeUnit ? ` pour ${activeUnit.name}` : ''}</p>
             <p className="text-sm mt-2">Créez votre première tâche en cliquant sur "Nouvelle Tâche"</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {tasks.map((task) => (
+          {filteredTasks.map((task) => (
             <Card key={task.id}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row items-start justify-between gap-4">

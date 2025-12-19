@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { 
   Users,
   Plus,
@@ -43,6 +44,19 @@ interface Supplier {
   products: string[];
   rating: number;
   notes: string;
+  unitId?: string;
+}
+
+interface Order {
+  id: string;
+  supplierId: string;
+  date: string;
+  products: string;
+  quantity: number;
+  amount: number;
+  status: 'pending' | 'delivered' | 'cancelled';
+  deliveryDate: string;
+  unitId?: string;
 }
 
 interface Order {
@@ -59,6 +73,7 @@ interface Order {
 const SuppliersManagement = () => {
   const { addLog } = useLogs();
   const { isDemoMode } = useAuth();
+  const { activeUnit } = useProductionUnits();
   
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
@@ -152,7 +167,8 @@ const SuppliersManagement = () => {
     category: '',
     products: '',
     rating: '5',
-    notes: ''
+    notes: '',
+    unitId: activeUnit?.id || ''
   });
 
   const [newOrder, setNewOrder] = useState({
@@ -160,8 +176,17 @@ const SuppliersManagement = () => {
     products: '',
     quantity: '',
     amount: '',
-    deliveryDate: ''
+    deliveryDate: '',
+    unitId: activeUnit?.id || ''
   });
+
+  // Synchroniser avec l'unité active
+  useEffect(() => {
+    if (activeUnit?.id) {
+      setNewSupplier(prev => ({ ...prev, unitId: activeUnit.id }));
+      setNewOrder(prev => ({ ...prev, unitId: activeUnit.id }));
+    }
+  }, [activeUnit?.id]);
 
   const handleSaveSupplier = () => {
     if (editingSupplier) {
@@ -210,7 +235,8 @@ const SuppliersManagement = () => {
       category: '',
       products: '',
       rating: '5',
-      notes: ''
+      notes: '',
+      unitId: activeUnit?.id || ''
     });
     setEditingSupplier(null);
     setShowSupplierDialog(false);
@@ -227,7 +253,8 @@ const SuppliersManagement = () => {
       category: supplier.category,
       products: supplier.products.join(', '),
       rating: supplier.rating.toString(),
-      notes: supplier.notes
+      notes: supplier.notes,
+      unitId: supplier.unitId || activeUnit?.id || ''
     });
     setShowSupplierDialog(true);
   };
@@ -255,7 +282,8 @@ const SuppliersManagement = () => {
       quantity: parseInt(newOrder.quantity),
       amount: parseFloat(newOrder.amount),
       status: 'pending',
-      deliveryDate: newOrder.deliveryDate
+      deliveryDate: newOrder.deliveryDate,
+      unitId: newOrder.unitId
     };
 
     setOrders(prev => [order, ...prev]);
@@ -266,19 +294,29 @@ const SuppliersManagement = () => {
       products: '',
       quantity: '',
       amount: '',
-      deliveryDate: ''
+      deliveryDate: '',
+      unitId: activeUnit?.id || ''
     });
     setShowOrderDialog(false);
   };
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         supplier.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         supplier.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || supplier.category === categoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  // Filtrer par unité active
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter(supplier => {
+      const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           supplier.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           supplier.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
+      const matchesCategory = categoryFilter === 'all' || supplier.category === categoryFilter;
+      const matchesUnit = !activeUnit?.id || supplier.unitId === activeUnit.id;
+      return matchesSearch && matchesStatus && matchesCategory && matchesUnit;
+    });
+  }, [suppliers, searchQuery, statusFilter, categoryFilter, activeUnit?.id]);
+
+  const filteredOrders = useMemo(() => {
+    if (!activeUnit?.id) return orders;
+    return orders.filter(order => order.unitId === activeUnit.id);
+  }, [orders, activeUnit?.id]);
 
   const getStatusColor = (status: Supplier['status']) => {
     switch (status) {
@@ -339,7 +377,8 @@ const SuppliersManagement = () => {
                   category: '',
                   products: '',
                   rating: '5',
-                  notes: ''
+                  notes: '',
+                  unitId: activeUnit?.id || ''
                 });
               }
             }}>
