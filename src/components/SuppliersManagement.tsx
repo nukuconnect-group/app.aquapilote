@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ProductionUnitSelector from './ProductionUnitSelector';
-import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSuppliers, Supplier, SupplierOrder } from '@/hooks/useSuppliers';
 import { 
   Users,
   Plus,
@@ -31,49 +31,22 @@ import {
   Filter
 } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
-
-interface Supplier {
-  id: string;
-  name: string;
-  contact: string;
-  email: string;
-  phone: string;
-  address: string;
-  status: 'active' | 'inactive' | 'pending';
-  category: string;
-  products: string[];
-  rating: number;
-  notes: string;
-  unitId?: string;
-}
-
-interface Order {
-  id: string;
-  supplierId: string;
-  date: string;
-  products: string;
-  quantity: number;
-  amount: number;
-  status: 'pending' | 'delivered' | 'cancelled';
-  deliveryDate: string;
-  unitId?: string;
-}
-
-interface Order {
-  id: string;
-  supplierId: string;
-  date: string;
-  products: string;
-  quantity: number;
-  amount: number;
-  status: 'pending' | 'delivered' | 'cancelled';
-  deliveryDate: string;
-}
+import { useToast } from '@/hooks/use-toast';
 
 const SuppliersManagement = () => {
   const { addLog } = useLogs();
-  const { isDemoMode } = useAuth();
+  const { toast } = useToast();
   const { activeUnit } = useProductionUnits();
+  const { 
+    suppliers, 
+    orders, 
+    allSuppliers,
+    loading,
+    addSupplier, 
+    updateSupplier, 
+    deleteSupplier,
+    addOrder
+  } = useSuppliers();
   
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
@@ -82,81 +55,6 @@ const SuppliersManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-
-  // Données de démonstration
-  const getDemoSuppliers = (): Supplier[] => isDemoMode ? [
-    {
-      id: '1',
-      name: 'AquaFeed Solutions',
-      contact: 'Jean Dupont',
-      email: 'contact@aquafeed.com',
-      phone: '+228 90 12 34 56',
-      address: 'Zone Industrielle, Lomé',
-      status: 'active',
-      category: 'Aliments',
-      products: ['Granulés flottants', 'Granulés coulants', 'Aliments spéciaux'],
-      rating: 4.5,
-      notes: 'Fournisseur principal, excellente qualité'
-    },
-    {
-      id: '2',
-      name: 'BioVet Togo',
-      contact: 'Dr. Marie Martin',
-      email: 'info@biovet.tg',
-      phone: '+228 91 23 45 67',
-      address: 'Avenue de la Paix, Lomé',
-      status: 'active',
-      category: 'Vétérinaire',
-      products: ['Vaccins', 'Antibiotiques', 'Désinfectants'],
-      rating: 5.0,
-      notes: 'Service vétérinaire de confiance'
-    },
-    {
-      id: '3',
-      name: 'TechEquip Aquaculture',
-      contact: 'Paul Kofi',
-      email: 'sales@techequip.com',
-      phone: '+228 92 34 56 78',
-      address: 'Quartier des Affaires, Lomé',
-      status: 'pending',
-      category: 'Équipement',
-      products: ['Pompes', 'Aérateurs', 'Filtres', 'Oxygénateurs'],
-      rating: 4.0,
-      notes: 'En cours de vérification'
-    }
-  ] : [];
-
-  const getDemoOrders = (): Order[] => isDemoMode ? [
-    {
-      id: '1',
-      supplierId: '1',
-      date: '2024-03-10',
-      products: 'Granulés flottants 25kg',
-      quantity: 50,
-      amount: 125000,
-      status: 'delivered',
-      deliveryDate: '2024-03-15'
-    },
-    {
-      id: '2',
-      supplierId: '2',
-      date: '2024-03-12',
-      products: 'Vaccin Anti-Aeromonas',
-      quantity: 10,
-      amount: 85000,
-      status: 'pending',
-      deliveryDate: '2024-03-20'
-    }
-  ] : [];
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>(getDemoSuppliers());
-  const [orders, setOrders] = useState<Order[]>(getDemoOrders());
-
-  // Mettre à jour les données quand le mode démo change
-  useEffect(() => {
-    setSuppliers(getDemoSuppliers());
-    setOrders(getDemoOrders());
-  }, [isDemoMode]);
 
   const [newSupplier, setNewSupplier] = useState({
     name: '',
@@ -188,28 +86,23 @@ const SuppliersManagement = () => {
     }
   }, [activeUnit?.id]);
 
-  const handleSaveSupplier = () => {
+  const handleSaveSupplier = async () => {
     if (editingSupplier) {
-      setSuppliers(prev => prev.map(s => 
-        s.id === editingSupplier.id 
-          ? {
-              ...editingSupplier,
-              name: newSupplier.name,
-              contact: newSupplier.contact,
-              email: newSupplier.email,
-              phone: newSupplier.phone,
-              address: newSupplier.address,
-              category: newSupplier.category,
-              products: newSupplier.products.split(',').map(p => p.trim()),
-              rating: parseFloat(newSupplier.rating),
-              notes: newSupplier.notes
-            }
-          : s
-      ));
+      await updateSupplier(editingSupplier.id, {
+        name: newSupplier.name,
+        contact: newSupplier.contact,
+        email: newSupplier.email,
+        phone: newSupplier.phone,
+        address: newSupplier.address,
+        category: newSupplier.category,
+        products: newSupplier.products.split(',').map(p => p.trim()),
+        rating: parseFloat(newSupplier.rating),
+        notes: newSupplier.notes
+      });
       addLog('Fournisseur modifié', 'Fournisseurs', `${newSupplier.name} a été mis à jour`, 'info');
+      toast({ title: "Fournisseur mis à jour", description: `${newSupplier.name} a été modifié` });
     } else {
-      const supplier: Supplier = {
-        id: Date.now().toString(),
+      const result = await addSupplier({
         name: newSupplier.name,
         contact: newSupplier.contact,
         email: newSupplier.email,
@@ -219,11 +112,13 @@ const SuppliersManagement = () => {
         category: newSupplier.category,
         products: newSupplier.products.split(',').map(p => p.trim()),
         rating: parseFloat(newSupplier.rating),
-        notes: newSupplier.notes
-      };
-
-      setSuppliers(prev => [supplier, ...prev]);
-      addLog('Fournisseur ajouté', 'Fournisseurs', `${supplier.name} a été ajouté`, 'success');
+        notes: newSupplier.notes,
+        unitId: newSupplier.unitId
+      });
+      if (result) {
+        addLog('Fournisseur ajouté', 'Fournisseurs', `${newSupplier.name} a été ajouté`, 'success');
+        toast({ title: "Fournisseur ajouté", description: `${newSupplier.name} a été créé` });
+      }
     }
     
     setNewSupplier({
@@ -259,23 +154,24 @@ const SuppliersManagement = () => {
     setShowSupplierDialog(true);
   };
 
-  const handleDeleteSupplier = (id: string) => {
-    setSuppliers(prev => prev.filter(s => s.id !== id));
+  const handleDeleteSupplier = async (id: string) => {
+    await deleteSupplier(id);
     addLog('Fournisseur supprimé', 'Fournisseurs', 'Un fournisseur a été retiré', 'warning');
     setDeletingSupplier(null);
+    toast({ title: "Fournisseur supprimé" });
   };
 
-  const handleToggleStatus = (id: string) => {
-    setSuppliers(prev => prev.map(s => 
-      s.id === id 
-        ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' as Supplier['status'] }
-        : s
-    ));
+  const handleToggleStatus = async (id: string) => {
+    const supplier = suppliers.find(s => s.id === id);
+    if (supplier) {
+      await updateSupplier(id, { 
+        status: supplier.status === 'active' ? 'inactive' : 'active' 
+      });
+    }
   };
 
-  const handleSaveOrder = () => {
-    const order: Order = {
-      id: Date.now().toString(),
+  const handleSaveOrder = async () => {
+    const result = await addOrder({
       supplierId: newOrder.supplierId,
       date: new Date().toISOString().split('T')[0],
       products: newOrder.products,
@@ -284,10 +180,12 @@ const SuppliersManagement = () => {
       status: 'pending',
       deliveryDate: newOrder.deliveryDate,
       unitId: newOrder.unitId
-    };
+    });
 
-    setOrders(prev => [order, ...prev]);
-    addLog('Commande créée', 'Fournisseurs', `Commande pour ${suppliers.find(s => s.id === order.supplierId)?.name}`, 'info');
+    if (result) {
+      addLog('Commande créée', 'Fournisseurs', `Commande pour ${allSuppliers.find(s => s.id === newOrder.supplierId)?.name}`, 'info');
+      toast({ title: "Commande créée" });
+    }
     
     setNewOrder({
       supplierId: '',
@@ -300,23 +198,17 @@ const SuppliersManagement = () => {
     setShowOrderDialog(false);
   };
 
-  // Filtrer par unité active
-  const filteredSuppliers = useMemo(() => {
-    return suppliers.filter(supplier => {
-      const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           supplier.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           supplier.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
-      const matchesCategory = categoryFilter === 'all' || supplier.category === categoryFilter;
-      const matchesUnit = !activeUnit?.id || supplier.unitId === activeUnit.id;
-      return matchesSearch && matchesStatus && matchesCategory && matchesUnit;
-    });
-  }, [suppliers, searchQuery, statusFilter, categoryFilter, activeUnit?.id]);
+  // Filtrer localement par recherche et catégorie (le filtrage par unité est dans le hook)
+  const filteredSuppliers = suppliers.filter(supplier => {
+    const matchesSearch = supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         supplier.contact.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         supplier.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || supplier.category === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
 
-  const filteredOrders = useMemo(() => {
-    if (!activeUnit?.id) return orders;
-    return orders.filter(order => order.unitId === activeUnit.id);
-  }, [orders, activeUnit?.id]);
+  const filteredOrders = orders;
 
   const getStatusColor = (status: Supplier['status']) => {
     switch (status) {
@@ -340,7 +232,7 @@ const SuppliersManagement = () => {
     }
   };
 
-  const getOrderStatusColor = (status: Order['status']) => {
+  const getOrderStatusColor = (status: SupplierOrder['status']) => {
     switch (status) {
       case 'delivered':
         return 'bg-green-100 text-green-800';

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,34 +17,19 @@ import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
 import ReceiptPreview, { ReceiptData } from './economics/ReceiptPreview';
-
-interface Sale {
-  id: string;
-  date: string;
-  clientName: string;
-  clientContact: string;
-  unitId: string;
-  products: Array<{
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-  }>;
-  totalAmount: number;
-  status: 'pending' | 'confirmed' | 'delivered' | 'paid';
-  paymentMethod: string;
-  notes: string;
-}
+import { useSales, Sale, SaleItem } from '@/hooks/useSales';
+import { useToast } from '@/hooks/use-toast';
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency, t, currency } = useSettings();
+  const { toast } = useToast();
+  const { sales, loading, addSale } = useSales();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -55,19 +40,16 @@ const SalesManagement = () => {
     notes: ''
   });
 
-  // Synchroniser la vente avec l’unité active (module = unité sélectionnée)
+  // Synchroniser la vente avec l'unité active
   useEffect(() => {
     if (!activeUnit?.id) return;
     setNewSale((prev) => ({ ...prev, unitId: activeUnit.id }));
   }, [activeUnit?.id]);
 
-  // Les données affichées dans le module sont filtrées par unité active
-  const filteredSales = useMemo(() => {
-    if (!activeUnit?.id) return sales;
-    return sales.filter((s) => s.unitId === activeUnit.id);
-  }, [sales, activeUnit?.id]);
+  // Les données affichées sont déjà filtrées par unité dans le hook
+  const filteredSales = sales;
 
-  // Calcul des stats basées sur les ventes de l’unité active
+  // Calcul des stats basées sur les ventes de l'unité active
   const salesData = {
     totalRevenue: filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
     totalOrders: filteredSales.length,
@@ -113,11 +95,10 @@ const SalesManagement = () => {
     setShowReceiptPreview(true);
   };
 
-  const handleConfirmSale = () => {
+  const handleConfirmSale = async () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
     
-    const sale: Sale = {
-      id: `V${String(sales.length + 1).padStart(3, '0')}`,
+    const result = await addSale({
       date: new Date().toISOString().split('T')[0],
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
@@ -130,10 +111,12 @@ const SalesManagement = () => {
       status: 'confirmed',
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes
-    };
+    });
 
-    setSales(prev => [sale, ...prev]);
-    addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${sale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
+    if (result) {
+      addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
+      toast({ title: "Vente enregistrée", description: `Vente de ${formatCurrency(totalAmount)} confirmée` });
+    }
     
     setNewSale({
       clientName: '',

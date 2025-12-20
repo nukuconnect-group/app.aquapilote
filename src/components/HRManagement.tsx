@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,44 +15,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import { useSettings } from '@/contexts/SettingsContext';
-
-interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  position: string;
-  unitId: string;
-  unitName: string;
-  salary: number;
-  hireDate: string;
-  status: 'active' | 'inactive' | 'vacation';
-  contractType: 'CDI' | 'CDD' | 'Stage' | 'Freelance';
-}
-
-interface PaySlip {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  period: string;
-  baseSalary: number;
-  overtime: number;
-  bonuses: number;
-  deductions: number;
-  netSalary: number;
-  generatedAt: string;
-}
+import { useEmployees, Employee, PaySlip } from '@/hooks/useEmployees';
 
 const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency } = useSettings();
-
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
-  const [paySlips, setPaySlips] = useState<PaySlip[]>([]);
+  const { 
+    employees, 
+    paySlips, 
+    allEmployees,
+    loading,
+    addEmployee, 
+    addPaySlip 
+  } = useEmployees();
 
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [showPaySlipGenerator, setShowPaySlipGenerator] = useState(false);
@@ -77,17 +54,8 @@ const HRManagement = () => {
     }
   }, [activeUnit?.id]);
 
-  // Filtrer par unité active
-  const filteredEmployees = useMemo(() => {
-    if (!activeUnit?.id) return employees;
-    return employees.filter(emp => emp.unitId === activeUnit.id);
-  }, [employees, activeUnit?.id]);
-
-  const filteredPaySlips = useMemo(() => {
-    if (!activeUnit?.id) return paySlips;
-    const unitEmployeeIds = employees.filter(emp => emp.unitId === activeUnit.id).map(emp => emp.id);
-    return paySlips.filter(slip => unitEmployeeIds.includes(slip.employeeId));
-  }, [paySlips, employees, activeUnit?.id]);
+  const filteredEmployees = employees;
+  const filteredPaySlips = paySlips;
 
   const [paySlipData, setPaySlipData] = useState({
     employeeId: '',
@@ -109,7 +77,7 @@ const HRManagement = () => {
     'Secrétaire'
   ];
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = async () => {
     if (!employeeFormData.firstName || !employeeFormData.lastName || !employeeFormData.unitId) {
       toast({
         title: "Erreur",
@@ -120,20 +88,20 @@ const HRManagement = () => {
     }
 
     const selectedUnit = units.find(u => u.id === employeeFormData.unitId);
-    const newEmployee: Employee = {
-      id: Date.now().toString(),
+    
+    const result = await addEmployee({
       ...employeeFormData,
       unitName: selectedUnit?.name || '',
       status: 'active'
-    };
-
-    setEmployees([...employees, newEmployee]);
-    addLog('Employé ajouté', 'RH', `${employeeFormData.firstName} ${employeeFormData.lastName} ajouté à ${selectedUnit?.name}`, 'success');
-    
-    toast({
-      title: "Employé ajouté",
-      description: `${employeeFormData.firstName} ${employeeFormData.lastName} a été ajouté avec succès`
     });
+
+    if (result) {
+      addLog('Employé ajouté', 'RH', `${employeeFormData.firstName} ${employeeFormData.lastName} ajouté à ${selectedUnit?.name}`, 'success');
+      toast({
+        title: "Employé ajouté",
+        description: `${employeeFormData.firstName} ${employeeFormData.lastName} a été ajouté avec succès`
+      });
+    }
 
     resetEmployeeForm();
   };
@@ -145,7 +113,7 @@ const HRManagement = () => {
       email: '',
       phone: '',
       position: '',
-      unitId: '',
+      unitId: activeUnit?.id || '',
       salary: 0,
       hireDate: '',
       contractType: 'CDI'
@@ -153,7 +121,7 @@ const HRManagement = () => {
     setShowEmployeeForm(false);
   };
 
-  const generatePaySlip = () => {
+  const generatePaySlip = async () => {
     if (!paySlipData.employeeId || !paySlipData.period) {
       toast({
         title: "Erreur",
@@ -169,8 +137,7 @@ const HRManagement = () => {
     const grossSalary = employee.salary + paySlipData.overtime + paySlipData.bonuses;
     const netSalary = grossSalary - paySlipData.deductions;
 
-    const newPaySlip: PaySlip = {
-      id: Date.now().toString(),
+    const result = await addPaySlip({
       employeeId: paySlipData.employeeId,
       employeeName: `${employee.firstName} ${employee.lastName}`,
       period: paySlipData.period,
@@ -179,16 +146,17 @@ const HRManagement = () => {
       bonuses: paySlipData.bonuses,
       deductions: paySlipData.deductions,
       netSalary: netSalary,
-      generatedAt: new Date().toISOString().split('T')[0]
-    };
-
-    setPaySlips([...paySlips, newPaySlip]);
-    addLog('Bulletin généré', 'RH', `Bulletin de paie généré pour ${employee.firstName} ${employee.lastName} - ${paySlipData.period}`, 'success');
-    
-    toast({
-      title: "Bulletin généré",
-      description: `Bulletin de paie créé pour ${employee.firstName} ${employee.lastName}`
+      generatedAt: new Date().toISOString().split('T')[0],
+      unitId: employee.unitId
     });
+
+    if (result) {
+      addLog('Bulletin généré', 'RH', `Bulletin de paie généré pour ${employee.firstName} ${employee.lastName} - ${paySlipData.period}`, 'success');
+      toast({
+        title: "Bulletin généré",
+        description: `Bulletin de paie créé pour ${employee.firstName} ${employee.lastName}`
+      });
+    }
 
     setPaySlipData({
       employeeId: '',
