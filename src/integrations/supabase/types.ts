@@ -315,6 +315,60 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          contract_type: string
+          created_at: string
+          email: string | null
+          first_name: string
+          hire_date: string | null
+          id: string
+          last_name: string
+          phone: string | null
+          position: string | null
+          salary: number
+          status: string
+          unit_id: string
+          unit_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contract_type?: string
+          created_at?: string
+          email?: string | null
+          first_name: string
+          hire_date?: string | null
+          id?: string
+          last_name: string
+          phone?: string | null
+          position?: string | null
+          salary?: number
+          status?: string
+          unit_id: string
+          unit_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          hire_date?: string | null
+          id?: string
+          last_name?: string
+          phone?: string | null
+          position?: string | null
+          salary?: number
+          status?: string
+          unit_id?: string
+          unit_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feed_stocks: {
         Row: {
           cost: number | null
@@ -689,6 +743,65 @@ export type Database = {
         }
         Relationships: []
       }
+      pay_slips: {
+        Row: {
+          base_salary: number
+          bonuses: number
+          created_at: string
+          deductions: number
+          employee_id: string
+          employee_name: string
+          generated_at: string
+          id: string
+          net_salary: number
+          overtime: number
+          period: string
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_salary?: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id: string
+          employee_name: string
+          generated_at?: string
+          id?: string
+          net_salary?: number
+          overtime?: number
+          period: string
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_salary?: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id?: string
+          employee_name?: string
+          generated_at?: string
+          id?: string
+          net_salary?: number
+          overtime?: number
+          period?: string
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_slips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_cycles: {
         Row: {
           created_at: string | null
@@ -1011,6 +1124,199 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sale_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          quantity: number
+          sale_id: string
+          total: number
+          unit_price: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          quantity?: number
+          sale_id: string
+          total?: number
+          unit_price?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          quantity?: number
+          sale_id?: string
+          total?: number
+          unit_price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          client_contact: string | null
+          client_name: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          status: string
+          total_amount: number
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_contact?: string | null
+          client_name: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_contact?: string | null
+          client_name?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      supplier_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          delivery_date: string | null
+          id: string
+          products: string
+          quantity: number
+          status: string
+          supplier_id: string
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          delivery_date?: string | null
+          id?: string
+          products?: string
+          quantity?: number
+          status?: string
+          supplier_id: string
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          delivery_date?: string | null
+          id?: string
+          products?: string
+          quantity?: number
+          status?: string
+          supplier_id?: string
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          category: string
+          contact: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          products: string[]
+          rating: number
+          status: string
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          category?: string
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          products?: string[]
+          rating?: number
+          status?: string
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          products?: string[]
+          rating?: number
+          status?: string
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       team_member_units: {
         Row: {
