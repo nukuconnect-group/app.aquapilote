@@ -1291,17 +1291,41 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
   };
 
   const updatePurchase = async (id: string, updates: Partial<Purchase>) => {
+    const purchase = purchases.find(p => p.id === id);
+    if (!purchase) return;
+
     if (isDemoMode) {
+      const updatedPurchase = { ...purchase, ...updates };
       setPurchases(purchases.map(p => 
-        p.id === id ? { ...p, ...updates } : p
+        p.id === id ? updatedPurchase : p
       ));
 
-      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
-      if (correspondingTransaction && updates.status === 'received') {
-        updateTransaction(correspondingTransaction.id, {
-          status: 'confirmed',
-          amount: updates.amount || correspondingTransaction.amount
-        });
+      // Check if status changed to 'received' and no transaction exists
+      if (updates.status === 'received' && purchase.status !== 'received') {
+        const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+        if (correspondingTransaction) {
+          updateTransaction(correspondingTransaction.id, {
+            status: 'confirmed',
+            amount: updates.amount ?? purchase.amount
+          });
+        } else {
+          // Create new expense transaction
+          addTransaction({
+            date: updatedPurchase.date,
+            type: 'expense',
+            category: updatedPurchase.category,
+            description: updatedPurchase.description,
+            amount: updatedPurchase.amount,
+            currency: updatedPurchase.currency,
+            paymentMethod: updatedPurchase.paymentMethod,
+            supplier: updatedPurchase.supplier,
+            status: 'confirmed',
+            unitId: updatedPurchase.unitId,
+            unitName: updatedPurchase.unitName,
+            purchaseId: updatedPurchase.id,
+            reference: updatedPurchase.reference
+          });
+        }
       }
       return;
     }
@@ -1330,17 +1354,38 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
 
       if (error) throw error;
 
+      const updatedPurchase = { ...purchase, ...updates };
       setPurchases(purchases.map(p => 
-        p.id === id ? { ...p, ...updates } : p
+        p.id === id ? updatedPurchase : p
       ));
 
-      // Update corresponding transaction if status changed to received
-      const correspondingTransaction = transactions.find(t => t.purchaseId === id);
-      if (correspondingTransaction && updates.status === 'received') {
-        await updateTransaction(correspondingTransaction.id, {
-          status: 'confirmed',
-          amount: updates.amount || correspondingTransaction.amount
-        });
+      // Check if status changed to 'received'
+      if (updates.status === 'received' && purchase.status !== 'received') {
+        const correspondingTransaction = transactions.find(t => t.purchaseId === id);
+        if (correspondingTransaction) {
+          // Update existing transaction
+          await updateTransaction(correspondingTransaction.id, {
+            status: 'confirmed',
+            amount: updates.amount ?? purchase.amount
+          });
+        } else {
+          // Create new expense transaction
+          await addTransaction({
+            date: updatedPurchase.date,
+            type: 'expense',
+            category: updatedPurchase.category,
+            description: updatedPurchase.description,
+            amount: updatedPurchase.amount,
+            currency: updatedPurchase.currency,
+            paymentMethod: updatedPurchase.paymentMethod,
+            supplier: updatedPurchase.supplier,
+            status: 'confirmed',
+            unitId: updatedPurchase.unitId,
+            unitName: updatedPurchase.unitName,
+            purchaseId: updatedPurchase.id,
+            reference: updatedPurchase.reference
+          });
+        }
       }
     } catch (err) {
       console.error('Error updating purchase:', err);
