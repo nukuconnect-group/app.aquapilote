@@ -163,11 +163,125 @@ export const useSales = () => {
     }
   };
 
+  const updateSale = async (id: string, updates: Partial<Sale>) => {
+    const sale = sales.find(s => s.id === id);
+    if (!sale) return null;
+
+    if (isDemoMode) {
+      const updatedSale = { ...sale, ...updates };
+      setSales(prev => prev.map(s => s.id === id ? updatedSale : s));
+
+      // If status changed to confirmed or paid and wasn't before, create transaction
+      const wasNotConfirmed = sale.status !== 'confirmed' && sale.status !== 'paid';
+      const isNowConfirmed = updates.status === 'confirmed' || updates.status === 'paid';
+      
+      if (wasNotConfirmed && isNowConfirmed) {
+        await addTransaction({
+          date: updatedSale.date,
+          type: 'revenue',
+          category: 'Vente de poissons',
+          description: `Vente à ${updatedSale.clientName}`,
+          amount: updatedSale.totalAmount,
+          currency: 'XOF',
+          paymentMethod: updatedSale.paymentMethod,
+          client: updatedSale.clientName,
+          status: updates.status === 'paid' ? 'confirmed' : 'pending',
+          unitId: updatedSale.unitId,
+          unitName: activeUnit?.name
+        });
+      }
+
+      return updatedSale;
+    }
+
+    if (!user?.id) return null;
+
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.date !== undefined) dbUpdates.date = updates.date;
+      if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+      if (updates.clientContact !== undefined) dbUpdates.client_contact = updates.clientContact;
+      if (updates.totalAmount !== undefined) dbUpdates.total_amount = updates.totalAmount;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+      const { error } = await supabase
+        .from('sales')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      const updatedSale = { ...sale, ...updates };
+      setSales(prev => prev.map(s => s.id === id ? updatedSale : s));
+
+      // If status changed to confirmed or paid and wasn't before, create transaction
+      const wasNotConfirmed = sale.status !== 'confirmed' && sale.status !== 'paid';
+      const isNowConfirmed = updates.status === 'confirmed' || updates.status === 'paid';
+      
+      if (wasNotConfirmed && isNowConfirmed) {
+        await addTransaction({
+          date: updatedSale.date,
+          type: 'revenue',
+          category: 'Vente de poissons',
+          description: `Vente à ${updatedSale.clientName}`,
+          amount: updatedSale.totalAmount,
+          currency: 'XOF',
+          paymentMethod: updatedSale.paymentMethod,
+          client: updatedSale.clientName,
+          status: updates.status === 'paid' ? 'confirmed' : 'pending',
+          unitId: updatedSale.unitId,
+          unitName: activeUnit?.name
+        });
+      }
+
+      return updatedSale;
+    } catch (err) {
+      console.error('Error updating sale:', err);
+      return null;
+    }
+  };
+
+  const deleteSale = async (id: string) => {
+    if (isDemoMode) {
+      setSales(prev => prev.filter(s => s.id !== id));
+      return true;
+    }
+    if (!user?.id) return false;
+
+    try {
+      // Delete sale items first
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', id);
+
+      if (itemsError) throw itemsError;
+
+      // Delete the sale
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setSales(prev => prev.filter(s => s.id !== id));
+      return true;
+    } catch (err) {
+      console.error('Error deleting sale:', err);
+      return false;
+    }
+  };
+
   return {
     sales: filteredSales,
     allSales: sales,
     loading,
     addSale,
+    updateSale,
+    deleteSale,
     refetch: fetchSales
   };
 };
