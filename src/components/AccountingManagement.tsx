@@ -157,10 +157,7 @@ const AccountingManagement = () => {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <AccountingDashboard 
-            unitData={currentData} 
-            cashFlow={cashFlowData}
-          />
+          <AccountingDashboard />
         </TabsContent>
 
         <TabsContent value="transactions">

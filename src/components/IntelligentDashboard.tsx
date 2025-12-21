@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed } from 'lucide-react';
+import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed, DollarSign, ShoppingCart, Users } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useReproductionRecords } from '@/hooks/useReproductionRecords';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 
 const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -35,6 +36,9 @@ const IntelligentDashboard = () => {
   const { isDemoMode } = useAuth();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  // Hook pour les données financières consolidées
+  const financialSummary = useFinancialSummary(activeUnit?.id);
   
   // Hooks pour récupérer les vraies données
   const { records: feedingRecords } = useFeedingRecords();
@@ -496,6 +500,61 @@ const IntelligentDashboard = () => {
       })}
       </div>
 
+      {/* Section Financière - Résumé rapide */}
+      {(financialSummary.totalRevenue > 0 || financialSummary.totalExpenses > 0 || financialSummary.salesCount > 0 || financialSummary.employeesCount > 0) && (
+        <Card className="bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 border-emerald-200 dark:border-emerald-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-emerald-600" />
+              Résumé Financier - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="text-xs font-medium text-muted-foreground">Revenus</span>
+                </div>
+                <p className="text-lg font-bold text-green-600">{formatCurrency(financialSummary.totalRevenue)}</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.confirmedSales} ventes</p>
+              </div>
+              
+              <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <ShoppingCart className="h-4 w-4 text-red-600" />
+                  <span className="text-xs font-medium text-muted-foreground">Dépenses</span>
+                </div>
+                <p className="text-lg font-bold text-red-600">{formatCurrency(financialSummary.totalExpenses)}</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.purchasesCount} achats</p>
+              </div>
+              
+              <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-purple-600" />
+                  <span className="text-xs font-medium text-muted-foreground">Salaires</span>
+                </div>
+                <p className="text-lg font-bold text-purple-600">{formatCurrency(financialSummary.totalSalaries)}</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.employeesCount} employés</p>
+              </div>
+              
+              <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-muted-foreground">Solde</span>
+                </div>
+                <p className={`text-lg font-bold ${financialSummary.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {formatCurrency(financialSummary.netBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Données spécifiques à l'écloserie - uniquement si données réelles */}
       {viewMode === 'unit' && activeUnit?.type === 'ecloserie' && livestock && (livestock.geniteurs_males > 0 || livestock.geniteurs_femelles > 0 || livestock.alevins_total > 0) && <Card>
           <CardHeader className="pb-2">
@@ -535,8 +594,9 @@ const IntelligentDashboard = () => {
           </CardContent>
         </Card>}
 
-      {/* Données financières - uniquement si données réelles */}
-      {currentFinancialData && currentFinancialData.monthlyData && currentFinancialData.monthlyData.some((d: any) => d.revenue > 0 || d.profit > 0) && <Card>
+      {/* Évolution financière mensuelle */}
+      {financialSummary.monthlyData.some(m => m.revenue > 0 || m.expenses > 0) && (
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
@@ -545,17 +605,19 @@ const IntelligentDashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={currentFinancialData.monthlyData}>
+              <LineChart data={financialSummary.monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" />
-                <Tooltip />
+                <Tooltip formatter={(value: number) => formatCurrency(value)} />
                 <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenus" />
-                <Line type="monotone" dataKey="profit" stroke="#059669" strokeWidth={2} name="Bénéfices" />
+                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Dépenses" />
+                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Résultat" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>}
+        </Card>
+      )}
 
       {/* Graphiques supplémentaires liés aux modules - uniquement si données réelles */}
       {(hasFeedingData || hasMortalityData || hasWaterQualityData || hasProductionData) && (
