@@ -1,11 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Download, Eye, Plus, Printer } from 'lucide-react';
+import { FileText, Download, Eye, Printer } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSales } from '@/hooks/useSales';
+
+type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 
 interface Invoice {
   id: string;
@@ -17,8 +19,7 @@ interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
-  transactionId?: string;
+  status: InvoiceStatus;
 }
 
 interface InvoiceItem {
@@ -31,91 +32,87 @@ interface InvoiceItem {
 
 const InvoiceManager = () => {
   const { formatCurrency, t } = useSettings();
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    {
-      id: '1',
-      invoiceNumber: 'INV-2024-001',
-      clientName: 'Restaurant Les Saveurs',
-      date: '2024-01-15',
-      dueDate: '2024-02-15',
-      items: [
-        {
-          id: '1',
-          description: 'Carpes matures - 50kg',
-          quantity: 50,
-          unitPrice: 15,
-          total: 750
-        }
-      ],
-      subtotal: 750,
-      tax: 150,
-      total: 900,
-      status: 'sent',
-      transactionId: 'trans-001'
-    },
-    {
-      id: '2',
-      invoiceNumber: 'INV-2024-002',
-      clientName: 'Aquarium Municipal',
-      date: '2024-01-18',
-      dueDate: '2024-02-18',
-      items: [
-        {
-          id: '1',
-          description: 'Alevins carpe - 200 unités',
-          quantity: 200,
-          unitPrice: 2.5,
-          total: 500
-        }
-      ],
-      subtotal: 500,
-      tax: 100,
-      total: 600,
-      status: 'draft'
-    }
-  ]);
-
+  const { sales } = useSales(); // déjà filtré par unité active dans le hook
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-  const getStatusColor = (status: string) => {
+  const invoices = useMemo<Invoice[]>(() => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const computeDueDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      const due = new Date(d);
+      due.setDate(d.getDate() + 30);
+      return due.toISOString().slice(0, 10);
+    };
+
+    const baseStatusFromSale = (saleStatus: string): InvoiceStatus => {
+      if (saleStatus === 'paid') return 'paid';
+      if (saleStatus === 'pending') return 'draft';
+      return 'sent'; // confirmed / delivered
+    };
+
+    return sales
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .map((sale) => {
+        const dueDate = computeDueDate(sale.date);
+        const items: InvoiceItem[] = sale.products.map((p, idx) => ({
+          id: `${sale.id}-${idx}`,
+          description: p.name,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice,
+          total: p.total,
+        }));
+
+        const subtotal = sale.totalAmount;
+        const tax = 0;
+        const total = subtotal + tax;
+
+        let status: InvoiceStatus = baseStatusFromSale(sale.status);
+        if (status !== 'paid' && dueDate < today) status = 'overdue';
+
+        return {
+          id: sale.id,
+          invoiceNumber: `INV-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+          clientName: sale.clientName,
+          date: sale.date,
+          dueDate,
+          items,
+          subtotal,
+          tax,
+          total,
+          status,
+        };
+      });
+  }, [sales]);
+
+  const getStatusColor = (status: InvoiceStatus) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'draft':
+        return 'bg-muted text-muted-foreground';
+      case 'sent':
+        return 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-200';
+      case 'paid':
+        return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200';
+      case 'overdue':
+        return 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-200';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: InvoiceStatus) => {
     switch (status) {
-      case 'draft': return t('draft');
-      case 'sent': return t('sent');
-      case 'paid': return t('paid');
-      case 'overdue': return t('overdue');
-      default: return status;
-    }
-  };
-
-  const handleDownloadInvoice = (invoice: Invoice) => {
-    // Simulation du téléchargement
-    const invoiceContent = generateInvoiceContent(invoice);
-    const blob = new Blob([invoiceContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${invoice.invoiceNumber}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handlePrintInvoice = (invoice: Invoice) => {
-    const invoiceContent = generateInvoiceContent(invoice);
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(invoiceContent);
-      printWindow.document.close();
-      printWindow.print();
+      case 'draft':
+        return t('draft') || 'Brouillon';
+      case 'sent':
+        return t('sent') || 'Envoyée';
+      case 'paid':
+        return t('paid') || 'Payée';
+      case 'overdue':
+        return t('overdue') || 'En retard';
+      default:
+        return status;
     }
   };
 
@@ -141,7 +138,7 @@ const InvoiceManager = () => {
             <h1>FACTURE</h1>
             <h2>${invoice.invoiceNumber}</h2>
           </div>
-          
+
           <div class="invoice-details">
             <div>
               <strong>Client:</strong><br>
@@ -152,7 +149,7 @@ const InvoiceManager = () => {
               <strong>Échéance:</strong> ${invoice.dueDate}
             </div>
           </div>
-          
+
           <table class="items-table">
             <thead>
               <tr>
@@ -163,20 +160,24 @@ const InvoiceManager = () => {
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map(item => `
+              ${invoice.items
+                .map(
+                  (item) => `
                 <tr>
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
                   <td>${formatCurrency(item.unitPrice)}</td>
                   <td>${formatCurrency(item.total)}</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join('')}
             </tbody>
           </table>
-          
+
           <div class="totals">
             <p>Sous-total: ${formatCurrency(invoice.subtotal)}</p>
-            <p>TVA (20%): ${formatCurrency(invoice.tax)}</p>
+            <p>TVA: ${formatCurrency(invoice.tax)}</p>
             <p class="total-row">Total: ${formatCurrency(invoice.total)}</p>
           </div>
         </body>
@@ -184,60 +185,69 @@ const InvoiceManager = () => {
     `;
   };
 
+  const handleDownloadInvoice = (invoice: Invoice) => {
+    const invoiceContent = generateInvoiceContent(invoice);
+    const blob = new Blob([invoiceContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${invoice.invoiceNumber}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrintInvoice = (invoice: Invoice) => {
+    const invoiceContent = generateInvoiceContent(invoice);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(invoiceContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-600" />
-          {t('invoiceManagement')}
+          <FileText className="w-5 h-5 text-primary" />
+          {t('invoiceManagement') || 'Factures'}
         </h3>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('newInvoice')}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">
-                {invoices.filter(i => i.status === 'draft').length}
-              </p>
-              <p className="text-sm text-gray-600">{t('drafts')}</p>
+              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'draft').length}</p>
+              <p className="text-sm text-muted-foreground">{t('drafts') || 'Brouillons'}</p>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">
-                {invoices.filter(i => i.status === 'sent').length}
-              </p>
-              <p className="text-sm text-gray-600">{t('pending')}</p>
+              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'sent').length}</p>
+              <p className="text-sm text-muted-foreground">{t('sent') || 'Envoyées'}</p>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {invoices.filter(i => i.status === 'paid').length}
-              </p>
-              <p className="text-sm text-gray-600">{t('paidInvoices')}</p>
+              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'paid').length}</p>
+              <p className="text-sm text-muted-foreground">{t('paidInvoices') || 'Payées'}</p>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">
-                {invoices.filter(i => i.status === 'overdue').length}
-              </p>
-              <p className="text-sm text-gray-600">{t('overdueInvoices')}</p>
+              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'overdue').length}</p>
+              <p className="text-sm text-muted-foreground">{t('overdueInvoices') || 'En retard'}</p>
             </div>
           </CardContent>
         </Card>
@@ -245,63 +255,53 @@ const InvoiceManager = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('invoiceList')}</CardTitle>
+          <CardTitle>{t('invoiceList') || 'Liste des factures'}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('invoiceNumber')}</TableHead>
-                <TableHead>{t('client')}</TableHead>
-                <TableHead>{t('date')}</TableHead>
-                <TableHead>{t('dueDate')}</TableHead>
-                <TableHead>{t('amount')}</TableHead>
-                <TableHead>{t('status')}</TableHead>
-                <TableHead>{t('actions')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.clientName}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>{formatCurrency(invoice.total)}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(invoice.status)}>
-                      {getStatusLabel(invoice.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedInvoice(invoice)}
-                      >
-                        <Eye className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadInvoice(invoice)}
-                      >
-                        <Download className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePrintInvoice(invoice)}
-                      >
-                        <Printer className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {invoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('noInvoicesYet') || "Aucune facture: enregistrez d'abord des ventes."}</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('invoiceNumber') || 'N°'}</TableHead>
+                  <TableHead>{t('client') || 'Client'}</TableHead>
+                  <TableHead>{t('date') || 'Date'}</TableHead>
+                  <TableHead>{t('dueDate') || 'Échéance'}</TableHead>
+                  <TableHead>{t('amount') || 'Montant'}</TableHead>
+                  <TableHead>{t('status') || 'Statut'}</TableHead>
+                  <TableHead>{t('actions') || 'Actions'}</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{invoice.clientName}</TableCell>
+                    <TableCell>{invoice.date}</TableCell>
+                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell>{formatCurrency(invoice.total)}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(invoice.status)}>{getStatusLabel(invoice.status)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedInvoice(invoice)}>
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
+                          <Download className="w-3 h-3" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePrintInvoice(invoice)}>
+                          <Printer className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -309,9 +309,9 @@ const InvoiceManager = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              {t('invoicePreview')} {selectedInvoice.invoiceNumber}
+              {t('invoicePreview') || 'Aperçu'} {selectedInvoice.invoiceNumber}
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
-                {t('close')}
+                {t('close') || 'Fermer'}
               </Button>
             </CardTitle>
           </CardHeader>
@@ -319,26 +319,31 @@ const InvoiceManager = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p><strong>{t('client')}:</strong> {selectedInvoice.clientName}</p>
-                  <p><strong>{t('date')}:</strong> {selectedInvoice.date}</p>
+                  <p>
+                    <strong>{t('client') || 'Client'}:</strong> {selectedInvoice.clientName}
+                  </p>
+                  <p>
+                    <strong>{t('date') || 'Date'}:</strong> {selectedInvoice.date}
+                  </p>
                 </div>
                 <div>
-                  <p><strong>{t('dueDate')}:</strong> {selectedInvoice.dueDate}</p>
-                  <p><strong>{t('status')}:</strong> 
-                    <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>
-                      {getStatusLabel(selectedInvoice.status)}
-                    </Badge>
+                  <p>
+                    <strong>{t('dueDate') || 'Échéance'}:</strong> {selectedInvoice.dueDate}
+                  </p>
+                  <p>
+                    <strong>{t('status') || 'Statut'}:</strong>
+                    <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>{getStatusLabel(selectedInvoice.status)}</Badge>
                   </p>
                 </div>
               </div>
-              
+
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('description')}</TableHead>
-                    <TableHead>{t('quantity')}</TableHead>
-                    <TableHead>{t('unitPrice')}</TableHead>
-                    <TableHead>{t('total')}</TableHead>
+                    <TableHead>{t('description') || 'Description'}</TableHead>
+                    <TableHead>{t('quantity') || 'Quantité'}</TableHead>
+                    <TableHead>{t('unitPrice') || 'Prix unitaire'}</TableHead>
+                    <TableHead>{t('total') || 'Total'}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -352,11 +357,17 @@ const InvoiceManager = () => {
                   ))}
                 </TableBody>
               </Table>
-              
+
               <div className="text-right space-y-1">
-                <p>{t('subtotal')}: {formatCurrency(selectedInvoice.subtotal)}</p>
-                <p>{t('vat')} (20%): {formatCurrency(selectedInvoice.tax)}</p>
-                <p className="text-lg font-bold">{t('total')}: {formatCurrency(selectedInvoice.total)}</p>
+                <p>
+                  {t('subtotal') || 'Sous-total'}: {formatCurrency(selectedInvoice.subtotal)}
+                </p>
+                <p>
+                  {t('vat') || 'TVA'}: {formatCurrency(selectedInvoice.tax)}
+                </p>
+                <p className="text-lg font-bold">
+                  {t('total') || 'Total'}: {formatCurrency(selectedInvoice.total)}
+                </p>
               </div>
             </div>
           </CardContent>

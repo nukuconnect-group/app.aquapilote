@@ -1389,6 +1389,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       }
     } catch (err) {
       console.error('Error updating purchase:', err);
+      throw err;
     }
   };
 
