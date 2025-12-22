@@ -12,26 +12,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
-import { useSettings } from '@/contexts/SettingsContext';
+import { useToast } from '@/hooks/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 
 const PurchaseManager = () => {
   const { addLog } = useLogs();
-  const { 
-    purchases, 
+  const { toast } = useToast();
+  const {
+    purchases,
     units,
     activeUnit,
     currency,
     setCurrency,
-    addPurchase, 
-    updatePurchase, 
+    addPurchase,
+    updatePurchase,
     deletePurchase,
-    convertCurrency
+    convertCurrency,
   } = useProductionUnits();
-  
+
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('list');
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState({
     category: '',
     supplier: '',
@@ -39,7 +41,7 @@ const PurchaseManager = () => {
     dateTo: '',
     search: '',
     unitId: activeUnit?.id || 'all',
-    status: ''
+    status: '',
   });
 
   const [newPurchase, setNewPurchase] = useState({
@@ -182,11 +184,41 @@ const PurchaseManager = () => {
     setShowPurchaseForm(true);
   };
 
-  const handleStatusChange = (purchaseId: string, newStatus: any) => {
-    updatePurchase(purchaseId, { status: newStatus });
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (purchase) {
-      addLog('Statut achat modifié', 'Achats', `${purchase.description} - Statut: ${getStatusLabel(newStatus)}`, 'info');
+  const handleStatusChange = async (
+    purchaseId: string,
+    newStatus: 'pending' | 'received' | 'cancelled'
+  ) => {
+    setStatusOverrides((prev) => ({ ...prev, [purchaseId]: newStatus }));
+
+    try {
+      await updatePurchase(purchaseId, { status: newStatus });
+      setStatusOverrides((prev) => {
+        const { [purchaseId]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      const purchase = purchases.find((p) => p.id === purchaseId);
+      addLog(
+        'Statut achat modifié',
+        'Achats',
+        `${purchase?.description ?? 'Achat'} - Statut: ${getStatusLabel(newStatus)}`,
+        'info'
+      );
+      toast({
+        title: 'Statut mis à jour',
+        description: `Achat marqué "${getStatusLabel(newStatus)}"`,
+      });
+    } catch (err) {
+      console.error('Purchase status change failed:', err);
+      setStatusOverrides((prev) => {
+        const { [purchaseId]: _removed, ...rest } = prev;
+        return rest;
+      });
+      toast({
+        title: 'Erreur',
+        description: "Impossible de confirmer l'achat. Vérifiez votre connexion et vos droits.",
+        variant: 'destructive',
+      });
     }
   };
 
@@ -502,8 +534,8 @@ const PurchaseManager = () => {
                             <Badge variant="secondary" className="text-xs">{purchase.subcategory}</Badge>
                           )}
                           <Select
-                            value={purchase.status}
-                            onValueChange={(value) => handleStatusChange(purchase.id, value)}
+                            value={statusOverrides[purchase.id] ?? purchase.status}
+                            onValueChange={(value) => handleStatusChange(purchase.id, value as any)}
                           >
                             <SelectTrigger className="w-32 h-6 text-xs">
                               <SelectValue />
