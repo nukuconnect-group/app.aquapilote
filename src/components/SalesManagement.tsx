@@ -25,7 +25,7 @@ const SalesManagement = () => {
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency, t, currency } = useSettings();
   const { toast } = useToast();
-  const { sales, loading, addSale } = useSales();
+  const { sales, loading, addSale, updateSale } = useSales();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
@@ -50,17 +50,57 @@ const SalesManagement = () => {
   const filteredSales = sales;
 
   // Calcul des stats basées sur les ventes de l'unité active
-  const salesData = {
-    totalRevenue: filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
-    totalOrders: filteredSales.length,
-    totalClients: [...new Set(filteredSales.map((s) => s.clientName))].length,
-    avgOrderValue:
-      filteredSales.length > 0
-        ? filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0) / filteredSales.length
-        : 0,
-    monthlyGrowth: 0,
-    topProducts: [] as { name: string; quantity: number; revenue: number }[]
-  };
+  const salesData = React.useMemo(() => {
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalOrders = filteredSales.length;
+    const totalClients = [...new Set(filteredSales.map((s) => s.clientName))].length;
+    const avgOrderValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
+    
+    // Calculer les produits les plus vendus à partir des vraies données
+    const productsMap = new Map<string, { name: string; quantity: number; revenue: number }>();
+    filteredSales.forEach(sale => {
+      sale.products.forEach(product => {
+        const existing = productsMap.get(product.name);
+        if (existing) {
+          existing.quantity += product.quantity;
+          existing.revenue += product.total;
+        } else {
+          productsMap.set(product.name, {
+            name: product.name,
+            quantity: product.quantity,
+            revenue: product.total
+          });
+        }
+      });
+    });
+    
+    const topProducts = Array.from(productsMap.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // Calculer les ventes par unité à partir des vraies données
+    const salesByUnit = units.map(unit => {
+      const unitSales = sales.filter(s => s.unitId === unit.id);
+      const unitRevenue = unitSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+      return {
+        id: unit.id,
+        name: unit.name,
+        type: unit.type,
+        revenue: unitRevenue,
+        salesCount: unitSales.length
+      };
+    }).filter(u => u.salesCount > 0);
+
+    return {
+      totalRevenue,
+      totalOrders,
+      totalClients,
+      avgOrderValue,
+      monthlyGrowth: 0,
+      topProducts,
+      salesByUnit
+    };
+  }, [filteredSales, units, sales]);
 
   const handlePreviewReceipt = () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
@@ -166,18 +206,33 @@ const SalesManagement = () => {
     }
   };
 
+  const handleStatusChange = async (saleId: string, newStatus: string) => {
+    await updateSale(saleId, { status: newStatus as 'pending' | 'confirmed' | 'delivered' | 'paid' });
+    const sale = sales.find(s => s.id === saleId);
+    if (sale) {
+      addLog('Statut vente modifié', 'Vente', `${sale.clientName} - Statut: ${getStatusText(newStatus)}`, 'info');
+      toast({ title: "Statut modifié", description: `Vente passée à "${getStatusText(newStatus)}"` });
+    }
+  };
+
+  const getCurrencySymbol = () => {
+    switch (currency) {
+      case 'XOF': return 'F CFA';
+      case 'EUR': return '€';
+      case 'USD': return '$';
+      default: return currency;
+    }
+  };
+
   const generateSalesReport = () => {
+    const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     const reportData = {
-      period: 'Mars 2024',
+      period: currentMonth,
       revenue: salesData.totalRevenue,
       orders: salesData.totalOrders,
       clients: salesData.totalClients,
       products: salesData.topProducts,
-      units: units.map(unit => ({
-        name: unit.name,
-        type: unit.type,
-        revenue: Math.floor(Math.random() * 20000) + 5000
-      }))
+      units: salesData.salesByUnit
     };
 
     const currencySymbol = currency === 'XOF' ? 'CFA' : currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
@@ -483,10 +538,21 @@ const SalesManagement = () => {
                             {new Date(sale.date).toLocaleDateString('fr-FR')} - {sale.clientContact}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 sm:flex-col sm:items-end">
-                          <Badge className={getStatusColor(sale.status)}>
-                            {getStatusText(sale.status)}
-                          </Badge>
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-col sm:items-end">
+                          <Select
+                            value={sale.status}
+                            onValueChange={(value) => handleStatusChange(sale.id, value)}
+                          >
+                            <SelectTrigger className="w-28 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">En attente</SelectItem>
+                              <SelectItem value="confirmed">Confirmée</SelectItem>
+                              <SelectItem value="delivered">Livrée</SelectItem>
+                              <SelectItem value="paid">Payée</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <p className="text-base sm:text-lg font-bold text-green-600">
                             {formatCurrency(sale.totalAmount)}
                           </p>
@@ -515,8 +581,10 @@ const SalesManagement = () => {
                           <span className="font-medium">{sale.paymentMethod}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Réf:</span>
-                          <span className="font-mono">{sale.id}</span>
+                          <span className="text-muted-foreground">Statut:</span>
+                          <Badge className={getStatusColor(sale.status)}>
+                            {getStatusText(sale.status)}
+                          </Badge>
                         </div>
                       </div>
                       
@@ -543,19 +611,26 @@ const SalesManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {salesData.topProducts.map((product, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-gray-600">{product.quantity} unités vendues</p>
+                {salesData.topProducts.length > 0 ? (
+                  <div className="space-y-3">
+                    {salesData.topProducts.map((product, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{product.quantity} unités vendues</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">{formatCurrency(product.revenue)}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600">€{product.revenue.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <TrendingUp className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Aucune vente enregistrée</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -567,23 +642,30 @@ const SalesManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {units.slice(0, 4).map((unit) => (
-                    <div key={unit.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{unit.name}</p>
-                        <Badge variant="outline" className="text-xs">
-                          {unit.type}
-                        </Badge>
+                {salesData.salesByUnit.length > 0 ? (
+                  <div className="space-y-3">
+                    {salesData.salesByUnit.map((unit) => (
+                      <div key={unit.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div>
+                          <p className="font-medium">{unit.name}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {unit.type} • {unit.salesCount} ventes
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-600">
+                            {formatCurrency(unit.revenue)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-blue-600">
-                          €{(Math.floor(Math.random() * 20000) + 5000).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <ShoppingCart className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Aucune vente par unité</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -605,32 +687,34 @@ const SalesManagement = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Catalogue de Produits
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouveau Produit
-                </Button>
+                Catalogue de Produits Vendus
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {salesData.topProducts.map((product, idx) => (
-                  <div key={idx} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">{product.name}</h4>
-                      <p className="text-sm text-gray-600">Stock disponible: {product.quantity} unités</p>
-                      <div className="flex items-center justify-between">
-                        <Badge className="bg-green-100 text-green-800">
-                          €{(product.revenue / product.quantity).toFixed(2)}/unité
-                        </Badge>
-                        <Button size="sm" variant="outline">
-                          Modifier
-                        </Button>
+              {salesData.topProducts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {salesData.topProducts.map((product, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">{product.name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Vendus: {product.quantity} unités</p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            {product.quantity > 0 ? formatCurrency(product.revenue / product.quantity) : '0'} {getCurrencySymbol()}/unité
+                          </Badge>
+                          <span className="font-bold text-green-600">{formatCurrency(product.revenue)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Aucun produit vendu</p>
+                  <p className="text-sm text-muted-foreground mt-2">Enregistrez des ventes pour voir les produits ici</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
