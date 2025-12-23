@@ -33,156 +33,37 @@ interface IoTModuleData {
 
 const IoTOverview = () => {
   const { activeUnit, units } = useProductionUnits();
-  const { sensorReadings, getActiveAlerts, basins } = useIoT();
+  const { sensorReadings, getActiveAlerts, basins, realTimeData } = useIoT();
   const { t, formatCurrency } = useSettings();
   
-  const [iotModules, setIotModules] = useState<IoTModuleData[]>([
-    {
-      id: 'temp_001',
-      name: 'Température Bassin A',
-      type: 'temperature',
-      value: 26.5,
-      unit: '°C',
-      status: 'normal',
-      trend: 'up',
-      history: [
-        { time: '00:00', value: 25.8 },
-        { time: '04:00', value: 25.5 },
-        { time: '08:00', value: 26.0 },
-        { time: '12:00', value: 26.5 },
-        { time: '16:00', value: 27.2 },
-        { time: '20:00', value: 26.8 },
-      ]
-    },
-    {
-      id: 'oxy_001',
-      name: 'Oxygène Bassin A',
-      type: 'oxygen',
-      value: 7.2,
-      unit: 'mg/L',
-      status: 'normal',
-      trend: 'stable',
-      history: [
-        { time: '00:00', value: 7.0 },
-        { time: '04:00', value: 6.8 },
-        { time: '08:00', value: 7.1 },
-        { time: '12:00', value: 7.2 },
-        { time: '16:00', value: 7.3 },
-        { time: '20:00', value: 7.2 },
-      ]
-    },
-    {
-      id: 'ph_001',
-      name: 'pH Bassin A',
-      type: 'ph',
-      value: 7.4,
-      unit: 'pH',
-      status: 'normal',
-      trend: 'stable',
-      history: [
-        { time: '00:00', value: 7.3 },
-        { time: '04:00', value: 7.4 },
-        { time: '08:00', value: 7.5 },
-        { time: '12:00', value: 7.4 },
-        { time: '16:00', value: 7.3 },
-        { time: '20:00', value: 7.4 },
-      ]
-    },
-    {
-      id: 'sal_001',
-      name: 'Salinité Bassin A',
-      type: 'salinity',
-      value: 15.2,
-      unit: 'ppt',
-      status: 'normal',
-      trend: 'down',
-      history: [
-        { time: '00:00', value: 15.8 },
-        { time: '04:00', value: 15.6 },
-        { time: '08:00', value: 15.4 },
-        { time: '12:00', value: 15.2 },
-        { time: '16:00', value: 15.1 },
-        { time: '20:00', value: 15.2 },
-      ]
-    },
-    {
-      id: 'temp_002',
-      name: 'Température Bassin B',
-      type: 'temperature',
-      value: 28.1,
-      unit: '°C',
-      status: 'warning',
-      trend: 'up',
-      history: [
-        { time: '00:00', value: 26.5 },
-        { time: '04:00', value: 27.0 },
-        { time: '08:00', value: 27.5 },
-        { time: '12:00', value: 28.0 },
-        { time: '16:00', value: 28.5 },
-        { time: '20:00', value: 28.1 },
-      ]
-    },
-    {
-      id: 'oxy_002',
-      name: 'Oxygène Bassin B',
-      type: 'oxygen',
-      value: 5.1,
-      unit: 'mg/L',
-      status: 'critical',
-      trend: 'down',
-      history: [
-        { time: '00:00', value: 6.2 },
-        { time: '04:00', value: 5.9 },
-        { time: '08:00', value: 5.6 },
-        { time: '12:00', value: 5.3 },
-        { time: '16:00', value: 5.0 },
-        { time: '20:00', value: 5.1 },
-      ]
-    }
-  ]);
+  // État vide par défaut - données réelles uniquement si capteurs connectés
+  const [iotModules, setIotModules] = useState<IoTModuleData[]>([]);
+  
+  // Vérifier si des capteurs IoT sont réellement connectés
+  const hasRealIoTConnection = basins.length > 0 && sensorReadings.length > 0;
 
-  // Simuler la mise à jour des données en temps réel
+  // Mettre à jour les modules IoT uniquement avec des données réelles
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIotModules(prev => prev.map(module => {
-        // Générer une petite variation aléatoire
-        const variation = (Math.random() - 0.5) * 0.2;
-        const newValue = +(module.value + variation).toFixed(1);
-        
-        // Déterminer le statut en fonction du type et de la valeur
-        let status: 'normal' | 'warning' | 'critical' = 'normal';
-        if (module.type === 'temperature') {
-          if (newValue > 28 || newValue < 22) status = 'warning';
-          if (newValue > 30 || newValue < 20) status = 'critical';
-        } else if (module.type === 'oxygen') {
-          if (newValue < 6 || newValue > 9) status = 'warning';
-          if (newValue < 5 || newValue > 10) status = 'critical';
-        } else if (module.type === 'ph') {
-          if (newValue < 6.5 || newValue > 8.0) status = 'warning';
-          if (newValue < 6.0 || newValue > 8.5) status = 'critical';
-        }
-        
-        // Déterminer la tendance
-        const trend = variation > 0.05 ? 'up' : variation < -0.05 ? 'down' : 'stable';
-        
-        // Ajouter le nouveau point à l'historique (garder les 6 derniers)
-        const newHistory = [
-          ...module.history.slice(1),
-          { time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), value: newValue }
-        ];
-        
-        return {
-          ...module,
-          value: newValue,
-          status,
-          trend,
-          history: newHistory
-        };
+    if (hasRealIoTConnection && sensorReadings.length > 0) {
+      // Construire les modules à partir des vraies données de capteurs
+      const modules: IoTModuleData[] = sensorReadings.map((reading, index) => ({
+        id: `sensor_${index}`,
+        name: reading.sensorType,
+        type: reading.sensorType as any,
+        value: reading.value,
+        unit: reading.sensorType === 'temperature' ? '°C' : 
+              reading.sensorType === 'oxygen' ? 'mg/L' : 
+              reading.sensorType === 'ph' ? 'pH' : 'ppt',
+        status: reading.status,
+        trend: 'stable' as const,
+        history: [{ time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), value: reading.value }]
       }));
-    }, 5000); // Mise à jour toutes les 5 secondes
-
-    return () => clearInterval(interval);
-  }, []);
+      setIotModules(modules);
+    } else {
+      // Aucune connexion IoT - garder vide
+      setIotModules([]);
+    }
+  }, [hasRealIoTConnection, sensorReadings]);
 
   const getModuleIcon = (type: string) => {
     switch (type) {
@@ -255,222 +136,244 @@ const IoTOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Statistiques Globales IoT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Wifi className="w-5 h-5 text-blue-600" />
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold">{activeSensors}/{totalSensors}</div>
-            <div className="text-sm text-muted-foreground">{t('connected_sensors')}</div>
-            <div className="text-xs text-green-600 mt-1">
-              {((activeSensors/totalSensors)*100).toFixed(0)}% {t('normal')}
-            </div>
+      {/* Message si pas de connexion IoT */}
+      {!hasRealIoTConnection && (
+        <Card className="border-2 border-dashed border-muted-foreground/25">
+          <CardContent className="p-8 text-center">
+            <Wifi className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">{t('no_iot_connection') || 'Aucun capteur IoT connecté'}</h3>
+            <p className="text-muted-foreground mb-4">
+              Connectez vos capteurs pour visualiser les données en temps réel.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Allez dans l'onglet Configuration pour paramétrer votre connexion MQTT.
+            </p>
           </CardContent>
         </Card>
+      )}
 
-        <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
-              <Badge className={activeAlerts.length > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                {activeAlerts.length > 0 ? t('warning') : t('normal')}
-              </Badge>
-            </div>
-            <div className="text-2xl font-bold">{activeAlerts.length}</div>
-            <div className="text-sm text-muted-foreground">{t('active_alerts')}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {criticalAlerts} {t('critical').toLowerCase()} • {warningAlerts} {t('warning').toLowerCase()}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistiques Globales IoT - uniquement si connecté */}
+      {hasRealIoTConnection && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Wifi className="w-5 h-5 text-blue-600" />
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="text-2xl font-bold">{activeSensors}/{totalSensors}</div>
+              <div className="text-sm text-muted-foreground">{t('connected_sensors')}</div>
+              <div className="text-xs text-green-600 mt-1">
+                {totalSensors > 0 ? ((activeSensors/totalSensors)*100).toFixed(0) : 0}% {t('normal')}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Brain className="w-5 h-5 text-purple-600" />
-              <Badge className={globalHealthScore >= 80 ? 'bg-green-100 text-green-800' : globalHealthScore >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}>
-                {globalHealthScore >= 80 ? t('normal') : t('warning')}
-              </Badge>
-            </div>
-            <div className="text-2xl font-bold">{globalHealthScore}/100</div>
-            <div className="text-sm text-muted-foreground">{t('global_health')}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {basins.length} {t('basin').toLowerCase()}(s) {t('active_ponds').toLowerCase()}
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="border-l-4 border-l-orange-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
+                <Badge className={activeAlerts.length > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                  {activeAlerts.length > 0 ? t('warning') : t('normal')}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold">{activeAlerts.length}</div>
+              <div className="text-sm text-muted-foreground">{t('active_alerts')}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {criticalAlerts} {t('critical').toLowerCase()} • {warningAlerts} {t('warning').toLowerCase()}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="border-l-4 border-l-red-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Activity className="w-5 h-5 text-red-600" />
-              <Badge className={parseFloat(anomalyRate) > 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
-                {parseFloat(anomalyRate) > 10 ? t('critical') : t('normal')}
-              </Badge>
-            </div>
-            <div className="text-2xl font-bold">{anomalyRate}%</div>
-            <div className="text-sm text-muted-foreground">{t('anomaly_rate')}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {totalSensors - activeSensors} {t('sensor').toLowerCase()}(s) en anomalie
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Brain className="w-5 h-5 text-purple-600" />
+                <Badge className={globalHealthScore >= 80 ? 'bg-green-100 text-green-800' : globalHealthScore >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}>
+                  {globalHealthScore >= 80 ? t('normal') : t('warning')}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold">{globalHealthScore}/100</div>
+              <div className="text-sm text-muted-foreground">{t('global_health')}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {basins.length} {t('basin').toLowerCase()}(s) {t('active_ponds').toLowerCase()}
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Graphiques des paramètres zootechniques - Vue en courbes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {iotModules.map((module) => {
-          const IconComponent = getModuleIcon(module.type);
-          
-          return (
-            <Card key={module.id} className={`border-l-4 ${
-              module.status === 'critical' ? 'border-l-red-500' :
-              module.status === 'warning' ? 'border-l-orange-500' :
-              'border-l-green-500'
-            }`}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="w-5 h-5 text-gray-600" />
-                    <CardTitle className="text-base font-semibold">{module.name}</CardTitle>
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Activity className="w-5 h-5 text-red-600" />
+                <Badge className={parseFloat(anomalyRate) > 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                  {parseFloat(anomalyRate) > 10 ? t('critical') : t('normal')}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold">{anomalyRate}%</div>
+              <div className="text-sm text-muted-foreground">{t('anomaly_rate')}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {totalSensors - activeSensors} {t('sensor').toLowerCase()}(s) en anomalie
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Graphiques des paramètres zootechniques - Vue en courbes - uniquement si connecté */}
+      {hasRealIoTConnection && iotModules.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {iotModules.map((module) => {
+            const IconComponent = getModuleIcon(module.type);
+            
+            return (
+              <Card key={module.id} className={`border-l-4 ${
+                module.status === 'critical' ? 'border-l-red-500' :
+                module.status === 'warning' ? 'border-l-orange-500' :
+                'border-l-green-500'
+              }`}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="w-5 h-5 text-gray-600" />
+                      <CardTitle className="text-base font-semibold">{module.name}</CardTitle>
+                    </div>
+                    <Badge className={getStatusColor(module.status)}>
+                      {getStatusText(module.status)}
+                    </Badge>
                   </div>
-                  <Badge className={getStatusColor(module.status)}>
-                    {getStatusText(module.status)}
-                  </Badge>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <div className="text-4xl font-bold text-primary">{module.value}</div>
-                  <div className="text-lg text-muted-foreground">{module.unit}</div>
-                  {getTrendIcon(module.trend)}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                {/* Graphique en courbe - Format large */}
-                <div className="h-40 mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={module.history}>
-                      <defs>
-                        <linearGradient id={`gradient-${module.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={getChartColor(module.type)} stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor={getChartColor(module.type)} stopOpacity={0.05}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis 
-                        dataKey="time" 
-                        tick={{ fontSize: 11 }}
-                        stroke="#9ca3af"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 11 }}
-                        stroke="#9ca3af"
-                        domain={['dataMin - 1', 'dataMax + 1']}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          background: 'white', 
-                          border: '1px solid #e5e7eb', 
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                        }}
-                        formatter={(value: number) => [`${value} ${module.unit}`, 'Valeur']}
-                        labelFormatter={(label) => `Heure: ${label}`}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke={getChartColor(module.type)} 
-                        strokeWidth={3}
-                        dot={{ fill: getChartColor(module.type), r: 4 }}
-                        activeDot={{ r: 6 }}
-                        fill={`url(#gradient-${module.id})`}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <div className="text-xs text-muted-foreground">
-                    {t('last_update')} : {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-4xl font-bold text-primary">{module.value}</div>
+                    <div className="text-lg text-muted-foreground">{module.unit}</div>
                     {getTrendIcon(module.trend)}
-                    <span className={
-                      module.trend === 'up' ? 'text-orange-600' :
-                      module.trend === 'down' ? 'text-blue-600' :
-                      'text-gray-600'
-                    }>
-                      {getTrendText(module.trend)}
-                    </span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  {/* Graphique en courbe - Format large */}
+                  <div className="h-40 mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={module.history}>
+                        <defs>
+                          <linearGradient id={`gradient-${module.id}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={getChartColor(module.type)} stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor={getChartColor(module.type)} stopOpacity={0.05}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis 
+                          dataKey="time" 
+                          tick={{ fontSize: 11 }}
+                          stroke="#9ca3af"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 11 }}
+                          stroke="#9ca3af"
+                          domain={['dataMin - 1', 'dataMax + 1']}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            background: 'white', 
+                            border: '1px solid #e5e7eb', 
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                          }}
+                          formatter={(value: number) => [`${value} ${module.unit}`, 'Valeur']}
+                          labelFormatter={(label) => `Heure: ${label}`}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke={getChartColor(module.type)} 
+                          strokeWidth={3}
+                          dot={{ fill: getChartColor(module.type), r: 4 }}
+                          activeDot={{ r: 6 }}
+                          fill={`url(#gradient-${module.id})`}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
 
-      {/* Graphique comparatif global - Tous les paramètres */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Évolution Comparative des Paramètres Zootechniques</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">Surveillance en temps réel sur 24 heures</p>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      {t('last_update')} : {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      {getTrendIcon(module.trend)}
+                      <span className={
+                        module.trend === 'up' ? 'text-orange-600' :
+                        module.trend === 'down' ? 'text-blue-600' :
+                        'text-gray-600'
+                      }>
+                        {getTrendText(module.trend)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Graphique comparatif global - Tous les paramètres - uniquement si connecté */}
+      {hasRealIoTConnection && iotModules.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Évolution Comparative des Paramètres Zootechniques</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Surveillance en temps réel sur 24 heures</p>
+              </div>
+              <Fish className="w-8 h-8 text-primary" />
             </div>
-            <Fish className="w-8 h-8 text-primary" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="time" 
-                  type="category" 
-                  allowDuplicatedCategory={false}
-                  tick={{ fontSize: 12 }}
-                  stroke="#6b7280"
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  stroke="#6b7280"
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'white', 
-                    border: '1px solid #e5e7eb', 
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  iconType="line"
-                />
-                {iotModules.map((module) => (
-                  <Line 
-                    key={module.id}
-                    data={module.history}
-                    dataKey="value" 
-                    name={`${module.name} (${module.unit})`}
-                    stroke={getChartColor(module.type)}
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="time" 
+                    type="category" 
+                    allowDuplicatedCategory={false}
+                    tick={{ fontSize: 12 }}
+                    stroke="#6b7280"
                   />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    stroke="#6b7280"
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'white', 
+                      border: '1px solid #e5e7eb', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    iconType="line"
+                  />
+                  {iotModules.map((module) => (
+                    <Line 
+                      key={module.id}
+                      data={module.history}
+                      dataKey="value" 
+                      name={`${module.name} (${module.unit})`}
+                      stroke={getChartColor(module.type)}
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

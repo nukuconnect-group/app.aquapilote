@@ -769,110 +769,140 @@ const LivestockManagement = () => {
         {/* Onglet Graphiques & Évolution */}
         <TabsContent value="charts">
           <div className="grid gap-3 sm:gap-4">
-            {/* Graphique performance par espèce */}
-            <Card>
-              <CardHeader className="p-3 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">Performance par espèce</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Comparaison des performances des différentes espèces</CardDescription>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={[
-                      { espece: 'Tilapia', quantite: 1500, poids: 225, rendement: 28 },
-                      { espece: 'Carpe', quantite: 800, poids: 160, rendement: 22 },
-                      { espece: 'Truite', quantite: 600, poids: 120, rendement: 18 }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="espece" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ fontSize: 12 }} />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="quantite" fill="#3b82f6" name="Quantité" />
-                      <Bar dataKey="poids" fill="#10b981" name="Poids total (kg)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Message si pas de données */}
+            {filteredBatches.length === 0 && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Fish className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Aucune donnée disponible</h3>
+                  <p className="text-muted-foreground">
+                    Ajoutez des lots de poissons pour voir les graphiques de performance.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Graphique performance par espèce - données réelles */}
+            {filteredBatches.length > 0 && (
+              <Card>
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Performance par espèce</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Comparaison des performances des différentes espèces</CardDescription>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                  <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={
+                        // Agréger les données par espèce
+                        Object.values(filteredBatches.reduce((acc, batch) => {
+                          const species = batch.species || 'Autres';
+                          if (!acc[species]) {
+                            acc[species] = { espece: species, quantite: 0, poids: 0 };
+                          }
+                          acc[species].quantite += batch.quantity;
+                          acc[species].poids += batch.totalWeight;
+                          return acc;
+                        }, {} as Record<string, { espece: string; quantite: number; poids: number }>))
+                      }>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="espece" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip contentStyle={{ fontSize: 12 }} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Bar dataKey="quantite" fill="#3b82f6" name="Quantité" />
+                        <Bar dataKey="poids" fill="#10b981" name="Poids total (kg)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Graphique tendances temporelles */}
-            <Card>
-              <CardHeader className="p-3 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">Tendances de croissance globale</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Évolution globale du cheptel</CardDescription>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={[
-                      { mois: 'Sept', individus: 2100, biomasse: 315 },
-                      { mois: 'Oct', individus: 2450, biomasse: 380 },
-                      { mois: 'Nov', individus: 2900, biomasse: 465 },
-                      { mois: 'Dec', individus: 3200, biomasse: 535 },
-                      { mois: 'Jan', individus: 3600, biomasse: 612 }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="mois" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ fontSize: 12 }} />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Line yAxisId="left" type="monotone" dataKey="individus" stroke="#8b5cf6" name="Individus" strokeWidth={2} />
-                      <Line yAxisId="right" type="monotone" dataKey="biomasse" stroke="#f59e0b" name="Biomasse (kg)" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Graphique tendances temporelles - données réelles */}
+            {filteredBatches.length > 0 && (
+              <Card>
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Tendances de croissance globale</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Évolution globale du cheptel</CardDescription>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                  <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={[
+                        { mois: 'Actuel', individus: totalQuantity, biomasse: totalWeight }
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="mois" tick={{ fontSize: 12 }} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                        <Tooltip contentStyle={{ fontSize: 12 }} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Line yAxisId="left" type="monotone" dataKey="individus" stroke="#8b5cf6" name="Individus" strokeWidth={2} />
+                        <Line yAxisId="right" type="monotone" dataKey="biomasse" stroke="#f59e0b" name="Biomasse (kg)" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* KPIs additionnels */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-lg sm:text-2xl font-bold truncate">94.2%</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Taux survie</p>
+            {/* KPIs additionnels - calculés à partir des vraies données */}
+            {filteredBatches.length > 0 && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                <Card>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-lg sm:text-2xl font-bold truncate">
+                          {healthyBatches > 0 ? ((healthyBatches / filteredBatches.length) * 100).toFixed(1) : 0}%
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">Taux survie</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-lg sm:text-2xl font-bold truncate">1.52</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Indice conv.</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-lg sm:text-2xl font-bold truncate">
+                          {totalQuantity > 0 ? (totalWeight / (totalQuantity / 1000)).toFixed(2) : '0'}
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">Poids moy. (g)</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-base sm:text-2xl font-bold truncate">26.5 kg/m²</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Densité moy.</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-base sm:text-2xl font-bold truncate">{filteredBatches.length}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">Lots actifs</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-lg sm:text-2xl font-bold truncate">145j</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Durée cycle</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-lg sm:text-2xl font-bold truncate">
+                          {filteredBatches.length > 0 
+                            ? Math.round(filteredBatches.reduce((sum, b) => sum + b.currentAge, 0) / filteredBatches.length) 
+                            : 0}j
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">Âge moy.</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
