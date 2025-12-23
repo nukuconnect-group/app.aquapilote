@@ -464,26 +464,26 @@ const IntelligentDashboard = () => {
                 </CardContent>
               </Card>;
       }) :
-      // global metrics
+      // global metrics - utiliser les données réelles du hook useFinancialSummary
       [{
         title: t('revenue'),
-        value: formatCurrency(globalFinancialData.revenue),
-        subtitle: t('all_units_label'),
+        value: formatCurrency(financialSummary.totalRevenue),
+        subtitle: `${financialSummary.confirmedSales} ${t('confirmed_sales') || 'ventes'}`,
         icon: TrendingUp
       }, {
         title: t('expenses'),
-        value: formatCurrency(globalFinancialData.expenses),
-        subtitle: t('total_production'),
+        value: formatCurrency(financialSummary.totalExpenses),
+        subtitle: `${financialSummary.purchasesCount} ${t('purchases') || 'achats'}`,
         icon: Activity
       }, {
         title: t('profit'),
-        value: formatCurrency(globalFinancialData.profit),
-        subtitle: t('profit_margin'),
+        value: formatCurrency(financialSummary.netBalance),
+        subtitle: financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit',
         icon: Fish
       }, {
         title: t('profit_margin'),
-        value: globalFinancialData.revenue > 0 ? `${(globalFinancialData.profit / globalFinancialData.revenue * 100).toFixed(1)}%` : "0%",
-        subtitle: t('profit_margin'),
+        value: financialSummary.totalRevenue > 0 ? `${(financialSummary.netBalance / financialSummary.totalRevenue * 100).toFixed(1)}%` : "0%",
+        subtitle: `${financialSummary.employeesCount} employés`,
         icon: Factory
       }].map((metric, index) => {
         const IconComponent = metric.icon;
