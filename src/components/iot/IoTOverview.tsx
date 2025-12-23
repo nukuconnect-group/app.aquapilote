@@ -141,7 +141,7 @@ const IoTOverview = () => {
         <Card className="border-2 border-dashed border-muted-foreground/25">
           <CardContent className="p-8 text-center">
             <Wifi className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">{t('no_iot_connection') || 'Aucun capteur IoT connecté'}</h3>
+            <h3 className="text-lg font-semibold mb-2">Capteurs connectés : 0</h3>
             <p className="text-muted-foreground mb-4">
               Connectez vos capteurs pour visualiser les données en temps réel.
             </p>
