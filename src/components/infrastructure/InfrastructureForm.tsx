@@ -272,13 +272,13 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
         </div>
 
         <div className="sm:col-span-2">
-          <Label className="text-sm">Lot de poisson suggéré (optionnel)</Label>
+          <Label className="text-sm">Lot de poisson rattaché (optionnel)</Label>
           <Select 
             value={newInfrastructure.suggestedBatchId || "none"} 
             onValueChange={(value) => setNewInfrastructure(prev => ({ ...prev, suggestedBatchId: value === "none" ? "" : value }))}
           >
             <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Sélectionner un lot (sera utilisé lors du rattachement à un cycle)" />
+              <SelectValue placeholder="Sélectionner un lot à rattacher" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Aucun lot</SelectItem>
@@ -286,13 +286,13 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
                 .filter(batch => batch.unit_id === newInfrastructure.unitId)
                 .map((batch) => (
                   <SelectItem key={batch.id} value={batch.id}>
-                    {batch.species} - {batch.quantity} individus ({batch.average_weight}g) - {batch.unit_name}
+                    {batch.species} - {batch.quantity} ind. ({batch.average_weight}g) - {batch.unit_name}
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
-            Ce lot sera automatiquement pré-sélectionné lors de la création d'un cycle utilisant cette infrastructure
+            Ce lot sera affiché sur cette infrastructure
           </p>
         </div>
 

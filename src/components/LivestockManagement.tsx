@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,11 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
+import { generateControlFishingPdf } from '@/lib/controlFishingPdf';
 
 interface LivestockBatch {
   id: string;
@@ -69,6 +72,12 @@ const LivestockManagement = () => {
   
   // Filtrer par unité active
   const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch, updateBatch } = useLivestockBatches(activeUnit?.id);
+  
+  // Charger les pêches de contrôle (health records) depuis la DB
+  const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
+  
+  // Charger les infrastructures pour les noms
+  const { infrastructures: allCycleInfras } = useCycleInfrastructures(undefined, true);
   
   // Fonction pour changer l'unité sélectionnée
   const handleUnitChange = (unitId: string) => {
@@ -742,26 +751,72 @@ const LivestockManagement = () => {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-3 sm:gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg flex-wrap">
-                    <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Pêche de Contrôle</span>
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm mt-1">
-                    Enregistrez les pêches de contrôle par infrastructure rattachée aux cycles de production
-                  </CardDescription>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg flex-wrap">
+                      <Fish className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Pêche de Contrôle</span>
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-1">
+                      Enregistrez les pêches de contrôle par infrastructure
+                    </CardDescription>
+                  </div>
+                  {healthRecords.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const recordsWithNames = healthRecords.map(r => {
+                          const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                          return {
+                            ...r,
+                            infrastructureName: infra?.infrastructure_name || 'N/A'
+                          };
+                        });
+                        generateControlFishingPdf({
+                          records: recordsWithNames,
+                          unitName: activeUnit?.name
+                        });
+                      }}
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Imprimer PDF
+                    </Button>
+                  )}
                 </div>
                 <ControlFishingForm unitId={selectedUnit === 'all' ? (units[0]?.id || '') : selectedUnit} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-                <Fish className="h-4 w-4 text-blue-600 mt-0.5" />
-                <p className="text-sm text-blue-800">
-                  Les données de pêche de contrôle sont rattachées aux infrastructures des cycles actifs. 
-                  Sélectionnez un cycle, puis une infrastructure pour enregistrer les données.
-                </p>
-              </div>
+            <CardContent className="space-y-4">
+              {healthRecords.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm">Historique des pêches ({healthRecords.length})</h4>
+                  {healthRecords.slice(0, 5).map((record) => {
+                    const infra = allCycleInfras.find(i => i.id === record.basin_id);
+                    return (
+                      <div key={record.id} className="border rounded-lg p-3 text-sm">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium">{new Date(record.date).toLocaleDateString('fr-FR')}</span>
+                          {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
+                          <div>Temp: {record.temperature ?? '-'}°C</div>
+                          <div>pH: {record.ph ?? '-'}</div>
+                          <div>O₂: {record.oxygen ?? '-'} mg/L</div>
+                          <div>Poids moy: {record.average_weight ?? '-'}g</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                  <Fish className="h-4 w-4 text-blue-600 mt-0.5" />
+                  <p className="text-sm text-blue-800">
+                    Aucune pêche de contrôle enregistrée. Utilisez le formulaire ci-dessus pour en ajouter.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
