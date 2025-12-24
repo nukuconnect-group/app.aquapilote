@@ -23,7 +23,7 @@ interface InfrastructureCardProps {
 }
 
 const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
-  const { infrastructures, setInfrastructures, activeUnit } = useProductionUnits();
+  const { infrastructures, setInfrastructures, activeUnit, deleteInfrastructure: deleteUnitInfrastructure } = useProductionUnits();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -113,9 +113,21 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
     setInfrastructures(updatedInfrastructures);
   };
 
-  const deleteInfrastructure = () => {
-    const updatedInfrastructures = infrastructures.filter(inf => inf.id !== infrastructure.id);
-    setInfrastructures(updatedInfrastructures);
+  const handleDeleteInfrastructure = async () => {
+    try {
+      await deleteUnitInfrastructure(infrastructure.id);
+      toast({
+        title: 'Succès',
+        description: 'Infrastructure supprimée',
+      });
+    } catch (error) {
+      console.error('Error deleting infrastructure:', error);
+      toast({
+        title: 'Erreur',
+        description: "Impossible de supprimer l'infrastructure",
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleEditSave = (updatedInfrastructure: any) => {
@@ -352,7 +364,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-row gap-2">
                   <AlertDialogCancel className="flex-1">Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={deleteInfrastructure} className="flex-1">
+                  <AlertDialogAction onClick={handleDeleteInfrastructure} className="flex-1">
                     Supprimer
                   </AlertDialogAction>
                 </AlertDialogFooter>
