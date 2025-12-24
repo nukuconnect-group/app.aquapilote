@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
+import { offlineStorage } from '@/lib/offlineStorage';
 
 export interface LivestockBatch {
   id: string;
@@ -25,22 +26,45 @@ export interface LivestockBatch {
   expected_survival_rate: number;
   created_at: string;
   updated_at: string;
+  // Champ pour tracking infrastructure rattachée
+  attached_infrastructure_id?: string | null;
 }
 
 export const useLivestockBatches = (unitId?: string) => {
   const [batches, setBatches] = useState<LivestockBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const { toast } = useToast();
   const { isReady, isAuthenticated, getUserId } = useAuthReady();
 
+  const cacheKey = unitId ? `livestock_batches_${unitId}` : 'livestock_batches_all';
+
+  // Surveiller le statut connexion
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const fetchBatches = useCallback(async () => {
-    // Attendre que l'auth soit prête
     if (!isReady) return;
-    
-    // Ne pas charger si non authentifié
-    if (!isAuthenticated) {
-      setBatches([]);
+
+    // Si hors ligne, charger depuis le cache
+    if (isOffline || !isAuthenticated) {
+      try {
+        const cachedData = await offlineStorage.getOfflineData(cacheKey);
+        if (cachedData && Array.isArray(cachedData)) {
+          setBatches(cachedData);
+        }
+      } catch (err) {
+        console.error('Erreur chargement cache lots:', err);
+      }
       setLoading(false);
       return;
     }
@@ -65,18 +89,28 @@ export const useLivestockBatches = (unitId?: string) => {
         throw fetchError;
       }
       
-      setBatches(data || []);
+      const resultData = data || [];
+      setBatches(resultData);
+      
+      // Sauvegarder dans le cache
+      await offlineStorage.saveOfflineData(cacheKey, resultData);
     } catch (err: any) {
       console.error('Error fetching livestock batches:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les lots de poissons',
-        variant: 'destructive'
-      });
+      // En cas d'erreur, essayer le cache
+      const cachedData = await offlineStorage.getOfflineData(cacheKey);
+      if (cachedData && Array.isArray(cachedData)) {
+        setBatches(cachedData);
+      } else {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les lots de poissons',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, unitId, toast]);
+  }, [isReady, isAuthenticated, isOffline, unitId, toast, cacheKey]);
 
   const createBatch = async (batch: Omit<LivestockBatch, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
