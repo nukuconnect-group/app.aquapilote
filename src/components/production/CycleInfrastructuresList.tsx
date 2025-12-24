@@ -52,19 +52,26 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
   const { infrastructures, loading, updateInfrastructure, deleteInfrastructure } = useCycleInfrastructures(cycleId);
   const { batches } = useLivestockBatches();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ current_quantity: 0, notes: '', livestock_batch_id: '' });
+  const [editData, setEditData] = useState<{ current_quantity: number; notes: string; livestock_batch_id: string | null }>({
+    current_quantity: 0,
+    notes: '',
+    livestock_batch_id: null,
+  });
 
-  // Calculs automatiques des totaux
+  // Calculs automatiques des totaux (sans double-compte)
   const totals = useMemo(() => {
     let totalQuantity = 0;
     let totalExpectedQuantity = 0;
     let totalCurrentBiomass = 0;
     let totalExpectedBiomass = 0;
+
     let batchCount = 0;
-    let totalAverageWeight = 0;
+    let totalWeightGrams = 0;
+    let totalBatchQuantityForAvg = 0;
 
     infrastructures.forEach((infra) => {
       const batch = infra.livestock_batch_id ? batches.find(b => b.id === infra.livestock_batch_id) : null;
+
       if (batch) {
         const forecast = calculateBatchForecast(batch);
         if (forecast) {
@@ -72,11 +79,14 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
           totalExpectedQuantity += forecast.expectedQuantity;
           totalCurrentBiomass += forecast.currentBiomass;
           totalExpectedBiomass += forecast.expectedBiomass;
-          totalAverageWeight += forecast.individualWeight;
+
+          totalWeightGrams += forecast.quantity * forecast.individualWeight;
+          totalBatchQuantityForAvg += forecast.quantity;
           batchCount++;
         }
+      } else {
+        totalQuantity += infra.current_quantity || 0;
       }
-      totalQuantity += infra.current_quantity;
     });
 
     return {
@@ -84,8 +94,9 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
       totalExpectedQuantity,
       totalCurrentBiomass,
       totalExpectedBiomass,
-      averageWeight: batchCount > 0 ? totalAverageWeight / batchCount : 0,
-      batchCount
+      // Moyenne pondérée (plus exacte si plusieurs lots)
+      averageWeight: totalBatchQuantityForAvg > 0 ? totalWeightGrams / totalBatchQuantityForAvg : 0,
+      batchCount,
     };
   }, [infrastructures, batches]);
 
@@ -94,24 +105,25 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
     setEditData({
       current_quantity: infra.current_quantity,
       notes: infra.notes || '',
-      livestock_batch_id: infra.livestock_batch_id || ''
+      livestock_batch_id: infra.livestock_batch_id || null,
     });
   };
 
   const handleSaveEdit = async () => {
     if (!editingId) return;
-    
+
     // Si un lot est sélectionné, mettre à jour la quantité automatiquement
-    const selectedBatch = editData.livestock_batch_id 
+    const selectedBatch = editData.livestock_batch_id
       ? batches.find(b => b.id === editData.livestock_batch_id)
       : null;
-    
+
     const updateData = {
-      ...editData,
-      current_quantity: selectedBatch ? selectedBatch.quantity : editData.current_quantity
+      current_quantity: selectedBatch ? selectedBatch.quantity : editData.current_quantity,
+      notes: editData.notes,
+      livestock_batch_id: editData.livestock_batch_id || null,
     };
-    
-    await updateInfrastructure(editingId, updateData);
+
+    await updateInfrastructure(editingId, updateData as any);
     setEditingId(null);
   };
 
@@ -315,31 +327,33 @@ const CycleInfrastructuresList = ({ cycleId }: CycleInfrastructuresListProps) =>
                             <DialogTitle>Modifier {infra.infrastructure_name}</DialogTitle>
                           </DialogHeader>
                            <div className="space-y-4 py-4">
-                             <div>
-                              <Label htmlFor="livestock">Lot de poisson rattaché</Label>
-                              <Select 
-                                value={editData.livestock_batch_id || "none"} 
-                                onValueChange={(value) => {
-                                  const batch = value !== "none" ? batches.find(b => b.id === value) : null;
-                                  setEditData({
-                                    ...editData,
-                                    livestock_batch_id: value === "none" ? "" : value,
-                                    current_quantity: batch ? batch.quantity : editData.current_quantity
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="text-sm">
-                                  <SelectValue placeholder="Sélectionner un lot" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Aucun lot</SelectItem>
-                                  {batches.map((batch) => (
-                                    <SelectItem key={batch.id} value={batch.id}>
-                                      {batch.species} - {batch.quantity} ind. ({batch.average_weight}g moy.)
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div>
+                               <Label htmlFor="livestock">Lot de poisson rattaché</Label>
+                               <Select 
+                                 value={editData.livestock_batch_id ?? "none"} 
+                                 onValueChange={(value) => {
+                                   const nextBatchId = value === "none" ? null : value;
+                                   const batch = nextBatchId ? batches.find(b => b.id === nextBatchId) : null;
+
+                                   setEditData({
+                                     ...editData,
+                                     livestock_batch_id: nextBatchId,
+                                     current_quantity: batch ? batch.quantity : editData.current_quantity
+                                   });
+                                 }}
+                               >
+                                 <SelectTrigger className="text-sm">
+                                   <SelectValue placeholder="Sélectionner un lot" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="none">Aucun lot</SelectItem>
+                                   {batches.map((batch) => (
+                                     <SelectItem key={batch.id} value={batch.id}>
+                                       {batch.species} - {batch.quantity} ind. ({batch.average_weight}g moy.)
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
                               
                               {/* Afficher les détails du lot sélectionné */}
                               {editData.livestock_batch_id && editData.livestock_batch_id !== "none" && (() => {
