@@ -53,15 +53,24 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
   const daysElapsed = Math.floor((new Date().getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24));
   const cycleDuration = cycle.endDate 
     ? Math.floor((new Date(cycle.endDate).getTime() - new Date(cycle.startDate).getTime()) / (1000 * 60 * 60 * 24))
-    : 150; // Par défaut 150 jours si pas de date de fin
+    : (cycle.duration_months ? cycle.duration_months * 30 : 180); // Utiliser la durée prévue ou 180 jours par défaut
   const expectedEndDate = cycle.endDate || 'Non défini';
   
-  // Calcul du poids moyen basé sur les enregistrements de santé
+  // Progression temporelle du cycle (basée sur le temps écoulé vs durée prévue)
+  const timeProgress = Math.min(100, Math.max(0, (daysElapsed / cycleDuration) * 100));
+  
+  // Calcul du poids moyen basé sur les enregistrements de santé ou les lots rattachés
   const latestHealthRecord = healthRecords.length > 0 ? healthRecords[0] : null;
+  
+  // Poids moyen depuis les lots ou le dernier enregistrement de santé
   const averageWeight = latestHealthRecord?.average_weight 
-    ? latestHealthRecord.average_weight.toFixed(0)
-    : ((cycle.currentQuantity * 2.5) / cycle.currentQuantity * 1000).toFixed(0);
-  const dailyGrowth = (parseFloat(averageWeight) / Math.max(1, daysElapsed)).toFixed(1);
+    ? latestHealthRecord.average_weight
+    : cycleBatchData.batchesDetails.length > 0
+      ? cycleBatchData.batchesDetails.reduce((sum, d) => sum + (d?.batch?.average_weight || 0), 0) / cycleBatchData.batchesDetails.length
+      : 0;
+  
+  // Croissance journalière
+  const dailyGrowth = daysElapsed > 0 ? (averageWeight / daysElapsed).toFixed(2) : '0';
   
   // Calcul basé sur les enregistrements d'alimentation
   const feedConsumed = feedingRecords.reduce((sum, r) => sum + (r.quantity || 0), 0).toFixed(1);
@@ -73,7 +82,9 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
   // Calcul du taux de survie basé sur les lots rattachés et les mortalités
   const totalMortality = cycleBatchData.totalMortality || healthRecords.reduce((sum, record) => sum + (record.mortality || 0), 0);
   const initialQuantity = cycleBatchData.totalInitialQuantity || cycle.initialQuantity || cycle.targetQuantity;
-  const currentAlive = initialQuantity - totalMortality;
+  const currentAlive = cycleBatchData.totalCurrentQuantity > 0 
+    ? cycleBatchData.totalCurrentQuantity 
+    : (initialQuantity - totalMortality);
   const survivalRate = initialQuantity > 0 
     ? ((currentAlive / initialQuantity) * 100).toFixed(1)
     : '100.0';
@@ -223,15 +234,18 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">Progression vs Objectif</span>
-                      <span className="font-medium">{((currentAlive / cycle.targetQuantity) * 100).toFixed(0)}%</span>
+                      <span className="text-muted-foreground">Progression temporelle du cycle</span>
+                      <span className="font-medium">{timeProgress.toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-3">
                       <div 
-                        className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (currentAlive / cycle.targetQuantity) * 100)}%` }}
+                        className="bg-gradient-to-r from-blue-500 to-primary h-3 rounded-full transition-all"
+                        style={{ width: `${timeProgress}%` }}
                       ></div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {daysElapsed} jours écoulés sur {cycleDuration} jours prévus
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -246,8 +260,8 @@ const ProductionCycleDetails: React.FC<CycleDetailsProps> = ({ cycle, isOpen, on
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Poids moyen</p>
-                    <p className="font-medium text-lg">{averageWeight}g</p>
+                    <p className="text-muted-foreground">Poids moyen actuel</p>
+                    <p className="font-medium text-lg">{averageWeight.toFixed(1)}g</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Croissance journalière</p>
