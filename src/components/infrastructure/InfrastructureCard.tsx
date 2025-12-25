@@ -38,12 +38,14 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const cycleInfra = cycleInfras.find(ci => 
     ci.infrastructure_name === infrastructure.name || ci.id === infrastructure.id
   );
-  // Find attached batch from ALL batches (not just unit-filtered ones)
-  const attachedBatch = cycleInfra?.livestock_batch_id 
-    ? allBatches.find(b => b.id === cycleInfra.livestock_batch_id)
+  
+  // Find attached batch - first check specifications.attachedBatchId (from form), then cycleInfra
+  const attachedBatchId = (infrastructure.specifications as any)?.attachedBatchId || cycleInfra?.livestock_batch_id;
+  const attachedBatch = attachedBatchId 
+    ? allBatches.find(b => b.id === attachedBatchId)
     : null;
   
-  // Find the associated production cycle
+  // Find the associated production cycle - only if infrastructure is attached to a cycle
   const associatedCycle = cycleInfra?.cycle_id 
     ? cycles.find(c => c.id === cycleInfra.cycle_id)
     : null;

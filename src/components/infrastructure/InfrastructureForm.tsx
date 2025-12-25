@@ -132,6 +132,14 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
   };
 
   const handleSave = async () => {
+    // Build specifications with attachedBatchId if a batch is selected
+    const specs = Object.fromEntries(
+      Object.entries(newInfrastructure.specifications).filter(([_, value]) => value !== '')
+    );
+    if (newInfrastructure.suggestedBatchId) {
+      (specs as any).attachedBatchId = newInfrastructure.suggestedBatchId;
+    }
+    
     const infrastructurePayload = {
       name: newInfrastructure.name,
       unitId: newInfrastructure.unitId,
@@ -139,9 +147,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
       customTypeName: newInfrastructure.customTypeName || undefined,
       capacity: newInfrastructure.capacity,
       status: newInfrastructure.status,
-      specifications: Object.fromEntries(
-        Object.entries(newInfrastructure.specifications).filter(([_, value]) => value !== '')
-      ),
+      specifications: specs,
     };
 
     try {
@@ -283,7 +289,17 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
             <SelectContent>
               <SelectItem value="none">Aucun lot</SelectItem>
               {batches
-                .filter(batch => batch.unit_id === newInfrastructure.unitId)
+                .filter(batch => {
+                  // Filter by unit and exclude batches already attached to other infrastructures
+                  if (batch.unit_id !== newInfrastructure.unitId) return false;
+                  // If editing, allow current batch
+                  if (infrastructure && (infrastructure.specifications as any)?.attachedBatchId === batch.id) return true;
+                  // Check if batch is attached elsewhere
+                  const isAttachedElsewhere = batches.some(b => 
+                    b.id !== batch.id && (b as any).attached_infrastructure_id
+                  );
+                  return !isAttachedElsewhere;
+                })
                 .map((batch) => (
                   <SelectItem key={batch.id} value={batch.id}>
                     {batch.species} - {batch.quantity} ind. ({batch.average_weight}g) - {batch.unit_name}
@@ -292,7 +308,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
-            Ce lot sera affiché sur cette infrastructure
+            Ce lot sera affiché sur cette infrastructure. Un lot ne peut être rattaché qu'à une seule infrastructure.
           </p>
         </div>
 
