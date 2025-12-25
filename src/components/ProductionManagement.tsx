@@ -1,21 +1,84 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import ProductionCycleForm from './production/ProductionCycleForm';
 import ProductionCycleDetails from './production/ProductionCycleDetails';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
+import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 
 const ProductionManagement = () => {
-  const { activeUnit, getUnitCycles } = useProductionUnits();
-  const [customCycles, setCustomCycles] = useState([]);
+  const { activeUnit } = useProductionUnits();
+  const { cycles, loading: cyclesLoading, refetch: refetchCycles } = useProductionCycles(activeUnit?.id);
+  const { infrastructures: allInfrastructures } = useCycleInfrastructures(undefined, true);
+  const { batches } = useLivestockBatches(activeUnit?.id);
+  
   const [selectedCycle, setSelectedCycle] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Convertir les cycles DB en format utilisé par le composant avec calculs automatiques
+  const unitCycles = useMemo(() => {
+    return cycles.map(cycle => {
+      // Trouver les infrastructures rattachées à ce cycle
+      const cycleInfras = allInfrastructures.filter(infra => infra.cycle_id === cycle.id);
+      
+      // Calculer les totaux à partir des lots rattachés
+      let totalQuantity = 0;
+      let totalWeight = 0;
+      let avgSurvivalRate = 0;
+      let batchCount = 0;
+      
+      cycleInfras.forEach(infra => {
+        const batch = infra.livestock_batch_id ? batches.find(b => b.id === infra.livestock_batch_id) : null;
+        if (batch) {
+          totalQuantity += batch.quantity;
+          totalWeight += batch.quantity * (batch.average_weight || 0);
+          avgSurvivalRate += batch.expected_survival_rate || 85;
+          batchCount++;
+        } else {
+          totalQuantity += infra.current_quantity || 0;
+        }
+      });
+      
+      if (batchCount > 0) {
+        avgSurvivalRate = avgSurvivalRate / batchCount;
+      } else {
+        avgSurvivalRate = 85;
+      }
+      
+      // Utiliser les totaux calculés ou les valeurs du cycle
+      const initialQty = totalQuantity > 0 ? totalQuantity : (cycle.initial_quantity || cycle.fingerlings_count || 0);
+      const currentQty = cycle.current_quantity || initialQty;
+      const targetQty = cycle.target_quantity || Math.round(initialQty * (avgSurvivalRate / 100));
+      
+      return {
+        id: cycle.id,
+        name: cycle.name,
+        status: cycle.status,
+        startDate: cycle.start_date,
+        endDate: cycle.end_date,
+        currentQuantity: currentQty,
+        targetQuantity: targetQty,
+        initialQuantity: initialQty,
+        initialWeight: totalWeight,
+        notes: cycle.notes,
+        species: cycle.species,
+        duration_months: cycle.duration_months,
+        stockingDate: cycle.stocking_date,
+        fingerlingsCount: cycle.fingerlings_count,
+        unitId: cycle.unit_id,
+        infrastructureCount: cycleInfras.length,
+        avgSurvivalRate
+      };
+    });
+  }, [cycles, allInfrastructures, batches]);
 
   if (!activeUnit) {
     return (
@@ -44,8 +107,6 @@ const ProductionManagement = () => {
       </div>
     );
   }
-
-  const unitCycles = [...getUnitCycles(activeUnit.id), ...customCycles.filter(c => c.unitId === activeUnit.id)];
 
   const [cycleAlertsData, setCycleAlertsData] = useState<any>(null);
 
@@ -85,8 +146,9 @@ const ProductionManagement = () => {
     }
   }, [unitCycles, activeUnit]);
 
-  const handleSaveCycle = (cycle) => {
-    setCustomCycles([...customCycles, cycle]);
+  const handleSaveCycle = async (cycle) => {
+    // Refetch cycles from database to get the newly created cycle
+    await refetchCycles();
   };
 
   const handleShowDetails = (cycle) => {

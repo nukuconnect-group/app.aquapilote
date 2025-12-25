@@ -178,7 +178,14 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
     return stocks.filter(stock => stock.expiration_date && new Date(stock.expiration_date) <= thirtyDaysFromNow);
   };
 
+  // Calculs des totaux
   const getTotalValue = () => stocks.reduce((total, stock) => total + (stock.quantity * (stock.cost || 0)), 0);
+  const getTotalQuantity = () => stocks.reduce((total, stock) => total + stock.quantity, 0);
+  const getTotalStocks = () => stocks.length;
+  const getAverageCost = () => {
+    const totalQty = getTotalQuantity();
+    return totalQty > 0 ? getTotalValue() / totalQty : 0;
+  };
 
   const handleCheckAlerts = async () => {
     try {
@@ -242,11 +249,59 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
   return (
     <div className="space-y-4">
+      {/* Carte récapitulative du stock */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Package className="w-4 h-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Stock total</span>
+            </div>
+            <p className="text-xl font-bold text-primary">{getTotalQuantity().toLocaleString('fr-FR')} kg</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingDown className="w-4 h-4 text-green-600" />
+              <span className="text-xs text-muted-foreground">Valeur totale</span>
+            </div>
+            <p className="text-xl font-bold text-green-600">{getTotalValue().toLocaleString('fr-FR')} F</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <BarChart3 className="w-4 h-4 text-blue-600" />
+              <span className="text-xs text-muted-foreground">Types d'aliments</span>
+            </div>
+            <p className="text-xl font-bold text-blue-600">{getTotalStocks()}</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-orange-600" />
+              <span className="text-xs text-muted-foreground">Coût moyen/kg</span>
+            </div>
+            <p className="text-xl font-bold text-orange-600">{getAverageCost().toLocaleString('fr-FR', { maximumFractionDigits: 0 })} F</p>
+          </CardContent>
+        </Card>
+      </div>
+      
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">Gestion des Stocks d'Aliment</h3>
-          <p className="text-sm text-gray-600">
-            Valeur totale: {getTotalValue().toLocaleString('fr-FR')} F CFA
+          <p className="text-sm text-muted-foreground">
+            {getLowStockItems().length > 0 && (
+              <span className="text-yellow-600 mr-2">⚠️ {getLowStockItems().length} stock(s) faible(s)</span>
+            )}
+            {getExpiringItems().length > 0 && (
+              <span className="text-red-600">🕐 {getExpiringItems().length} expiration(s) proche(s)</span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -460,16 +515,20 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         </div>
       </div>
 
-      {/* Tabs for Stocks and Alert History */}
+      {/* Tabs for Stocks, Movement History, and Alert History */}
       <Tabs defaultValue="stocks" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="stocks" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
             Stocks
           </TabsTrigger>
+          <TabsTrigger value="movements" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Mouvements
+          </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="w-4 h-4" />
-            Historique Alertes
+            Alertes
           </TabsTrigger>
         </TabsList>
         
@@ -615,6 +674,106 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+        
+        <TabsContent value="movements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="w-5 h-5" />
+                Historique des Mouvements de Stock
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stocks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Aucun stock enregistré. Ajoutez des stocks pour voir l'historique.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Tableau récapitulatif des stocks par type */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2">Type d'aliment</th>
+                          <th className="text-right py-2 px-2">Quantité</th>
+                          <th className="text-right py-2 px-2">Coût unitaire</th>
+                          <th className="text-right py-2 px-2">Valeur</th>
+                          <th className="text-center py-2 px-2">Statut</th>
+                          <th className="text-center py-2 px-2">Dernière MAJ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stocks.map(stock => {
+                          const isLow = stock.quantity <= (stock.min_threshold || 50);
+                          const isExpiring = stock.expiration_date && new Date(stock.expiration_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                          return (
+                            <tr key={stock.id} className="border-b hover:bg-muted/50">
+                              <td className="py-2 px-2">
+                                <div>
+                                  <p className="font-medium">{stock.custom_name || stock.feed_type}</p>
+                                  <p className="text-xs text-muted-foreground">{stock.supplier || 'Sans fournisseur'}</p>
+                                </div>
+                              </td>
+                              <td className="text-right py-2 px-2 font-medium">{stock.quantity} {stock.unit}</td>
+                              <td className="text-right py-2 px-2">{(stock.cost || 0).toLocaleString('fr-FR')} F</td>
+                              <td className="text-right py-2 px-2 font-medium">{(stock.quantity * (stock.cost || 0)).toLocaleString('fr-FR')} F</td>
+                              <td className="text-center py-2 px-2">
+                                {isLow ? (
+                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 text-xs">Stock bas</Badge>
+                                ) : isExpiring ? (
+                                  <Badge variant="outline" className="bg-red-100 text-red-800 text-xs">Expire bientôt</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">OK</Badge>
+                                )}
+                              </td>
+                              <td className="text-center py-2 px-2 text-xs text-muted-foreground">
+                                {stock.updated_at ? new Date(stock.updated_at).toLocaleDateString('fr-FR') : 'N/A'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/30 font-medium">
+                          <td className="py-2 px-2">Total</td>
+                          <td className="text-right py-2 px-2">{getTotalQuantity().toLocaleString('fr-FR')} kg</td>
+                          <td className="text-right py-2 px-2">{getAverageCost().toLocaleString('fr-FR', { maximumFractionDigits: 0 })} F (moy)</td>
+                          <td className="text-right py-2 px-2">{getTotalValue().toLocaleString('fr-FR')} F</td>
+                          <td colSpan={2}></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  
+                  {/* Graphique d'évolution */}
+                  {stocks.length > 0 && (
+                    <div className="h-64 mt-4">
+                      <p className="text-sm font-medium mb-2">Évolution des stocks</p>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={stockEvolutionData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="quantite" 
+                            stroke="#f97316" 
+                            strokeWidth={2}
+                            name="Quantité (kg)"
+                            dot={{ r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="history">
