@@ -681,10 +681,14 @@ const LivestockManagement = () => {
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm mb-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm mb-3">
                           <div>
                             <p className="text-muted-foreground">Quantité</p>
                             <p className="font-medium truncate">{batch.quantity.toLocaleString()} individus</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Poids moyen ind.</p>
+                            <p className="font-medium">{batch.averageWeight} g</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Poids total</p>
