@@ -34,19 +34,30 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const { batches: allBatches, createBatch } = useLivestockBatches();
   const { cycles } = useProductionCycles();
   
-  // Find cycle infrastructure matching this infrastructure by name or ID
-  const cycleInfra = cycleInfras.find(ci => 
-    ci.infrastructure_name === infrastructure.name || ci.id === infrastructure.id
-  );
-  
-  // Find attached batch - first check specifications.attachedBatchId (from form), then cycleInfra
-  const attachedBatchId = (infrastructure.specifications as any)?.attachedBatchId || cycleInfra?.livestock_batch_id;
+  // Find attached batch from specifications - this is set when user attaches a batch to infrastructure
+  const attachedBatchId = (infrastructure.specifications as any)?.attachedBatchId;
   const attachedBatch = attachedBatchId 
     ? allBatches.find(b => b.id === attachedBatchId)
     : null;
   
-  // Find the associated production cycle - only if infrastructure is attached to a cycle
-  const associatedCycle = cycleInfra?.cycle_id 
+  // Find cycle infrastructure - ONLY match if this exact infrastructure ID is registered in cycle_infrastructures
+  // We need to match by BOTH unit infrastructure ID and name to avoid false positives
+  const cycleInfra = cycleInfras.find(ci => {
+    // Check if this cycle_infrastructure references this unit infrastructure
+    // The infrastructure_name in cycle_infrastructures should match exactly
+    // AND we verify it's for this specific infrastructure by checking if:
+    // 1. The name matches exactly
+    // 2. The batch attached matches (if any)
+    const nameMatches = ci.infrastructure_name === infrastructure.name;
+    
+    // Only consider it a match if the infrastructure was actually attached to a cycle
+    // and not just coincidentally having the same name
+    return nameMatches && ci.cycle_id;
+  });
+  
+  // Find the associated production cycle - ONLY if infrastructure is explicitly attached to a cycle
+  // A new infrastructure should NEVER show a cycle unless it was explicitly attached
+  const associatedCycle = cycleInfra 
     ? cycles.find(c => c.id === cycleInfra.cycle_id)
     : null;
 

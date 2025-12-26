@@ -302,8 +302,11 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                   <>
                     <div className="space-y-3">
                       {infrastructures.map((infra) => {
-                        // Trouver le lot suggéré pour cette infrastructure
-                        const suggestedBatch = batches.find(b => (infra as any).suggestedBatchId === b.id);
+                        // Trouver le lot attaché à cette infrastructure via specifications.attachedBatchId
+                        const attachedBatchId = (infra.specifications as any)?.attachedBatchId;
+                        const attachedBatch = attachedBatchId 
+                          ? batches.find(b => b.id === attachedBatchId)
+                          : null;
                         
                         return (
                           <div key={infra.id} className="p-3 border rounded-lg space-y-2">
@@ -313,14 +316,14 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                                 checked={formData.infrastructures.includes(infra.name)}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    // Auto-sélectionner le lot suggéré si disponible
-                                    const suggestedBatchId = (infra as any).suggestedBatchId || '';
+                                    // Auto-sélectionner le lot attaché à cette infrastructure
+                                    const batchIdToUse = attachedBatchId || '';
                                     setFormData({
                                       ...formData,
                                       infrastructures: [...formData.infrastructures, infra.name],
                                       infrastructureBatches: {
                                         ...formData.infrastructureBatches,
-                                        [infra.name]: suggestedBatchId
+                                        [infra.name]: batchIdToUse
                                       }
                                     });
                                   } else {
@@ -343,9 +346,9 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                                   <div className="text-xs text-muted-foreground">
                                     {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
                                   </div>
-                                  {suggestedBatch && (
+                                  {attachedBatch && (
                                     <div className="text-xs text-primary mt-1 font-medium">
-                                      → Lot: {suggestedBatch.species} - {suggestedBatch.quantity} individus ({suggestedBatch.average_weight}g)
+                                      → Lot attaché: {attachedBatch.species} - {attachedBatch.quantity.toLocaleString()} individus ({attachedBatch.average_weight || 0}g)
                                     </div>
                                   )}
                                 </div>
