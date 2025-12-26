@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ interface InfrastructureFormProps {
 }
 
 const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: InfrastructureFormProps) => {
-  const { units, addInfrastructure, updateInfrastructure } = useProductionUnits();
+  const { units, addInfrastructure, updateInfrastructure, infrastructures: allInfrastructures } = useProductionUnits();
   const { addLog } = useLogs();
   const { batches } = useLivestockBatches();
   
@@ -290,14 +290,21 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
               <SelectItem value="none">Aucun lot</SelectItem>
               {batches
                 .filter(batch => {
-                  // Filter by unit and exclude batches already attached to other infrastructures
+                  // Filter by unit
                   if (batch.unit_id !== newInfrastructure.unitId) return false;
+                  
                   // If editing, allow current batch
-                  if (infrastructure && (infrastructure.specifications as any)?.attachedBatchId === batch.id) return true;
-                  // Check if batch is attached elsewhere
-                  const isAttachedElsewhere = batches.some(b => 
-                    b.id !== batch.id && (b as any).attached_infrastructure_id
-                  );
+                  const currentAttachedBatchId = (infrastructure?.specifications as any)?.attachedBatchId;
+                  if (infrastructure && currentAttachedBatchId === batch.id) return true;
+                  
+                  // Check if batch is attached to another infrastructure
+                  const isAttachedElsewhere = allInfrastructures.some(inf => {
+                    // Skip current infrastructure if editing
+                    if (infrastructure && inf.id === infrastructure.id) return false;
+                    // Check if this infrastructure has the batch attached
+                    return (inf.specifications as any)?.attachedBatchId === batch.id;
+                  });
+                  
                   return !isAttachedElsewhere;
                 })
                 .map((batch) => (

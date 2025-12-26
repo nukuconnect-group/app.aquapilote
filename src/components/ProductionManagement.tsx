@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -13,12 +13,15 @@ import ProductionCycleDetails from './production/ProductionCycleDetails';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const ProductionManagement = () => {
-  const { activeUnit } = useProductionUnits();
-  const { cycles, loading: cyclesLoading, refetch: refetchCycles } = useProductionCycles(activeUnit?.id);
-  const { infrastructures: allInfrastructures } = useCycleInfrastructures(undefined, true);
+  const { activeUnit, infrastructures: unitInfrastructures } = useProductionUnits();
+  const { cycles, loading: cyclesLoading, refetch: refetchCycles, deleteCycle } = useProductionCycles(activeUnit?.id);
+  const { infrastructures: allCycleInfrastructures } = useCycleInfrastructures(undefined, true);
   const { batches } = useLivestockBatches(activeUnit?.id);
+  const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
   
   const [selectedCycle, setSelectedCycle] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -27,19 +30,21 @@ const ProductionManagement = () => {
   const unitCycles = useMemo(() => {
     return cycles.map(cycle => {
       // Trouver les infrastructures rattachées à ce cycle
-      const cycleInfras = allInfrastructures.filter(infra => infra.cycle_id === cycle.id);
+      const cycleInfras = allCycleInfrastructures.filter(infra => infra.cycle_id === cycle.id);
       
       // Calculer les totaux à partir des lots rattachés
       let totalQuantity = 0;
       let totalWeight = 0;
       let avgSurvivalRate = 0;
       let batchCount = 0;
+      let totalAverageWeight = 0;
       
       cycleInfras.forEach(infra => {
         const batch = infra.livestock_batch_id ? batches.find(b => b.id === infra.livestock_batch_id) : null;
         if (batch) {
           totalQuantity += batch.quantity;
           totalWeight += batch.quantity * (batch.average_weight || 0);
+          totalAverageWeight += batch.average_weight || 0;
           avgSurvivalRate += batch.expected_survival_rate || 85;
           batchCount++;
         } else {
@@ -49,14 +54,30 @@ const ProductionManagement = () => {
       
       if (batchCount > 0) {
         avgSurvivalRate = avgSurvivalRate / batchCount;
+        totalAverageWeight = totalAverageWeight / batchCount;
       } else {
         avgSurvivalRate = 85;
       }
+      
+      // Obtenir le poids moyen depuis le dernier health record (pêche de contrôle)
+      const cycleHealthRecords = healthRecords.filter(r => r.cycle_id === cycle.id);
+      const latestHealthRecord = cycleHealthRecords.length > 0 
+        ? cycleHealthRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+        : null;
+      const currentAverageWeight = latestHealthRecord?.average_weight || totalAverageWeight;
       
       // Utiliser les totaux calculés ou les valeurs du cycle
       const initialQty = totalQuantity > 0 ? totalQuantity : (cycle.initial_quantity || cycle.fingerlings_count || 0);
       const currentQty = cycle.current_quantity || initialQty;
       const targetQty = cycle.target_quantity || Math.round(initialQty * (avgSurvivalRate / 100));
+      
+      // Calculer la progression temporelle
+      const startDate = new Date(cycle.start_date);
+      const endDate = cycle.end_date ? new Date(cycle.end_date) : new Date(startDate.getTime() + (cycle.duration_months || 6) * 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const totalDuration = endDate.getTime() - startDate.getTime();
+      const elapsed = now.getTime() - startDate.getTime();
+      const timeProgress = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
       
       return {
         id: cycle.id,
@@ -68,6 +89,7 @@ const ProductionManagement = () => {
         targetQuantity: targetQty,
         initialQuantity: initialQty,
         initialWeight: totalWeight,
+        currentAverageWeight,
         notes: cycle.notes,
         species: cycle.species,
         duration_months: cycle.duration_months,
@@ -75,10 +97,11 @@ const ProductionManagement = () => {
         fingerlingsCount: cycle.fingerlings_count,
         unitId: cycle.unit_id,
         infrastructureCount: cycleInfras.length,
-        avgSurvivalRate
+        avgSurvivalRate,
+        timeProgress
       };
     });
-  }, [cycles, allInfrastructures, batches]);
+  }, [cycles, allCycleInfrastructures, batches, healthRecords]);
 
   if (!activeUnit) {
     return (
@@ -266,25 +289,69 @@ const ProductionManagement = () => {
                   <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <CardTitle className="text-base sm:text-lg">{cycle.name}</CardTitle>
-                      <Badge className="bg-green-100 text-green-800 w-fit">
-                        {cycle.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-100 text-green-800 w-fit">
+                          {cycle.status}
+                        </Badge>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="outline" className="h-7 w-7 text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer le cycle ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action supprimera définitivement le cycle "{cycle.name}" et toutes ses données associées.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteCycle(cycle.id)}>
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </CardHeader>
                   
                   <CardContent className="space-y-3">
-                    <div className="text-xs sm:text-sm">
-                      <p className="text-gray-600">Démarré le {cycle.startDate}</p>
-                      <p className="font-medium">
-                        {cycle.currentQuantity.toLocaleString()} / {cycle.targetQuantity.toLocaleString()}
-                      </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                      <div>
+                        <p className="text-gray-600">Qté initiale</p>
+                        <p className="font-medium">{cycle.initialQuantity.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Poids moy. actuel</p>
+                        <p className="font-medium">{cycle.currentAverageWeight ? `${cycle.currentAverageWeight.toFixed(1)} g` : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Qté actuelle/cible</p>
+                        <p className="font-medium">
+                          {cycle.currentQuantity.toLocaleString()} / {cycle.targetQuantity.toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Taux survie</p>
+                        <p className="font-medium">{cycle.avgSurvivalRate.toFixed(1)}%</p>
+                      </div>
                     </div>
                     
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all" 
-                        style={{ width: `${Math.min(100, (cycle.currentQuantity / cycle.targetQuantity) * 100)}%` }}
-                      ></div>
+                    {/* Barre de progression temporelle */}
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Progression du cycle</span>
+                        <span>{cycle.timeProgress}%</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all" 
+                          style={{ width: `${cycle.timeProgress}%` }}
+                        ></div>
+                      </div>
                     </div>
                     
                     {cycle.notes && (
@@ -334,25 +401,66 @@ const ProductionManagement = () => {
 
         <TabsContent value="all">
           <div className="space-y-4">
-            {unitCycles.map((cycle) => (
+            {unitCycles.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Aucun cycle de production
+              </div>
+            ) : unitCycles.map((cycle) => (
               <Card key={cycle.id}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-medium text-sm sm:text-base">{cycle.name}</h4>
                       <p className="text-xs sm:text-sm text-gray-600">
                         {cycle.startDate} - {cycle.endDate || 'En cours'}
                       </p>
+                      <div className="grid grid-cols-3 gap-2 text-xs mt-2">
+                        <span>Init: {cycle.initialQuantity.toLocaleString()}</span>
+                        <span>Poids moy: {cycle.currentAverageWeight ? `${cycle.currentAverageWeight.toFixed(1)}g` : 'N/A'}</span>
+                        <span>Survie: {cycle.avgSurvivalRate.toFixed(0)}%</span>
+                      </div>
+                      {/* Barre de progression */}
+                      <div className="mt-2">
+                        <div className="w-full bg-secondary rounded-full h-1.5">
+                          <div 
+                            className="bg-primary h-1.5 rounded-full transition-all" 
+                            style={{ width: `${cycle.timeProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
-                    <Badge 
-                      className={
-                        cycle.status === 'active' ? 'bg-green-100 text-green-800' :
-                        cycle.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }
-                    >
-                      {cycle.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        className={
+                          cycle.status === 'active' ? 'bg-green-100 text-green-800' :
+                          cycle.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }
+                      >
+                        {cycle.status}
+                      </Badge>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-8 w-8 text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer le cycle ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action supprimera définitivement le cycle "{cycle.name}".
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteCycle(cycle.id)}>
+                              Supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
