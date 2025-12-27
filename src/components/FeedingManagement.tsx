@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -22,6 +22,8 @@ import { generateFeedingRecordHTML, printHTML } from '@/lib/feedingPrintUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { createNotification } from '@/lib/notificationService';
+import { supabase } from '@/integrations/supabase/client';
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
@@ -165,6 +167,72 @@ const FeedingManagement = () => {
         notes: enrichedNotes.trim() || undefined,
         behavior: record.fishBehavior || undefined,
       });
+
+      // Déduire du stock d'aliment
+      const quantityUsed = record.quantity || record.actualQuantity || 0;
+      if (quantityUsed > 0 && record.feedType) {
+        // Trouver le stock correspondant au type d'aliment
+        const matchingStock = stocks.find(s => 
+          s.feed_type === record.feedType || 
+          s.custom_name === record.feedType
+        );
+        
+        if (matchingStock && matchingStock.quantity >= quantityUsed) {
+          // Mettre à jour le stock
+          const newQuantity = matchingStock.quantity - quantityUsed;
+          await supabase
+            .from('feed_stocks')
+            .update({ quantity: newQuantity })
+            .eq('id', matchingStock.id);
+          
+          // Créer une alerte de sortie d'aliment
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await createNotification({
+              userId: user.id,
+              title: 'Sortie d\'aliment',
+              message: `${quantityUsed} ${record.unit || 'kg'} de ${record.feedType} utilisé. Stock restant: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
+              type: 'info',
+              module: 'Alimentation',
+              isCritical: false,
+              metadata: {
+                feedType: record.feedType,
+                quantityUsed,
+                remainingStock: newQuantity,
+                unitId: activeUnit.id
+              }
+            });
+            
+            // Vérifier si le stock est bas après la déduction
+            if (newQuantity <= (matchingStock.min_threshold || 50)) {
+              await createNotification({
+                userId: user.id,
+                title: 'Stock d\'aliment bas',
+                message: `Le stock de ${record.feedType} est bas (${newQuantity.toFixed(1)} ${matchingStock.unit}). Seuil minimum: ${matchingStock.min_threshold || 50}`,
+                type: 'warning',
+                module: 'Alimentation',
+                isCritical: newQuantity <= 0,
+                metadata: {
+                  feedType: record.feedType,
+                  currentStock: newQuantity,
+                  threshold: matchingStock.min_threshold || 50
+                }
+              });
+            }
+          }
+          
+          toast({
+            title: 'Stock mis à jour',
+            description: `${quantityUsed} ${record.unit || 'kg'} déduit du stock. Reste: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
+          });
+        } else if (matchingStock && matchingStock.quantity < quantityUsed) {
+          toast({
+            title: 'Attention',
+            description: `Stock insuffisant pour ${record.feedType}. Stock actuel: ${matchingStock.quantity} ${matchingStock.unit}`,
+            variant: 'destructive',
+          });
+        }
+      }
     } catch (error) {
       console.error('Error saving feeding record:', error);
     }
@@ -297,6 +365,11 @@ const FeedingManagement = () => {
               <span className="hidden sm:inline">Stock aliment</span>
               <span className="sm:hidden">Stock</span>
             </TabsTrigger>
+            <TabsTrigger value="alerts" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Alertes</span>
+              <span className="sm:hidden">Alert.</span>
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
               <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Suivi graphique</span>
@@ -364,6 +437,10 @@ const FeedingManagement = () => {
             unitId={activeUnit.id}
             onStockUpdate={handleStockUpdate}
           />
+        </TabsContent>
+
+        <TabsContent value="alerts" className="space-y-4">
+          <SmartAlerts unitId={activeUnit.id} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

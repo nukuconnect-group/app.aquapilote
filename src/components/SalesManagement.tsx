@@ -19,6 +19,8 @@ import DocumentTemplateManager from './economics/DocumentTemplateManager';
 import ReceiptPreview, { ReceiptData } from './economics/ReceiptPreview';
 import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
+import { createNotification } from '@/lib/notificationService';
+import { supabase } from '@/integrations/supabase/client';
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -156,6 +158,24 @@ const SalesManagement = () => {
     if (result) {
       addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
       toast({ title: "Vente enregistrée", description: `Vente de ${formatCurrency(totalAmount)} confirmée` });
+      
+      // Create notification for the sale
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await createNotification({
+          userId: user.id,
+          title: 'Nouvelle vente',
+          message: `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`,
+          type: 'success',
+          module: 'Ventes',
+          isCritical: false,
+          metadata: {
+            clientName: newSale.clientName,
+            totalAmount,
+            paymentMethod: newSale.paymentMethod
+          }
+        });
+      }
     }
     
     setNewSale({
