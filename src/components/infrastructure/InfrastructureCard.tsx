@@ -40,19 +40,23 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
     ? allBatches.find(b => b.id === attachedBatchId)
     : null;
   
-  // Find cycle infrastructure - ONLY match if this exact infrastructure ID is registered in cycle_infrastructures
-  // We need to match by BOTH unit infrastructure ID and name to avoid false positives
+  // Find cycle infrastructure - ONLY match if this exact infrastructure is registered in cycle_infrastructures
+  // Match by: infrastructure name AND the infrastructure must belong to the same unit
+  // AND the cycle it's attached to must also belong to the same unit
   const cycleInfra = cycleInfras.find(ci => {
-    // Check if this cycle_infrastructure references this unit infrastructure
-    // The infrastructure_name in cycle_infrastructures should match exactly
-    // AND we verify it's for this specific infrastructure by checking if:
-    // 1. The name matches exactly
-    // 2. The batch attached matches (if any)
-    const nameMatches = ci.infrastructure_name === infrastructure.name;
+    // The name must match exactly
+    if (ci.infrastructure_name !== infrastructure.name) return false;
     
-    // Only consider it a match if the infrastructure was actually attached to a cycle
-    // and not just coincidentally having the same name
-    return nameMatches && ci.cycle_id;
+    // Must have a cycle_id to be considered attached
+    if (!ci.cycle_id) return false;
+    
+    // Find the cycle this infrastructure is attached to
+    const cycle = cycles.find(c => c.id === ci.cycle_id);
+    
+    // The cycle must exist and belong to the same unit as this infrastructure
+    if (!cycle || cycle.unit_id !== activeUnit?.id) return false;
+    
+    return true;
   });
   
   // Find the associated production cycle - ONLY if infrastructure is explicitly attached to a cycle

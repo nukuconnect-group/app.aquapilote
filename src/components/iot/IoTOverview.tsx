@@ -134,14 +134,47 @@ const IoTOverview = () => {
     }
   };
 
+  // Define the zootechnical parameters to display
+  const zootechnicalParams = [
+    { type: 'oxygen', name: 'Oxygène', unit: 'mg/L', icon: Wind, color: '#3b82f6' },
+    { type: 'ph', name: 'pH', unit: '', icon: Droplets, color: '#8b5cf6' },
+    { type: 'temperature', name: 'Température', unit: '°C', icon: Thermometer, color: '#ef4444' },
+    { type: 'nitrite', name: 'Nitrite', unit: 'mg/L', icon: Activity, color: '#10b981' },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Paramètres zootechniques - 4 icônes */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {zootechnicalParams.map((param) => {
+          const IconComponent = param.icon;
+          const sensorData = iotModules.find(m => m.type === param.type);
+          return (
+            <Card key={param.type} className="border-l-4" style={{ borderLeftColor: param.color }}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: `${param.color}20` }}>
+                    <IconComponent className="w-5 h-5" style={{ color: param.color }} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{param.name}</p>
+                    <p className="text-xl font-bold">
+                      {sensorData ? `${sensorData.value} ${param.unit}` : '--'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       {/* Message si pas de connexion IoT */}
       {!hasRealIoTConnection && (
         <Card className="border-2 border-dashed border-muted-foreground/25">
           <CardContent className="p-8 text-center">
             <Wifi className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Capteurs connectés : 0</h3>
+            <h3 className="text-lg font-semibold mb-2">0 capteurs connectés</h3>
             <p className="text-muted-foreground mb-4">
               Connectez vos capteurs pour visualiser les données en temps réel.
             </p>

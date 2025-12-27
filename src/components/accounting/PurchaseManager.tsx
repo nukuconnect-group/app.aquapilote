@@ -14,6 +14,8 @@ import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/hooks/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { createNotification } from '@/lib/notificationService';
+import { supabase } from '@/integrations/supabase/client';
 
 const PurchaseManager = () => {
   const { addLog } = useLogs();
@@ -94,7 +96,7 @@ const PurchaseManager = () => {
     { code: 'USD', symbol: '$', name: 'Dollar US' }
   ];
 
-  const handleAddPurchase = () => {
+  const handleAddPurchase = async () => {
     const selectedUnit = units.find(u => u.id === newPurchase.unitId);
     addPurchase({
       date: new Date().toISOString().split('T')[0],
@@ -116,6 +118,25 @@ const PurchaseManager = () => {
     });
     
     addLog('Achat enregistré', 'Achats', `${newPurchase.category}: ${newPurchase.description} - ${newPurchase.amount} ${newPurchase.currency}`, 'success');
+    
+    // Create notification for the purchase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await createNotification({
+        userId: user.id,
+        title: 'Nouvel achat',
+        message: `${newPurchase.category}: ${newPurchase.description} - ${newPurchase.amount} ${newPurchase.currency}`,
+        type: 'info',
+        module: 'Achats',
+        isCritical: false,
+        metadata: {
+          category: newPurchase.category,
+          amount: newPurchase.amount,
+          supplier: newPurchase.supplier
+        }
+      });
+    }
+    
     resetForm();
   };
 
@@ -527,25 +548,27 @@ const PurchaseManager = () => {
                   return (
                     <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <StatusIcon className="w-4 h-4" />
                           <Badge variant="outline">{purchase.category}</Badge>
                           {purchase.subcategory && (
                             <Badge variant="secondary" className="text-xs">{purchase.subcategory}</Badge>
                           )}
-                          <Select
-                            value={statusOverrides[purchase.id] ?? purchase.status}
-                            onValueChange={(value) => handleStatusChange(purchase.id, value as any)}
-                          >
-                            <SelectTrigger className="w-32 h-6 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">En attente</SelectItem>
-                              <SelectItem value="received">Reçu</SelectItem>
-                              <SelectItem value="cancelled">Annulé</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                            <Select
+                              value={statusOverrides[purchase.id] ?? purchase.status}
+                              onValueChange={(value) => handleStatusChange(purchase.id, value as any)}
+                            >
+                              <SelectTrigger className="w-32 h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent position="popper" sideOffset={5}>
+                                <SelectItem value="pending">En attente</SelectItem>
+                                <SelectItem value="received">Reçu</SelectItem>
+                                <SelectItem value="cancelled">Annulé</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <span className="text-sm text-gray-500">{purchase.date}</span>
                         </div>
                         <h4 className="font-medium">{purchase.description}</h4>
