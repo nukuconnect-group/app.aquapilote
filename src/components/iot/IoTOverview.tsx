@@ -36,13 +36,71 @@ const IoTOverview = () => {
   const { sensorReadings, getActiveAlerts, basins, realTimeData } = useIoT();
   const { t, formatCurrency } = useSettings();
   
-  // État vide par défaut - données réelles uniquement si capteurs connectés
+  // Données de démonstration
+  const [showDemoData, setShowDemoData] = useState(true);
   const [iotModules, setIotModules] = useState<IoTModuleData[]>([]);
   
   // Vérifier si des capteurs IoT sont réellement connectés
   const hasRealIoTConnection = basins.length > 0 && sensorReadings.length > 0;
 
-  // Mettre à jour les modules IoT uniquement avec des données réelles
+  // Générer des données de démo réalistes
+  const generateDemoData = (): IoTModuleData[] => {
+    const now = new Date();
+    const generateHistory = (baseValue: number, variance: number) => {
+      return Array.from({ length: 12 }, (_, i) => {
+        const time = new Date(now.getTime() - (11 - i) * 30 * 60 * 1000);
+        return {
+          time: time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          value: +(baseValue + (Math.random() - 0.5) * variance).toFixed(1)
+        };
+      });
+    };
+
+    return [
+      {
+        id: 'demo_temp',
+        name: 'Température',
+        type: 'temperature',
+        value: 26.5,
+        unit: '°C',
+        status: 'normal',
+        trend: 'stable',
+        history: generateHistory(26.5, 2)
+      },
+      {
+        id: 'demo_oxygen',
+        name: 'Oxygène',
+        type: 'oxygen',
+        value: 6.8,
+        unit: 'mg/L',
+        status: 'normal',
+        trend: 'up',
+        history: generateHistory(6.8, 1)
+      },
+      {
+        id: 'demo_ph',
+        name: 'pH',
+        type: 'ph',
+        value: 7.2,
+        unit: 'pH',
+        status: 'normal',
+        trend: 'stable',
+        history: generateHistory(7.2, 0.5)
+      },
+      {
+        id: 'demo_salinity',
+        name: 'Salinité',
+        type: 'salinity',
+        value: 12.5,
+        unit: 'ppt',
+        status: 'warning',
+        trend: 'down',
+        history: generateHistory(12.5, 2)
+      }
+    ];
+  };
+
+  // Mettre à jour les modules IoT
   useEffect(() => {
     if (hasRealIoTConnection && sensorReadings.length > 0) {
       // Construire les modules à partir des vraies données de capteurs
@@ -59,11 +117,14 @@ const IoTOverview = () => {
         history: [{ time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), value: reading.value }]
       }));
       setIotModules(modules);
+      setShowDemoData(false);
+    } else if (showDemoData) {
+      // Afficher les données de démo
+      setIotModules(generateDemoData());
     } else {
-      // Aucune connexion IoT - garder vide
       setIotModules([]);
     }
-  }, [hasRealIoTConnection, sensorReadings]);
+  }, [hasRealIoTConnection, sensorReadings, showDemoData]);
 
   const getModuleIcon = (type: string) => {
     switch (type) {
@@ -169,8 +230,8 @@ const IoTOverview = () => {
         })}
       </div>
 
-      {/* Message si pas de connexion IoT */}
-      {!hasRealIoTConnection && (
+      {/* Message si pas de connexion IoT et démo désactivé */}
+      {!hasRealIoTConnection && !showDemoData && (
         <Card className="border-2 border-dashed border-muted-foreground/25">
           <CardContent className="p-8 text-center">
             <Wifi className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -185,8 +246,16 @@ const IoTOverview = () => {
         </Card>
       )}
 
+      {/* Indicateur de mode démo */}
+      {showDemoData && !hasRealIoTConnection && (
+        <div className="flex items-center justify-center gap-2 p-2 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
+          <AlertTriangle className="w-4 h-4" />
+          <span>Mode démonstration - Données simulées (0 capteurs réels connectés)</span>
+        </div>
+      )}
+
       {/* Statistiques Globales IoT - uniquement si connecté */}
-      {hasRealIoTConnection && (
+      {(hasRealIoTConnection || showDemoData) && iotModules.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="p-4">
@@ -253,7 +322,7 @@ const IoTOverview = () => {
       )}
 
       {/* Graphiques des paramètres zootechniques - Vue en courbes - uniquement si connecté */}
-      {hasRealIoTConnection && iotModules.length > 0 && (
+      {(hasRealIoTConnection || showDemoData) && iotModules.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {iotModules.map((module) => {
             const IconComponent = getModuleIcon(module.type);
@@ -350,7 +419,7 @@ const IoTOverview = () => {
       )}
 
       {/* Graphique comparatif global - Tous les paramètres - uniquement si connecté */}
-      {hasRealIoTConnection && iotModules.length > 0 && (
+      {(hasRealIoTConnection || showDemoData) && iotModules.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

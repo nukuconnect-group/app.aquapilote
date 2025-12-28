@@ -554,15 +554,30 @@ const PurchaseManager = () => {
                           {purchase.subcategory && (
                             <Badge variant="secondary" className="text-xs">{purchase.subcategory}</Badge>
                           )}
-                          <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                          <div 
+                            onClick={(e) => e.stopPropagation()} 
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
                             <Select
                               value={statusOverrides[purchase.id] ?? purchase.status}
-                              onValueChange={(value) => handleStatusChange(purchase.id, value as any)}
+                              onValueChange={(value) => {
+                                handleStatusChange(purchase.id, value as any);
+                              }}
                             >
-                              <SelectTrigger className="w-32 h-7 text-xs">
+                              <SelectTrigger 
+                                className="w-32 h-7 text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent position="popper" sideOffset={5}>
+                              <SelectContent 
+                                position="popper" 
+                                sideOffset={5}
+                                onCloseAutoFocus={(e) => e.preventDefault()}
+                              >
                                 <SelectItem value="pending">En attente</SelectItem>
                                 <SelectItem value="received">Reçu</SelectItem>
                                 <SelectItem value="cancelled">Annulé</SelectItem>
