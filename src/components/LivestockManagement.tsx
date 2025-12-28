@@ -798,20 +798,53 @@ const LivestockManagement = () => {
               {healthRecords.length > 0 ? (
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm">Historique des pêches ({healthRecords.length})</h4>
-                  {healthRecords.slice(0, 5).map((record) => {
+                  {healthRecords.slice(0, 10).map((record) => {
                     const infra = allCycleInfras.find(i => i.id === record.basin_id);
                     return (
-                      <div key={record.id} className="border rounded-lg p-3 text-sm">
+                      <div key={record.id} className="border rounded-lg p-3 text-sm hover:bg-accent/30">
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-medium">{new Date(record.date).toLocaleDateString('fr-FR')}</span>
-                          {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
+                          <div className="flex gap-2">
+                            {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
+                            {record.density && (
+                              <Badge variant="secondary" className="text-xs">
+                                {record.density.toFixed(1)}% prélevé
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
-                          <div>Temp: {record.temperature ?? '-'}°C</div>
-                          <div>pH: {record.ph ?? '-'}</div>
-                          <div>O₂: {record.oxygen ?? '-'} mg/L</div>
-                          <div>Poids moy: {record.average_weight ?? '-'}g</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                          <div className="bg-muted/50 p-2 rounded">
+                            <span className="text-muted-foreground block">PMI</span>
+                            <span className="font-bold text-primary">{record.average_weight?.toFixed(1) ?? '-'}g</span>
+                          </div>
+                          <div className="bg-muted/50 p-2 rounded">
+                            <span className="text-muted-foreground block">Échantillon</span>
+                            <span className="font-medium">{record.sample_count ?? '-'} sujets</span>
+                          </div>
+                          <div className="bg-muted/50 p-2 rounded">
+                            <span className="text-muted-foreground block">Poids total</span>
+                            <span className="font-medium">{record.feeding?.toFixed(2) ?? '-'} kg</span>
+                          </div>
+                          <div className="bg-muted/50 p-2 rounded">
+                            <span className="text-muted-foreground block">Temp</span>
+                            <span className="font-medium">{record.temperature ?? '-'}°C</span>
+                          </div>
+                          <div className="bg-muted/50 p-2 rounded">
+                            <span className="text-muted-foreground block">pH / O₂</span>
+                            <span className="font-medium">{record.ph ?? '-'} / {record.oxygen ?? '-'}</span>
+                          </div>
                         </div>
+                        {record.notes && record.notes.includes('PRÉLÈVEMENT PAR LOTS') && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                              Voir détails des lots
+                            </summary>
+                            <pre className="text-xs mt-2 p-2 bg-muted rounded whitespace-pre-wrap">
+                              {record.notes}
+                            </pre>
+                          </details>
+                        )}
                       </div>
                     );
                   })}

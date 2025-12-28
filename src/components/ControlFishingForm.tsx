@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,15 +6,25 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Fish } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Fish, Trash2, Calculator, Scale, Info } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ControlFishingFormProps {
   unitId: string;
   onRecordCreated?: () => void;
+}
+
+interface SampleBatch {
+  id: string;
+  subjectCount: number;
+  individualWeight: number; // grammes
+  totalWeight: number; // grammes calculé automatiquement
 }
 
 const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps) => {
@@ -23,6 +33,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   const [selectedCycleId, setSelectedCycleId] = useState('');
   const { infrastructures } = useCycleInfrastructures(selectedCycleId);
   const { createRecord, records: allHealthRecords } = useHealthRecords(selectedCycleId, unitId);
+  const { batches: livestockBatches } = useLivestockBatches(unitId);
   
   const [formData, setFormData] = useState({
     infrastructureId: '',
@@ -31,42 +42,121 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     ph: '',
     oxygen: '',
     mortality: '',
-    average_weight: '',
-    sample_count: '',
     notes: ''
+  });
+
+  // Système de prélèvement par lots
+  const [sampleBatches, setSampleBatches] = useState<SampleBatch[]>([]);
+  const [newBatch, setNewBatch] = useState({
+    subjectCount: '',
+    individualWeight: ''
   });
 
   const activeCycles = cycles.filter(c => c.status === 'active');
   const selectedCycle = cycles.find(c => c.id === selectedCycleId);
   const selectedInfrastructure = infrastructures.find(i => i.id === formData.infrastructureId);
   
+  // Trouver le lot de poissons attaché à l'infrastructure
+  const attachedBatch = useMemo(() => {
+    if (!selectedInfrastructure?.livestock_batch_id) return null;
+    return livestockBatches.find(b => b.id === selectedInfrastructure.livestock_batch_id);
+  }, [selectedInfrastructure, livestockBatches]);
+
+  // Calculer le nombre de sujets disponibles (depuis le lot attaché ou l'infrastructure)
+  const availableSubjects = useMemo(() => {
+    if (attachedBatch) {
+      return attachedBatch.quantity;
+    }
+    return selectedInfrastructure?.current_quantity || 0;
+  }, [attachedBatch, selectedInfrastructure]);
+  
   // Filtrer les pêches de contrôle passées pour l'infrastructure sélectionnée
   const pastControlRecords = allHealthRecords.filter(r => r.basin_id === formData.infrastructureId);
   
-  // Calculs automatiques
-  const samplePercentage = selectedInfrastructure?.current_quantity && formData.sample_count
-    ? ((parseInt(formData.sample_count) / selectedInfrastructure.current_quantity) * 100).toFixed(2)
-    : '0';
+  // Calculs automatiques pour les lots prélevés
+  const batchCalculations = useMemo(() => {
+    const totalSubjects = sampleBatches.reduce((sum, b) => sum + b.subjectCount, 0);
+    const totalWeight = sampleBatches.reduce((sum, b) => sum + b.totalWeight, 0);
+    const pmi = totalSubjects > 0 ? totalWeight / totalSubjects : 0;
+    const samplePercentage = availableSubjects > 0 
+      ? ((totalSubjects / availableSubjects) * 100)
+      : 0;
+    
+    return {
+      totalSubjects,
+      totalWeight, // en grammes
+      totalWeightKg: totalWeight / 1000,
+      pmi, // Poids Moyen Individuel en grammes
+      samplePercentage
+    };
+  }, [sampleBatches, availableSubjects]);
+
+  // Ajouter un lot prélevé
+  const handleAddSampleBatch = () => {
+    const subjectCount = parseInt(newBatch.subjectCount) || 0;
+    const individualWeight = parseFloat(newBatch.individualWeight) || 0;
+    
+    if (subjectCount <= 0 || individualWeight <= 0) return;
+    
+    const newSampleBatch: SampleBatch = {
+      id: Date.now().toString(),
+      subjectCount,
+      individualWeight,
+      totalWeight: subjectCount * individualWeight
+    };
+    
+    setSampleBatches([...sampleBatches, newSampleBatch]);
+    setNewBatch({ subjectCount: '', individualWeight: '' });
+  };
+
+  // Supprimer un lot prélevé
+  const handleRemoveSampleBatch = (id: string) => {
+    setSampleBatches(sampleBatches.filter(b => b.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (sampleBatches.length === 0) {
+      return;
+    }
+    
     try {
+      // Créer les notes avec les détails des lots prélevés
+      const batchDetails = sampleBatches.map((b, i) => 
+        `Lot ${i + 1}: ${b.subjectCount} sujets × ${b.individualWeight}g = ${b.totalWeight}g`
+      ).join('\n');
+      
+      const calculationNotes = `
+=== PRÉLÈVEMENT PAR LOTS ===
+${batchDetails}
+
+=== CALCULS ===
+Total sujets prélevés: ${batchCalculations.totalSubjects}
+Poids total: ${batchCalculations.totalWeight.toFixed(0)}g (${batchCalculations.totalWeightKg.toFixed(2)}kg)
+PMI (Poids Moyen Individuel): ${batchCalculations.pmi.toFixed(2)}g
+Pourcentage prélevé: ${batchCalculations.samplePercentage.toFixed(2)}%
+Sujets disponibles dans l'infrastructure: ${availableSubjects}
+
+${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
+      `.trim();
+      
       await createRecord({
         cycle_id: selectedCycleId,
         unit_id: unitId,
-        basin_id: formData.infrastructureId, // basin_id = infrastructure_id
+        basin_id: formData.infrastructureId,
         date: formData.date,
         temperature: formData.temperature ? parseFloat(formData.temperature) : undefined,
         ph: formData.ph ? parseFloat(formData.ph) : undefined,
         oxygen: formData.oxygen ? parseFloat(formData.oxygen) : undefined,
         mortality: formData.mortality ? parseFloat(formData.mortality) : undefined,
-        average_weight: formData.average_weight ? parseFloat(formData.average_weight) : undefined,
-        sample_count: formData.sample_count ? parseInt(formData.sample_count) : undefined,
-        notes: formData.notes
+        average_weight: batchCalculations.pmi,
+        sample_count: batchCalculations.totalSubjects,
+        density: batchCalculations.samplePercentage, // Utiliser density pour stocker le % prélevé
+        feeding: batchCalculations.totalWeightKg, // Utiliser feeding pour stocker le poids total en kg
+        notes: calculationNotes
       });
       
-      // Appeler le callback de rafraîchissement
       onRecordCreated?.();
       
       setIsOpen(false);
@@ -79,10 +169,9 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
         ph: '',
         oxygen: '',
         mortality: '',
-        average_weight: '',
-        sample_count: '',
         notes: ''
       });
+      setSampleBatches([]);
       setSelectedCycleId('');
     } catch (error) {
       console.error('Error creating control fishing record:', error);
@@ -98,7 +187,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Fish className="w-5 h-5" />
@@ -124,7 +213,11 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
                 ) : (
                   <Select 
                     value={selectedCycleId} 
-                    onValueChange={setSelectedCycleId}
+                    onValueChange={(value) => {
+                      setSelectedCycleId(value);
+                      setFormData({...formData, infrastructureId: ''});
+                      setSampleBatches([]);
+                    }}
                     required
                   >
                     <SelectTrigger>
@@ -153,45 +246,90 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
                   ) : (
                     <Select 
                       value={formData.infrastructureId} 
-                      onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
+                      onValueChange={(value) => {
+                        setFormData({...formData, infrastructureId: value});
+                        setSampleBatches([]);
+                      }}
                       required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner une infrastructure" />
                       </SelectTrigger>
                       <SelectContent>
-                        {infrastructures.map((infra) => (
-                          <SelectItem key={infra.id} value={infra.id}>
-                            {infra.infrastructure_name} ({infra.infrastructure_type}) - {infra.current_quantity || 0} sujets
-                          </SelectItem>
-                        ))}
+                        {infrastructures.map((infra) => {
+                          const batch = livestockBatches.find(b => b.id === infra.livestock_batch_id);
+                          const subjectCount = batch?.quantity || infra.current_quantity || 0;
+                          return (
+                            <SelectItem key={infra.id} value={infra.id}>
+                              {infra.infrastructure_name} ({infra.infrastructure_type}) - {subjectCount} sujets
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   )}
                 </div>
               )}
               
-              {/* Informations sur l'infrastructure sélectionnée */}
+              {/* Informations détaillées sur l'infrastructure sélectionnée */}
               {selectedInfrastructure && (
-                <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
-                  <h4 className="font-semibold text-sm">Informations de l'infrastructure</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    Détails de l'infrastructure
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Nombre de sujets actuel:</span>
-                      <p className="font-medium">{selectedInfrastructure.current_quantity || 0} individus</p>
+                      <span className="text-muted-foreground block text-xs">Sujets disponibles</span>
+                      <p className="font-bold text-lg text-primary">{availableSubjects.toLocaleString()}</p>
                     </div>
+                    
+                    {attachedBatch && (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Espèce</span>
+                          <p className="font-medium">{attachedBatch.species}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Poids moyen actuel</span>
+                          <p className="font-medium">{attachedBatch.average_weight}g</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Biomasse totale</span>
+                          <p className="font-medium">{attachedBatch.total_weight?.toFixed(2)}kg</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Statut du lot</span>
+                          <Badge variant={attachedBatch.status === 'healthy' ? 'default' : 'destructive'}>
+                            {attachedBatch.status === 'healthy' ? 'Sain' : attachedBatch.status}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
+                    
                     <div>
-                      <span className="text-muted-foreground">Pêches de contrôle passées:</span>
+                      <span className="text-muted-foreground block text-xs">Pêches précédentes</span>
                       <p className="font-medium">{pastControlRecords.length} enregistrement(s)</p>
                     </div>
                   </div>
+                  
+                  {/* Dernières pêches de contrôle */}
                   {pastControlRecords.length > 0 && (
-                    <div className="mt-2">
-                      <span className="text-muted-foreground text-xs">Dernière pêche de contrôle:</span>
-                      <p className="text-xs">
-                        {new Date(pastControlRecords[0].date).toLocaleDateString()} - 
-                        Poids moyen: {pastControlRecords[0].average_weight || 'N/A'}g
-                      </p>
+                    <div className="mt-3 pt-3 border-t">
+                      <span className="text-xs font-medium text-muted-foreground">Dernières pêches</span>
+                      <div className="space-y-2 mt-2">
+                        {pastControlRecords.slice(0, 3).map((record, idx) => (
+                          <div key={record.id} className="text-xs flex justify-between items-center bg-background/50 p-2 rounded">
+                            <span>{new Date(record.date).toLocaleDateString('fr-FR')}</span>
+                            <div className="flex gap-3">
+                              <span>PMI: <strong>{record.average_weight?.toFixed(1) || '-'}g</strong></span>
+                              <span>Échant: <strong>{record.sample_count || '-'}</strong></span>
+                              <span>%: <strong>{record.density?.toFixed(1) || '-'}%</strong></span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -199,12 +337,135 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
             </CardContent>
           </Card>
 
-          {/* Données de la pêche */}
+          {/* Prélèvement par lots */}
           {formData.infrastructureId && (
             <>
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Données de mesure</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Scale className="w-4 h-4" />
+                    Prélèvement par lots
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                      Ajoutez plusieurs lots prélevés. Le PMI (Poids Moyen Individuel) sera calculé automatiquement à partir du total.
+                    </p>
+                  </div>
+                  
+                  {/* Formulaire d'ajout de lot */}
+                  <div className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-4">
+                      <Label className="text-xs">Nb sujets</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={newBatch.subjectCount}
+                        onChange={(e) => setNewBatch({...newBatch, subjectCount: e.target.value})}
+                        placeholder="200"
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Label className="text-xs">Poids ind. (g)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={newBatch.individualWeight}
+                        onChange={(e) => setNewBatch({...newBatch, individualWeight: e.target.value})}
+                        placeholder="50"
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <Button 
+                        type="button" 
+                        onClick={handleAddSampleBatch}
+                        disabled={!newBatch.subjectCount || !newBatch.individualWeight}
+                        className="w-full"
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Ajouter
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Tableau des lots prélevés */}
+                  {sampleBatches.length > 0 && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Lot</TableHead>
+                            <TableHead className="text-xs text-right">Sujets</TableHead>
+                            <TableHead className="text-xs text-right">Poids ind. (g)</TableHead>
+                            <TableHead className="text-xs text-right">Total (g)</TableHead>
+                            <TableHead className="text-xs w-10"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sampleBatches.map((batch, idx) => (
+                            <TableRow key={batch.id}>
+                              <TableCell className="font-medium">Lot {idx + 1}</TableCell>
+                              <TableCell className="text-right">{batch.subjectCount}</TableCell>
+                              <TableCell className="text-right">{batch.individualWeight}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                {batch.totalWeight.toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  type="button"
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleRemoveSampleBatch(batch.id)}
+                                >
+                                  <Trash2 className="w-3 h-3 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Résumé des calculs */}
+                  {sampleBatches.length > 0 && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
+                      <h5 className="font-semibold text-sm flex items-center gap-2 text-green-800">
+                        <Calculator className="w-4 h-4" />
+                        Calculs automatiques
+                      </h5>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground text-xs block">Total sujets</span>
+                          <p className="font-bold text-lg">{batchCalculations.totalSubjects}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-xs block">Poids total</span>
+                          <p className="font-bold text-lg">{batchCalculations.totalWeightKg.toFixed(2)} kg</p>
+                          <p className="text-xs text-muted-foreground">{batchCalculations.totalWeight.toLocaleString()} g</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-xs block">PMI</span>
+                          <p className="font-bold text-lg text-primary">{batchCalculations.pmi.toFixed(2)} g</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-xs block">% prélevé</span>
+                          <p className="font-bold text-lg">{batchCalculations.samplePercentage.toFixed(2)}%</p>
+                          <p className="text-xs text-muted-foreground">sur {availableSubjects} sujets</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Données environnementales */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Paramètres environnementaux</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -256,7 +517,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
                     </div>
 
                     <div>
-                      <Label htmlFor="mortality">Mortalité (nombre)</Label>
+                      <Label htmlFor="mortality">Mortalité observée</Label>
                       <Input
                         id="mortality"
                         type="number"
@@ -272,60 +533,27 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Données biométriques</CardTitle>
+                  <CardTitle className="text-sm">Observations</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="sample_count">Nombre d'individus échantillonnés</Label>
-                      <Input
-                        id="sample_count"
-                        type="number"
-                        step="1"
-                        value={formData.sample_count}
-                        onChange={(e) => setFormData({...formData, sample_count: e.target.value})}
-                        placeholder="30"
-                      />
-                      {selectedInfrastructure && formData.sample_count && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Échantillon: {samplePercentage}% du lot total
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="average_weight">Poids moyen individuel (g)</Label>
-                      <Input
-                        id="average_weight"
-                        type="number"
-                        step="0.1"
-                        value={formData.average_weight}
-                        onChange={(e) => setFormData({...formData, average_weight: e.target.value})}
-                        placeholder="250"
-                      />
-                      {formData.average_weight && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Poids moyen: {formData.average_weight}g par individu
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="notes">Observations</Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                      placeholder="Notes et observations sur la pêche de contrôle..."
-                      rows={4}
-                    />
-                  </div>
+                <CardContent>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    placeholder="Notes et observations sur la pêche de contrôle..."
+                    rows={3}
+                  />
                 </CardContent>
               </Card>
 
-              <Button type="submit" className="w-full">
-                Enregistrer la pêche de contrôle
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={sampleBatches.length === 0}
+              >
+                {sampleBatches.length === 0 
+                  ? 'Ajoutez au moins un lot prélevé' 
+                  : `Enregistrer la pêche (${batchCalculations.totalSubjects} sujets, PMI: ${batchCalculations.pmi.toFixed(2)}g)`
+                }
               </Button>
             </>
           )}
