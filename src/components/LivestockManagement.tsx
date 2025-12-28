@@ -73,8 +73,8 @@ const LivestockManagement = () => {
   // Filtrer par unité active
   const { batches: dbBatches, loading: batchesLoading, createBatch, deleteBatch, updateBatch } = useLivestockBatches(activeUnit?.id);
   
-  // Charger les pêches de contrôle (health records) depuis la DB
-  const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
+  // Charger les pêches de contrôle (health records) depuis la DB - sans filtre de cycle pour voir toutes les pêches
+  const { records: healthRecords, refetch: refetchHealthRecords } = useHealthRecords(undefined, activeUnit?.id);
   
   // Charger les infrastructures pour les noms
   const { infrastructures: allCycleInfras } = useCycleInfrastructures(undefined, true);
@@ -788,7 +788,10 @@ const LivestockManagement = () => {
                     </Button>
                   )}
                 </div>
-                <ControlFishingForm unitId={selectedUnit === 'all' ? (units[0]?.id || '') : selectedUnit} />
+                <ControlFishingForm 
+                  unitId={selectedUnit === 'all' ? (units[0]?.id || '') : selectedUnit}
+                  onRecordCreated={refetchHealthRecords}
+                />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

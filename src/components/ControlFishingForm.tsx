@@ -14,9 +14,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ControlFishingFormProps {
   unitId: string;
+  onRecordCreated?: () => void;
 }
 
-const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
+const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { cycles } = useProductionCycles(unitId);
   const [selectedCycleId, setSelectedCycleId] = useState('');
@@ -64,6 +65,9 @@ const ControlFishingForm = ({ unitId }: ControlFishingFormProps) => {
         sample_count: formData.sample_count ? parseInt(formData.sample_count) : undefined,
         notes: formData.notes
       });
+      
+      // Appeler le callback de rafraîchissement
+      onRecordCreated?.();
       
       setIsOpen(false);
       
