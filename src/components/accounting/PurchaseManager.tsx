@@ -9,13 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign } from 'lucide-react';
+import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign, FileText } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/hooks/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
+import PurchaseInvoice from './PurchaseInvoice';
 
 const PurchaseManager = () => {
   const { addLog } = useLogs();
@@ -36,6 +37,7 @@ const PurchaseManager = () => {
   const [editingPurchase, setEditingPurchase] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('list');
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [selectedInvoicePurchase, setSelectedInvoicePurchase] = useState<any>(null);
   const [filters, setFilters] = useState({
     category: '',
     supplier: '',
@@ -612,6 +614,14 @@ const PurchaseManager = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => setSelectedInvoicePurchase(purchase)}
+                            title="Voir facture"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEditPurchase(purchase)}
                           >
                             <Edit className="w-4 h-4" />
@@ -778,13 +788,40 @@ const PurchaseManager = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label>Quantité</Label>
                 <Input
                   type="number"
                   value={newPurchase.quantity}
-                  onChange={(e) => setNewPurchase({...newPurchase, quantity: parseInt(e.target.value) || 0})}
+                  onChange={(e) => {
+                    const qty = parseInt(e.target.value) || 0;
+                    // Calcul auto du montant si prix unitaire déjà défini
+                    const unitPrice = newPurchase.amount && newPurchase.quantity > 0 
+                      ? newPurchase.amount / newPurchase.quantity 
+                      : 0;
+                    setNewPurchase({
+                      ...newPurchase, 
+                      quantity: qty,
+                      amount: unitPrice > 0 ? qty * unitPrice : newPurchase.amount
+                    });
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Prix Unitaire</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newPurchase.quantity > 0 ? (newPurchase.amount / newPurchase.quantity).toFixed(2) : '0'}
+                  onChange={(e) => {
+                    const unitPrice = parseFloat(e.target.value) || 0;
+                    setNewPurchase({
+                      ...newPurchase,
+                      amount: unitPrice * (newPurchase.quantity || 1)
+                    });
+                  }}
+                  placeholder="Prix par unité"
                 />
               </div>
               <div>
@@ -869,6 +906,15 @@ const PurchaseManager = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de facture */}
+      {selectedInvoicePurchase && (
+        <PurchaseInvoice
+          purchase={selectedInvoicePurchase}
+          isOpen={!!selectedInvoicePurchase}
+          onClose={() => setSelectedInvoicePurchase(null)}
+        />
+      )}
     </div>
   );
 };
