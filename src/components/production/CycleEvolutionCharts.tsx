@@ -103,14 +103,15 @@ const CycleEvolutionCharts: React.FC<CycleEvolutionChartsProps> = ({
   // Alertes basées sur les enregistrements de santé
   if (healthRecords.length > 0) {
     const latestHealth = healthRecords[healthRecords.length - 1];
-    if (latestHealth.temperature > 28) {
+    // Vérifier que les valeurs existent avant de les utiliser
+    if (latestHealth?.temperature != null && latestHealth.temperature > 28) {
       alerts.push({ 
         level: 'warning', 
         message: `Température élevée détectée (${latestHealth.temperature.toFixed(1)}°C)`, 
         date: new Date(latestHealth.date).toLocaleDateString('fr-FR')
       });
     }
-    if (latestHealth.oxygen < 6) {
+    if (latestHealth?.oxygen != null && latestHealth.oxygen < 6) {
       alerts.push({ 
         level: 'warning', 
         message: `Niveau d'oxygène bas (${latestHealth.oxygen.toFixed(1)} mg/L)`, 

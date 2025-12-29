@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
 import { generateControlFishingPdf } from '@/lib/controlFishingPdf';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface LivestockBatch {
   id: string;
@@ -662,11 +663,14 @@ const LivestockManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 sm:space-y-4">
-                {filteredBatches.map((batch) => (
+                {filteredBatches.map((batch, index) => (
                   <div key={batch.id} className="border rounded-lg p-3 sm:p-4 hover:bg-accent/50">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Badge className="bg-primary text-primary-foreground text-xs font-mono">
+                            LOT-{String(index + 1).padStart(4, '0')}
+                          </Badge>
                           <h3 className="font-semibold text-base sm:text-lg">{batch.species}</h3>
                           {batch.variety && (
                             <Badge variant="secondary" className="text-xs">{batch.variety}</Badge>
@@ -727,6 +731,70 @@ const LivestockManagement = () => {
                             <p className="text-xs line-clamp-2">{batch.notes}</p>
                           </div>
                         )}
+                        
+                        {/* QR Code pour traçabilité */}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="mt-2">
+                              <QrCode className="w-3 h-3 mr-1" />
+                              QR Code
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-sm">
+                            <DialogHeader>
+                              <DialogTitle>QR Code - LOT-{String(index + 1).padStart(4, '0')}</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex flex-col items-center gap-4 p-4">
+                              <QRCodeSVG 
+                                value={JSON.stringify({
+                                  lot: `LOT-${String(index + 1).padStart(4, '0')}`,
+                                  id: batch.id,
+                                  species: batch.species,
+                                  variety: batch.variety,
+                                  quantity: batch.quantity,
+                                  unit: batch.unitName,
+                                  acquisitionDate: batch.acquisitionDate,
+                                  source: batch.source
+                                })}
+                                size={200}
+                                level="H"
+                                includeMargin
+                              />
+                              <div className="text-center text-sm">
+                                <p className="font-bold">LOT-{String(index + 1).padStart(4, '0')}</p>
+                                <p>{batch.species} {batch.variety && `- ${batch.variety}`}</p>
+                                <p className="text-muted-foreground">{batch.quantity.toLocaleString()} individus</p>
+                                <p className="text-muted-foreground">{batch.unitName}</p>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const svg = document.querySelector('.qr-code-container svg');
+                                  if (svg) {
+                                    const svgData = new XMLSerializer().serializeToString(svg);
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    const img = new Image();
+                                    img.onload = () => {
+                                      canvas.width = img.width;
+                                      canvas.height = img.height;
+                                      ctx?.drawImage(img, 0, 0);
+                                      const a = document.createElement('a');
+                                      a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}.png`;
+                                      a.href = canvas.toDataURL('image/png');
+                                      a.click();
+                                    };
+                                    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                                  }
+                                }}
+                              >
+                                <Printer className="w-3 h-3 mr-1" />
+                                Télécharger
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
 
                       <div className="flex sm:flex-col gap-2">
