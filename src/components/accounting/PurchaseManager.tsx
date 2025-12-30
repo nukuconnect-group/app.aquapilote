@@ -547,8 +547,9 @@ const PurchaseManager = () => {
               <div className="space-y-3">
                 {filteredPurchases.map((purchase) => {
                   const StatusIcon = getStatusIcon(purchase.status);
+                  const currentStatus = statusOverrides[purchase.id] ?? purchase.status;
                   return (
-                    <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div key={purchase.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <StatusIcon className="w-4 h-4" />
@@ -556,36 +557,9 @@ const PurchaseManager = () => {
                           {purchase.subcategory && (
                             <Badge variant="secondary" className="text-xs">{purchase.subcategory}</Badge>
                           )}
-                          <div 
-                            onClick={(e) => e.stopPropagation()} 
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
-                          >
-                            <Select
-                              value={statusOverrides[purchase.id] ?? purchase.status}
-                              onValueChange={(value) => {
-                                handleStatusChange(purchase.id, value as any);
-                              }}
-                            >
-                              <SelectTrigger 
-                                className="w-32 h-7 text-xs"
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                              >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent 
-                                position="popper" 
-                                sideOffset={5}
-                                onCloseAutoFocus={(e) => e.preventDefault()}
-                              >
-                                <SelectItem value="pending">En attente</SelectItem>
-                                <SelectItem value="received">Reçu</SelectItem>
-                                <SelectItem value="cancelled">Annulé</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          <Badge className={getStatusColor(currentStatus)}>
+                            {getStatusLabel(currentStatus)}
+                          </Badge>
                           <span className="text-sm text-gray-500">{purchase.date}</span>
                         </div>
                         <h4 className="font-medium">{purchase.description}</h4>
@@ -595,8 +569,73 @@ const PurchaseManager = () => {
                           {purchase.reference && ` • Réf: ${purchase.reference}`}
                           {purchase.unitName && ` • Unité: ${purchase.unitName}`}
                         </p>
-                        {purchase.deliveryDate && purchase.status === 'pending' && (
+                        {purchase.deliveryDate && currentStatus === 'pending' && (
                           <p className="text-xs text-blue-600">Livraison prévue: {purchase.deliveryDate}</p>
+                        )}
+                        
+                        {/* Status action buttons */}
+                        {currentStatus === 'pending' && (
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleStatusChange(purchase.id, 'received');
+                              }}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Confirmer réception
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleStatusChange(purchase.id, 'cancelled');
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Annuler
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {currentStatus === 'received' && (
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleStatusChange(purchase.id, 'pending');
+                              }}
+                            >
+                              <Clock className="w-4 h-4 mr-1" />
+                              Remettre en attente
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {currentStatus === 'cancelled' && (
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleStatusChange(purchase.id, 'pending');
+                              }}
+                            >
+                              <Clock className="w-4 h-4 mr-1" />
+                              Réactiver
+                            </Button>
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center space-x-4">

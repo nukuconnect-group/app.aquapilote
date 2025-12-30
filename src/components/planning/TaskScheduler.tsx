@@ -6,84 +6,132 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, CheckCircle2, ClipboardList } from 'lucide-react';
+import { Calendar, Clock, Plus, CheckCircle2, ClipboardList, Trash2, Bell, Volume2 } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
-
-interface Task {
-  id: string;
-  title: string;
-  type: 'feeding' | 'purchase' | 'sale' | 'monitoring' | 'maintenance' | 'health';
-  description: string;
-  assignedTo: string;
-  dueDate: string;
-  dueTime: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in-progress' | 'completed' | 'overdue';
-  unitId?: string;
-}
+import { usePlannedTasks, PlannedTask } from '@/hooks/usePlannedTasks';
+import { useFeedingPlans } from '@/hooks/useFeedingPlans';
 
 const TaskScheduler = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
-  
-  // Initialisation avec un tableau vide - pas de données de démo
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, loading, createTask, updateTask, deleteTask, upcomingTasks, playAlertSound } = usePlannedTasks(activeUnit?.id);
+  const { plans: feedingPlans } = useFeedingPlans(activeUnit?.id || '');
 
   const [showAddTask, setShowAddTask] = useState(false);
   const [taskForm, setTaskForm] = useState({
     title: '',
-    type: 'feeding' as Task['type'],
+    type: 'feeding' as PlannedTask['type'],
     description: '',
     assignedTo: '',
     dueDate: new Date().toISOString().split('T')[0],
     dueTime: '09:00',
-    priority: 'medium' as Task['priority'],
-    unitId: activeUnit?.id || ''
+    priority: 'medium' as PlannedTask['priority'],
+    unitId: activeUnit?.id || '',
+    unitName: activeUnit?.name || ''
   });
 
-  // Synchroniser avec l'unité active
+  // Synchronize with active unit
   useEffect(() => {
     if (activeUnit?.id) {
-      setTaskForm(prev => ({ ...prev, unitId: activeUnit.id }));
+      setTaskForm(prev => ({ ...prev, unitId: activeUnit.id, unitName: activeUnit.name }));
     }
-  }, [activeUnit?.id]);
+  }, [activeUnit?.id, activeUnit?.name]);
 
-  // Filtrer les tâches par unité active
+  // Filter tasks by active unit
   const filteredTasks = useMemo(() => {
     if (!activeUnit?.id) return tasks;
-    return tasks.filter(task => task.unitId === activeUnit.id);
+    return tasks.filter(task => task.unit_id === activeUnit.id || !task.unit_id);
   }, [tasks, activeUnit?.id]);
 
-  const addTask = () => {
+  // Combine feeding plans as tasks
+  const feedingPlanTasks = useMemo(() => {
+    if (!feedingPlans || feedingPlans.length === 0) return [];
+    
+    const today = new Date();
+    const dayName = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][today.getDay()];
+    
+    return feedingPlans
+      .filter(plan => plan.is_active && plan.days.includes(dayName))
+      .map(plan => ({
+        id: `feeding-${plan.id}`,
+        title: `Nourrissage: ${plan.feed_type}`,
+        type: 'feeding' as const,
+        description: `Quantité: ${plan.quantity} ${plan.unit}${plan.notes ? ` - ${plan.notes}` : ''}`,
+        due_date: today.toISOString().split('T')[0],
+        due_time: plan.time,
+        priority: 'medium' as const,
+        status: 'pending' as const,
+        unit_id: plan.unit_id,
+        unit_name: activeUnit?.name || '',
+        source: 'feeding_plan' as const,
+        source_id: plan.id,
+        assigned_to: null,
+        alert_sent: false,
+        user_id: '',
+        created_at: plan.created_at || '',
+        updated_at: plan.updated_at || '',
+      }));
+  }, [feedingPlans, activeUnit?.name]);
+
+  // Combine all tasks
+  const allTasks = useMemo(() => {
+    const combined = [...filteredTasks, ...feedingPlanTasks];
+    return combined.sort((a, b) => {
+      if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
+      return a.due_time.localeCompare(b.due_time);
+    });
+  }, [filteredTasks, feedingPlanTasks]);
+
+  const addTask = async () => {
     if (!taskForm.title.trim()) return;
     
-    const task: Task = {
-      id: Date.now().toString(),
-      ...taskForm,
-      status: 'pending'
-    };
-    setTasks([...tasks, task]);
-    addLog('Tâche ajoutée', 'Planification', `${taskForm.title} programmée pour ${taskForm.dueDate}`, 'info');
-    setTaskForm({
-      title: '',
-      type: 'feeding',
-      description: '',
-      assignedTo: '',
-      dueDate: new Date().toISOString().split('T')[0],
-      dueTime: '09:00',
-      priority: 'medium',
-      unitId: ''
-    });
-    setShowAddTask(false);
+    try {
+      await createTask({
+        title: taskForm.title,
+        type: taskForm.type,
+        description: taskForm.description || null,
+        assigned_to: taskForm.assignedTo || null,
+        due_date: taskForm.dueDate,
+        due_time: taskForm.dueTime,
+        priority: taskForm.priority,
+        status: 'pending',
+        unit_id: taskForm.unitId || null,
+        unit_name: taskForm.unitName || null,
+        source: 'manual',
+        source_id: null,
+      });
+      
+      addLog('Tâche ajoutée', 'Planification', `${taskForm.title} programmée pour ${taskForm.dueDate} à ${taskForm.dueTime}`, 'info');
+      
+      setTaskForm({
+        title: '',
+        type: 'feeding',
+        description: '',
+        assignedTo: '',
+        dueDate: new Date().toISOString().split('T')[0],
+        dueTime: '09:00',
+        priority: 'medium',
+        unitId: activeUnit?.id || '',
+        unitName: activeUnit?.name || ''
+      });
+      setShowAddTask(false);
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
-  const updateTaskStatus = (taskId: string, status: Task['status']) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, status } : task
-    ));
+  const handleUpdateTaskStatus = async (taskId: string, status: PlannedTask['status']) => {
+    // Skip feeding plan pseudo-tasks
+    if (taskId.startsWith('feeding-')) return;
+    await updateTask(taskId, { status });
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (taskId.startsWith('feeding-')) return;
+    await deleteTask(taskId);
   };
 
   const getTypeLabel = (type: string) => {
@@ -148,18 +196,54 @@ const TaskScheduler = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="animate-pulse">Chargement des tâches...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-600" />
           Planification des Tâches
         </h3>
-        <Button onClick={() => setShowAddTask(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle Tâche
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={playAlertSound} title="Tester le son d'alerte">
+            <Volume2 className="w-4 h-4" />
+          </Button>
+          <Button onClick={() => setShowAddTask(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle Tâche
+          </Button>
+        </div>
       </div>
+
+      {/* Upcoming tasks alert */}
+      {upcomingTasks.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Bell className="w-5 h-5 text-orange-600" />
+              <h4 className="font-medium text-orange-800">
+                {upcomingTasks.length} tâche(s) à venir dans les 24h
+              </h4>
+            </div>
+            <div className="space-y-1">
+              {upcomingTasks.slice(0, 3).map(task => (
+                <div key={task.id} className="text-sm text-orange-700">
+                  • {task.due_time} - {task.title}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {showAddTask && (
         <Card>
@@ -169,7 +253,7 @@ const TaskScheduler = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="taskTitle">Titre de la tâche</Label>
+                <Label htmlFor="taskTitle">Titre de la tâche *</Label>
                 <Input
                   id="taskTitle"
                   value={taskForm.title}
@@ -182,7 +266,7 @@ const TaskScheduler = () => {
                 <Label htmlFor="taskType">Type de tâche</Label>
                 <Select 
                   value={taskForm.type} 
-                  onValueChange={(value) => setTaskForm({...taskForm, type: value as Task['type']})}
+                  onValueChange={(value) => setTaskForm({...taskForm, type: value as PlannedTask['type']})}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -202,7 +286,7 @@ const TaskScheduler = () => {
                 <Label htmlFor="taskPriority">Priorité</Label>
                 <Select 
                   value={taskForm.priority} 
-                  onValueChange={(value) => setTaskForm({...taskForm, priority: value as Task['priority']})}
+                  onValueChange={(value) => setTaskForm({...taskForm, priority: value as PlannedTask['priority']})}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -216,7 +300,7 @@ const TaskScheduler = () => {
               </div>
 
               <div>
-                <Label htmlFor="taskDate">Date d'échéance</Label>
+                <Label htmlFor="taskDate">Date d'échéance *</Label>
                 <Input
                   id="taskDate"
                   type="date"
@@ -226,7 +310,7 @@ const TaskScheduler = () => {
               </div>
 
               <div>
-                <Label htmlFor="taskTime">Heure</Label>
+                <Label htmlFor="taskTime">Heure *</Label>
                 <Input
                   id="taskTime"
                   type="time"
@@ -247,7 +331,13 @@ const TaskScheduler = () => {
 
               <div>
                 <Label htmlFor="taskUnit">Unité de production</Label>
-                <Select value={taskForm.unitId} onValueChange={(value) => setTaskForm({...taskForm, unitId: value})}>
+                <Select 
+                  value={taskForm.unitId} 
+                  onValueChange={(value) => {
+                    const unit = units.find(u => u.id === value);
+                    setTaskForm({...taskForm, unitId: value, unitName: unit?.name || ''});
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une unité" />
                   </SelectTrigger>
@@ -283,18 +373,18 @@ const TaskScheduler = () => {
         </Card>
       )}
 
-      {filteredTasks.length === 0 ? (
+      {allTasks.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
             <ClipboardList className="w-12 h-12 mx-auto mb-4" />
             <p>Aucune tâche planifiée{activeUnit ? ` pour ${activeUnit.name}` : ''}</p>
-            <p className="text-sm mt-2">Créez votre première tâche en cliquant sur "Nouvelle Tâche"</p>
+            <p className="text-sm mt-2">Créez votre première tâche ou activez des planifications d'alimentation</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredTasks.map((task) => (
-            <Card key={task.id}>
+          {allTasks.map((task) => (
+            <Card key={task.id} className={task.source === 'feeding_plan' ? 'border-green-200 bg-green-50/30' : ''}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                   <div className="flex-1">
@@ -306,6 +396,11 @@ const TaskScheduler = () => {
                       <Badge className={getPriorityColor(task.priority)}>
                         {getPriorityLabel(task.priority)}
                       </Badge>
+                      {task.source === 'feeding_plan' && (
+                        <Badge variant="outline" className="text-green-600 border-green-300">
+                          Plan automatique
+                        </Badge>
+                      )}
                     </div>
                     
                     {task.description && (
@@ -315,13 +410,13 @@ const TaskScheduler = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {task.dueDate} à {task.dueTime}
+                        {task.due_date} à {task.due_time}
                       </div>
-                      {task.assignedTo && (
-                        <span>Assigné à: <strong>{task.assignedTo}</strong></span>
+                      {task.assigned_to && (
+                        <span>Assigné à: <strong>{task.assigned_to}</strong></span>
                       )}
-                      {task.unitId && (
-                        <span>Unité: <strong>{units.find(u => u.id === task.unitId)?.name}</strong></span>
+                      {task.unit_name && (
+                        <span>Unité: <strong>{task.unit_name}</strong></span>
                       )}
                     </div>
                   </div>
@@ -331,21 +426,29 @@ const TaskScheduler = () => {
                       {getStatusLabel(task.status)}
                     </Badge>
                     
-                    {task.status !== 'completed' && (
+                    {task.status !== 'completed' && task.source !== 'feeding_plan' && (
                       <div className="flex gap-1">
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => updateTaskStatus(task.id, 'in-progress')}
+                          onClick={() => handleUpdateTaskStatus(task.id, 'in-progress')}
                         >
                           En cours
                         </Button>
                         <Button 
                           size="sm" 
-                          onClick={() => updateTaskStatus(task.id, 'completed')}
+                          onClick={() => handleUpdateTaskStatus(task.id, 'completed')}
                           className="bg-green-600 hover:bg-green-700 text-white"
                         >
                           <CheckCircle2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     )}
