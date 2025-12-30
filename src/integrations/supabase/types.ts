@@ -802,6 +802,66 @@ export type Database = {
           },
         ]
       }
+      planned_tasks: {
+        Row: {
+          alert_sent: boolean | null
+          assigned_to: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string
+          due_time: string
+          id: string
+          priority: string
+          source: string | null
+          source_id: string | null
+          status: string
+          title: string
+          type: string
+          unit_id: string | null
+          unit_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_sent?: boolean | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date: string
+          due_time: string
+          id?: string
+          priority?: string
+          source?: string | null
+          source_id?: string | null
+          status?: string
+          title: string
+          type?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_sent?: boolean | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string
+          due_time?: string
+          id?: string
+          priority?: string
+          source?: string | null
+          source_id?: string | null
+          status?: string
+          title?: string
+          type?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       production_cycles: {
         Row: {
           created_at: string | null
