@@ -100,8 +100,31 @@ const AdminDashboard = () => {
       const logDate = new Date(l.timestamp);
       const today = startOfDay(new Date());
       return logDate >= today;
-    }).length
+    }).length,
+    suspendedUsers: users.filter(u => u.isSuspended).length
   };
+
+  // Country distribution
+  const countryDistribution = users.reduce((acc, user) => {
+    const country = user.country || 'Non spécifié';
+    if (!acc[country]) {
+      acc[country] = { count: 0, online: 0 };
+    }
+    acc[country].count++;
+    if (onlineUserIds.has(user.id)) {
+      acc[country].online++;
+    }
+    return acc;
+  }, {} as Record<string, { count: number; online: number }>);
+
+  const countryData = Object.entries(countryDistribution)
+    .map(([country, data]) => ({
+      name: country,
+      count: data.count,
+      online: data.online
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
   // Données pour les graphiques
   const roleDistribution = [
@@ -621,25 +644,76 @@ const AdminDashboard = () => {
             <OnlineUsersPanel />
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Activité sur 7 jours</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="activities" stroke="hsl(var(--primary))" name="Activités" />
-                  <Line type="monotone" dataKey="errors" stroke="hsl(var(--destructive))" name="Erreurs" />
-                  <Line type="monotone" dataKey="warnings" stroke="#f59e0b" name="Avertissements" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          {/* Geographic distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Répartition géographique
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {countryData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Globe className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Aucune donnée de pays disponible</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {countryData.map((country, index) => (
+                      <div key={country.name} className="flex items-center gap-3">
+                        <div className="w-6 text-center font-mono text-sm text-muted-foreground">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-sm">{country.name}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {country.count} utilisateur{country.count > 1 ? 's' : ''}
+                              </Badge>
+                              {country.online > 0 && (
+                                <Badge variant="default" className="bg-green-500 text-white text-xs">
+                                  {country.online} en ligne
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all" 
+                              style={{ width: `${(country.count / stats.totalUsers) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Activité sur 7 jours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={activityData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="activities" stroke="hsl(var(--primary))" name="Activités" />
+                    <Line type="monotone" dataKey="errors" stroke="hsl(var(--destructive))" name="Erreurs" />
+                    <Line type="monotone" dataKey="warnings" stroke="#f59e0b" name="Avertissements" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">

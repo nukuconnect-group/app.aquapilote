@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthReady } from '@/hooks/useAuthReady';
 
 export interface PlannedTask {
   id: string;
@@ -27,6 +28,7 @@ export const usePlannedTasks = (unitId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isReady, isAuthenticated } = useAuthReady();
   const alertIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -76,11 +78,22 @@ export const usePlannedTasks = (unitId?: string) => {
   }, []);
 
   const fetchTasks = useCallback(async () => {
+    // Attendre que l'auth soit prête
+    if (!isReady) return;
+    
+    // Ne pas charger si non authentifié
+    if (!isAuthenticated) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setTasks([]);
+        setLoading(false);
         return;
       }
 
@@ -106,7 +119,7 @@ export const usePlannedTasks = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [unitId]);
+  }, [isReady, isAuthenticated, unitId]);
 
   const createTask = async (task: Omit<PlannedTask, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'alert_sent'>) => {
     try {
@@ -246,7 +259,9 @@ export const usePlannedTasks = (unitId?: string) => {
 
   // Set up alert check interval
   useEffect(() => {
-    fetchTasks();
+    if (isReady) {
+      fetchTasks();
+    }
     
     // Check for due tasks every 30 seconds
     alertIntervalRef.current = setInterval(checkDueTasks, 30000);
@@ -256,7 +271,7 @@ export const usePlannedTasks = (unitId?: string) => {
         clearInterval(alertIntervalRef.current);
       }
     };
-  }, [fetchTasks, checkDueTasks]);
+  }, [isReady, isAuthenticated, fetchTasks, checkDueTasks]);
 
   // Get upcoming tasks (next 24 hours)
   const upcomingTasks = tasks.filter(task => {

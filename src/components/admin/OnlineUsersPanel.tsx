@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Wifi, WifiOff, RefreshCw, Clock } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, Clock, Globe, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -14,7 +14,19 @@ interface OnlineUser {
   email: string;
   lastActivity: string;
   isOnline: boolean;
+  country?: string;
+  countryCode?: string;
 }
+
+// Simple country code to flag emoji converter
+const getCountryFlag = (countryCode?: string) => {
+  if (!countryCode) return '🌍';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
 
 const OnlineUsersPanel: React.FC = () => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
@@ -39,7 +51,7 @@ const OnlineUsersPanel: React.FC = () => {
         
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, email')
+          .select('id, full_name, email, country, country_code')
           .in('id', userIds);
 
         if (profilesError) throw profilesError;
@@ -51,7 +63,9 @@ const OnlineUsersPanel: React.FC = () => {
             userName: profile.full_name || profile.email,
             email: profile.email,
             lastActivity: session?.last_activity_at || new Date().toISOString(),
-            isOnline: true
+            isOnline: true,
+            country: profile.country,
+            countryCode: profile.country_code
           };
         });
 
@@ -141,6 +155,12 @@ const OnlineUsersPanel: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{user.userName}</p>
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  {user.country && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-sm">{getCountryFlag(user.countryCode)}</span>
+                      <span className="text-xs text-muted-foreground">{user.country}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="w-3 h-3" />
