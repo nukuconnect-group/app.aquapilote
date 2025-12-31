@@ -9,19 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye } from 'lucide-react';
+import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye, CreditCard, CheckCircle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useEmployees, Employee, PaySlip } from '@/hooks/useEmployees';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { generateProfessionalPayslipHTML } from '@/lib/payslipGenerator';
 
 const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency } = useSettings();
+  const { user } = useAuth();
   const { 
     employees, 
     paySlips, 
@@ -33,7 +37,9 @@ const HRManagement = () => {
 
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [showPaySlipGenerator, setShowPaySlipGenerator] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   const [employeeFormData, setEmployeeFormData] = useState({
     firstName: '',
@@ -62,7 +68,10 @@ const HRManagement = () => {
     period: '',
     overtime: 0,
     bonuses: 0,
-    deductions: 0
+    deductions: 0,
+    transportAllowance: 0,
+    housingAllowance: 0,
+    mealAllowance: 0
   });
 
   const positions = [
@@ -134,8 +143,12 @@ const HRManagement = () => {
     const employee = employees.find(e => e.id === paySlipData.employeeId);
     if (!employee) return;
 
-    const grossSalary = employee.salary + paySlipData.overtime + paySlipData.bonuses;
-    const netSalary = grossSalary - paySlipData.deductions;
+    const allBonuses = paySlipData.bonuses + paySlipData.transportAllowance + paySlipData.housingAllowance + paySlipData.mealAllowance;
+    const grossSalary = employee.salary + paySlipData.overtime + allBonuses;
+    
+    // Calcul des cotisations (environ 22% du brut)
+    const calculatedDeductions = Math.round(grossSalary * 0.22);
+    const netSalary = grossSalary - calculatedDeductions;
 
     const result = await addPaySlip({
       employeeId: paySlipData.employeeId,
@@ -143,8 +156,8 @@ const HRManagement = () => {
       period: paySlipData.period,
       baseSalary: employee.salary,
       overtime: paySlipData.overtime,
-      bonuses: paySlipData.bonuses,
-      deductions: paySlipData.deductions,
+      bonuses: allBonuses,
+      deductions: calculatedDeductions,
       netSalary: netSalary,
       generatedAt: new Date().toISOString().split('T')[0],
       unitId: employee.unitId
@@ -163,81 +176,99 @@ const HRManagement = () => {
       period: '',
       overtime: 0,
       bonuses: 0,
-      deductions: 0
+      deductions: 0,
+      transportAllowance: 0,
+      housingAllowance: 0,
+      mealAllowance: 0
     });
     setShowPaySlipGenerator(false);
   };
 
+  // Fonction pour effectuer le paiement et créer l'écriture comptable
+  const processPayment = async (paySlip: PaySlip) => {
+    if (!user?.id) return;
+    
+    setPaymentProcessing(true);
+    try {
+      const employee = employees.find(e => e.id === paySlip.employeeId);
+      const unitName = employee?.unitName || activeUnit?.name || '';
+
+      // Créer l'écriture comptable pour le paiement de salaire
+      const { error } = await supabase
+        .from('accounting_transactions')
+        .insert({
+          user_id: user.id,
+          date: new Date().toISOString().split('T')[0],
+          type: 'expense',
+          category: 'Salaires et charges',
+          amount: paySlip.netSalary,
+          description: `Paiement salaire ${paySlip.employeeName} - ${paySlip.period}`,
+          reference: `PAY-${paySlip.period}-${paySlip.employeeId.slice(0, 8)}`,
+          status: 'completed',
+          payment_method: 'Virement bancaire',
+          unit_id: paySlip.unitId,
+          unit_name: unitName
+        });
+
+      if (error) throw error;
+
+      // Créer aussi une écriture pour les charges patronales
+      const employerCharges = Math.round((paySlip.baseSalary + paySlip.overtime + paySlip.bonuses) * 0.42);
+      
+      await supabase
+        .from('accounting_transactions')
+        .insert({
+          user_id: user.id,
+          date: new Date().toISOString().split('T')[0],
+          type: 'expense',
+          category: 'Charges sociales patronales',
+          amount: employerCharges,
+          description: `Charges patronales ${paySlip.employeeName} - ${paySlip.period}`,
+          reference: `CHRG-${paySlip.period}-${paySlip.employeeId.slice(0, 8)}`,
+          status: 'completed',
+          unit_id: paySlip.unitId,
+          unit_name: unitName
+        });
+
+      addLog('Paiement effectué', 'RH', `Salaire payé: ${paySlip.employeeName} - ${formatCurrency(paySlip.netSalary)}`, 'success');
+      
+      toast({
+        title: "Paiement enregistré",
+        description: `Le paiement de ${formatCurrency(paySlip.netSalary)} pour ${paySlip.employeeName} a été enregistré en comptabilité`
+      });
+
+      setShowPaymentDialog(false);
+    } catch (err) {
+      console.error('Error processing payment:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'enregistrer le paiement",
+        variant: "destructive"
+      });
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
   const downloadPaySlip = (paySlip: PaySlip) => {
     const employee = employees.find(e => e.id === paySlip.employeeId);
-    const content = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Bulletin de Paie - ${paySlip.employeeName}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 15px; }
-            .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-            .salary-details { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            .salary-details th, .salary-details td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .salary-details th { background-color: #f2f2f2; }
-            .total { font-weight: bold; background-color: #e3f2fd; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>BULLETIN DE PAIE</h1>
-            <p>Période: ${paySlip.period}</p>
-          </div>
-          
-          <div class="info">
-            <div>
-              <strong>Employé:</strong><br>
-              ${paySlip.employeeName}<br>
-              ${employee?.position}<br>
-              Unité: ${employee?.unitName}
-            </div>
-            <div>
-              <strong>Employeur:</strong><br>
-              Ferme Piscicole Aqua-Plus<br>
-              Date de génération: ${new Date(paySlip.generatedAt).toLocaleDateString('fr-FR')}
-            </div>
-          </div>
-          
-          <table class="salary-details">
-            <thead>
-              <tr>
-                <th>Libellé</th>
-                <th>Montant</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                 <td>Salaire de base</td>
-                <td>${formatCurrency(paySlip.baseSalary)}</td>
-              </tr>
-              <tr>
-                <td>Heures supplémentaires</td>
-                <td>${formatCurrency(paySlip.overtime)}</td>
-              </tr>
-              <tr>
-                <td>Primes</td>
-                <td>${formatCurrency(paySlip.bonuses)}</td>
-              </tr>
-              <tr>
-                <td>Cotisations sociales</td>
-                <td>-${formatCurrency(paySlip.deductions)}</td>
-              </tr>
-              <tr class="total">
-                <td><strong>SALAIRE NET</strong></td>
-                <td><strong>${formatCurrency(paySlip.netSalary)}</strong></td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+    if (!employee) return;
+
+    const companyInfo = {
+      name: 'AquaPilote - Ferme Aquacole',
+      address: 'Zone industrielle, BP 123',
+      phone: '+225 00 00 00 00',
+      email: 'contact@aquapilote.com',
+      siret: '123 456 789 00012',
+      naf: '0321Z'
+    };
+
+    const content = generateProfessionalPayslipHTML(
+      employee,
+      paySlip,
+      companyInfo,
+      formatCurrency
+    );
 
     const blob = new Blob([content], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -462,15 +493,12 @@ const HRManagement = () => {
                   <p className="text-sm text-muted-foreground mt-2">Cliquez sur "Générer Bulletin" pour créer un bulletin de paie</p>
                 </div>
               ) : (
-                <Table>
+              <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Employé</TableHead>
                       <TableHead>Période</TableHead>
                       <TableHead>Salaire Base</TableHead>
-                      <TableHead>Heures Sup.</TableHead>
-                      <TableHead>Primes</TableHead>
-                      <TableHead>Cotisations</TableHead>
                       <TableHead>Net</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -481,19 +509,27 @@ const HRManagement = () => {
                         <TableCell>{paySlip.employeeName}</TableCell>
                         <TableCell>{paySlip.period}</TableCell>
                         <TableCell>{formatCurrency(paySlip.baseSalary)}</TableCell>
-                        <TableCell>{formatCurrency(paySlip.overtime)}</TableCell>
-                        <TableCell>{formatCurrency(paySlip.bonuses)}</TableCell>
-                        <TableCell>{formatCurrency(paySlip.deductions)}</TableCell>
                         <TableCell className="font-bold">{formatCurrency(paySlip.netSalary)}</TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => downloadPaySlip(paySlip)}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            PDF
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadPaySlip(paySlip)}
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              PDF
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => processPayment(paySlip)}
+                              disabled={paymentProcessing}
+                            >
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              Payer
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

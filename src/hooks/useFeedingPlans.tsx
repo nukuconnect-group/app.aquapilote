@@ -80,6 +80,53 @@ export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
     }
   }, [isReady, isAuthenticated, unitId, cycleId, fetchPlans]);
 
+  // Sync feeding plan with planned_tasks table
+  const syncWithPlannedTasks = async (plan: FeedingPlan) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get current day and check if plan applies today
+      const today = new Date();
+      const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const currentDay = dayNames[today.getDay()];
+      
+      if (!plan.days.includes(currentDay) || !plan.is_active) return;
+
+      const todayStr = today.toISOString().split('T')[0];
+
+      // Check if task already exists for today
+      const { data: existingTask } = await supabase
+        .from('planned_tasks')
+        .select('id')
+        .eq('source', 'feeding_plan')
+        .eq('source_id', plan.id)
+        .eq('due_date', todayStr)
+        .single();
+
+      if (!existingTask) {
+        // Create task for today
+        await supabase
+          .from('planned_tasks')
+          .insert({
+            user_id: user.id,
+            title: `Alimentation: ${plan.feed_type}`,
+            type: 'feeding',
+            description: `${plan.quantity} ${plan.unit} - ${plan.notes || ''}`,
+            due_date: todayStr,
+            due_time: plan.time,
+            priority: 'high',
+            status: 'pending',
+            unit_id: plan.unit_id,
+            source: 'feeding_plan',
+            source_id: plan.id,
+          });
+      }
+    } catch (err) {
+      console.error('Error syncing with planned tasks:', err);
+    }
+  };
+
   const createPlan = async (plan: Omit<FeedingPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -92,6 +139,11 @@ export const useFeedingPlans = (unitId?: string, cycleId?: string) => {
         .single();
 
       if (error) throw error;
+
+      // Sync with planned_tasks
+      if (data) {
+        await syncWithPlannedTasks(data as FeedingPlan);
+      }
 
       toast({
         title: 'Succès',

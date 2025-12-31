@@ -15,6 +15,7 @@ import NotificationsPanel from '@/components/NotificationsPanel';
 import SettingsManagement from '@/components/SettingsManagement';
 import ProfileDialog from '@/components/ProfileDialog';
 import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator';
+import TaskAlertIndicator from '@/components/TaskAlertIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useLogs } from '@/contexts/LogsContext';
@@ -82,6 +83,9 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
             <div className="hidden md:flex">
               <ConnectionStatusIndicator />
             </div>
+            
+            {/* Indicateur d'alerte de tâches */}
+            <TaskAlertIndicator />
             
             {/* Notifications */}
             <NotificationsPanel />
