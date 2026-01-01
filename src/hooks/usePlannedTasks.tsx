@@ -121,86 +121,95 @@ export const usePlannedTasks = (unitId?: string) => {
     }
   }, [isReady, isAuthenticated, unitId]);
 
-  const createTask = async (task: Omit<PlannedTask, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'alert_sent'>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utilisateur non connecté');
+  const createTask = useCallback(
+    async (task: Omit<PlannedTask, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'alert_sent'>) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Utilisateur non connecté');
 
-      const { data, error: insertError } = await supabase
-        .from('planned_tasks')
-        .insert({
-          ...task,
-          user_id: user.id,
-        })
-        .select()
-        .single();
+        const { data, error: insertError } = await supabase
+          .from('planned_tasks')
+          .insert({
+            ...task,
+            user_id: user.id,
+          })
+          .select()
+          .single();
 
-      if (insertError) throw insertError;
-      
-      setTasks(prev => [...prev, data as PlannedTask]);
-      toast({
-        title: 'Tâche créée',
-        description: `${task.title} programmée pour ${task.due_date} à ${task.due_time}`,
-      });
-      
-      return data as PlannedTask;
-    } catch (err: any) {
-      console.error('Error creating task:', err);
-      toast({
-        title: 'Erreur',
-        description: err.message,
-        variant: 'destructive',
-      });
-      throw err;
-    }
-  };
+        if (insertError) throw insertError;
 
-  const updateTask = async (id: string, updates: Partial<PlannedTask>) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('planned_tasks')
-        .update(updates)
-        .eq('id', id);
+        setTasks(prev => [...prev, data as PlannedTask]);
+        toast({
+          title: 'Tâche créée',
+          description: `${task.title} programmée pour ${task.due_date} à ${task.due_time}`,
+        });
 
-      if (updateError) throw updateError;
-      
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-      return true;
-    } catch (err: any) {
-      console.error('Error updating task:', err);
-      toast({
-        title: 'Erreur',
-        description: err.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
+        return data as PlannedTask;
+      } catch (err: any) {
+        console.error('Error creating task:', err);
+        toast({
+          title: 'Erreur',
+          description: err.message,
+          variant: 'destructive',
+        });
+        throw err;
+      }
+    },
+    [toast]
+  );
 
-  const deleteTask = async (id: string) => {
-    try {
-      const { error: deleteError } = await supabase
-        .from('planned_tasks')
-        .delete()
-        .eq('id', id);
+  const updateTask = useCallback(
+    async (id: string, updates: Partial<PlannedTask>) => {
+      try {
+        const { error: updateError } = await supabase
+          .from('planned_tasks')
+          .update(updates)
+          .eq('id', id);
 
-      if (deleteError) throw deleteError;
-      
-      setTasks(prev => prev.filter(t => t.id !== id));
-      toast({
-        title: 'Tâche supprimée',
-      });
-      return true;
-    } catch (err: any) {
-      console.error('Error deleting task:', err);
-      toast({
-        title: 'Erreur',
-        description: err.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
+        if (updateError) throw updateError;
+
+        setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...updates } : t)));
+        return true;
+      } catch (err: any) {
+        console.error('Error updating task:', err);
+        toast({
+          title: 'Erreur',
+          description: err.message,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast]
+  );
+
+  const deleteTask = useCallback(
+    async (id: string) => {
+      try {
+        const { error: deleteError } = await supabase
+          .from('planned_tasks')
+          .delete()
+          .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        setTasks(prev => prev.filter(t => t.id !== id));
+        toast({
+          title: 'Tâche supprimée',
+        });
+        return true;
+      } catch (err: any) {
+        console.error('Error deleting task:', err);
+        toast({
+          title: 'Erreur',
+          description: err.message,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast]
+  );
 
   // Check for due tasks and trigger alerts
   const checkDueTasks = useCallback(async () => {
@@ -257,18 +266,21 @@ export const usePlannedTasks = (unitId?: string) => {
     }
   }, []);
 
-  // Set up alert check interval
+  // Set up fetch + alert check interval (stable)
   useEffect(() => {
     if (isReady) {
       fetchTasks();
     }
-    
-    // Check for due tasks every 30 seconds
-    alertIntervalRef.current = setInterval(checkDueTasks, 30000);
-    
+
+    // Check for due tasks every 30 seconds only when authenticated
+    if (isReady && isAuthenticated) {
+      alertIntervalRef.current = setInterval(checkDueTasks, 30000);
+    }
+
     return () => {
       if (alertIntervalRef.current) {
         clearInterval(alertIntervalRef.current);
+        alertIntervalRef.current = null;
       }
     };
   }, [isReady, isAuthenticated, fetchTasks, checkDueTasks]);
