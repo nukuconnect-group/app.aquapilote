@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -21,6 +21,7 @@ import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
+import ExportDropdown from './ExportDropdown';
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -32,6 +33,7 @@ const SalesManagement = () => {
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
+  const [viewingSaleReceipt, setViewingSaleReceipt] = useState<Sale | null>(null);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -233,6 +235,40 @@ const SalesManagement = () => {
       addLog('Statut vente modifié', 'Vente', `${sale.clientName} - Statut: ${getStatusText(newStatus)}`, 'info');
       toast({ title: "Statut modifié", description: `Vente passée à "${getStatusText(newStatus)}"` });
     }
+  };
+
+  // Generate receipt data for a sale
+  const generateSaleReceipt = (sale: Sale): ReceiptData => {
+    return {
+      id: sale.id,
+      type: 'receipt',
+      number: `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      date: sale.date,
+      clientName: sale.clientName,
+      clientContact: sale.clientContact || undefined,
+      items: sale.products.map(p => ({
+        name: p.name,
+        quantity: p.quantity,
+        unitPrice: p.unitPrice,
+        total: p.total
+      })),
+      subtotal: sale.totalAmount,
+      tax: 0,
+      taxRate: 0,
+      total: sale.totalAmount,
+      paymentMethod: sale.paymentMethod || undefined,
+      notes: sale.notes || undefined,
+      companyName: 'AquaPilot',
+      companyAddress: '',
+      companyContact: ''
+    };
+  };
+
+  const handleViewSaleReceipt = (sale: Sale) => {
+    const receiptData = generateSaleReceipt(sale);
+    setPreviewReceiptData(receiptData);
+    setViewingSaleReceipt(sale);
+    setShowReceiptPreview(true);
   };
 
   const getCurrencySymbol = () => {
@@ -613,6 +649,19 @@ const SalesManagement = () => {
                           <strong>Notes:</strong> {sale.notes}
                         </div>
                       )}
+                      
+                      {/* Receipt actions */}
+                      <div className="mt-3 pt-3 border-t flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewSaleReceipt(sale)}
+                          className="text-xs"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Voir Reçu
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
