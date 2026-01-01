@@ -171,6 +171,7 @@ function toast({ ...props }: Toast) {
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
+  // IMPORTANT: subscribe once (not on every state change) to avoid listener leaks
   React.useEffect(() => {
     listeners.push(setState)
     return () => {
@@ -179,7 +180,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,
