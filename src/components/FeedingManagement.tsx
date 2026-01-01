@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell, Download } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -24,6 +24,8 @@ import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
+import ExportDropdown from './ExportDropdown';
+import { ExportOptions } from '@/lib/dataExportUtils';
 
 const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
@@ -379,6 +381,32 @@ const FeedingManagement = () => {
         </div>
 
         <TabsContent value="history" className="space-y-4">
+          {/* Export button for feeding history */}
+          {unitRecords.length > 0 && (
+            <div className="flex justify-end">
+              <ExportDropdown
+                options={{
+                  title: 'Historique de Nourrissage',
+                  subtitle: `Période: ${new Date().toLocaleDateString('fr-FR')}`,
+                  filename: `historique-nourrissage-${activeUnit.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}`,
+                  unitName: activeUnit.name,
+                  companyName: 'AquaPilot',
+                  columns: [
+                    { key: 'date', label: 'Date' },
+                    { key: 'time', label: 'Heure', format: (v) => v || '-' },
+                    { key: 'feed_type', label: 'Type d\'aliment', format: (v) => v || '-' },
+                    { key: 'quantity', label: 'Quantité (kg)' },
+                    { key: 'temperature', label: 'Température (°C)', format: (v) => v ? `${v}°C` : '-' },
+                    { key: 'behavior', label: 'Comportement', format: (v) => v || '-' },
+                    { key: 'notes', label: 'Notes', format: (v) => v || '-' },
+                  ],
+                  data: unitRecords,
+                }}
+                label="Télécharger"
+              />
+            </div>
+          )}
+          
           {loading ? (
             <Card>
               <CardContent className="p-6 text-center">

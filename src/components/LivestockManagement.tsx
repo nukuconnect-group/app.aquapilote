@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
 import { generateControlFishingPdf } from '@/lib/controlFishingPdf';
 import { QRCodeSVG } from 'qrcode.react';
+import ExportDropdown from './ExportDropdown';
 
 interface LivestockBatch {
   id: string;
@@ -834,26 +835,53 @@ const LivestockManagement = () => {
                     </CardDescription>
                   </div>
                   {healthRecords.length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        const recordsWithNames = healthRecords.map(r => {
-                          const infra = allCycleInfras.find(i => i.id === r.basin_id);
-                          return {
-                            ...r,
-                            infrastructureName: infra?.infrastructure_name || 'N/A'
-                          };
-                        });
-                        generateControlFishingPdf({
-                          records: recordsWithNames,
-                          unitName: activeUnit?.name
-                        });
-                      }}
-                    >
-                      <Printer className="w-4 h-4 mr-2" />
-                      Imprimer PDF
-                    </Button>
+                    <div className="flex gap-2">
+                      <ExportDropdown
+                        options={{
+                          title: 'Historique Pêche de Contrôle',
+                          subtitle: `${healthRecords.length} enregistrements`,
+                          filename: `peche-controle-${activeUnit?.name?.replace(/\s+/g, '-') || 'tous'}-${new Date().toISOString().split('T')[0]}`,
+                          unitName: activeUnit?.name,
+                          companyName: 'AquaPilot',
+                          columns: [
+                            { key: 'date', label: 'Date', format: (v) => new Date(v).toLocaleDateString('fr-FR') },
+                            { key: 'basin_id', label: 'Infrastructure', format: (v, row) => {
+                              const infra = allCycleInfras.find(i => i.id === v);
+                              return infra?.infrastructure_name || 'N/A';
+                            }},
+                            { key: 'sample_count', label: 'Échantillon', format: (v) => v ? `${v} sujets` : '-' },
+                            { key: 'average_weight', label: 'PMI (g)', format: (v) => v?.toFixed(1) || '-' },
+                            { key: 'feeding', label: 'Poids Total (kg)', format: (v) => v?.toFixed(2) || '-' },
+                            { key: 'density', label: '% Prélevé', format: (v) => v?.toFixed(1) + '%' || '-' },
+                            { key: 'temperature', label: 'Temp °C', format: (v) => v || '-' },
+                            { key: 'ph', label: 'pH', format: (v) => v || '-' },
+                            { key: 'oxygen', label: 'O₂ (mg/L)', format: (v) => v || '-' },
+                          ],
+                          data: healthRecords,
+                        }}
+                        label="Télécharger"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const recordsWithNames = healthRecords.map(r => {
+                            const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                            return {
+                              ...r,
+                              infrastructureName: infra?.infrastructure_name || 'N/A'
+                            };
+                          });
+                          generateControlFishingPdf({
+                            records: recordsWithNames,
+                            unitName: activeUnit?.name
+                          });
+                        }}
+                      >
+                        <Printer className="w-4 h-4 mr-2" />
+                        Imprimer
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <ControlFishingForm 
