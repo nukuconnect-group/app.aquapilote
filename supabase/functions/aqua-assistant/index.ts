@@ -84,6 +84,68 @@ serve(async (req) => {
     console.log("Authenticated user:", user.id);
 
     const { messages, language } = await req.json();
+
+    // Input validation for messages array
+    if (!Array.isArray(messages) || messages.length === 0) {
+      console.error("Invalid messages format: not an array or empty");
+      return new Response(JSON.stringify({ error: "Format de messages invalide" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (messages.length > 50) {
+      console.error("Too many messages:", messages.length);
+      return new Response(JSON.stringify({ error: "Trop de messages dans la conversation" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate message structure and content length
+    for (const msg of messages) {
+      if (!msg || typeof msg !== 'object') {
+        console.error("Invalid message object:", msg);
+        return new Response(JSON.stringify({ error: "Format de message invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!msg.role || !msg.content || typeof msg.content !== 'string') {
+        console.error("Message missing role or content:", msg);
+        return new Response(JSON.stringify({ error: "Message incomplet (rôle ou contenu manquant)" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system') {
+        console.error("Invalid message role:", msg.role);
+        return new Response(JSON.stringify({ error: "Rôle de message invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (msg.content.length > 10000) {
+        console.error("Message content too long:", msg.content.length);
+        return new Response(JSON.stringify({ error: "Message trop long (max 10000 caractères)" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Validate language parameter
+    if (language !== undefined && language !== null && typeof language !== 'string') {
+      console.error("Invalid language parameter:", language);
+      return new Response(JSON.stringify({ error: "Paramètre de langue invalide" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
