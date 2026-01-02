@@ -27,53 +27,72 @@ const ProductionManagement = () => {
   const [showDetails, setShowDetails] = useState(false);
 
   // Convertir les cycles DB en format utilisé par le composant avec calculs automatiques
+  // IMPORTANT: Utiliser les mêmes calculs que ProductionCycleDetails pour la concordance
   const unitCycles = useMemo(() => {
     return cycles.map(cycle => {
       // Trouver les infrastructures rattachées à ce cycle
       const cycleInfras = allCycleInfrastructures.filter(infra => infra.cycle_id === cycle.id);
       
-      // Calculer les totaux à partir des lots rattachés
-      let totalQuantity = 0;
+      // Récupérer les health records pour ce cycle (mortalités, poids moyen)
+      const cycleHealthRecords = healthRecords.filter(r => r.cycle_id === cycle.id);
+      
+      // Calculer les totaux à partir des lots rattachés via cycle_infrastructures
+      let totalInitialQuantity = 0;
       let totalWeight = 0;
-      let avgSurvivalRate = 0;
+      let avgExpectedSurvival = 0;
       let batchCount = 0;
-      let totalAverageWeight = 0;
+      let totalBatchWeight = 0;
       
       cycleInfras.forEach(infra => {
         const batch = infra.livestock_batch_id ? batches.find(b => b.id === infra.livestock_batch_id) : null;
         if (batch) {
-          totalQuantity += batch.quantity;
+          totalInitialQuantity += batch.quantity;
           totalWeight += batch.quantity * (batch.average_weight || 0);
-          totalAverageWeight += batch.average_weight || 0;
-          avgSurvivalRate += batch.expected_survival_rate || 85;
+          totalBatchWeight += batch.average_weight || 0;
+          avgExpectedSurvival += batch.expected_survival_rate || 95;
           batchCount++;
         } else {
-          totalQuantity += infra.current_quantity || 0;
+          // Utiliser current_quantity de l'infrastructure si pas de lot
+          totalInitialQuantity += infra.current_quantity || 0;
         }
       });
       
       if (batchCount > 0) {
-        avgSurvivalRate = avgSurvivalRate / batchCount;
-        totalAverageWeight = totalAverageWeight / batchCount;
+        avgExpectedSurvival = avgExpectedSurvival / batchCount;
+        totalBatchWeight = totalBatchWeight / batchCount;
       } else {
-        avgSurvivalRate = 85;
+        avgExpectedSurvival = 95;
       }
       
-      // Obtenir le poids moyen depuis le dernier health record (pêche de contrôle)
-      const cycleHealthRecords = healthRecords.filter(r => r.cycle_id === cycle.id);
+      // Calculer les mortalités cumulées depuis les health records
+      const totalMortality = cycleHealthRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
+      
+      // Quantité initiale: priorité aux lots, sinon valeurs du cycle
+      const initialQty = totalInitialQuantity > 0 
+        ? totalInitialQuantity 
+        : (cycle.initial_quantity || cycle.fingerlings_count || cycle.target_quantity || 0);
+      
+      // Quantité actuelle = initiale - mortalités
+      const currentQty = Math.max(0, initialQty - totalMortality);
+      
+      // Taux de survie réel
+      const survivalRate = initialQty > 0 ? (currentQty / initialQty) * 100 : 100;
+      
+      // Objectif final (utilisé pour l'affichage)
+      const targetQty = cycle.target_quantity || Math.round(initialQty * (avgExpectedSurvival / 100));
+      
+      // Poids moyen depuis le dernier health record
       const latestHealthRecord = cycleHealthRecords.length > 0 
         ? cycleHealthRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
         : null;
-      const currentAverageWeight = latestHealthRecord?.average_weight || totalAverageWeight;
+      const currentAverageWeight = latestHealthRecord?.average_weight || totalBatchWeight || 0;
       
-      // Utiliser les totaux calculés ou les valeurs du cycle
-      const initialQty = totalQuantity > 0 ? totalQuantity : (cycle.initial_quantity || cycle.fingerlings_count || 0);
-      const currentQty = cycle.current_quantity || initialQty;
-      const targetQty = cycle.target_quantity || Math.round(initialQty * (avgSurvivalRate / 100));
-      
-      // Calculer la progression temporelle
+      // Progression temporelle du cycle
       const startDate = new Date(cycle.start_date);
-      const endDate = cycle.end_date ? new Date(cycle.end_date) : new Date(startDate.getTime() + (cycle.duration_months || 6) * 30 * 24 * 60 * 60 * 1000);
+      const cycleDuration = cycle.duration_months ? cycle.duration_months * 30 : 180;
+      const endDate = cycle.end_date 
+        ? new Date(cycle.end_date) 
+        : new Date(startDate.getTime() + cycleDuration * 24 * 60 * 60 * 1000);
       const now = new Date();
       const totalDuration = endDate.getTime() - startDate.getTime();
       const elapsed = now.getTime() - startDate.getTime();
@@ -97,7 +116,9 @@ const ProductionManagement = () => {
         fingerlingsCount: cycle.fingerlings_count,
         unitId: cycle.unit_id,
         infrastructureCount: cycleInfras.length,
-        avgSurvivalRate,
+        totalMortality,
+        avgSurvivalRate: survivalRate, // Taux réel, pas attendu
+        expectedSurvivalRate: avgExpectedSurvival,
         timeProgress
       };
     });
