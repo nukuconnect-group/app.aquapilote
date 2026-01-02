@@ -84,16 +84,41 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
   // Informations personnalisables de l'entreprise
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(loadSavedCompanyInfo);
 
+  // Charger les données du bulletin sauvegardées
+  const loadSavedPayslipData = () => {
+    try {
+      const saved = localStorage.getItem(`payslip_data_${paySlip.id}`);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Erreur chargement données bulletin:', e);
+    }
+    return null;
+  };
+
+  const savedData = loadSavedPayslipData();
+
   // Données du bulletin modifiables
   const [editablePayslip, setEditablePayslip] = useState({
-    baseSalary: paySlip.baseSalary,
-    overtime: paySlip.overtime,
-    bonuses: paySlip.bonuses,
-    transportAllowance: 0,
-    housingAllowance: 0,
-    mealAllowance: 0,
-    otherAllowances: 0,
-    otherDeductions: 0
+    baseSalary: savedData?.baseSalary ?? paySlip.baseSalary,
+    overtime: savedData?.overtime ?? paySlip.overtime,
+    bonuses: savedData?.bonuses ?? paySlip.bonuses,
+    transportAllowance: savedData?.transportAllowance ?? 0,
+    housingAllowance: savedData?.housingAllowance ?? 0,
+    mealAllowance: savedData?.mealAllowance ?? 0,
+    otherAllowances: savedData?.otherAllowances ?? 0,
+    otherDeductions: savedData?.otherDeductions ?? 0
+  });
+
+  // Taux de cotisations modifiables
+  const [rates, setRates] = useState({
+    cnssEmployee: savedData?.rates?.cnssEmployee ?? 3.6,
+    cnssEmployer: savedData?.rates?.cnssEmployer ?? 15.7,
+    taxWithholding: savedData?.rates?.taxWithholding ?? 1.5,
+    healthInsurance: savedData?.rates?.healthInsurance ?? 0,
+    pension: savedData?.rates?.pension ?? 0,
+    otherEmployerCharges: savedData?.rates?.otherEmployerCharges ?? 0
   });
 
   // Gérer l'upload du logo
@@ -116,13 +141,33 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
   };
 
   // Sauvegarder les modifications
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
       // Sauvegarder les infos entreprise dans localStorage
       localStorage.setItem('payslip_company_info', JSON.stringify(companyInfo));
-      toast.success('Modifications enregistrées avec succès');
+      
+      // Sauvegarder les données du bulletin
+      const payslipDataToSave = {
+        ...editablePayslip,
+        rates,
+        grossSalary,
+        netSalary,
+        totalDeductions,
+        cnssEmployee,
+        cnssEmployer,
+        taxWithholding,
+        healthInsurance,
+        pension,
+        otherEmployerCharges,
+        totalEmployerCharges,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(`payslip_data_${paySlip.id}`, JSON.stringify(payslipDataToSave));
+      
+      toast.success('Toutes les modifications ont été enregistrées avec succès');
     } catch (e) {
+      console.error('Erreur sauvegarde:', e);
       toast.error('Erreur lors de la sauvegarde');
     } finally {
       setIsSaving(false);
@@ -138,7 +183,7 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
     }).format(value) + ' F CFA';
   };
 
-  // Calculs
+  // Calculs automatiques basés sur les taux
   const grossSalary = editablePayslip.baseSalary + 
     editablePayslip.overtime + 
     editablePayslip.bonuses +
@@ -147,10 +192,18 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
     editablePayslip.mealAllowance +
     editablePayslip.otherAllowances;
   
-  const cnssEmployee = Math.round(grossSalary * 0.036); // CNSS salarié 3.6%
-  const taxWithholding = Math.round(grossSalary * 0.015); // IGR estimé 1.5%
+  // Cotisations salariales
+  const cnssEmployee = Math.round(grossSalary * (rates.cnssEmployee / 100));
+  const taxWithholding = Math.round(grossSalary * (rates.taxWithholding / 100));
   const totalDeductions = cnssEmployee + taxWithholding + editablePayslip.otherDeductions;
-  const cnssEmployer = Math.round(grossSalary * 0.157); // CNSS employeur 15.7%
+  
+  // Charges patronales
+  const cnssEmployer = Math.round(grossSalary * (rates.cnssEmployer / 100));
+  const healthInsurance = Math.round(grossSalary * (rates.healthInsurance / 100));
+  const pension = Math.round(grossSalary * (rates.pension / 100));
+  const otherEmployerCharges = Math.round(grossSalary * (rates.otherEmployerCharges / 100));
+  const totalEmployerCharges = cnssEmployer + healthInsurance + pension + otherEmployerCharges;
+  
   const netSalary = grossSalary - totalDeductions;
 
   // Safe date parsing
@@ -449,12 +502,12 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
           <td colspan="3">COTISATIONS SOCIALES</td>
         </tr>
         <tr>
-          <td>CNSS (Part salariale 3.6%)</td>
+          <td>CNSS (Part salariale ${rates.cnssEmployee}%)</td>
           <td>${formatCFA(grossSalary)}</td>
           <td>-${formatCFA(cnssEmployee)}</td>
         </tr>
         <tr>
-          <td>Impôt sur le revenu (IGR estimé)</td>
+          <td>Impôt sur le revenu (IGR ${rates.taxWithholding}%)</td>
           <td>${formatCFA(grossSalary)}</td>
           <td>-${formatCFA(taxWithholding)}</td>
         </tr>
@@ -481,9 +534,12 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
 
     <div class="summary-section">
       <div class="summary-box employer">
-        <h4>CHARGES PATRONALES (estimation)</h4>
-        <p>CNSS employeur (15.7%): ${formatCFA(cnssEmployer)}</p>
-        <p class="amount" style="margin-top: 8px;">Total: ${formatCFA(cnssEmployer)}</p>
+        <h4>CHARGES PATRONALES</h4>
+        <p>CNSS employeur (${rates.cnssEmployer}%): ${formatCFA(cnssEmployer)}</p>
+        ${healthInsurance > 0 ? `<p>Assurance maladie (${rates.healthInsurance}%): ${formatCFA(healthInsurance)}</p>` : ''}
+        ${pension > 0 ? `<p>Retraite complémentaire (${rates.pension}%): ${formatCFA(pension)}</p>` : ''}
+        ${otherEmployerCharges > 0 ? `<p>Autres charges (${rates.otherEmployerCharges}%): ${formatCFA(otherEmployerCharges)}</p>` : ''}
+        <p class="amount" style="margin-top: 8px;">Total: ${formatCFA(totalEmployerCharges)}</p>
       </div>
       <div class="summary-box employee">
         <h4>NET À PAYER AU SALARIÉ</h4>
@@ -674,6 +730,102 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
 
             <Card>
               <CardHeader>
+                <CardTitle className="text-base">Cotisations Salariales (Taux %)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>CNSS salarié (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.cnssEmployee}
+                      onChange={(e) => setRates({...rates, cnssEmployee: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(cnssEmployee)}</p>
+                  </div>
+                  <div>
+                    <Label>IGR / Impôt (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.taxWithholding}
+                      onChange={(e) => setRates({...rates, taxWithholding: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(taxWithholding)}</p>
+                  </div>
+                  <div>
+                    <Label>Autres retenues (F CFA)</Label>
+                    <Input
+                      type="number"
+                      value={editablePayslip.otherDeductions}
+                      onChange={(e) => setEditablePayslip({...editablePayslip, otherDeductions: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Charges Patronales (Taux %)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>CNSS employeur (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.cnssEmployer}
+                      onChange={(e) => setRates({...rates, cnssEmployer: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(cnssEmployer)}</p>
+                  </div>
+                  <div>
+                    <Label>Assurance maladie (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.healthInsurance}
+                      onChange={(e) => setRates({...rates, healthInsurance: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(healthInsurance)}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Retraite complémentaire (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.pension}
+                      onChange={(e) => setRates({...rates, pension: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(pension)}</p>
+                  </div>
+                  <div>
+                    <Label>Autres charges patronales (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={rates.otherEmployerCharges}
+                      onChange={(e) => setRates({...rates, otherEmployerCharges: parseFloat(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Montant: {formatCFA(otherEmployerCharges)}</p>
+                  </div>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-amber-800 dark:text-amber-200">Total charges patronales:</span>
+                    <span className="font-bold text-amber-800 dark:text-amber-200">{formatCFA(totalEmployerCharges)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="text-base">Récapitulatif</CardTitle>
               </CardHeader>
               <CardContent>
@@ -683,11 +835,11 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
                     <span className="font-semibold">{formatCFA(grossSalary)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>CNSS salarié (3.6%):</span>
+                    <span>CNSS salarié ({rates.cnssEmployee}%):</span>
                     <span className="text-red-600">-{formatCFA(cnssEmployee)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>IGR (estimation):</span>
+                    <span>IGR ({rates.taxWithholding}%):</span>
                     <span className="text-red-600">-{formatCFA(taxWithholding)}</span>
                   </div>
                   <div className="flex justify-between">
@@ -698,6 +850,17 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
                     <span className="font-bold">Net à payer:</span>
                     <span className="font-bold text-green-600 text-lg">{formatCFA(netSalary)}</span>
                   </div>
+                  <div className="flex justify-between col-span-2 pt-2 border-t">
+                    <span className="font-medium text-amber-700">Coût total employeur:</span>
+                    <span className="font-semibold text-amber-700">{formatCFA(grossSalary + totalEmployerCharges)}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleSave} disabled={isSaving} className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
