@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell, Download } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell, Download, User } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -12,8 +12,8 @@ import ProductionCycleDetails from './production/ProductionCycleDetails';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useSettings } from '@/contexts/SettingsContext';
-import FeedingForm from './feeding/FeedingForm';
-import FeedingHistory from './feeding/FeedingHistory';
+import SimpleFeedingForm from './feeding/SimpleFeedingForm';
+import DailyFeedingSummary from './feeding/DailyFeedingSummary';
 import FeedStockManager from './feeding/FeedStockManager';
 import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
@@ -142,41 +142,34 @@ const FeedingManagement = () => {
 
   const handleSaveFeedingRecord = async (record: any) => {
     try {
-      // Enrichir les notes avec les informations supplémentaires
-      let enrichedNotes = record.notes || '';
-      
-      if (record.feederName) {
-        enrichedNotes = `Nourri par: ${record.feederName}\n${enrichedNotes}`;
-      }
-      
-      if (record.prescribedQuantity && record.actualQuantity) {
-        enrichedNotes += `\nQuantité prescrite: ${record.prescribedQuantity} ${record.unit}`;
-        enrichedNotes += `\nQuantité servie: ${record.actualQuantity} ${record.unit}`;
-        if (record.remainingQuantity) {
-          enrichedNotes += `\nQuantité restante: ${record.remainingQuantity} ${record.unit}`;
-        }
-      }
-
       await createRecord({
         unit_id: activeUnit.id,
-        cycle_id: activeCycle?.id,
-        infrastructure_id: record.infrastructureId,
+        cycle_id: activeCycle?.id || record.cycle_id,
+        infrastructure_id: record.infrastructure_id,
         date: record.date,
         time: record.time,
-        feed_type: record.feedType,
+        feed_type: record.feed_type,
         quantity: record.quantity,
         temperature: record.temperature || undefined,
-        notes: enrichedNotes.trim() || undefined,
-        behavior: record.fishBehavior || undefined,
+        notes: record.notes || undefined,
+        behavior: record.behavior || undefined,
+        // Nouveaux champs pour les sessions détaillées
+        session_type: record.session_type,
+        feeder_name: record.feeder_name,
+        prescribed_quantity: record.prescribed_quantity,
+        actual_quantity: record.actual_quantity,
+        remaining_quantity: record.remaining_quantity,
+        mortality: record.mortality,
       });
 
       // Déduire du stock d'aliment
-      const quantityUsed = record.quantity || record.actualQuantity || 0;
-      if (quantityUsed > 0 && record.feedType) {
+      const quantityUsed = record.quantity || record.actual_quantity || 0;
+      const feedType = record.feed_type;
+      if (quantityUsed > 0 && feedType) {
         // Trouver le stock correspondant au type d'aliment
         const matchingStock = stocks.find(s => 
-          s.feed_type === record.feedType || 
-          s.custom_name === record.feedType
+          s.feed_type === feedType || 
+          s.custom_name === feedType
         );
         
         if (matchingStock && matchingStock.quantity >= quantityUsed) {
@@ -193,29 +186,28 @@ const FeedingManagement = () => {
             await createNotification({
               userId: user.id,
               title: 'Sortie d\'aliment',
-              message: `${quantityUsed} ${record.unit || 'kg'} de ${record.feedType} utilisé. Stock restant: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
+              message: `${quantityUsed} kg de ${feedType} utilisé. Stock restant: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
               type: 'info',
               module: 'Alimentation',
               isCritical: false,
               metadata: {
-                feedType: record.feedType,
+                feedType: feedType,
                 quantityUsed,
                 remainingStock: newQuantity,
                 unitId: activeUnit.id
               }
             });
             
-            // Vérifier si le stock est bas après la déduction
             if (newQuantity <= (matchingStock.min_threshold || 50)) {
               await createNotification({
                 userId: user.id,
                 title: 'Stock d\'aliment bas',
-                message: `Le stock de ${record.feedType} est bas (${newQuantity.toFixed(1)} ${matchingStock.unit}). Seuil minimum: ${matchingStock.min_threshold || 50}`,
+                message: `Le stock de ${feedType} est bas (${newQuantity.toFixed(1)} ${matchingStock.unit}). Seuil minimum: ${matchingStock.min_threshold || 50}`,
                 type: 'warning',
                 module: 'Alimentation',
                 isCritical: newQuantity <= 0,
                 metadata: {
-                  feedType: record.feedType,
+                  feedType: feedType,
                   currentStock: newQuantity,
                   threshold: matchingStock.min_threshold || 50
                 }
@@ -225,12 +217,12 @@ const FeedingManagement = () => {
           
           toast({
             title: 'Stock mis à jour',
-            description: `${quantityUsed} ${record.unit || 'kg'} déduit du stock. Reste: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
+            description: `${quantityUsed} kg déduit du stock. Reste: ${newQuantity.toFixed(1)} ${matchingStock.unit}`,
           });
         } else if (matchingStock && matchingStock.quantity < quantityUsed) {
           toast({
             title: 'Attention',
-            description: `Stock insuffisant pour ${record.feedType}. Stock actuel: ${matchingStock.quantity} ${matchingStock.unit}`,
+            description: `Stock insuffisant pour ${feedType}. Stock actuel: ${matchingStock.quantity} ${matchingStock.unit}`,
             variant: 'destructive',
           });
         }
@@ -240,32 +232,22 @@ const FeedingManagement = () => {
     }
   };
 
-  const handlePrintRecord = (record: any) => {
-    const html = generateFeedingRecordHTML(record, activeUnit.name);
-    printHTML(html);
-  };
-
   const handleEditRecord = async (record: any) => {
     try {
-      // Enrichir les notes avec les informations de session
-      let enrichedNotes = record.notes || '';
-      
-      if (record.feederName && !enrichedNotes.includes('Nourri par:')) {
-        enrichedNotes = `Nourri par: ${record.feederName}\n${enrichedNotes}`;
-      }
-      
-      if (record.feedingSession && !enrichedNotes.includes('Session:')) {
-        enrichedNotes += `\nSession: ${record.feedingSession}`;
-      }
-
       await updateRecord(record.id, {
         date: record.date,
         time: record.time,
-        feed_type: record.feed_type || record.feedType,
+        feed_type: record.feed_type,
         quantity: record.quantity,
         temperature: record.temperature || undefined,
-        notes: enrichedNotes.trim() || undefined,
+        notes: record.notes || undefined,
         behavior: record.behavior || undefined,
+        session_type: record.session_type,
+        feeder_name: record.feeder_name,
+        prescribed_quantity: record.prescribed_quantity,
+        actual_quantity: record.actual_quantity,
+        remaining_quantity: record.remaining_quantity,
+        mortality: record.mortality,
       });
       
       toast({
@@ -277,39 +259,6 @@ const FeedingManagement = () => {
       toast({
         title: 'Erreur',
         description: 'Impossible de mettre à jour la fiche',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleAddSession = async (recordId: string, sessionData: any) => {
-    try {
-      // Trouver l'enregistrement parent
-      const parentRecord = feedingRecords.find(r => r.id === recordId);
-      if (!parentRecord) return;
-
-      // Créer un nouvel enregistrement pour cette session
-      await createRecord({
-        unit_id: activeUnit.id,
-        cycle_id: activeCycle?.id,
-        date: parentRecord.date, // Même date que l'enregistrement parent
-        time: sessionData.time,
-        feed_type: parentRecord.feed_type,
-        quantity: sessionData.quantity,
-        temperature: sessionData.temperature || undefined,
-        notes: `Session: ${sessionData.sessionType || 'Non spécifiée'}\nNourri par: ${sessionData.feederName || 'Non spécifié'}\nMortalité: ${sessionData.mortality || 0}\nComportement: ${sessionData.behavior || 'Normal'}\n${sessionData.notes || ''}`.trim(),
-        behavior: sessionData.behavior || undefined,
-      });
-
-      toast({
-        title: 'Session ajoutée',
-        description: `Nouvelle session de nourrissage ajoutée pour ${parentRecord.date}`,
-      });
-    } catch (error) {
-      console.error('Error adding feeding session:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'ajouter la session',
         variant: 'destructive',
       });
     }
@@ -347,7 +296,7 @@ const FeedingManagement = () => {
             </div>
           </div>
           <div className="mt-4 sm:mt-0">
-            <FeedingForm 
+            <SimpleFeedingForm 
               unitId={activeUnit.id}
               unitName={activeUnit.name}
               cycleId={activeCycle?.id}
@@ -468,26 +417,10 @@ const FeedingManagement = () => {
               </CardContent>
             </Card>
           ) : (
-            <FeedingHistory
-              records={unitRecords.map(r => ({
-                id: r.id,
-                date: r.date,
-                time: r.time || '',
-                feedType: r.feed_type || '',
-                quantity: r.quantity,
-                unit: 'kg',
-                temperature: r.temperature || 0,
-                notes: r.notes || '',
-                unitId: r.unit_id,
-                behavior: r.behavior,
-                feed_type: r.feed_type,
-              }))}
+            <DailyFeedingSummary
+              records={unitRecords}
               onEdit={handleEditRecord}
               onDelete={handleDeleteRecord}
-              onPrint={handlePrintRecord}
-              onAddSession={handleAddSession}
-              unitName={activeUnit.name}
-              cycleName={activeCycle?.name}
             />
           )}
         </TabsContent>
