@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Eye, Edit2, Building2, FileText } from 'lucide-react';
+import { Download, Eye, Edit2, Building2, FileText, Upload, Save, Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ExportDropdown from './ExportDropdown';
+import { toast } from 'sonner';
 
 interface Employee {
   firstName: string;
@@ -56,17 +57,32 @@ interface PayslipEditorProps {
 
 const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip, employee }) => {
   const [activeTab, setActiveTab] = useState('preview');
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
+  // Charger les préférences sauvegardées
+  const loadSavedCompanyInfo = (): CompanyInfo => {
+    try {
+      const saved = localStorage.getItem('payslip_company_info');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Erreur chargement préférences:', e);
+    }
+    return {
+      name: 'Nom de votre entreprise',
+      address: 'Adresse de l\'entreprise, BP XXX',
+      phone: '+XXX XX XX XX XX',
+      email: 'contact@entreprise.com',
+      siret: '',
+      naf: '',
+      logoUrl: ''
+    };
+  };
+
   // Informations personnalisables de l'entreprise
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: 'Nom de votre entreprise',
-    address: 'Adresse de l\'entreprise, BP XXX',
-    phone: '+XXX XX XX XX XX',
-    email: 'contact@entreprise.com',
-    siret: '',
-    naf: '',
-    logoUrl: ''
-  });
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(loadSavedCompanyInfo);
 
   // Données du bulletin modifiables
   const [editablePayslip, setEditablePayslip] = useState({
@@ -79,6 +95,39 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
     otherAllowances: 0,
     otherDeductions: 0
   });
+
+  // Gérer l'upload du logo
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Le logo ne doit pas dépasser 2 Mo');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setCompanyInfo({ ...companyInfo, logoUrl: base64 });
+        toast.success('Logo téléchargé avec succès');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Sauvegarder les modifications
+  const handleSave = () => {
+    setIsSaving(true);
+    try {
+      // Sauvegarder les infos entreprise dans localStorage
+      localStorage.setItem('payslip_company_info', JSON.stringify(companyInfo));
+      toast.success('Modifications enregistrées avec succès');
+    } catch (e) {
+      toast.error('Erreur lors de la sauvegarde');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Formater en F CFA
   const formatCFA = (value: number) => {
@@ -531,6 +580,10 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
               />
             </div>
             <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={handleSave} disabled={isSaving}>
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
               <Button variant="outline" onClick={downloadHTML}>
                 <Download className="w-4 h-4 mr-2" />
                 Télécharger (HTML/PDF)
@@ -708,14 +761,63 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
                   </div>
                 </div>
                 <div>
-                  <Label>URL du logo (optionnel)</Label>
-                  <Input
-                    value={companyInfo.logoUrl}
-                    onChange={(e) => setCompanyInfo({...companyInfo, logoUrl: e.target.value})}
-                    placeholder="https://..."
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Entrez l'URL d'une image pour votre logo d'entreprise
+                  <Label>Logo de l'entreprise</Label>
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => logoInputRef.current?.click()}
+                      className="flex-1"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Télécharger un logo
+                    </Button>
+                    {companyInfo.logoUrl && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setCompanyInfo({...companyInfo, logoUrl: ''})}
+                      >
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
+                  {companyInfo.logoUrl && (
+                    <div className="mt-3 p-3 border rounded-lg bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-2">Aperçu du logo:</p>
+                      <img 
+                        src={companyInfo.logoUrl} 
+                        alt="Logo entreprise" 
+                        className="max-h-16 object-contain"
+                      />
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <Label className="text-xs text-muted-foreground">Ou entrez une URL</Label>
+                    <Input
+                      value={companyInfo.logoUrl?.startsWith('data:') ? '' : companyInfo.logoUrl}
+                      onChange={(e) => setCompanyInfo({...companyInfo, logoUrl: e.target.value})}
+                      placeholder="https://..."
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSave} disabled={isSaving} className="w-full">
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? 'Enregistrement...' : 'Enregistrer les préférences'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Les informations seront réutilisées pour les prochains bulletins
                   </p>
                 </div>
               </CardContent>
