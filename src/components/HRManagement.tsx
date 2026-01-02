@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye, CreditCard, CheckCircle } from 'lucide-react';
+import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye, CreditCard, Edit2 } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
@@ -19,6 +18,7 @@ import { useEmployees, Employee, PaySlip } from '@/hooks/useEmployees';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateProfessionalPayslipHTML } from '@/lib/payslipGenerator';
+import PayslipEditor from './PayslipEditor';
 
 const HRManagement = () => {
   const { addLog } = useLogs();
@@ -38,6 +38,8 @@ const HRManagement = () => {
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [showPaySlipGenerator, setShowPaySlipGenerator] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showPayslipEditor, setShowPayslipEditor] = useState(false);
+  const [selectedPayslip, setSelectedPayslip] = useState<PaySlip | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
@@ -250,33 +252,25 @@ const HRManagement = () => {
     }
   };
 
-  const downloadPaySlip = (paySlip: PaySlip) => {
+  // Formater en F CFA par défaut
+  const formatCFA = (value: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value) + ' F CFA';
+  };
+
+  const openPayslipEditor = (paySlip: PaySlip) => {
     const employee = employees.find(e => e.id === paySlip.employeeId);
-    if (!employee) return;
+    setSelectedPayslip(paySlip);
+    setSelectedEmployee(employee || null);
+    setShowPayslipEditor(true);
+  };
 
-    const companyInfo = {
-      name: 'AquaPilote - Ferme Aquacole',
-      address: 'Zone industrielle, BP 123',
-      phone: '+225 00 00 00 00',
-      email: 'contact@aquapilote.com',
-      siret: '123 456 789 00012',
-      naf: '0321Z'
-    };
-
-    const content = generateProfessionalPayslipHTML(
-      employee,
-      paySlip,
-      companyInfo,
-      formatCurrency
-    );
-
-    const blob = new Blob([content], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bulletin_paie_${paySlip.employeeName.replace(' ', '_')}_${paySlip.period}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadPaySlip = (paySlip: PaySlip) => {
+    // Ouvrir l'éditeur pour permettre la personnalisation avant téléchargement
+    openPayslipEditor(paySlip);
   };
 
   const getStatusColor = (status: string) => {
@@ -508,17 +502,17 @@ const HRManagement = () => {
                       <TableRow key={paySlip.id}>
                         <TableCell>{paySlip.employeeName}</TableCell>
                         <TableCell>{paySlip.period}</TableCell>
-                        <TableCell>{formatCurrency(paySlip.baseSalary)}</TableCell>
-                        <TableCell className="font-bold">{formatCurrency(paySlip.netSalary)}</TableCell>
+                        <TableCell>{formatCFA(paySlip.baseSalary)}</TableCell>
+                        <TableCell className="font-bold">{formatCFA(paySlip.netSalary)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadPaySlip(paySlip)}
+                              onClick={() => openPayslipEditor(paySlip)}
                             >
-                              <Download className="w-3 h-3 mr-1" />
-                              PDF
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Éditer
                             </Button>
                             <Button
                               size="sm"
@@ -788,6 +782,19 @@ const HRManagement = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Éditeur de Bulletin */}
+      {selectedPayslip && (
+        <PayslipEditor
+          isOpen={showPayslipEditor}
+          onClose={() => {
+            setShowPayslipEditor(false);
+            setSelectedPayslip(null);
+          }}
+          paySlip={selectedPayslip}
+          employee={selectedEmployee}
+        />
+      )}
     </div>
   );
 };
