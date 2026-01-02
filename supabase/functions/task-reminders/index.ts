@@ -19,6 +19,34 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Task reminders function triggered at:", new Date().toISOString());
 
+    // Verify scheduler authentication token
+    const authHeader = req.headers.get('Authorization');
+    const expectedToken = Deno.env.get('CRON_SECRET_TOKEN');
+    
+    // If CRON_SECRET_TOKEN is set, enforce authentication
+    if (expectedToken) {
+      if (!authHeader) {
+        console.error('Missing authorization header for scheduled function');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Missing authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const providedToken = authHeader.replace('Bearer ', '');
+      if (providedToken !== expectedToken) {
+        console.error('Invalid authorization token for scheduled function');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('Scheduler authentication verified');
+    } else {
+      console.warn('CRON_SECRET_TOKEN not configured - function is publicly accessible');
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
