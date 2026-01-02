@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign, FileText } from 'lucide-react';
+import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign, FileText, UserPlus } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
 import PurchaseInvoice from './PurchaseInvoice';
+import { useSuppliers, Supplier } from '@/hooks/useSuppliers';
 
 const PurchaseManager = () => {
   const { addLog } = useLogs();
@@ -32,12 +33,16 @@ const PurchaseManager = () => {
     deletePurchase,
     convertCurrency,
   } = useProductionUnits();
+  
+  const { suppliers, addSupplier, refetch: refetchSuppliers } = useSuppliers();
 
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showNewSupplierForm, setShowNewSupplierForm] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('list');
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [selectedInvoicePurchase, setSelectedInvoicePurchase] = useState<any>(null);
+  const [newSupplierName, setNewSupplierName] = useState('');
   const [filters, setFilters] = useState({
     category: '',
     supplier: '',
@@ -47,6 +52,7 @@ const PurchaseManager = () => {
     unitId: activeUnit?.id || 'all',
     status: '',
   });
+
 
   const [newPurchase, setNewPurchase] = useState({
     category: '',
@@ -790,11 +796,46 @@ const PurchaseManager = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Fournisseur *</Label>
-                <Input
-                  value={newPurchase.supplier}
-                  onChange={(e) => setNewPurchase({...newPurchase, supplier: e.target.value})}
-                  placeholder="Nom du fournisseur"
-                />
+                <div className="flex gap-2">
+                  <Select
+                    value={newPurchase.supplier}
+                    onValueChange={(value) => {
+                      if (value === '__new__') {
+                        setShowNewSupplierForm(true);
+                      } else {
+                        setNewPurchase({...newPurchase, supplier: value});
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Sélectionner ou ajouter..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      {suppliers.map(supplier => (
+                        <SelectItem key={supplier.id} value={supplier.name}>
+                          <div className="flex items-center gap-2">
+                            <span>{supplier.name}</span>
+                            {supplier.category && (
+                              <Badge variant="outline" className="text-xs">{supplier.category}</Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__new__" className="text-primary font-medium">
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="w-4 h-4" />
+                          Ajouter un nouveau fournisseur
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={newPurchase.supplier}
+                    onChange={(e) => setNewPurchase({...newPurchase, supplier: e.target.value})}
+                    placeholder="Ou saisir le nom"
+                    className="flex-1"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -954,6 +995,65 @@ const PurchaseManager = () => {
           onClose={() => setSelectedInvoicePurchase(null)}
         />
       )}
+
+      {/* Dialog Nouveau Fournisseur */}
+      <Dialog open={showNewSupplierForm} onOpenChange={setShowNewSupplierForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter un fournisseur</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Nom du fournisseur *</Label>
+              <Input
+                value={newSupplierName}
+                onChange={(e) => setNewSupplierName(e.target.value)}
+                placeholder="Nom du fournisseur"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Le fournisseur sera ajouté au module Fournisseurs. Vous pourrez compléter ses informations (contact, adresse, etc.) depuis ce module.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setShowNewSupplierForm(false);
+                setNewSupplierName('');
+              }}>
+                Annuler
+              </Button>
+              <Button onClick={async () => {
+                if (!newSupplierName.trim()) {
+                  toast({ title: "Erreur", description: "Veuillez saisir un nom", variant: "destructive" });
+                  return;
+                }
+                const result = await addSupplier({
+                  name: newSupplierName.trim(),
+                  contact: '',
+                  email: '',
+                  phone: '',
+                  address: '',
+                  status: 'pending',
+                  category: newPurchase.category || '',
+                  products: [],
+                  rating: 5,
+                  notes: 'Ajouté depuis le module Achats',
+                  unitId: activeUnit?.id || ''
+                });
+                if (result) {
+                  setNewPurchase({...newPurchase, supplier: newSupplierName.trim()});
+                  toast({ title: "Fournisseur ajouté", description: "Complétez ses informations dans le module Fournisseurs" });
+                  refetchSuppliers();
+                }
+                setShowNewSupplierForm(false);
+                setNewSupplierName('');
+              }}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Ajouter
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

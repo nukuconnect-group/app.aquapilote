@@ -671,11 +671,12 @@ const HRManagement = () => {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Salaire (€) *</Label>
+                <Label>Salaire (F CFA) *</Label>
                 <Input
                   type="number"
                   value={employeeFormData.salary}
                   onChange={(e) => setEmployeeFormData({...employeeFormData, salary: parseInt(e.target.value) || 0})}
+                  placeholder="Salaire en F CFA"
                 />
               </div>
               <div>
