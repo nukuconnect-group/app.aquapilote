@@ -17,7 +17,7 @@ const TaskScheduler = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
-  const { tasks, loading, createTask, updateTask, deleteTask, upcomingTasks, playAlertSound } = usePlannedTasks(activeUnit?.id);
+  const { tasks, loading, error, refetch, createTask, updateTask, deleteTask, upcomingTasks, playAlertSound } = usePlannedTasks(activeUnit?.id);
   const { plans: feedingPlans } = useFeedingPlans(activeUnit?.id || '');
 
   const [showAddTask, setShowAddTask] = useState(false);
@@ -201,6 +201,21 @@ const TaskScheduler = () => {
       <Card>
         <CardContent className="p-8 text-center">
           <div className="animate-pulse">Chargement des tâches...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center space-y-3">
+          <div className="text-sm text-destructive">
+            Erreur de chargement des tâches : {error}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Réessayer
+          </Button>
         </CardContent>
       </Card>
     );

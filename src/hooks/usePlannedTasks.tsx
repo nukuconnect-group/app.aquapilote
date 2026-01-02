@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthReady } from '@/hooks/useAuthReady';
-
 export interface PlannedTask {
   id: string;
   user_id: string;
@@ -28,9 +26,14 @@ export const usePlannedTasks = (unitId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { isReady, isAuthenticated } = useAuthReady();
-  const alertIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const tasksRef = useRef<PlannedTask[]>([]);
+  const alertIntervalRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const playAlertSound = useCallback(() => {
     try {
@@ -78,29 +81,29 @@ export const usePlannedTasks = (unitId?: string) => {
   }, []);
 
   const fetchTasks = useCallback(async () => {
-    // Attendre que l'auth soit prête
-    if (!isReady) return;
-    
-    // Ne pas charger si non authentifié
-    if (!isAuthenticated) {
-      setTasks([]);
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const user = session?.user;
       if (!user) {
         setTasks([]);
-        setLoading(false);
+        setError(null);
         return;
       }
 
+      // IMPORTANT:
+      // - We rely on RLS to scope data. We don't hard-filter on user_id so the app can
+      //   support shared/team visibility via policies without code changes.
       let query = supabase
         .from('planned_tasks')
         .select('*')
-        .eq('user_id', user.id)
         .order('due_date', { ascending: true })
         .order('due_time', { ascending: true });
 
@@ -115,12 +118,12 @@ export const usePlannedTasks = (unitId?: string) => {
       setError(null);
     } catch (err: any) {
       console.error('Error fetching tasks:', err);
-      setError(err.message);
+      setError(err?.message ?? 'Erreur lors du chargement des tâches');
+      setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, unitId]);
-
+  }, [unitId]);
   const createTask = useCallback(
     async (task: Omit<PlannedTask, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'alert_sent'>) => {
       try {
@@ -211,40 +214,37 @@ export const usePlannedTasks = (unitId?: string) => {
     [toast]
   );
 
-  // Check for due tasks and trigger alerts
   const checkDueTasks = useCallback(async () => {
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0];
     const currentTime = now.toTimeString().slice(0, 5);
-    
-    const dueTasks = tasks.filter(task => {
+
+    const currentTasks = tasksRef.current;
+
+    const dueTasks = currentTasks.filter(task => {
       if (task.status === 'completed' || task.alert_sent) return false;
       if (task.due_date !== currentDate) return false;
-      
-      // Check if task is due within the next 5 minutes or already past
+
       const [taskHours, taskMinutes] = task.due_time.split(':').map(Number);
       const [nowHours, nowMinutes] = currentTime.split(':').map(Number);
-      
+
       const taskTotalMinutes = taskHours * 60 + taskMinutes;
       const nowTotalMinutes = nowHours * 60 + nowMinutes;
-      
+
       // Alert if task is due within -5 to +5 minutes window
       return Math.abs(taskTotalMinutes - nowTotalMinutes) <= 5;
     });
 
     for (const task of dueTasks) {
       if (!task.alert_sent) {
-        // Play sound
         playAlertSound();
-        
-        // Show toast notification
+
         toast({
           title: '🔔 Tâche programmée !',
           description: `${task.title} - ${task.due_time}`,
           duration: 10000,
         });
-        
-        // Show browser notification if permitted
+
         if (Notification.permission === 'granted') {
           new Notification('AquaPilote - Tâche programmée', {
             body: `${task.title} à ${task.due_time}`,
@@ -252,13 +252,11 @@ export const usePlannedTasks = (unitId?: string) => {
             requireInteraction: true,
           });
         }
-        
-        // Mark alert as sent
+
         await updateTask(task.id, { alert_sent: true });
       }
     }
-  }, [tasks, playAlertSound, toast, updateTask]);
-
+  }, [playAlertSound, toast, updateTask]);
   // Request notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -266,25 +264,22 @@ export const usePlannedTasks = (unitId?: string) => {
     }
   }, []);
 
-  // Set up fetch + alert check interval (stable)
+  // Charger les tâches au montage + quand l'unité change
   useEffect(() => {
-    if (isReady) {
-      fetchTasks();
-    }
+    fetchTasks();
+  }, [fetchTasks]);
 
-    // Check for due tasks every 30 seconds only when authenticated
-    if (isReady && isAuthenticated) {
-      alertIntervalRef.current = setInterval(checkDueTasks, 30000);
-    }
+  // Vérifier les tâches échues toutes les 30 secondes (interval stable)
+  useEffect(() => {
+    alertIntervalRef.current = window.setInterval(checkDueTasks, 30000);
 
     return () => {
-      if (alertIntervalRef.current) {
-        clearInterval(alertIntervalRef.current);
+      if (alertIntervalRef.current !== null) {
+        window.clearInterval(alertIntervalRef.current);
         alertIntervalRef.current = null;
       }
     };
-  }, [isReady, isAuthenticated, fetchTasks, checkDueTasks]);
-
+  }, [checkDueTasks]);
   // Get upcoming tasks (next 24 hours)
   const upcomingTasks = tasks.filter(task => {
     if (task.status === 'completed') return false;
