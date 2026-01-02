@@ -104,13 +104,39 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
   const cnssEmployer = Math.round(grossSalary * 0.157); // CNSS employeur 15.7%
   const netSalary = grossSalary - totalDeductions;
 
-  const [year, month] = paySlip.period.split('-');
-  const periodDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-  const periodLabel = format(periodDate, 'MMMM yyyy', { locale: fr });
+  // Safe date parsing
+  const getPeriodLabel = () => {
+    try {
+      if (!paySlip.period) return 'Période non définie';
+      const parts = paySlip.period.split('-');
+      if (parts.length !== 2) return paySlip.period;
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      if (isNaN(year) || isNaN(month)) return paySlip.period;
+      const periodDate = new Date(year, month - 1, 1);
+      if (isNaN(periodDate.getTime())) return paySlip.period;
+      return format(periodDate, 'MMMM yyyy', { locale: fr });
+    } catch {
+      return paySlip.period || 'N/A';
+    }
+  };
+  
+  const periodLabel = getPeriodLabel();
+
+  const safeFormatDate = (dateStr: string | null | undefined, defaultValue = 'N/A') => {
+    try {
+      if (!dateStr) return defaultValue;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return defaultValue;
+      return format(date, 'dd/MM/yyyy');
+    } catch {
+      return defaultValue;
+    }
+  };
 
   const generatePreviewHTML = () => {
-    const hireDate = employee?.hireDate ? format(new Date(employee.hireDate), 'dd/MM/yyyy') : 'N/A';
-    const generatedDate = format(new Date(paySlip.generatedAt || new Date()), 'dd/MM/yyyy');
+    const hireDate = safeFormatDate(employee?.hireDate);
+    const generatedDate = safeFormatDate(paySlip.generatedAt, format(new Date(), 'dd/MM/yyyy'));
 
     return `
 <!DOCTYPE html>
