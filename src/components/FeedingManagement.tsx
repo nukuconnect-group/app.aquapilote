@@ -247,17 +247,71 @@ const FeedingManagement = () => {
 
   const handleEditRecord = async (record: any) => {
     try {
+      // Enrichir les notes avec les informations de session
+      let enrichedNotes = record.notes || '';
+      
+      if (record.feederName && !enrichedNotes.includes('Nourri par:')) {
+        enrichedNotes = `Nourri par: ${record.feederName}\n${enrichedNotes}`;
+      }
+      
+      if (record.feedingSession && !enrichedNotes.includes('Session:')) {
+        enrichedNotes += `\nSession: ${record.feedingSession}`;
+      }
+
       await updateRecord(record.id, {
         date: record.date,
         time: record.time,
-        feed_type: record.feed_type,
+        feed_type: record.feed_type || record.feedType,
         quantity: record.quantity,
         temperature: record.temperature || undefined,
-        notes: record.notes || undefined,
+        notes: enrichedNotes.trim() || undefined,
         behavior: record.behavior || undefined,
+      });
+      
+      toast({
+        title: 'Fiche mise à jour',
+        description: 'Les modifications ont été enregistrées',
       });
     } catch (error) {
       console.error('Error updating feeding record:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour la fiche',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAddSession = async (recordId: string, sessionData: any) => {
+    try {
+      // Trouver l'enregistrement parent
+      const parentRecord = feedingRecords.find(r => r.id === recordId);
+      if (!parentRecord) return;
+
+      // Créer un nouvel enregistrement pour cette session
+      await createRecord({
+        unit_id: activeUnit.id,
+        cycle_id: activeCycle?.id,
+        date: parentRecord.date, // Même date que l'enregistrement parent
+        time: sessionData.time,
+        feed_type: parentRecord.feed_type,
+        quantity: sessionData.quantity,
+        temperature: sessionData.temperature || undefined,
+        notes: `Session: ${sessionData.sessionType || 'Non spécifiée'}\nNourri par: ${sessionData.feederName || 'Non spécifié'}\nMortalité: ${sessionData.mortality || 0}\nComportement: ${sessionData.behavior || 'Normal'}\n${sessionData.notes || ''}`.trim(),
+        behavior: sessionData.behavior || undefined,
+      });
+
+      toast({
+        title: 'Session ajoutée',
+        description: `Nouvelle session de nourrissage ajoutée pour ${parentRecord.date}`,
+      });
+    } catch (error) {
+      console.error('Error adding feeding session:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la session',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -413,41 +467,28 @@ const FeedingManagement = () => {
                 Chargement des enregistrements...
               </CardContent>
             </Card>
-          ) : unitRecords.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                Aucun enregistrement d'alimentation pour cette unité.
-              </CardContent>
-            </Card>
           ) : (
-            <div className="space-y-2">
-              {unitRecords.map((record) => (
-                <Card key={record.id}>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm sm:text-base truncate">{record.feed_type}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {record.date} - {record.time || 'N/A'}
-                        </p>
-                        <p className="text-xs sm:text-sm">Quantité: {record.quantity} kg</p>
-                        {record.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{record.notes}</p>}
-                      </div>
-                      <div className="flex gap-2 justify-end sm:justify-start flex-shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => handlePrintRecord(record)} className="h-8 px-2 sm:px-3">
-                          <Printer className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="ml-1 hidden sm:inline text-xs">Impr.</span>
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)} className="h-8 px-2 sm:px-3 text-xs">
-                          <span className="sm:hidden">Suppr.</span>
-                          <span className="hidden sm:inline">Supprimer</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <FeedingHistory
+              records={unitRecords.map(r => ({
+                id: r.id,
+                date: r.date,
+                time: r.time || '',
+                feedType: r.feed_type || '',
+                quantity: r.quantity,
+                unit: 'kg',
+                temperature: r.temperature || 0,
+                notes: r.notes || '',
+                unitId: r.unit_id,
+                behavior: r.behavior,
+                feed_type: r.feed_type,
+              }))}
+              onEdit={handleEditRecord}
+              onDelete={handleDeleteRecord}
+              onPrint={handlePrintRecord}
+              onAddSession={handleAddSession}
+              unitName={activeUnit.name}
+              cycleName={activeCycle?.name}
+            />
           )}
         </TabsContent>
 
