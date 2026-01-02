@@ -1,10 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Clock, Thermometer, BarChart3, Printer } from 'lucide-react';
+import { Edit, Trash2, Clock, Thermometer, BarChart3, Printer, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  exportFeedingToPDF,
+  exportFeedingToWord,
+  exportFeedingToExcel,
+  exportFeedingToCSV
+} from '@/lib/feedingExportUtils';
 
 interface FeedingRecord {
   id: string;
@@ -16,6 +28,14 @@ interface FeedingRecord {
   temperature: number;
   notes: string;
   unitId: string;
+  behavior?: string;
+  feed_type?: string;
+  feederName?: string;
+  prescribedQuantity?: number;
+  actualQuantity?: number;
+  mortality?: number;
+  feedingSession?: string;
+  frequency?: number;
 }
 
 interface FeedingHistoryProps {
@@ -23,12 +43,41 @@ interface FeedingHistoryProps {
   onEdit: (record: FeedingRecord) => void;
   onDelete: (id: string) => void;
   onPrint: (record: FeedingRecord) => void;
+  unitName?: string;
+  cycleName?: string;
 }
 
-const FeedingHistory = ({ records, onEdit, onDelete, onPrint }: FeedingHistoryProps) => {
+const FeedingHistory = ({ records, onEdit, onDelete, onPrint, unitName = '', cycleName }: FeedingHistoryProps) => {
   const sortedRecords = records.sort((a, b) => 
     new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime()
   );
+
+  const handleExport = (record: FeedingRecord, format: 'pdf' | 'word' | 'excel' | 'csv') => {
+    const exportOptions = {
+      record: {
+        ...record,
+        feed_type: record.feed_type || record.feedType,
+      },
+      unitName,
+      cycleName,
+      companyName: 'AquaPilot'
+    };
+
+    switch (format) {
+      case 'pdf':
+        exportFeedingToPDF(exportOptions);
+        break;
+      case 'word':
+        exportFeedingToWord(exportOptions);
+        break;
+      case 'excel':
+        exportFeedingToExcel(exportOptions);
+        break;
+      case 'csv':
+        exportFeedingToCSV(exportOptions);
+        break;
+    }
+  };
 
   if (records.length === 0) {
     return (
@@ -107,9 +156,9 @@ const FeedingHistory = ({ records, onEdit, onDelete, onPrint }: FeedingHistoryPr
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                  <h4 className="font-medium text-sm sm:text-base break-words">{record.feedType}</h4>
+                  <h4 className="font-medium text-sm sm:text-base break-words">{record.feedType || record.feed_type}</h4>
                   <Badge variant="secondary" className="w-fit text-xs sm:text-sm">
-                    {record.quantity} {record.unit}
+                    {record.quantity} {record.unit || 'kg'}
                   </Badge>
                 </div>
                 
@@ -134,6 +183,37 @@ const FeedingHistory = ({ records, onEdit, onDelete, onPrint }: FeedingHistoryPr
               </div>
               
               <div className="flex gap-2">
+                {/* Export dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                      title="Télécharger la fiche"
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-background">
+                    <DropdownMenuItem onClick={() => handleExport(record, 'pdf')}>
+                      <Printer className="w-4 h-4 mr-2 text-red-500" />
+                      Exporter en PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport(record, 'word')}>
+                      <FileText className="w-4 h-4 mr-2 text-blue-500" />
+                      Exporter en Word
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport(record, 'excel')}>
+                      <FileSpreadsheet className="w-4 h-4 mr-2 text-green-500" />
+                      Exporter en Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport(record, 'csv')}>
+                      <FileSpreadsheet className="w-4 h-4 mr-2 text-gray-500" />
+                      Exporter en CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button 
                   size="sm" 
                   variant="outline"

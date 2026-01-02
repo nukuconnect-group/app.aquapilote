@@ -27,6 +27,9 @@ interface FeedingRecord {
   actualQuantity: number;
   remainingQuantity: number;
   fishBehavior: string;
+  mortality?: number;
+  feedingSession?: string;
+  frequency?: number;
 }
 
 interface FeedingFormProps {
@@ -50,7 +53,10 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
     unit: 'kg',
     temperature: '',
     notes: '',
-    fishBehavior: ''
+    fishBehavior: '',
+    mortality: '',
+    feedingSession: '',
+    frequency: ''
   });
 
   const feedTypes = [
@@ -72,6 +78,13 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
     'Stress visible'
   ];
 
+  const feedingSessions = [
+    { value: 'matin', label: 'Matin (6h-10h)' },
+    { value: 'midi', label: 'Midi (11h-14h)' },
+    { value: 'apres-midi', label: 'Après-midi (15h-17h)' },
+    { value: 'soir', label: 'Soir (18h-20h)' }
+  ];
+
   const calculateRemainingQuantity = () => {
     const prescribed = parseFloat(formData.prescribedQuantity) || 0;
     const actual = parseFloat(formData.actualQuantity) || 0;
@@ -84,6 +97,18 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Enrichir les notes avec les informations supplémentaires
+    let enrichedNotes = formData.notes || '';
+    if (formData.mortality) {
+      enrichedNotes += `\nMortalité: ${formData.mortality}`;
+    }
+    if (formData.feedingSession) {
+      enrichedNotes += `\nSession: ${feedingSessions.find(s => s.value === formData.feedingSession)?.label || formData.feedingSession}`;
+    }
+    if (formData.frequency) {
+      enrichedNotes += `\nFréquence: ${formData.frequency} fois/jour`;
+    }
+    
     const record = {
       date: formData.date,
       time: formData.time,
@@ -95,10 +120,13 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
       remainingQuantity,
       unit: formData.unit,
       temperature: parseFloat(formData.temperature),
-      notes: formData.notes,
+      notes: enrichedNotes.trim(),
       fishBehavior: formData.fishBehavior,
       unitId,
-      quantity: parseFloat(formData.actualQuantity) // Pour compatibilité
+      quantity: parseFloat(formData.actualQuantity),
+      mortality: formData.mortality ? parseInt(formData.mortality) : undefined,
+      feedingSession: formData.feedingSession || undefined,
+      frequency: formData.frequency ? parseInt(formData.frequency) : undefined
     };
 
     onSave(record);
@@ -114,7 +142,10 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
       unit: 'kg',
       temperature: '',
       notes: '',
-      fishBehavior: ''
+      fishBehavior: '',
+      mortality: '',
+      feedingSession: '',
+      frequency: ''
     });
   };
 
@@ -159,8 +190,42 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <Label htmlFor="feedingSession" className="text-xs sm:text-sm">Session de nourrissage</Label>
+              <Select 
+                value={formData.feedingSession} 
+                onValueChange={(value) => setFormData({...formData, feedingSession: value})}
+              >
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
+                  <SelectValue placeholder="Choisir session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {feedingSessions.map((session) => (
+                    <SelectItem key={session.value} value={session.value} className="text-xs sm:text-sm">
+                      {session.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="frequency" className="text-xs sm:text-sm">Fréquence (fois/jour)</Label>
+              <Input
+                id="frequency"
+                type="number"
+                min="1"
+                max="10"
+                value={formData.frequency}
+                onChange={(e) => setFormData({...formData, frequency: e.target.value})}
+                placeholder="Ex: 3"
+                className="text-xs sm:text-sm h-9 sm:h-10"
+              />
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="feederName" className="text-xs sm:text-sm">Nom de la personne</Label>
+            <Label htmlFor="feederName" className="text-xs sm:text-sm">Nom de la personne qui nourrit</Label>
             <Input
               id="feederName"
               value={formData.feederName}
@@ -268,6 +333,32 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
             </Alert>
           )}
 
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <Label htmlFor="mortality" className="text-xs sm:text-sm">Mortalité observée</Label>
+              <Input
+                id="mortality"
+                type="number"
+                min="0"
+                value={formData.mortality}
+                onChange={(e) => setFormData({...formData, mortality: e.target.value})}
+                placeholder="Nombre"
+                className="text-xs sm:text-sm h-9 sm:h-10"
+              />
+            </div>
+            <div>
+              <Label htmlFor="temperature" className="text-xs sm:text-sm">Température eau (°C)</Label>
+              <Input
+                id="temperature"
+                type="number"
+                step="0.1"
+                value={formData.temperature}
+                onChange={(e) => setFormData({...formData, temperature: e.target.value})}
+                className="text-xs sm:text-sm h-9 sm:h-10"
+              />
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="fishBehavior" className="text-xs sm:text-sm">Comportement des poissons</Label>
             <Select 
@@ -283,18 +374,6 @@ const FeedingForm = ({ unitId, unitName, cycleId, onSave }: FeedingFormProps) =>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="temperature" className="text-xs sm:text-sm">Température de l'eau (°C)</Label>
-            <Input
-              id="temperature"
-              type="number"
-              step="0.1"
-              value={formData.temperature}
-              onChange={(e) => setFormData({...formData, temperature: e.target.value})}
-              className="text-xs sm:text-sm h-9 sm:h-10"
-            />
           </div>
 
           <div>
