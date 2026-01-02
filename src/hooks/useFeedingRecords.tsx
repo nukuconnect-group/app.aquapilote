@@ -19,6 +19,13 @@ export interface FeedingRecord {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  // Nouveaux champs pour les sessions détaillées
+  session_type?: string;
+  feeder_name?: string;
+  prescribed_quantity?: number;
+  actual_quantity?: number;
+  remaining_quantity?: number;
+  mortality?: number;
 }
 
 export const useFeedingRecords = (cycleId?: string, unitId?: string) => {

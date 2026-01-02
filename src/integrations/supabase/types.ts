@@ -494,16 +494,22 @@ export type Database = {
       }
       feeding_records: {
         Row: {
+          actual_quantity: number | null
           behavior: string | null
           created_at: string | null
           cycle_id: string | null
           date: string
           fcr: number | null
           feed_type: string | null
+          feeder_name: string | null
           id: string
           infrastructure_id: string | null
+          mortality: number | null
           notes: string | null
+          prescribed_quantity: number | null
           quantity: number
+          remaining_quantity: number | null
+          session_type: string | null
           temperature: number | null
           time: string | null
           unit_id: string
@@ -511,16 +517,22 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actual_quantity?: number | null
           behavior?: string | null
           created_at?: string | null
           cycle_id?: string | null
           date: string
           fcr?: number | null
           feed_type?: string | null
+          feeder_name?: string | null
           id?: string
           infrastructure_id?: string | null
+          mortality?: number | null
           notes?: string | null
+          prescribed_quantity?: number | null
           quantity: number
+          remaining_quantity?: number | null
+          session_type?: string | null
           temperature?: number | null
           time?: string | null
           unit_id: string
@@ -528,16 +540,22 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actual_quantity?: number | null
           behavior?: string | null
           created_at?: string | null
           cycle_id?: string | null
           date?: string
           fcr?: number | null
           feed_type?: string | null
+          feeder_name?: string | null
           id?: string
           infrastructure_id?: string | null
+          mortality?: number | null
           notes?: string | null
+          prescribed_quantity?: number | null
           quantity?: number
+          remaining_quantity?: number | null
+          session_type?: string | null
           temperature?: number | null
           time?: string | null
           unit_id?: string
