@@ -12,18 +12,29 @@ import {
   Edit, 
   Trash2,
   AlertTriangle,
-  CheckCircle,
-  Utensils
+  Utensils,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { FeedingRecord } from '@/hooks/useFeedingRecords';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface DailyFeedingSummaryProps {
   records: FeedingRecord[];
+  unitName: string;
   onEdit: (record: FeedingRecord) => void;
   onDelete: (id: string) => void;
 }
@@ -45,7 +56,7 @@ const BEHAVIOR_LABELS: Record<string, { label: string; color: string }> = {
   stress: { label: 'Stress', color: 'bg-red-100 text-red-800' },
 };
 
-const DailyFeedingSummary = ({ records, onEdit, onDelete }: DailyFeedingSummaryProps) => {
+const DailyFeedingSummary = ({ records, unitName, onEdit, onDelete }: DailyFeedingSummaryProps) => {
   const [expandedDates, setExpandedDates] = React.useState<Set<string>>(new Set());
 
   // Grouper par date
@@ -107,6 +118,14 @@ const DailyFeedingSummary = ({ records, onEdit, onDelete }: DailyFeedingSummaryP
     });
   };
 
+  const formatDateFull = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const getDaySummary = (dayRecords: FeedingRecord[]) => {
     const totalQuantity = dayRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
     const totalMortality = dayRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
@@ -123,6 +142,375 @@ const DailyFeedingSummary = ({ records, onEdit, onDelete }: DailyFeedingSummaryP
   const getBehaviorInfo = (behavior: string | undefined) => {
     if (!behavior) return null;
     return BEHAVIOR_LABELS[behavior] || { label: behavior, color: 'bg-gray-100 text-gray-800' };
+  };
+
+  // Export functions for daily records
+  const generateDailyHTML = (date: string, dayRecords: FeedingRecord[]) => {
+    const summary = getDaySummary(dayRecords);
+    
+    const sessionsHTML = dayRecords.map(record => {
+      const sessionInfo = getSessionInfo(record);
+      const behaviorInfo = getBehaviorInfo(record.behavior);
+      
+      return `
+        <div class="session-card">
+          <div class="session-header">
+            <span class="session-badge">${sessionInfo.icon} ${sessionInfo.label} - ${record.time || '--:--'}</span>
+          </div>
+          <div class="session-grid">
+            <div class="session-item">
+              <span class="label">Nourrisseur</span>
+              <span class="value">${record.feeder_name || '-'}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Type d'aliment</span>
+              <span class="value">${record.feed_type || '-'}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Qté prescrite</span>
+              <span class="value">${record.prescribed_quantity ? `${record.prescribed_quantity} kg` : '-'}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Qté servie</span>
+              <span class="value highlight">${record.actual_quantity || record.quantity} kg</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Qté restante</span>
+              <span class="value ${(record.remaining_quantity || 0) > 0 ? 'warning' : ''}">${record.remaining_quantity ? `${record.remaining_quantity} kg` : '0 kg'}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Température eau</span>
+              <span class="value">${record.temperature ? `${record.temperature}°C` : '-'}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Mortalité</span>
+              <span class="value ${(record.mortality || 0) > 0 ? 'danger' : ''}">${record.mortality || 0}</span>
+            </div>
+            <div class="session-item">
+              <span class="label">Comportement</span>
+              <span class="value">${behaviorInfo?.label || record.behavior || '-'}</span>
+            </div>
+          </div>
+          ${record.notes ? `<div class="session-notes"><strong>Notes:</strong> ${record.notes}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Fiche de Nourrissage - ${formatDateFull(date)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 40px; 
+            background: #f8fafc;
+            color: #1e293b;
+          }
+          .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            border-bottom: 3px solid #f97316;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .logo { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #f97316;
+          }
+          .document-title { text-align: right; }
+          .document-title h1 { font-size: 24px; color: #1e293b; margin-bottom: 5px; }
+          .document-title p { color: #64748b; font-size: 14px; }
+          
+          .summary-section {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+          }
+          .summary-section h2 { font-size: 18px; margin-bottom: 15px; }
+          .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+          }
+          .summary-item { text-align: center; }
+          .summary-item .value { font-size: 24px; font-weight: 700; }
+          .summary-item .label { font-size: 12px; opacity: 0.9; }
+          
+          .sessions-title { 
+            font-size: 18px; 
+            color: #f97316; 
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fed7aa;
+          }
+          
+          .session-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #fafafa;
+          }
+          .session-header {
+            margin-bottom: 15px;
+          }
+          .session-badge {
+            background: #f97316;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+          }
+          .session-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+          }
+          .session-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #f97316;
+          }
+          .session-item .label { 
+            display: block;
+            font-size: 11px; 
+            color: #64748b; 
+            text-transform: uppercase;
+            margin-bottom: 4px;
+          }
+          .session-item .value { 
+            font-size: 14px; 
+            font-weight: 600;
+            color: #1e293b;
+          }
+          .session-item .value.highlight { color: #16a34a; }
+          .session-item .value.warning { color: #ea580c; }
+          .session-item .value.danger { color: #dc2626; }
+          
+          .session-notes {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fffbeb;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #78350f;
+            border-left: 3px solid #f59e0b;
+          }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            color: #94a3b8;
+            font-size: 12px;
+          }
+          
+          .signature-section {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+          }
+          .signature-box {
+            text-align: center;
+            padding-top: 60px;
+            border-top: 1px dashed #94a3b8;
+          }
+          .signature-label { font-size: 12px; color: #64748b; }
+          
+          @media print {
+            body { padding: 20px; background: white; }
+            .container { box-shadow: none; padding: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">AquaPilot</div>
+            <div class="document-title">
+              <h1>Fiche de Nourrissage Journalière</h1>
+              <p>${unitName}</p>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <h2>📅 ${formatDateFull(date)}</h2>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <div class="value">${summary.sessionCount}</div>
+                <div class="label">Sessions</div>
+              </div>
+              <div class="summary-item">
+                <div class="value">${summary.totalQuantity.toFixed(1)} kg</div>
+                <div class="label">Total servi</div>
+              </div>
+              <div class="summary-item">
+                <div class="value">${summary.totalMortality}</div>
+                <div class="label">Mortalité</div>
+              </div>
+              <div class="summary-item">
+                <div class="value">${summary.feeders.length}</div>
+                <div class="label">Nourrisseurs</div>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="sessions-title">🍽️ Détail des sessions (${summary.sessionCount})</h3>
+          ${sessionsHTML}
+
+          <div class="signature-section">
+            <div class="signature-box">
+              <div class="signature-label">Signature du Responsable</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-label">Visa du Superviseur</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <span>Document généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
+            <span>AquaPilot - Gestion Aquacole</span>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const exportToPDF = (date: string, dayRecords: FeedingRecord[]) => {
+    const html = generateDailyHTML(date, dayRecords);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  const exportToWord = (date: string, dayRecords: FeedingRecord[]) => {
+    const html = generateDailyHTML(date, dayRecords);
+    const blob = new Blob([`
+      <!DOCTYPE html>
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:w="urn:schemas-microsoft-com:office:word" 
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="UTF-8"></head>
+      <body>${html}</body>
+      </html>
+    `], { type: 'application/msword' });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fiche-nourrissage-${date}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToExcel = (date: string, dayRecords: FeedingRecord[]) => {
+    const summary = getDaySummary(dayRecords);
+    
+    const rows = [
+      ['FICHE DE NOURRISSAGE JOURNALIÈRE'],
+      [''],
+      ['Unité', unitName],
+      ['Date', formatDateFull(date)],
+      ['Nombre de sessions', summary.sessionCount.toString()],
+      ['Total quantité servie', `${summary.totalQuantity.toFixed(1)} kg`],
+      ['Mortalité totale', summary.totalMortality.toString()],
+      ['Nourrisseurs', summary.feeders.join(', ')],
+      [''],
+      ['DÉTAIL DES SESSIONS'],
+      ['Session', 'Heure', 'Nourrisseur', 'Type aliment', 'Qté prescrite (kg)', 'Qté servie (kg)', 'Qté restante (kg)', 'Température (°C)', 'Mortalité', 'Comportement', 'Notes'],
+      ...dayRecords.map(r => {
+        const sessionInfo = getSessionInfo(r);
+        const behaviorInfo = getBehaviorInfo(r.behavior);
+        return [
+          sessionInfo.label,
+          r.time || '-',
+          r.feeder_name || '-',
+          r.feed_type || '-',
+          r.prescribed_quantity?.toString() || '-',
+          (r.actual_quantity || r.quantity).toString(),
+          r.remaining_quantity?.toString() || '0',
+          r.temperature?.toString() || '-',
+          r.mortality?.toString() || '0',
+          behaviorInfo?.label || r.behavior || '-',
+          (r.notes || '').replace(/\n/g, ' ')
+        ];
+      })
+    ];
+    
+    const csvContent = rows.map(row => row.join('\t')).join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fiche-nourrissage-${date}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToCSV = (date: string, dayRecords: FeedingRecord[]) => {
+    const headers = ['Date', 'Heure', 'Session', 'Nourrisseur', 'Type aliment', 'Qté prescrite (kg)', 'Qté servie (kg)', 'Qté restante (kg)', 'Température (°C)', 'Mortalité', 'Comportement', 'Notes'];
+    
+    const csvRows = dayRecords.map(r => {
+      const sessionInfo = getSessionInfo(r);
+      const behaviorInfo = getBehaviorInfo(r.behavior);
+      return [
+        date,
+        r.time || '',
+        sessionInfo.label,
+        r.feeder_name || '',
+        r.feed_type || '',
+        r.prescribed_quantity?.toString() || '',
+        (r.actual_quantity || r.quantity).toString(),
+        r.remaining_quantity?.toString() || '0',
+        r.temperature?.toString() || '',
+        r.mortality?.toString() || '0',
+        behaviorInfo?.label || r.behavior || '',
+        (r.notes || '').replace(/\n/g, ' ').replace(/,/g, ';')
+      ].map(v => `"${v}"`).join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...csvRows].join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fiche-nourrissage-${date}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (records.length === 0) {
@@ -169,6 +557,39 @@ const DailyFeedingSummary = ({ records, onEdit, onDelete }: DailyFeedingSummaryP
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Download button */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            <span className="hidden sm:inline">Télécharger</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportToPDF(date, dayRecords); }}>
+                            <FileText className="w-4 h-4 mr-2 text-red-600" />
+                            Exporter en PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportToWord(date, dayRecords); }}>
+                            <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                            Exporter en Word
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportToExcel(date, dayRecords); }}>
+                            <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />
+                            Exporter en Excel
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); exportToCSV(date, dayRecords); }}>
+                            <FileSpreadsheet className="w-4 h-4 mr-2 text-orange-600" />
+                            Exporter en CSV
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
                       {summary.feeders.length > 0 && (
                         <Badge variant="outline" className="text-xs hidden sm:flex">
                           <User className="w-3 h-3 mr-1" />

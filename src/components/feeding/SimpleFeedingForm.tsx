@@ -193,14 +193,14 @@ const SimpleFeedingForm = ({ unitId, unitName, cycleId, onSave }: SimpleFeedingF
             <div>
               <Label className="text-xs">Infrastructure utilisée</Label>
               <Select 
-                value={formData.infrastructureId} 
+                value={formData.infrastructureId || undefined} 
                 onValueChange={(value) => setFormData({ ...formData, infrastructureId: value })}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Sélectionner (optionnel)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {infrastructures.map((infra) => (
+                  {infrastructures.filter(infra => infra.id).map((infra) => (
                     <SelectItem key={infra.id} value={infra.id}>
                       {infra.infrastructure_name}
                     </SelectItem>
@@ -214,7 +214,7 @@ const SimpleFeedingForm = ({ unitId, unitName, cycleId, onSave }: SimpleFeedingF
           <div>
             <Label className="text-xs">Type d'aliment</Label>
             <Select 
-              value={formData.feedType} 
+              value={formData.feedType || undefined} 
               onValueChange={(value) => setFormData({ ...formData, feedType: value })}
             >
               <SelectTrigger className="h-9">
@@ -295,7 +295,7 @@ const SimpleFeedingForm = ({ unitId, unitName, cycleId, onSave }: SimpleFeedingF
           <div>
             <Label className="text-xs">Comportement des poissons</Label>
             <Select 
-              value={formData.behavior} 
+              value={formData.behavior || 'normal'} 
               onValueChange={(value) => setFormData({ ...formData, behavior: value })}
             >
               <SelectTrigger className="h-9">
