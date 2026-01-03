@@ -245,9 +245,9 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                     </Alert>
                   ) : (
                     <Select 
-                      value={formData.infrastructureId} 
+                      value={formData.infrastructureId || undefined}
                       onValueChange={(value) => {
-                        setFormData({...formData, infrastructureId: value});
+                        setFormData({ ...formData, infrastructureId: value });
                         setSampleBatches([]);
                       }}
                       required
@@ -256,15 +256,17 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         <SelectValue placeholder="Sélectionner une infrastructure" />
                       </SelectTrigger>
                       <SelectContent>
-                        {infrastructures.map((infra) => {
-                          const batch = livestockBatches.find(b => b.id === infra.livestock_batch_id);
-                          const subjectCount = batch?.quantity || infra.current_quantity || 0;
-                          return (
-                            <SelectItem key={infra.id} value={infra.id}>
-                              {infra.infrastructure_name} ({infra.infrastructure_type}) - {subjectCount} sujets
-                            </SelectItem>
-                          );
-                        })}
+                        {infrastructures
+                          .filter((infra) => Boolean(infra.id))
+                          .map((infra) => {
+                            const batch = livestockBatches.find((b) => b.id === infra.livestock_batch_id);
+                            const subjectCount = batch?.quantity || infra.current_quantity || 0;
+                            return (
+                              <SelectItem key={infra.id} value={infra.id}>
+                                {infra.infrastructure_name} ({infra.infrastructure_type}) - {subjectCount} sujets
+                              </SelectItem>
+                            );
+                          })}
                       </SelectContent>
                     </Select>
                   )}

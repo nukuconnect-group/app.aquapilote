@@ -206,15 +206,15 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
               {cycleId && infrastructures.length > 0 && (
                 <div>
                   <Label htmlFor="infrastructure" className="text-xs sm:text-sm">Infrastructure</Label>
-                  <Select 
-                    value={formData.infrastructureId} 
-                    onValueChange={(value) => setFormData({...formData, infrastructureId: value})}
+                  <Select
+                    value={formData.infrastructureId || undefined}
+                    onValueChange={(value) => setFormData({ ...formData, infrastructureId: value })}
                   >
                     <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                       <SelectValue placeholder="Sélectionner une infrastructure (optionnel)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {infrastructures.map((infra) => (
+                      {infrastructures.filter((infra) => Boolean(infra.id)).map((infra) => (
                         <SelectItem key={infra.id} value={infra.id} className="text-xs sm:text-sm">
                           {infra.infrastructure_name} ({infra.infrastructure_type})
                         </SelectItem>
