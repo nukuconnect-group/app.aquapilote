@@ -419,6 +419,7 @@ const FeedingManagement = () => {
           ) : (
             <DailyFeedingSummary
               records={unitRecords}
+              unitName={activeUnit.name}
               onEdit={handleEditRecord}
               onDelete={handleDeleteRecord}
             />
