@@ -274,7 +274,7 @@ const FeedingAnalyticsDashboard = ({
             <div className="flex items-center justify-between mb-2">
               <DollarSign className="h-5 w-5 text-emerald-600" />
             </div>
-            <p className="text-2xl font-bold">{stats.estimatedCost.toFixed(0)} €</p>
+            <p className="text-2xl font-bold">{stats.estimatedCost.toLocaleString('fr-FR')} F CFA</p>
             <p className="text-xs text-muted-foreground">Coût estimé</p>
           </CardContent>
         </Card>
