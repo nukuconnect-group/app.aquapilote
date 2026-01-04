@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
@@ -21,6 +22,7 @@ import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
 import { generateControlFishingPdf } from '@/lib/controlFishingPdf';
+import { exportControlFishingToPDF, exportControlFishingToWord, exportControlFishingToExcel, exportControlFishingToCSV, printControlFishing } from '@/lib/controlFishingExport';
 import { QRCodeSVG } from 'qrcode.react';
 import ExportDropdown from './ExportDropdown';
 
@@ -894,56 +896,135 @@ const LivestockManagement = () => {
               {healthRecords.length > 0 ? (
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm">Historique des pêches ({healthRecords.length})</h4>
-                  {healthRecords.slice(0, 10).map((record) => {
-                    const infra = allCycleInfras.find(i => i.id === record.basin_id);
-                    return (
-                      <div key={record.id} className="border rounded-lg p-3 text-sm hover:bg-accent/30">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium">{new Date(record.date).toLocaleDateString('fr-FR')}</span>
-                          <div className="flex gap-2">
-                            {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
-                            {record.density && (
-                              <Badge variant="secondary" className="text-xs">
-                                {record.density.toFixed(1)}% prélevé
-                              </Badge>
-                            )}
+                  {(() => {
+                    // Grouper par date
+                    const recordsByDate = healthRecords.reduce((acc, record) => {
+                      const dateKey = record.date;
+                      if (!acc[dateKey]) acc[dateKey] = [];
+                      acc[dateKey].push(record);
+                      return acc;
+                    }, {} as Record<string, typeof healthRecords>);
+                    
+                    return Object.entries(recordsByDate)
+                      .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+                      .slice(0, 10)
+                      .map(([date, records]) => (
+                        <div key={date} className="border rounded-lg overflow-hidden">
+                          <div className="flex justify-between items-center p-3 bg-muted/50">
+                            <span className="font-semibold text-sm">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">{records.length} pêche(s)</Badge>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Download className="w-3 h-3 mr-1" />
+                                    <ChevronDown className="w-3 h-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => {
+                                    const recordsWithNames = records.map(r => {
+                                      const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                                      return { ...r, infrastructureName: infra?.infrastructure_name || 'N/A' };
+                                    });
+                                    exportControlFishingToPDF({ records: recordsWithNames, unitName: activeUnit?.name, date });
+                                  }}>
+                                    <FileText className="w-4 h-4 mr-2" /> PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    const recordsWithNames = records.map(r => {
+                                      const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                                      return { ...r, infrastructureName: infra?.infrastructure_name || 'N/A' };
+                                    });
+                                    exportControlFishingToWord({ records: recordsWithNames, unitName: activeUnit?.name, date });
+                                  }}>
+                                    <FileText className="w-4 h-4 mr-2" /> Word
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    const recordsWithNames = records.map(r => {
+                                      const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                                      return { ...r, infrastructureName: infra?.infrastructure_name || 'N/A' };
+                                    });
+                                    exportControlFishingToExcel({ records: recordsWithNames, unitName: activeUnit?.name, date });
+                                  }}>
+                                    <FileText className="w-4 h-4 mr-2" /> Excel
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    const recordsWithNames = records.map(r => {
+                                      const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                                      return { ...r, infrastructureName: infra?.infrastructure_name || 'N/A' };
+                                    });
+                                    exportControlFishingToCSV({ records: recordsWithNames, unitName: activeUnit?.name, date });
+                                  }}>
+                                    <FileText className="w-4 h-4 mr-2" /> CSV
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    const recordsWithNames = records.map(r => {
+                                      const infra = allCycleInfras.find(i => i.id === r.basin_id);
+                                      return { ...r, infrastructureName: infra?.infrastructure_name || 'N/A' };
+                                    });
+                                    printControlFishing({ records: recordsWithNames, unitName: activeUnit?.name, date });
+                                  }}>
+                                    <Printer className="w-4 h-4 mr-2" /> Imprimer
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                          <div className="divide-y">
+                            {records.map((record) => {
+                              const infra = allCycleInfras.find(i => i.id === record.basin_id);
+                              return (
+                                <div key={record.id} className="p-3 text-sm hover:bg-accent/30">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex gap-2 flex-wrap">
+                                      {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
+                                      {record.density && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {record.density.toFixed(1)}% prélevé
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                                    <div className="bg-muted/50 p-2 rounded">
+                                      <span className="text-muted-foreground block">PMI</span>
+                                      <span className="font-bold text-primary">{record.average_weight?.toFixed(1) ?? '-'}g</span>
+                                    </div>
+                                    <div className="bg-muted/50 p-2 rounded">
+                                      <span className="text-muted-foreground block">Échantillon</span>
+                                      <span className="font-medium">{record.sample_count ?? '-'} sujets</span>
+                                    </div>
+                                    <div className="bg-muted/50 p-2 rounded">
+                                      <span className="text-muted-foreground block">Poids total</span>
+                                      <span className="font-medium">{record.feeding?.toFixed(2) ?? '-'} kg</span>
+                                    </div>
+                                    <div className="bg-muted/50 p-2 rounded">
+                                      <span className="text-muted-foreground block">Temp</span>
+                                      <span className="font-medium">{record.temperature ?? '-'}°C</span>
+                                    </div>
+                                    <div className="bg-muted/50 p-2 rounded">
+                                      <span className="text-muted-foreground block">pH / O₂</span>
+                                      <span className="font-medium">{record.ph ?? '-'} / {record.oxygen ?? '-'}</span>
+                                    </div>
+                                  </div>
+                                  {record.notes && record.notes.includes('PRÉLÈVEMENT PAR LOTS') && (
+                                    <details className="mt-2">
+                                      <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                                        Voir détails des lots
+                                      </summary>
+                                      <pre className="text-xs mt-2 p-2 bg-muted rounded whitespace-pre-wrap">
+                                        {record.notes}
+                                      </pre>
+                                    </details>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                          <div className="bg-muted/50 p-2 rounded">
-                            <span className="text-muted-foreground block">PMI</span>
-                            <span className="font-bold text-primary">{record.average_weight?.toFixed(1) ?? '-'}g</span>
-                          </div>
-                          <div className="bg-muted/50 p-2 rounded">
-                            <span className="text-muted-foreground block">Échantillon</span>
-                            <span className="font-medium">{record.sample_count ?? '-'} sujets</span>
-                          </div>
-                          <div className="bg-muted/50 p-2 rounded">
-                            <span className="text-muted-foreground block">Poids total</span>
-                            <span className="font-medium">{record.feeding?.toFixed(2) ?? '-'} kg</span>
-                          </div>
-                          <div className="bg-muted/50 p-2 rounded">
-                            <span className="text-muted-foreground block">Temp</span>
-                            <span className="font-medium">{record.temperature ?? '-'}°C</span>
-                          </div>
-                          <div className="bg-muted/50 p-2 rounded">
-                            <span className="text-muted-foreground block">pH / O₂</span>
-                            <span className="font-medium">{record.ph ?? '-'} / {record.oxygen ?? '-'}</span>
-                          </div>
-                        </div>
-                        {record.notes && record.notes.includes('PRÉLÈVEMENT PAR LOTS') && (
-                          <details className="mt-2">
-                            <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                              Voir détails des lots
-                            </summary>
-                            <pre className="text-xs mt-2 p-2 bg-muted rounded whitespace-pre-wrap">
-                              {record.notes}
-                            </pre>
-                          </details>
-                        )}
-                      </div>
-                    );
-                  })}
+                      ));
+                  })()}
                 </div>
               ) : (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">

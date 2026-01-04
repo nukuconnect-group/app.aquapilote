@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +43,12 @@ const PurchaseManager = () => {
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [selectedInvoicePurchase, setSelectedInvoicePurchase] = useState<any>(null);
   const [newSupplierName, setNewSupplierName] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [customSubcategories, setCustomSubcategories] = useState<Record<string, string[]>>({});
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
+  const [showCustomSubcategoryInput, setShowCustomSubcategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [filters, setFilters] = useState({
     category: '',
     supplier: '',
@@ -76,7 +82,7 @@ const PurchaseManager = () => {
     setNewPurchase((prev) => ({ ...prev, unitId: activeUnit.id }));
   }, [activeUnit?.id]);
 
-  const purchaseCategories = {
+  const predefinedPurchaseCategories = {
     'Aliments': ['Granulés flottants', 'Granulés coulants', 'Farine de poisson', 'Aliment croissance', 'Aliment finition', 'Compléments nutritionnels'],
     'Équipements et matériels': ['Pompes', 'Filtres', 'Aérateurs', 'Bassins', 'Filets', 'Outils de mesure', 'Matériel de pêche'],
     'Intrants': ['Engrais organiques', 'Probiotiques', 'Désinfectants', 'Produits de traitement', 'Chaux', 'Sel'],
@@ -87,6 +93,23 @@ const PurchaseManager = () => {
     'Matières premières': ['Ciment', 'Bâches', 'Tuyaux', 'Vannes', 'Raccords', 'Électricité'],
     'Kits et autres': ['Kits de test', 'Produits d\'entretien', 'Fournitures bureau', 'Carburant', 'Divers']
   };
+
+  // Merge predefined and custom categories
+  const purchaseCategories = useMemo(() => {
+    const merged = { ...predefinedPurchaseCategories };
+    customCategories.forEach(cat => {
+      if (!merged[cat]) {
+        merged[cat] = customSubcategories[cat] || [];
+      }
+    });
+    // Add custom subcategories to existing categories
+    Object.keys(customSubcategories).forEach(cat => {
+      if (merged[cat]) {
+        merged[cat] = [...new Set([...merged[cat], ...(customSubcategories[cat] || [])])];
+      }
+    });
+    return merged;
+  }, [customCategories, customSubcategories]);
 
   const paymentMethods = [
     'Espèces',
@@ -748,39 +771,114 @@ const PurchaseManager = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Catégorie *</Label>
-                <Select
-                  value={newPurchase.category}
-                  onValueChange={(value) => setNewPurchase({...newPurchase, category: value, subcategory: ''})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(purchaseCategories).map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Select
+                    value={newPurchase.category}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setShowCustomCategoryInput(true);
+                      } else {
+                        setNewPurchase({...newPurchase, category: value, subcategory: ''});
+                        setShowCustomCategoryInput(false);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(purchaseCategories).map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                      <SelectItem value="__custom__" className="text-primary font-medium">
+                        + Ajouter une catégorie personnalisée
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {showCustomCategoryInput && (
+                    <div className="flex gap-2">
+                      <Input
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="Nom de la catégorie"
+                        className="flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (newCategoryName.trim()) {
+                            setCustomCategories(prev => [...new Set([...prev, newCategoryName.trim()])]);
+                            setNewPurchase({...newPurchase, category: newCategoryName.trim(), subcategory: ''});
+                            setNewCategoryName('');
+                            setShowCustomCategoryInput(false);
+                          }
+                        }}
+                      >
+                        Ajouter
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <Label>Sous-catégorie</Label>
-                <Select
-                  value={newPurchase.subcategory}
-                  onValueChange={(value) => setNewPurchase({...newPurchase, subcategory: value})}
-                  disabled={!newPurchase.category}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {newPurchase.category && purchaseCategories[newPurchase.category as keyof typeof purchaseCategories]?.map(subcat => (
-                      <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Select
+                    value={newPurchase.subcategory}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setShowCustomSubcategoryInput(true);
+                      } else {
+                        setNewPurchase({...newPurchase, subcategory: value});
+                        setShowCustomSubcategoryInput(false);
+                      }
+                    }}
+                    disabled={!newPurchase.category}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {newPurchase.category && purchaseCategories[newPurchase.category as keyof typeof purchaseCategories]?.map(subcat => (
+                        <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
+                      ))}
+                      {newPurchase.category && (
+                        <SelectItem value="__custom__" className="text-primary font-medium">
+                          + Ajouter une sous-catégorie
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {showCustomSubcategoryInput && newPurchase.category && (
+                    <div className="flex gap-2">
+                      <Input
+                        value={newSubcategoryName}
+                        onChange={(e) => setNewSubcategoryName(e.target.value)}
+                        placeholder="Nom de la sous-catégorie"
+                        className="flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (newSubcategoryName.trim()) {
+                            setCustomSubcategories(prev => ({
+                              ...prev,
+                              [newPurchase.category]: [...(prev[newPurchase.category] || []), newSubcategoryName.trim()]
+                            }));
+                            setNewPurchase({...newPurchase, subcategory: newSubcategoryName.trim()});
+                            setNewSubcategoryName('');
+                            setShowCustomSubcategoryInput(false);
+                          }
+                        }}
+                      >
+                        Ajouter
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -619,60 +619,79 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
           {/* Liste des stocks */}
           <div className="grid gap-4">
-            {stocks.map(stock => (
-              <Card key={stock.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div>
-                      <CardTitle className="text-base">{stock.custom_name || stock.feed_type}</CardTitle>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {predefinedFeedTypes.find(t => t.value === stock.feed_type)?.label || stock.feed_type}
-                        </Badge>
-                        <Badge className={stock.quantity <= (stock.min_threshold || 50) ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
-                          {stock.quantity} {stock.unit}
-                        </Badge>
+            {stocks.map(stock => {
+              const stockValue = stock.quantity * (stock.cost || 0);
+              const isLow = stock.quantity <= (stock.min_threshold || 50);
+              return (
+                <Card key={stock.id} className={isLow ? 'border-yellow-300' : ''}>
+                  <CardHeader className="pb-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-base">{stock.custom_name || stock.feed_type}</CardTitle>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {predefinedFeedTypes.find(t => t.value === stock.feed_type)?.label || stock.feed_type}
+                          </Badge>
+                          <Badge className={isLow ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                            Stock: {stock.quantity} {stock.unit}
+                          </Badge>
+                          {stock.min_threshold && (
+                            <Badge variant="secondary" className="text-xs">
+                              Seuil: {stock.min_threshold} {stock.unit}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditStock(stock)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteStock(stock.id)} className="text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditStock(stock)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteStock(stock.id)} className="text-red-600">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
+                      <div className="p-2 bg-primary/5 rounded">
+                        <span className="text-muted-foreground block text-xs">Stock restant</span>
+                        <span className="font-bold text-primary text-lg">{stock.quantity} {stock.unit}</span>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded">
+                        <span className="text-muted-foreground block text-xs">Valeur stock</span>
+                        <span className="font-semibold text-green-600">{stockValue.toLocaleString('fr-FR')} F</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 block text-xs">Expiration:</span>
+                        <span className="font-medium">
+                          {stock.expiration_date ? new Date(stock.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 block text-xs">Coût unitaire:</span>
+                        <span className="font-medium">{(stock.cost || 0).toLocaleString('fr-FR')} F/{stock.unit}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 block text-xs">Fournisseur:</span>
+                        <span className="font-medium">{stock.supplier || 'N/A'}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
-                    <div>
-                      <span className="text-gray-600">Expiration:</span>
-                      <span className="ml-1 font-medium">
-                        {stock.expiration_date ? new Date(stock.expiration_date).toLocaleDateString('fr-FR') : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Coût:</span>
-                      <span className="ml-1 font-medium">{(stock.cost || 0).toLocaleString('fr-FR')} F CFA/{stock.unit}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Protéines:</span>
-                      <span className="ml-1 font-medium">{stock.protein_content || 0}%</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Fournisseur:</span>
-                      <span className="ml-1 font-medium">{stock.supplier || 'N/A'}</span>
-                    </div>
-                  </div>
-                  {stock.notes && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                      <strong>Notes:</strong> {stock.notes}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    {isLow && (
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Stock inférieur au seuil minimum ({stock.min_threshold} {stock.unit})
+                      </div>
+                    )}
+                    {stock.notes && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                        <strong>Notes:</strong> {stock.notes}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
         
