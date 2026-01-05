@@ -735,66 +735,191 @@ const LivestockManagement = () => {
                           </div>
                         )}
                         
-                        {/* QR Code pour traçabilité */}
+                        {/* QR Code et Code-barres pour traçabilité avancée */}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" className="mt-2">
                               <QrCode className="w-3 h-3 mr-1" />
-                              QR Code
+                              Traçabilité
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-sm">
+                          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>QR Code - LOT-{String(index + 1).padStart(4, '0')}</DialogTitle>
+                              <DialogTitle className="flex items-center gap-2">
+                                <Fish className="w-5 h-5 text-cyan-600" />
+                                Traçabilité - LOT-{String(index + 1).padStart(4, '0')}
+                              </DialogTitle>
                             </DialogHeader>
-                            <div className="flex flex-col items-center gap-4 p-4">
-                              <QRCodeSVG 
-                                value={JSON.stringify({
-                                  lot: `LOT-${String(index + 1).padStart(4, '0')}`,
-                                  id: batch.id,
-                                  species: batch.species,
-                                  variety: batch.variety,
-                                  quantity: batch.quantity,
-                                  unit: batch.unitName,
-                                  acquisitionDate: batch.acquisitionDate,
-                                  source: batch.source
-                                })}
-                                size={200}
-                                level="H"
-                                includeMargin
-                              />
-                              <div className="text-center text-sm">
-                                <p className="font-bold">LOT-{String(index + 1).padStart(4, '0')}</p>
-                                <p>{batch.species} {batch.variety && `- ${batch.variety}`}</p>
-                                <p className="text-muted-foreground">{batch.quantity.toLocaleString()} individus</p>
-                                <p className="text-muted-foreground">{batch.unitName}</p>
+                            <div className="space-y-4 p-2">
+                              {/* Code-barres */}
+                              <div className="bg-white p-4 rounded-lg border text-center">
+                                <p className="text-xs text-muted-foreground mb-2">Code-barres</p>
+                                <div className="flex justify-center items-center gap-0.5 h-12">
+                                  {`LOT${String(index + 1).padStart(4, '0')}${batch.id.slice(0, 8)}`.split('').map((char, i) => (
+                                    <div 
+                                      key={i} 
+                                      className="bg-black" 
+                                      style={{ 
+                                        width: (i % 3 === 0) ? '2px' : '1px', 
+                                        height: '100%' 
+                                      }} 
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-xs font-mono mt-1">LOT-{String(index + 1).padStart(4, '0')}-{batch.id.slice(0, 8).toUpperCase()}</p>
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  const svg = document.querySelector('.qr-code-container svg');
-                                  if (svg) {
-                                    const svgData = new XMLSerializer().serializeToString(svg);
-                                    const canvas = document.createElement('canvas');
-                                    const ctx = canvas.getContext('2d');
-                                    const img = new Image();
-                                    img.onload = () => {
-                                      canvas.width = img.width;
-                                      canvas.height = img.height;
-                                      ctx?.drawImage(img, 0, 0);
-                                      const a = document.createElement('a');
-                                      a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}.png`;
-                                      a.href = canvas.toDataURL('image/png');
-                                      a.click();
-                                    };
-                                    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-                                  }
-                                }}
-                              >
-                                <Printer className="w-3 h-3 mr-1" />
-                                Télécharger
-                              </Button>
+
+                              {/* QR Code avec données complètes */}
+                              <div className="bg-white p-4 rounded-lg border">
+                                <p className="text-xs text-muted-foreground mb-2 text-center">QR Code - Scannez pour détails</p>
+                                <div className="flex justify-center qr-code-container">
+                                  <QRCodeSVG 
+                                    value={JSON.stringify({
+                                      type: 'AQUAPILOT_LOT',
+                                      lot_id: `LOT-${String(index + 1).padStart(4, '0')}`,
+                                      internal_id: batch.id,
+                                      product: {
+                                        species: batch.species,
+                                        variety: batch.variety || 'Standard',
+                                        type: 'Poisson frais'
+                                      },
+                                      quantity: {
+                                        count: batch.quantity,
+                                        unit: 'individus',
+                                        average_weight_g: batch.averageWeight,
+                                        total_weight_kg: batch.totalWeight
+                                      },
+                                      traceability: {
+                                        production_unit: batch.unitName,
+                                        acquisition_date: batch.acquisitionDate,
+                                        source: batch.source || 'Production interne',
+                                        age_days: batch.currentAge,
+                                        expected_harvest: batch.expectedHarvestDate,
+                                        status: batch.status
+                                      },
+                                      quality: {
+                                        last_health_check: batch.lastHealthCheck,
+                                        feeding_plan: batch.feedingPlan,
+                                        health_status: batch.status
+                                      },
+                                      certification: {
+                                        system: 'AquaPilot',
+                                        generated_at: new Date().toISOString(),
+                                        version: '2.0'
+                                      }
+                                    })}
+                                    size={180}
+                                    level="H"
+                                    includeMargin
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Détails de traçabilité */}
+                              <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  Informations de Traçabilité
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <p className="text-muted-foreground">Espèce</p>
+                                    <p className="font-medium">{batch.species}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Variété</p>
+                                    <p className="font-medium">{batch.variety || 'Standard'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Fournisseur/Source</p>
+                                    <p className="font-medium">{batch.source || 'Production interne'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Lieu de production</p>
+                                    <p className="font-medium">{batch.unitName}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Date d'acquisition</p>
+                                    <p className="font-medium">{batch.acquisitionDate ? new Date(batch.acquisitionDate).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Âge du lot</p>
+                                    <p className="font-medium">{batch.currentAge} jours</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Quantité</p>
+                                    <p className="font-medium">{batch.quantity.toLocaleString()} ind.</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Poids moyen</p>
+                                    <p className="font-medium">{batch.averageWeight} g</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Poids total</p>
+                                    <p className="font-medium">{batch.totalWeight.toFixed(1)} kg</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Récolte prévue</p>
+                                    <p className="font-medium">{batch.expectedHarvestDate ? new Date(batch.expectedHarvestDate).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Plan alimentaire</p>
+                                    <p className="font-medium">{batch.feedingPlan || 'Standard'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Dernier contrôle</p>
+                                    <p className="font-medium">{batch.lastHealthCheck ? new Date(batch.lastHealthCheck).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                                  </div>
+                                </div>
+                                {batch.notes && (
+                                  <div className="pt-2 border-t">
+                                    <p className="text-muted-foreground text-xs">Notes</p>
+                                    <p className="text-xs">{batch.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Boutons d'action */}
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    const svg = document.querySelector('.qr-code-container svg');
+                                    if (svg) {
+                                      const svgData = new XMLSerializer().serializeToString(svg);
+                                      const canvas = document.createElement('canvas');
+                                      const ctx = canvas.getContext('2d');
+                                      const img = new Image();
+                                      img.onload = () => {
+                                        canvas.width = img.width;
+                                        canvas.height = img.height;
+                                        ctx?.drawImage(img, 0, 0);
+                                        const a = document.createElement('a');
+                                        a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}.png`;
+                                        a.href = canvas.toDataURL('image/png');
+                                        a.click();
+                                      };
+                                      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                                    }
+                                  }}
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  QR Code
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    window.print();
+                                  }}
+                                >
+                                  <Printer className="w-3 h-3 mr-1" />
+                                  Imprimer
+                                </Button>
+                              </div>
                             </div>
                           </DialogContent>
                         </Dialog>
