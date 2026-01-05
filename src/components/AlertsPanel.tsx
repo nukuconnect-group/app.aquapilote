@@ -1,162 +1,213 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, AlertCircle, Info, CheckCircle, Bell, Thermometer, Fish, Activity, Droplets } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle, Bell, Thermometer, Fish, Activity, Droplets, Package, TrendingDown, Heart } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
+
+interface RealAlert {
+  id: string;
+  type: 'critical' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  time: string;
+  action: string;
+  icon: React.ElementType;
+  module?: string;
+}
 
 const AlertsPanel = () => {
   const { activeUnit } = useProductionUnits();
+  const { notifications } = useNotifications();
+  const { stocks: feedStocks } = useFeedStocks();
+  const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
+  const { batches } = useLivestockBatches(activeUnit?.id);
+  const { cycles } = useProductionCycles(activeUnit?.id);
 
-  // Alertes génériques
-  const globalAlerts = [
-    {
-      id: 'global-1',
-      type: 'info',
-      title: 'Système opérationnel',
-      message: 'Tous les systèmes fonctionnent normalement',
-      time: '10 min ago',
-      action: 'Voir détails',
-      icon: CheckCircle
+  // Générer les alertes réelles à partir des données
+  const realAlerts = useMemo(() => {
+    const alerts: RealAlert[] = [];
+    const now = new Date();
+
+    // Alertes des stocks d'aliments
+    const lowStocks = feedStocks.filter(stock => {
+      const minThreshold = stock.min_threshold || 50;
+      return stock.quantity <= minThreshold;
+    });
+
+    lowStocks.forEach(stock => {
+      alerts.push({
+        id: `stock-${stock.id}`,
+        type: stock.quantity <= (stock.min_threshold || 50) / 2 ? 'critical' : 'warning',
+        title: `Stock aliment faible: ${stock.feed_type}`,
+        message: `Stock actuel: ${stock.quantity} ${stock.unit}. Seuil minimum: ${stock.min_threshold || 50} ${stock.unit}`,
+        time: 'En temps réel',
+        action: 'Commander',
+        icon: Package,
+        module: 'alimentation'
+      });
+    });
+
+    // Alertes d'aliments périmés
+    const expiredStocks = feedStocks.filter(stock => {
+      if (!stock.expiration_date) return false;
+      return new Date(stock.expiration_date) <= now;
+    });
+
+    expiredStocks.forEach(stock => {
+      alerts.push({
+        id: `expired-${stock.id}`,
+        type: 'critical',
+        title: `Aliment périmé: ${stock.feed_type}`,
+        message: `Date d'expiration dépassée le ${new Date(stock.expiration_date!).toLocaleDateString('fr-FR')}`,
+        time: 'Urgent',
+        action: 'Retirer',
+        icon: AlertTriangle,
+        module: 'alimentation'
+      });
+    });
+
+    // Alertes mortalité élevée (derniers 7 jours)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentHealthRecords = healthRecords.filter(r => new Date(r.date) >= weekAgo);
+    const totalMortality = recentHealthRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
+    const totalStock = batches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+    const mortalityRate = totalStock > 0 ? (totalMortality / totalStock) * 100 : 0;
+
+    if (mortalityRate > 5) {
+      alerts.push({
+        id: 'mortality-high',
+        type: mortalityRate > 10 ? 'critical' : 'warning',
+        title: 'Taux de mortalité élevé',
+        message: `${mortalityRate.toFixed(1)}% de mortalité sur les 7 derniers jours (${totalMortality} individus)`,
+        time: 'Cette semaine',
+        action: 'Analyser',
+        icon: TrendingDown,
+        module: 'santé'
+      });
     }
-  ];
 
-  // Alertes spécifiques par unité
-  const getUnitSpecificAlerts = () => {
-    if (!activeUnit) return [];
-
-    switch (activeUnit.type) {
-      case 'ecloserie':
-        return [
-          {
-            id: 'eclo-1',
-            type: 'warning',
-            title: 'Température élevée - Bassin incubation',
-            message: 'Température de 28.5°C détectée dans le bassin d\'incubation A',
-            time: '5 min ago',
-            action: 'Régler thermostat',
-            icon: Thermometer
-          },
-          {
-            id: 'eclo-2',
+    // Alertes des cycles en fin de production
+    cycles.forEach(cycle => {
+      if (cycle.status === 'active' && cycle.end_date) {
+        const endDate = new Date(cycle.end_date);
+        const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilEnd <= 7 && daysUntilEnd > 0) {
+          alerts.push({
+            id: `cycle-end-${cycle.id}`,
             type: 'info',
-            title: 'Éclosion prévue',
-            message: 'Prochaine éclosion prévue dans 48h pour le lot B2024',
-            time: '1h ago',
-            action: 'Préparer matériel',
-            icon: Fish
-          },
-          {
-            id: 'eclo-3',
-            type: 'success',
-            title: 'Taux de fécondité excellent',
-            message: 'Taux de fécondité de 89% atteint ce cycle (+3% vs normal)',
-            time: '2h ago',
-            action: 'Voir rapport',
-            icon: Activity
-          }
-        ];
+            title: `Fin de cycle proche: ${cycle.name}`,
+            message: `Le cycle se termine dans ${daysUntilEnd} jour(s). Préparez la récolte.`,
+            time: `${daysUntilEnd}j restants`,
+            action: 'Planifier',
+            icon: Fish,
+            module: 'production'
+          });
+        }
+      }
+    });
 
-      case 'grossissement':
-        return [
-          {
-            id: 'gross-1',
-            type: 'critical',
-            title: 'Niveau d\'oxygène bas - Bassin C',
-            message: 'Le niveau d\'oxygène dans le bassin C est descendu à 5.2 mg/L',
-            time: '5 min ago',
-            action: 'Activer aération',
-            icon: Droplets
-          },
-          {
-            id: 'gross-2',
-            type: 'warning',
-            title: 'Mortalité légèrement élevée',
-            message: 'Taux de mortalité de 2.8% observé cette semaine',
-            time: '30 min ago',
-            action: 'Analyser causes',
-            icon: Fish
-          }
-        ];
+    // Alertes qualité de l'eau (paramètres anormaux)
+    const todayRecords = healthRecords.filter(r => 
+      new Date(r.date).toDateString() === now.toDateString()
+    );
 
-      case 'transformation':
-        return [
-          {
-            id: 'transf-1',
-            type: 'info',
-            title: 'Maintenance four électrique',
-            message: 'Maintenance préventive du four électrique prévue demain',
-            time: '1h ago',
-            action: 'Programmer',
-            icon: Activity
-          },
-          {
-            id: 'transf-2',
-            type: 'success',
-            title: 'Objectif de production atteint',
-            message: '2,450 kg transformés cette semaine (objectif: 2,400 kg)',
-            time: '3h ago',
-            action: 'Voir détails',
-            icon: CheckCircle
-          }
-        ];
+    todayRecords.forEach(record => {
+      if (record.oxygen && record.oxygen < 5) {
+        alerts.push({
+          id: `oxygen-${record.id}`,
+          type: 'critical',
+          title: 'Niveau d\'oxygène critique',
+          message: `Oxygène à ${record.oxygen} mg/L (minimum recommandé: 5 mg/L)`,
+          time: 'Aujourd\'hui',
+          action: 'Activer aération',
+          icon: Droplets,
+          module: 'santé'
+        });
+      }
 
-      case 'conservation':
-        return [
-          {
-            id: 'cons-1',
-            type: 'warning',
-            title: 'Température chambre froide A',
-            message: 'Température remontée à -1°C dans la chambre froide A',
-            time: '15 min ago',
-            action: 'Vérifier système',
-            icon: Thermometer
-          },
-          {
-            id: 'cons-2',
-            type: 'info',
-            title: 'Capacité stockage',
-            message: 'Capacité de stockage utilisée à 85% (1,700/2,000 kg)',
-            time: '2h ago',
-            action: 'Planifier évacuation',
-            icon: Info
-          }
-        ];
+      if (record.temperature && (record.temperature > 32 || record.temperature < 20)) {
+        alerts.push({
+          id: `temp-${record.id}`,
+          type: 'warning',
+          title: 'Température anormale',
+          message: `Température à ${record.temperature}°C (plage optimale: 24-30°C)`,
+          time: 'Aujourd\'hui',
+          action: 'Réguler',
+          icon: Thermometer,
+          module: 'santé'
+        });
+      }
 
-      case 'fabrication_aliment':
-        return [
-          {
-            id: 'alim-1',
-            type: 'warning',
-            title: 'Stock matière première faible',
-            message: 'Stock de farine de poisson inférieur à 500 kg',
-            time: '45 min ago',
-            action: 'Commander',
-            icon: AlertTriangle
-          }
-        ];
+      if (record.ph && (record.ph < 6.5 || record.ph > 8.5)) {
+        alerts.push({
+          id: `ph-${record.id}`,
+          type: 'warning',
+          title: 'pH hors norme',
+          message: `pH à ${record.ph} (plage optimale: 6.5-8.5)`,
+          time: 'Aujourd\'hui',
+          action: 'Corriger',
+          icon: Activity,
+          module: 'santé'
+        });
+      }
+    });
 
-      case 'commercialisation':
-        return [
-          {
-            id: 'comm-1',
-            type: 'info',
-            title: 'Commande importante',
-            message: 'Nouvelle commande de 1,500 kg reçue pour livraison vendredi',
-            time: '2h ago',
-            action: 'Préparer livraison',
-            icon: Info
-          }
-        ];
-
-      default:
-        return [];
+    // Lots en quarantaine
+    const quarantineBatches = batches.filter(b => b.status === 'quarantine');
+    if (quarantineBatches.length > 0) {
+      alerts.push({
+        id: 'quarantine',
+        type: 'warning',
+        title: `${quarantineBatches.length} lot(s) en quarantaine`,
+        message: `Surveillance requise pour ${quarantineBatches.map(b => b.species).join(', ')}`,
+        time: 'En cours',
+        action: 'Vérifier',
+        icon: Heart,
+        module: 'cheptel'
+      });
     }
-  };
 
-  const unitAlerts = getUnitSpecificAlerts();
-  const allAlerts = [...unitAlerts, ...globalAlerts];
+    // Notifications critiques non lues
+    const criticalNotifications = notifications.filter(n => n.is_critical && !n.is_read);
+    criticalNotifications.forEach(notif => {
+      alerts.push({
+        id: `notif-${notif.id}`,
+        type: 'critical',
+        title: notif.title,
+        message: notif.message,
+        time: new Date(notif.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        action: 'Voir',
+        icon: AlertCircle,
+        module: notif.module
+      });
+    });
+
+    // Message de succès si aucune alerte
+    if (alerts.length === 0) {
+      alerts.push({
+        id: 'all-good',
+        type: 'success',
+        title: 'Tout est en ordre',
+        message: 'Aucune alerte détectée. Votre exploitation fonctionne normalement.',
+        time: 'Maintenant',
+        action: 'Continuer',
+        icon: CheckCircle,
+        module: 'système'
+      });
+    }
+
+    // Trier par priorité (critical > warning > info > success)
+    const priority = { critical: 0, warning: 1, info: 2, success: 3 };
+    return alerts.sort((a, b) => priority[a.type] - priority[b.type]);
+  }, [feedStocks, healthRecords, batches, cycles, notifications, activeUnit]);
 
   const getAlertConfig = (type: string) => {
     switch (type) {
@@ -198,16 +249,8 @@ const AlertsPanel = () => {
     }
   };
 
-  if (allAlerts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-4 sm:p-6 text-center">
-          <Bell className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm text-gray-500">Aucune alerte pour le moment</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const criticalCount = realAlerts.filter(a => a.type === 'critical').length;
+  const warningCount = realAlerts.filter(a => a.type === 'warning').length;
 
   return (
     <Card>
@@ -216,17 +259,31 @@ const AlertsPanel = () => {
           <div className="flex items-center space-x-2">
             <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-aqua-600" />
             <span className="text-sm sm:text-base">
-              Alertes {activeUnit ? `- ${activeUnit.name}` : ''}
+              Alertes {activeUnit ? `- ${activeUnit.name}` : 'Globales'}
             </span>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {allAlerts.length} nouvelle{allAlerts.length > 1 ? 's' : ''}
-          </Badge>
+          <div className="flex gap-1">
+            {criticalCount > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                {criticalCount} critique{criticalCount > 1 ? 's' : ''}
+              </Badge>
+            )}
+            {warningCount > 0 && (
+              <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                {warningCount} attention
+              </Badge>
+            )}
+            {criticalCount === 0 && warningCount === 0 && (
+              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                OK
+              </Badge>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3 max-h-64 overflow-y-auto">
-          {allAlerts.map(alert => {
+          {realAlerts.map(alert => {
             const config = getAlertConfig(alert.type);
             const IconComponent = alert.icon;
             
@@ -250,9 +307,16 @@ const AlertsPanel = () => {
                     </p>
                     
                     <div className="flex items-center justify-between">
-                      <Badge className={`${config.badgeClass} text-xs`}>
-                        {config.label}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${config.badgeClass} text-xs`}>
+                          {config.label}
+                        </Badge>
+                        {alert.module && (
+                          <Badge variant="outline" className="text-xs">
+                            {alert.module}
+                          </Badge>
+                        )}
+                      </div>
                       
                       <Button variant="outline" size="sm" className="text-xs">
                         {alert.action}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useLivestockBatches } from '@/hooks/useLivestockBatches';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
+import { useHealthRecords } from '@/hooks/useHealthRecords';
+import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,7 +31,7 @@ interface Category {
 interface Language {
   id: string;
   label: string;
-  code: string; // BCP 47 language code for speech recognition
+  code: string;
   flag: string;
 }
 
@@ -109,21 +114,29 @@ const categories: Category[] = [
 ];
 
 const AquaAssistant = () => {
-  const { units } = useProductionUnits();
+  const { units, activeUnit } = useProductionUnits();
   const [isOpen, setIsOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole. Sélectionnez une catégorie ou posez-moi directement votre question." }
+    { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(activeUnit?.id || null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('fr');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Données réelles pour le contexte
+  const { batches } = useLivestockBatches(selectedUnitId || undefined);
+  const { stocks: feedStocks } = useFeedStocks();
+  const { cycles } = useProductionCycles(selectedUnitId || undefined);
+  const { records: healthRecords } = useHealthRecords(undefined, selectedUnitId || undefined);
+  const { records: feedingRecords } = useFeedingRecords();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -196,6 +209,92 @@ const AquaAssistant = () => {
     setInput(suggestion);
   };
 
+  // Générer le contexte des données réelles pour l'assistant
+  const generateDataContext = () => {
+    const unitName = units.find(u => u.id === selectedUnitId)?.name || 'toutes les unités';
+    let context = `\n\n[DONNÉES RÉELLES DE L'UTILISATEUR - ${unitName}]\n`;
+
+    // Cycles de production
+    if (cycles.length > 0) {
+      const activeCycles = cycles.filter(c => c.status === 'active');
+      context += `\n📊 CYCLES DE PRODUCTION:\n`;
+      context += `- ${activeCycles.length} cycle(s) actif(s) sur ${cycles.length} total\n`;
+      activeCycles.forEach(cycle => {
+        const progress = cycle.target_quantity > 0 ? ((cycle.current_quantity / cycle.target_quantity) * 100).toFixed(1) : 0;
+        const daysActive = cycle.start_date ? Math.floor((Date.now() - new Date(cycle.start_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        context += `  • ${cycle.name}: ${cycle.species || 'N/A'}, ${cycle.current_quantity?.toLocaleString() || 0} poissons, progression ${progress}%, ${daysActive} jours actif\n`;
+      });
+    } else {
+      context += `\n📊 CYCLES: Aucun cycle enregistré\n`;
+    }
+
+    // Lots de poissons (cheptel)
+    if (batches.length > 0) {
+      const totalQuantity = batches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+      const totalWeight = batches.reduce((sum, b) => sum + (b.total_weight || 0), 0);
+      const healthyBatches = batches.filter(b => b.status === 'healthy').length;
+      context += `\n🐟 CHEPTEL (LOTS DE POISSONS):\n`;
+      context += `- ${batches.length} lot(s), ${totalQuantity.toLocaleString()} individus total, ${totalWeight.toFixed(1)} kg\n`;
+      context += `- ${healthyBatches} lot(s) en bonne santé\n`;
+      batches.slice(0, 5).forEach(batch => {
+        context += `  • ${batch.species} (${batch.variety || 'standard'}): ${batch.quantity?.toLocaleString() || 0} ind., ${batch.average_weight || 0}g/ind., ${batch.status}\n`;
+      });
+    } else {
+      context += `\n🐟 CHEPTEL: Aucun lot enregistré\n`;
+    }
+
+    // Stocks d'aliments
+    const unitStocks = selectedUnitId ? feedStocks.filter(s => s.unit_id === selectedUnitId) : feedStocks;
+    if (unitStocks.length > 0) {
+      const totalStock = unitStocks.reduce((sum, s) => sum + (s.quantity || 0), 0);
+      const lowStocks = unitStocks.filter(s => s.quantity <= (s.min_threshold || 50));
+      context += `\n🌾 STOCK D'ALIMENTS:\n`;
+      context += `- ${unitStocks.length} type(s) d'aliment, ${totalStock.toFixed(1)} kg total\n`;
+      if (lowStocks.length > 0) {
+        context += `- ⚠️ ${lowStocks.length} stock(s) faible(s)!\n`;
+      }
+      unitStocks.forEach(stock => {
+        const status = stock.quantity <= (stock.min_threshold || 50) ? '⚠️ FAIBLE' : '✅';
+        context += `  • ${stock.feed_type}: ${stock.quantity} ${stock.unit} ${status}\n`;
+      });
+    } else {
+      context += `\n🌾 STOCK: Aucun stock enregistré\n`;
+    }
+
+    // Données de santé et mortalité
+    if (healthRecords.length > 0) {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const recentRecords = healthRecords.filter(r => new Date(r.date) >= weekAgo);
+      const totalMortality = recentRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
+      const avgTemp = recentRecords.length > 0 
+        ? recentRecords.reduce((sum, r) => sum + (r.temperature || 0), 0) / recentRecords.filter(r => r.temperature).length 
+        : 0;
+      const avgPh = recentRecords.length > 0 
+        ? recentRecords.reduce((sum, r) => sum + (r.ph || 0), 0) / recentRecords.filter(r => r.ph).length 
+        : 0;
+      
+      context += `\n❤️ SANTÉ (7 derniers jours):\n`;
+      context += `- Mortalité: ${totalMortality} individus\n`;
+      if (avgTemp > 0) context += `- Température moyenne: ${avgTemp.toFixed(1)}°C\n`;
+      if (avgPh > 0) context += `- pH moyen: ${avgPh.toFixed(1)}\n`;
+    }
+
+    // Alimentation récente
+    if (feedingRecords.length > 0) {
+      const unitFeedings = selectedUnitId ? feedingRecords.filter(r => r.unit_id === selectedUnitId) : feedingRecords;
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const recentFeedings = unitFeedings.filter(r => new Date(r.date) >= weekAgo);
+      const totalFed = recentFeedings.reduce((sum, r) => sum + (r.quantity || 0), 0);
+      
+      context += `\n🍽️ ALIMENTATION (7 derniers jours):\n`;
+      context += `- ${recentFeedings.length} nourrissage(s), ${totalFed.toFixed(1)} kg distribués\n`;
+    }
+
+    return context;
+  };
+
   const sendMessage = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
     if (!textToSend || isLoading) return;
@@ -204,6 +303,9 @@ const AquaAssistant = () => {
     const contextPrefix = selectedUnitId && selectedUnitName 
       ? `[Contexte: Unité "${selectedUnitName}"] ` 
       : '';
+
+    // Ajouter le contexte des données réelles si une catégorie est sélectionnée
+    const dataContext = selectedCategory ? generateDataContext() : '';
 
     const userMessage: Message = { 
       role: 'user', 
@@ -231,10 +333,11 @@ const AquaAssistant = () => {
         return;
       }
 
+      // Enrichir le message avec le contexte des données
       const enrichedMessages = newMessages.map(m => ({
         role: m.role,
         content: m.role === 'user' && m === userMessage 
-          ? `${contextPrefix}${m.content}`
+          ? `${contextPrefix}${m.content}${dataContext}`
           : m.content
       }));
 
@@ -341,27 +444,42 @@ const AquaAssistant = () => {
 
       {/* Chat modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[600px] flex flex-col bg-background border border-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden">
+        <div className={`fixed z-50 flex flex-col bg-background border border-border shadow-2xl overflow-hidden transition-all duration-300 ${
+          isFullscreen 
+            ? 'inset-0 rounded-none' 
+            : 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[600px] rounded-none sm:rounded-2xl'
+        }`}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
+          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-3 sm:p-4 text-white">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">AquaAssistant Pro</h3>
-                  <p className="text-xs text-white/80">Expert aquacole IA</p>
+                  <h3 className="font-bold text-base sm:text-lg">AquaAssistant Pro</h3>
+                  <p className="text-[10px] sm:text-xs text-white/80">Expert aquacole IA - Données en temps réel</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                {/* Fullscreen toggle - visible on mobile/tablet */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => { setIsOpen(false); setIsFullscreen(false); }}
+                  className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
+              </div>
             </div>
 
             {/* Unit selector */}
