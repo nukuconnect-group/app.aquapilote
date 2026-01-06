@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -100,6 +100,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       items: [
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText },
+      ]
+    },
+    {
+      label: language === 'fr' ? 'Outils' : 'Tools',
+      items: [
+        { id: 'aqua-assistant', label: 'AquaAssistant IA', icon: MessageCircle },
       ]
     },
     {

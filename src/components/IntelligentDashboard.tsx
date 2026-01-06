@@ -17,6 +17,7 @@ import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useReproductionRecords } from '@/hooks/useReproductionRecords';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
 
 const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -25,7 +26,6 @@ const IntelligentDashboard = () => {
     activeUnit,
     getUnitInfrastructures,
     getUnitEquipment,
-    getUnitCycles,
     getUnitFinancialData,
     getGlobalFinancialData
   } = useProductionUnits();
@@ -46,9 +46,17 @@ const IntelligentDashboard = () => {
   const { records: reproductionRecords } = useReproductionRecords();
   const { batches } = useLivestockBatches();
   
+  // Hook pour les cycles de production (données réelles de la DB)
+  const { cycles: allCycles } = useProductionCycles();
+  
   const unitInfrastructures = activeUnit ? getUnitInfrastructures(activeUnit.id) : [];
   const unitEquipment = activeUnit ? getUnitEquipment(activeUnit.id) : [];
-  const unitCycles = activeUnit ? getUnitCycles(activeUnit.id) : [];
+  
+  // Utiliser les cycles réels de la base de données
+  const unitCycles = activeUnit 
+    ? allCycles.filter(c => c.unit_id === activeUnit.id) 
+    : allCycles;
+    
   const unitFinancialData = activeUnit ? getUnitFinancialData(activeUnit.id) : null;
   const globalFinancialData = getGlobalFinancialData();
   const currentFinancialData = viewMode === 'global' ? globalFinancialData : unitFinancialData;
@@ -759,14 +767,14 @@ const IntelligentDashboard = () => {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm sm:text-base truncate">{cycle.name}</h4>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            Démarré le {cycle.startDate}
+                            Démarré le {cycle.start_date}
                           </p>
                           <div className="mt-2">
                             <div className="flex justify-between text-xs mb-1">
                               <span>Progression</span>
-                              <span>{cycle.currentQuantity.toLocaleString()}/{cycle.targetQuantity.toLocaleString()}</span>
+                              <span>{(cycle.current_quantity || 0).toLocaleString()}/{(cycle.target_quantity || 0).toLocaleString()}</span>
                             </div>
-                            <Progress value={cycle.currentQuantity / cycle.targetQuantity * 100} className="h-2" />
+                            <Progress value={(cycle.current_quantity || 0) / (cycle.target_quantity || 1) * 100} className="h-2" />
                           </div>
                         </div>
                         <Badge variant={cycle.status === 'active' ? 'default' : 'secondary'} className="text-xs shrink-0">

@@ -19,7 +19,8 @@ import {
   Truck,
   UserCog,
   Database,
-  Shield
+  Shield,
+  MessageCircle
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,6 +104,13 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       items: [
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText }
+      ]
+    },
+    // Outils
+    {
+      category: language === 'fr' ? 'Outils' : 'Tools',
+      items: [
+        { id: 'aqua-assistant', label: 'AquaAssistant IA', icon: MessageCircle }
       ]
     },
     // Configuration
