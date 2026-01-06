@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +116,13 @@ const LivestockManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<LivestockBatch | null>(null);
   const [showControlForm, setShowControlForm] = useState(false);
+  
+  // États de recherche pour les lots
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'barcode' | 'lot' | 'species'>('all');
+  
+  // État de recherche pour pêches de contrôle par date
+  const [controlSearchDate, setControlSearchDate] = useState('');
   
   // Données de contrôle de pêche - vides par défaut, remplies en mode démo
   const getDemoControlRecords = (): ControlFishing[] => isDemoMode ? [
@@ -322,11 +329,60 @@ const LivestockManagement = () => {
   };
 
   // Les données sont déjà filtrées par le hook via activeUnit.id
-  const filteredBatches = livestockBatches;
+  // Puis filtrer par recherche
+  const filteredBatches = useMemo(() => {
+    let result = livestockBatches;
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((batch, index) => {
+        const lotNumber = `LOT-${String(index + 1).padStart(4, '0')}`.toLowerCase();
+        const barcodeId = `LOT${String(index + 1).padStart(4, '0')}${batch.id.slice(0, 8)}`.toLowerCase();
+        
+        switch (searchType) {
+          case 'barcode':
+            return barcodeId.includes(query) || batch.id.toLowerCase().includes(query);
+          case 'lot':
+            return lotNumber.includes(query);
+          case 'species':
+            return batch.species.toLowerCase().includes(query) || 
+                   (batch.variety?.toLowerCase().includes(query) || false);
+          default: // 'all'
+            return lotNumber.includes(query) ||
+                   barcodeId.includes(query) ||
+                   batch.species.toLowerCase().includes(query) ||
+                   (batch.variety?.toLowerCase().includes(query) || false) ||
+                   batch.unitName.toLowerCase().includes(query) ||
+                   (batch.source?.toLowerCase().includes(query) || false) ||
+                   batch.id.toLowerCase().includes(query);
+        }
+      });
+    }
+    
+    return result;
+  }, [livestockBatches, searchQuery, searchType]);
 
-  const filteredControlRecords = activeUnit
-    ? controlRecords.filter(record => record.bassinId === activeUnit.id)
-    : controlRecords;
+  // Filtrer les pêches de contrôle par unité et date
+  const filteredControlRecords = useMemo(() => {
+    let records = activeUnit
+      ? controlRecords.filter(record => record.bassinId === activeUnit.id)
+      : controlRecords;
+    
+    if (controlSearchDate) {
+      records = records.filter(record => record.date === controlSearchDate);
+    }
+    
+    return records;
+  }, [controlRecords, activeUnit, controlSearchDate]);
+
+  // Filtrer les health records par date aussi
+  const filteredHealthRecords = useMemo(() => {
+    let records = healthRecords;
+    if (controlSearchDate) {
+      records = records.filter(r => r.date === controlSearchDate);
+    }
+    return records;
+  }, [healthRecords, controlSearchDate]);
 
   const totalQuantity = filteredBatches.reduce((sum, batch) => sum + batch.quantity, 0);
   const totalWeight = filteredBatches.reduce((sum, batch) => sum + batch.totalWeight, 0);
@@ -659,14 +715,89 @@ const LivestockManagement = () => {
         <TabsContent value="lots">
           <Card>
             <CardHeader>
-              <CardTitle>Lots de poissons</CardTitle>
-              <CardDescription>
-                Gestion et suivi de tous les lots par unité de production
-              </CardDescription>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <CardTitle>Lots de poissons</CardTitle>
+                  <CardDescription>
+                    Gestion et suivi de tous les lots par unité de production
+                  </CardDescription>
+                </div>
+                {/* Barre de recherche avancée */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Rechercher par lot, code-barres, espèce..."
+                      className="pl-9 text-sm"
+                    />
+                  </div>
+                  <Select value={searchType} onValueChange={(v: any) => setSearchType(v)}>
+                    <SelectTrigger className="w-full sm:w-40 text-sm">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Search className="w-3 h-3" />
+                          Tous
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="barcode">
+                        <div className="flex items-center gap-2">
+                          <ScanBarcode className="w-3 h-3" />
+                          Code-barres
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="lot">
+                        <div className="flex items-center gap-2">
+                          <Fish className="w-3 h-3" />
+                          N° Lot
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="species">
+                        <div className="flex items-center gap-2">
+                          <Fish className="w-3 h-3" />
+                          Espèce
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {searchQuery && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSearchQuery('')}
+                      className="text-xs"
+                    >
+                      Effacer
+                    </Button>
+                  )}
+                </div>
+                {searchQuery && (
+                  <p className="text-xs text-muted-foreground">
+                    {filteredBatches.length} lot(s) trouvé(s) sur {livestockBatches.length}
+                  </p>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 sm:space-y-4">
-                {filteredBatches.map((batch, index) => (
+                {filteredBatches.length === 0 && searchQuery ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Aucun lot trouvé pour "{searchQuery}"</p>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      onClick={() => setSearchQuery('')}
+                      className="mt-2"
+                    >
+                      Effacer la recherche
+                    </Button>
+                  </div>
+                ) : filteredBatches.map((batch, index) => (
                   <div key={batch.id} className="border rounded-lg p-3 sm:p-4 hover:bg-accent/50">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -961,7 +1092,37 @@ const LivestockManagement = () => {
                       Enregistrez les pêches de contrôle par infrastructure
                     </CardDescription>
                   </div>
-                  {healthRecords.length > 0 && (
+                </div>
+                
+                {/* Recherche par date */}
+                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Label className="text-xs whitespace-nowrap">Filtrer par date:</Label>
+                    <Input
+                      type="date"
+                      value={controlSearchDate}
+                      onChange={(e) => setControlSearchDate(e.target.value)}
+                      className="w-full sm:w-auto text-sm"
+                    />
+                    {controlSearchDate && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setControlSearchDate('')}
+                        className="text-xs px-2"
+                      >
+                        Effacer
+                      </Button>
+                    )}
+                  </div>
+                  {controlSearchDate && (
+                    <Badge variant="secondary" className="text-xs">
+                      {filteredHealthRecords.length} enregistrement(s) le {new Date(controlSearchDate).toLocaleDateString('fr-FR')}
+                    </Badge>
+                  )}
+                </div>
+                
+                {filteredHealthRecords.length > 0 && (
                     <div className="flex gap-2">
                       <ExportDropdown
                         options={{
@@ -1010,20 +1171,19 @@ const LivestockManagement = () => {
                       </Button>
                     </div>
                   )}
-                </div>
-                <ControlFishingForm 
-                  unitId={selectedUnit === 'all' ? (units[0]?.id || '') : selectedUnit}
-                  onRecordCreated={refetchHealthRecords}
-                />
               </div>
+              <ControlFishingForm 
+                unitId={selectedUnit === 'all' ? (units[0]?.id || '') : selectedUnit}
+                onRecordCreated={refetchHealthRecords}
+              />
             </CardHeader>
             <CardContent className="space-y-4">
-              {healthRecords.length > 0 ? (
+              {filteredHealthRecords.length > 0 ? (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-sm">Historique des pêches ({healthRecords.length})</h4>
+                  <h4 className="font-medium text-sm">Historique des pêches ({filteredHealthRecords.length})</h4>
                   {(() => {
                     // Grouper par date
-                    const recordsByDate = healthRecords.reduce((acc, record) => {
+                    const recordsByDate = filteredHealthRecords.reduce((acc, record) => {
                       const dateKey = record.date;
                       if (!acc[dateKey]) acc[dateKey] = [];
                       acc[dateKey].push(record);

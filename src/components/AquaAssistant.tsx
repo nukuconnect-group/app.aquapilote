@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Maximize2, Minimize2, Crown, Lock, Calculator, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -117,6 +117,7 @@ const AquaAssistant = () => {
   const { units, activeUnit } = useProductionUnits();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false); // Option premium
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
   ]);
@@ -128,8 +129,24 @@ const AquaAssistant = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('fr');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Synchroniser avec l'unité active du contexte
+  useEffect(() => {
+    if (activeUnit?.id && activeUnit.id !== selectedUnitId) {
+      setSelectedUnitId(activeUnit.id);
+      // Ajouter un message automatique lors du changement d'unité
+      if (isOpen && messages.length > 1) {
+        const unitName = activeUnit.name;
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `📍 Contexte basculé vers l'unité "${unitName}". Je peux maintenant répondre avec les données spécifiques de cette unité.` 
+        }]);
+      }
+    }
+  }, [activeUnit?.id]);
 
   // Données réelles pour le contexte
   const { batches } = useLivestockBatches(selectedUnitId || undefined);
@@ -546,6 +563,26 @@ const AquaAssistant = () => {
             </div>
           </div>
 
+          {/* Premium banner */}
+          {!isPremium && (
+            <div className="px-3 py-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-200/50">
+              <button
+                onClick={() => setShowPremiumModal(true)}
+                className="w-full flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-amber-700 dark:text-amber-400 font-medium">Passez à Premium</span>
+                </div>
+                <div className="flex items-center gap-1 text-amber-600">
+                  <Calculator className="w-3 h-3" />
+                  <BarChart3 className="w-3 h-3" />
+                  <Lock className="w-3 h-3" />
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* Categories */}
           <div className="p-2 border-b border-border bg-muted/30">
             <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
@@ -553,14 +590,14 @@ const AquaAssistant = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap transition-all ${
                     selectedCategory === cat.id 
                       ? `${cat.color} text-white shadow-md` 
                       : 'bg-background hover:bg-muted border border-border'
                   }`}
                 >
                   {cat.icon}
-                  {cat.label}
+                  <span className="hidden xs:inline sm:inline">{cat.label}</span>
                 </button>
               ))}
             </div>
@@ -568,14 +605,14 @@ const AquaAssistant = () => {
 
           {/* Suggestions */}
           {currentCategory && messages.length <= 2 && (
-            <div className="p-3 bg-muted/20 border-b border-border">
-              <p className="text-xs text-muted-foreground mb-2">Suggestions {currentCategory.label.toLowerCase()} :</p>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="p-2 sm:p-3 bg-muted/20 border-b border-border">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 sm:mb-2">Suggestions :</p>
+              <div className="flex flex-wrap gap-1 sm:gap-1.5">
                 {currentCategory.suggestions.map((suggestion, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-2.5 py-1 text-xs bg-background hover:bg-primary/10 border border-border rounded-full transition-colors hover:border-primary/50"
+                    className="px-2 py-1 text-[10px] sm:text-xs bg-background hover:bg-primary/10 border border-border rounded-full transition-colors hover:border-primary/50 leading-tight"
                   >
                     {suggestion}
                   </button>
@@ -584,36 +621,43 @@ const AquaAssistant = () => {
             </div>
           )}
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4">
+          {/* Messages with WhatsApp-style background */}
+          <ScrollArea 
+            className="flex-1 relative" 
+            ref={scrollRef}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2306b6d4' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              backgroundColor: 'hsl(var(--muted) / 0.3)'
+            }}
+          >
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {messages.map((msg, index) => (
                 <div
                   key={index}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] p-3 rounded-2xl ${
+                    className={`max-w-[90%] sm:max-w-[85%] p-2.5 sm:p-3 rounded-2xl shadow-sm ${
                       msg.role === 'user'
                         ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-br-md'
-                        : 'bg-muted text-foreground rounded-bl-md'
+                        : 'bg-background text-foreground rounded-bl-md border border-border/50'
                     }`}
                   >
                     {msg.role === 'user' && msg.unitId && (
-                      <Badge variant="secondary" className="mb-1.5 text-[10px] bg-white/20 text-white border-0">
-                        <Building2 className="w-3 h-3 mr-1" />
+                      <Badge variant="secondary" className="mb-1 sm:mb-1.5 text-[9px] sm:text-[10px] bg-white/20 text-white border-0">
+                        <Building2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                         {units.find(u => u.id === msg.unitId)?.name}
                       </Badge>
                     )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                     {msg.role === 'assistant' && msg.content && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => speakText(msg.content)}
-                        className="mt-2 h-7 px-2 text-xs opacity-70 hover:opacity-100"
+                        className="mt-1.5 sm:mt-2 h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs opacity-70 hover:opacity-100"
                       >
-                        <Volume2 className="w-3 h-3 mr-1" />
+                        <Volume2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                         Écouter
                       </Button>
                     )}
@@ -622,10 +666,10 @@ const AquaAssistant = () => {
               ))}
               {isLoading && messages[messages.length - 1]?.content === '' && (
                 <div className="flex justify-start">
-                  <div className="bg-muted p-3 rounded-2xl rounded-bl-md">
+                  <div className="bg-background border border-border/50 p-2.5 sm:p-3 rounded-2xl rounded-bl-md shadow-sm">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      <span className="text-xs text-muted-foreground">Analyse en cours...</span>
+                      <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-primary" />
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">Analyse en cours...</span>
                     </div>
                   </div>
                 </div>
@@ -634,39 +678,101 @@ const AquaAssistant = () => {
           </ScrollArea>
 
           {/* Input */}
-          <div className="p-4 border-t border-border bg-background">
-            <div className="flex items-center gap-2">
+          <div className="p-2.5 sm:p-4 border-t border-border bg-background">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 variant={isListening ? "destructive" : "outline"}
                 size="icon"
                 onClick={toggleListening}
-                className="shrink-0 h-10 w-10"
+                className="shrink-0 h-9 w-9 sm:h-10 sm:w-10"
                 disabled={isLoading}
               >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isListening ? <MicOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               </Button>
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Posez votre question..."
-                className="flex-1 h-10"
+                className="flex-1 h-9 sm:h-10 text-sm"
                 disabled={isLoading}
               />
               <Button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="shrink-0 h-10 w-10 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
               >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isLoading ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               </Button>
             </div>
             {isListening && (
-              <p className="text-xs text-center text-muted-foreground mt-2 animate-pulse">
+              <p className="text-[10px] sm:text-xs text-center text-muted-foreground mt-1.5 sm:mt-2 animate-pulse">
                 🎤 Écoute en cours... Parlez maintenant
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Premium Modal */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Crown className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">AquaAssistant Premium</h3>
+                  <p className="text-xs text-white/80">Fonctionnalités avancées</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                  <Calculator className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium">Calculs de production</p>
+                    <p className="text-xs text-muted-foreground">Estimations précises de rendement</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium">Analyse de rentabilité</p>
+                    <p className="text-xs text-muted-foreground">ROI et marges détaillées</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  <div>
+                    <p className="text-sm font-medium">Prévisions avancées</p>
+                    <p className="text-xs text-muted-foreground">Planification et scénarios</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t pt-3 space-y-2">
+                <Button 
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  onClick={() => { setIsPremium(true); setShowPremiumModal(false); }}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Activer Premium (Essai)
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-sm"
+                  onClick={() => setShowPremiumModal(false)}
+                >
+                  Plus tard
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
