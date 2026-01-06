@@ -757,19 +757,21 @@ const AquaAssistant = () => {
               </div>
               
               <div className="border-t pt-3 space-y-2">
-                <Button 
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                  onClick={() => { setIsPremium(true); setShowPremiumModal(false); }}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Activer Premium (Essai)
-                </Button>
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">En cours de développement</span>
+                  </div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400/80">
+                    Cette fonctionnalité premium sera bientôt disponible. Restez connecté pour les mises à jour !
+                  </p>
+                </div>
                 <Button 
                   variant="ghost" 
                   className="w-full text-sm"
                   onClick={() => setShowPremiumModal(false)}
                 >
-                  Plus tard
+                  Fermer
                 </Button>
               </div>
             </div>

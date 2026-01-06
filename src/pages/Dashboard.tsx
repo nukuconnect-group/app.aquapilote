@@ -27,6 +27,7 @@ import TeamManagement from '@/components/TeamManagement';
 import ReportsManagement from '@/components/ReportsManagement';
 import SettingsManagement from '@/components/SettingsManagement';
 import AquaAssistant from '@/components/AquaAssistant';
+import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info } from 'lucide-react';
@@ -125,6 +126,18 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  // État pour afficher le module AquaAssistant en page complète
+  const [showAquaAssistantModule, setShowAquaAssistantModule] = useState(false);
+
+  // Detecter le changement d'onglet vers aqua-assistant
+  useEffect(() => {
+    if (activeTab === 'aqua-assistant') {
+      setShowAquaAssistantModule(true);
+    } else {
+      setShowAquaAssistantModule(false);
+    }
+  }, [activeTab]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -174,6 +187,8 @@ const Dashboard: React.FC = () => {
         return <SettingsManagement />;
       case 'admin':
         return <AdminDashboard />;
+      case 'aqua-assistant':
+        return <AquaAssistantModule />;
       default:
         return (
           <>
