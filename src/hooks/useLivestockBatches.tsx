@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
 import { offlineStorage } from '@/lib/offlineStorage';
+import { notificationHelpers } from '@/lib/notificationService';
 
 export interface LivestockBatch {
   id: string;
@@ -129,6 +130,9 @@ export const useLivestockBatches = (unitId?: string) => {
         title: 'Succès',
         description: 'Lot de poissons créé avec succès'
       });
+
+      // Create notification for batch creation
+      await notificationHelpers.livestockBatchAdded(user.id, batch.species, batch.quantity, batch.unit_name);
 
       await fetchBatches();
       return data;

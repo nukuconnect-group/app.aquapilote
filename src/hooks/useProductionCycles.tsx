@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
+import { notificationHelpers } from '@/lib/notificationService';
 
 export interface ProductionCycle {
   id: string;
@@ -102,6 +103,9 @@ export const useProductionCycles = (unitId?: string) => {
         title: 'Succès',
         description: 'Cycle de production créé avec succès',
       });
+
+      // Create notification for cycle creation
+      await notificationHelpers.cycleCreated(user.id, cycle.name, cycle.unit_name);
 
       await fetchCycles();
       return data as unknown as ProductionCycle;
