@@ -26,6 +26,7 @@ import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import AlertHistory from '@/components/alerts/AlertHistory';
+import { notificationHelpers } from '@/lib/notificationService';
 
 interface FeedStockManagerProps {
   unitId: string;
@@ -112,10 +113,30 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         min_threshold: newStock.min_threshold || 50
       };
 
+      const { data: { user } } = await supabase.auth.getUser();
+
       if (editingStock) {
         await updateStock(editingStock.id, stockData);
+        toast({
+          title: 'Stock modifié',
+          description: `${newStock.custom_name || newStock.feed_type} mis à jour`,
+        });
       } else {
         await createStock(stockData);
+        toast({
+          title: 'Stock ajouté',
+          description: `${newStock.quantity} ${newStock.unit} de ${newStock.custom_name || newStock.feed_type} ajouté`,
+        });
+        
+        // Create notification for stock addition
+        if (user?.id) {
+          notificationHelpers.stockAdded(
+            user.id, 
+            newStock.custom_name || newStock.feed_type, 
+            newStock.quantity, 
+            newStock.unit
+          );
+        }
       }
 
       if (onStockUpdate) {
@@ -161,8 +182,20 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
   };
 
   const handleDeleteStock = async (stockId: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce stock ?')) return;
+    
     try {
+      const stockToDelete = stocks.find(s => s.id === stockId);
       await deleteStock(stockId);
+      
+      if (stockToDelete) {
+        toast({
+          title: 'Stock supprimé',
+          description: `${stockToDelete.custom_name || stockToDelete.feed_type} retiré du stock`,
+          variant: 'destructive'
+        });
+      }
+      
       if (onStockUpdate) {
         onStockUpdate(stocks);
       }

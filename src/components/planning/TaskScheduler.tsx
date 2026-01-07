@@ -6,21 +6,26 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, CheckCircle2, ClipboardList, Trash2, Bell, Volume2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar, Clock, Plus, CheckCircle2, ClipboardList, Trash2, Bell, Volume2, Edit } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePlannedTasks, PlannedTask } from '@/hooks/usePlannedTasks';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
+import { notificationHelpers } from '@/lib/notificationService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TaskScheduler = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
+  const { user } = useAuth();
   const { tasks, loading, error, refetch, createTask, updateTask, deleteTask, upcomingTasks, playAlertSound } = usePlannedTasks(activeUnit?.id);
   const { plans: feedingPlans } = useFeedingPlans(activeUnit?.id || '');
 
   const [showAddTask, setShowAddTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<PlannedTask | null>(null);
   const [taskForm, setTaskForm] = useState({
     title: '',
     type: 'feeding' as PlannedTask['type'],
@@ -85,41 +90,92 @@ const TaskScheduler = () => {
     });
   }, [filteredTasks, feedingPlanTasks]);
 
+  const resetForm = () => {
+    setTaskForm({
+      title: '',
+      type: 'feeding',
+      description: '',
+      assignedTo: '',
+      dueDate: new Date().toISOString().split('T')[0],
+      dueTime: '09:00',
+      priority: 'medium',
+      unitId: activeUnit?.id || '',
+      unitName: activeUnit?.name || ''
+    });
+    setEditingTask(null);
+    setShowAddTask(false);
+  };
+
+  const handleEditTask = (task: PlannedTask) => {
+    setEditingTask(task);
+    setTaskForm({
+      title: task.title,
+      type: task.type,
+      description: task.description || '',
+      assignedTo: task.assigned_to || '',
+      dueDate: task.due_date,
+      dueTime: task.due_time,
+      priority: task.priority,
+      unitId: task.unit_id || activeUnit?.id || '',
+      unitName: task.unit_name || activeUnit?.name || ''
+    });
+    setShowAddTask(true);
+  };
+
   const addTask = async () => {
     if (!taskForm.title.trim()) return;
     
     try {
-      await createTask({
-        title: taskForm.title,
-        type: taskForm.type,
-        description: taskForm.description || null,
-        assigned_to: taskForm.assignedTo || null,
-        due_date: taskForm.dueDate,
-        due_time: taskForm.dueTime,
-        priority: taskForm.priority,
-        status: 'pending',
-        unit_id: taskForm.unitId || null,
-        unit_name: taskForm.unitName || null,
-        source: 'manual',
-        source_id: null,
-      });
+      if (editingTask) {
+        // Update existing task
+        await updateTask(editingTask.id, {
+          title: taskForm.title,
+          type: taskForm.type,
+          description: taskForm.description || null,
+          assigned_to: taskForm.assignedTo || null,
+          due_date: taskForm.dueDate,
+          due_time: taskForm.dueTime,
+          priority: taskForm.priority,
+          unit_id: taskForm.unitId || null,
+          unit_name: taskForm.unitName || null,
+        });
+        
+        addLog('Tâche modifiée', 'Planification', `${taskForm.title} mise à jour`, 'info');
+      } else {
+        // Create new task
+        await createTask({
+          title: taskForm.title,
+          type: taskForm.type,
+          description: taskForm.description || null,
+          assigned_to: taskForm.assignedTo || null,
+          due_date: taskForm.dueDate,
+          due_time: taskForm.dueTime,
+          priority: taskForm.priority,
+          status: 'pending',
+          unit_id: taskForm.unitId || null,
+          unit_name: taskForm.unitName || null,
+          source: 'manual',
+          source_id: null,
+        });
+        
+        addLog('Tâche ajoutée', 'Planification', `${taskForm.title} programmée pour ${taskForm.dueDate} à ${taskForm.dueTime}`, 'info');
+        
+        // Send notification
+        if (user?.id) {
+          notificationHelpers.taskCreated(user.id, taskForm.title, taskForm.dueDate);
+        }
+      }
       
-      addLog('Tâche ajoutée', 'Planification', `${taskForm.title} programmée pour ${taskForm.dueDate} à ${taskForm.dueTime}`, 'info');
-      
-      setTaskForm({
-        title: '',
-        type: 'feeding',
-        description: '',
-        assignedTo: '',
-        dueDate: new Date().toISOString().split('T')[0],
-        dueTime: '09:00',
-        priority: 'medium',
-        unitId: activeUnit?.id || '',
-        unitName: activeUnit?.name || ''
-      });
-      setShowAddTask(false);
+      resetForm();
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('Error saving task:', error);
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string, taskTitle: string) => {
+    await updateTask(taskId, { status: 'completed' });
+    if (user?.id) {
+      notificationHelpers.taskCompleted(user.id, taskTitle);
     }
   };
 
@@ -131,7 +187,9 @@ const TaskScheduler = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     if (taskId.startsWith('feeding-')) return;
-    await deleteTask(taskId);
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+      await deleteTask(taskId);
+    }
   };
 
   const getTypeLabel = (type: string) => {
@@ -260,12 +318,12 @@ const TaskScheduler = () => {
         </Card>
       )}
 
-      {showAddTask && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ajouter une nouvelle tâche</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Dialog open={showAddTask} onOpenChange={(open) => { if (!open) resetForm(); else setShowAddTask(true); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingTask ? 'Modifier la tâche' : 'Ajouter une nouvelle tâche'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="taskTitle">Titre de la tâche *</Label>
@@ -378,15 +436,15 @@ const TaskScheduler = () => {
               </div>
             </div>
 
-            <div className="flex gap-2 mt-4">
-              <Button onClick={addTask}>Ajouter</Button>
-              <Button variant="outline" onClick={() => setShowAddTask(false)}>
+            <div className="flex gap-2">
+              <Button onClick={addTask}>{editingTask ? 'Enregistrer' : 'Ajouter'}</Button>
+              <Button variant="outline" onClick={resetForm}>
                 Annuler
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {allTasks.length === 0 ? (
         <Card>
@@ -441,27 +499,41 @@ const TaskScheduler = () => {
                       {getStatusLabel(task.status)}
                     </Badge>
                     
-                    {task.status !== 'completed' && task.source !== 'feeding_plan' && (
+                    {task.source !== 'feeding_plan' && (
                       <div className="flex gap-1">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleUpdateTaskStatus(task.id, 'in-progress')}
+                        {task.status !== 'completed' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleUpdateTaskStatus(task.id, 'in-progress')}
+                            >
+                              En cours
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleCompleteTask(task.id, task.title)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditTask(task)}
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Modifier"
                         >
-                          En cours
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleUpdateTaskStatus(task.id, 'completed')}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
+                          <Edit className="w-3 h-3" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDeleteTask(task.id)}
                           className="text-red-600 hover:text-red-700"
+                          title="Supprimer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>

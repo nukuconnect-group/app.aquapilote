@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { notificationHelpers } from '@/lib/notificationService';
 
 export interface Supplier {
   id: string;
@@ -184,6 +185,10 @@ export const useSuppliers = () => {
         unitId: data.unit_id
       };
       setSuppliers(prev => [newSupplier, ...prev]);
+      
+      // Create notification for supplier addition
+      await notificationHelpers.supplierAdded(user.id, supplier.name, supplier.category);
+      
       return newSupplier;
     } catch (err) {
       console.error('Error adding supplier:', err);

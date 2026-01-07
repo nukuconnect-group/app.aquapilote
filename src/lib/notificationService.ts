@@ -79,6 +79,28 @@ export const notificationHelpers = {
       metadata: { stockName, currentQty, threshold },
     }),
 
+  stockAdded: (userId: string, stockName: string, quantity: number, unit: string) =>
+    createNotification({
+      userId,
+      title: 'Stock ajouté',
+      message: `${quantity} ${unit} de ${stockName} ajouté au stock`,
+      type: 'success',
+      module: 'Alimentation',
+      isCritical: false,
+      metadata: { stockName, quantity, unit },
+    }),
+
+  stockRemoved: (userId: string, stockName: string, quantity: number, unit: string) =>
+    createNotification({
+      userId,
+      title: 'Sortie de stock',
+      message: `${quantity} ${unit} de ${stockName} utilisé`,
+      type: 'info',
+      module: 'Alimentation',
+      isCritical: false,
+      metadata: { stockName, quantity, unit },
+    }),
+
   temperatureAlert: (userId: string, basinName: string, temperature: number, threshold: number) =>
     createNotification({
       userId,
@@ -123,6 +145,17 @@ export const notificationHelpers = {
       metadata: { basinName, time },
     }),
 
+  feedingCompleted: (userId: string, feedType: string, quantity: number, unit: string) =>
+    createNotification({
+      userId,
+      title: 'Nourrissage effectué',
+      message: `${quantity} ${unit} de ${feedType} distribués`,
+      type: 'success',
+      module: 'Alimentation',
+      isCritical: false,
+      metadata: { feedType, quantity, unit },
+    }),
+
   cycleAlert: (userId: string, cycleName: string, message: string, isCritical: boolean = false) =>
     createNotification({
       userId,
@@ -134,6 +167,72 @@ export const notificationHelpers = {
       metadata: { cycleName },
     }),
 
+  cycleCreated: (userId: string, cycleName: string, unitName: string) =>
+    createNotification({
+      userId,
+      title: 'Nouveau cycle créé',
+      message: `Le cycle "${cycleName}" a été créé pour l'unité ${unitName}`,
+      type: 'success',
+      module: 'Production',
+      isCritical: false,
+      metadata: { cycleName, unitName },
+    }),
+
+  saleCompleted: (userId: string, clientName: string, amount: number, currency: string) =>
+    createNotification({
+      userId,
+      title: 'Vente conclue',
+      message: `Vente de ${amount.toLocaleString('fr-FR')} ${currency} pour ${clientName}`,
+      type: 'success',
+      module: 'Ventes',
+      isCritical: false,
+      metadata: { clientName, amount, currency },
+    }),
+
+  purchaseAdded: (userId: string, description: string, amount: number, currency: string) =>
+    createNotification({
+      userId,
+      title: 'Achat enregistré',
+      message: `Achat: ${description} - ${amount.toLocaleString('fr-FR')} ${currency}`,
+      type: 'info',
+      module: 'Achats',
+      isCritical: false,
+      metadata: { description, amount, currency },
+    }),
+
+  supplierAdded: (userId: string, supplierName: string, category: string) =>
+    createNotification({
+      userId,
+      title: 'Fournisseur ajouté',
+      message: `Nouveau fournisseur: ${supplierName} (${category})`,
+      type: 'success',
+      module: 'Fournisseurs',
+      isCritical: false,
+      metadata: { supplierName, category },
+    }),
+
+  livestockBatchAdded: (userId: string, species: string, quantity: number, unitName: string) =>
+    createNotification({
+      userId,
+      title: 'Lot de poissons ajouté',
+      message: `${quantity} ${species} ajoutés à ${unitName}`,
+      type: 'success',
+      module: 'Cheptel',
+      isCritical: false,
+      metadata: { species, quantity, unitName },
+    }),
+
+  payslipGenerated: (userId: string, employeeName: string, period: string) =>
+    createNotification({
+      userId,
+      title: 'Bulletin de paie généré',
+      message: `Bulletin de ${employeeName} pour ${period}`,
+      type: 'success',
+      module: 'RH',
+      isCritical: false,
+      metadata: { employeeName, period },
+    }),
+
   teamMemberAdded: (userId: string, memberName: string) =>
     createNotification({
       userId,
@@ -143,6 +242,28 @@ export const notificationHelpers = {
       module: 'Équipe',
       isCritical: false,
       metadata: { memberName },
+    }),
+
+  taskCreated: (userId: string, taskTitle: string, dueDate: string) =>
+    createNotification({
+      userId,
+      title: 'Tâche planifiée',
+      message: `Nouvelle tâche: ${taskTitle} prévue pour le ${dueDate}`,
+      type: 'info',
+      module: 'Planification',
+      isCritical: false,
+      metadata: { taskTitle, dueDate },
+    }),
+
+  taskCompleted: (userId: string, taskTitle: string) =>
+    createNotification({
+      userId,
+      title: 'Tâche terminée',
+      message: `La tâche "${taskTitle}" a été complétée`,
+      type: 'success',
+      module: 'Planification',
+      isCritical: false,
+      metadata: { taskTitle },
     }),
 
   systemAlert: (userId: string, title: string, message: string, isCritical: boolean = false) =>
