@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Download, Eye, Printer } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FileText, Download, Eye, Printer, X } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSales } from '@/hooks/useSales';
 
@@ -213,41 +214,52 @@ const InvoiceManager = () => {
           <FileText className="w-5 h-5 text-primary" />
           {t('invoiceManagement') || 'Factures'}
         </h3>
+        <div className="text-sm text-muted-foreground">
+          {invoices.length} facture{invoices.length > 1 ? 's' : ''} au total
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-l-4 border-l-muted">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'draft').length}</p>
+              <p className="text-2xl font-bold text-muted-foreground">{invoices.filter((i) => i.status === 'draft').length}</p>
               <p className="text-sm text-muted-foreground">{t('drafts') || 'Brouillons'}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-sky-500">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'sent').length}</p>
+              <p className="text-2xl font-bold text-sky-600">{invoices.filter((i) => i.status === 'sent').length}</p>
               <p className="text-sm text-muted-foreground">{t('sent') || 'Envoyées'}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-emerald-500">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'paid').length}</p>
+              <p className="text-2xl font-bold text-emerald-600">{invoices.filter((i) => i.status === 'paid').length}</p>
               <p className="text-sm text-muted-foreground">{t('paidInvoices') || 'Payées'}</p>
+              <p className="text-xs text-emerald-600 mt-1">
+                {formatCurrency(invoices.filter((i) => i.status === 'paid').reduce((sum, inv) => sum + inv.total, 0))}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-rose-500">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">{invoices.filter((i) => i.status === 'overdue').length}</p>
+              <p className="text-2xl font-bold text-rose-600">{invoices.filter((i) => i.status === 'overdue').length}</p>
               <p className="text-sm text-muted-foreground">{t('overdueInvoices') || 'En retard'}</p>
+              {invoices.filter((i) => i.status === 'overdue').length > 0 && (
+                <p className="text-xs text-rose-600 mt-1">
+                  {formatCurrency(invoices.filter((i) => i.status === 'overdue').reduce((sum, inv) => sum + inv.total, 0))}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -305,74 +317,117 @@ const InvoiceManager = () => {
         </CardContent>
       </Card>
 
-      {selectedInvoice && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              {t('invoicePreview') || 'Aperçu'} {selectedInvoice.invoiceNumber}
-              <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
-                {t('close') || 'Fermer'}
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p>
-                    <strong>{t('client') || 'Client'}:</strong> {selectedInvoice.clientName}
-                  </p>
-                  <p>
-                    <strong>{t('date') || 'Date'}:</strong> {selectedInvoice.date}
-                  </p>
-                </div>
-                <div>
-                  <p>
-                    <strong>{t('dueDate') || 'Échéance'}:</strong> {selectedInvoice.dueDate}
-                  </p>
-                  <p>
-                    <strong>{t('status') || 'Statut'}:</strong>
-                    <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>{getStatusLabel(selectedInvoice.status)}</Badge>
-                  </p>
+      {/* Dialog de prévisualisation de facture */}
+      <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Facture {selectedInvoice?.invoiceNumber}
+            </DialogTitle>
+            <DialogDescription>
+              Prévisualisation de la facture
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedInvoice && (
+            <div className="space-y-6">
+              {/* En-tête de facture */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t('client') || 'Client'}</p>
+                    <p className="font-semibold text-lg">{selectedInvoice.clientName}</p>
+                  </div>
+                  <div className="text-left md:text-right">
+                    <Badge className={`${getStatusColor(selectedInvoice.status)} text-sm`}>
+                      {getStatusLabel(selectedInvoice.status)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('description') || 'Description'}</TableHead>
-                    <TableHead>{t('quantity') || 'Quantité'}</TableHead>
-                    <TableHead>{t('unitPrice') || 'Prix unitaire'}</TableHead>
-                    <TableHead>{t('total') || 'Total'}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedInvoice.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                      <TableCell>{formatCurrency(item.total)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {/* Détails de la facture */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-muted-foreground text-xs">{t('invoiceNumber') || 'N° Facture'}</p>
+                  <p className="font-medium font-mono">{selectedInvoice.invoiceNumber}</p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-muted-foreground text-xs">{t('date') || 'Date'}</p>
+                  <p className="font-medium">{new Date(selectedInvoice.date).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-muted-foreground text-xs">{t('dueDate') || 'Échéance'}</p>
+                  <p className="font-medium">{new Date(selectedInvoice.dueDate).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-muted-foreground text-xs">{t('total') || 'Total'}</p>
+                  <p className="font-bold text-primary">{formatCurrency(selectedInvoice.total)}</p>
+                </div>
+              </div>
 
-              <div className="text-right space-y-1">
-                <p>
-                  {t('subtotal') || 'Sous-total'}: {formatCurrency(selectedInvoice.subtotal)}
-                </p>
-                <p>
-                  {t('vat') || 'TVA'}: {formatCurrency(selectedInvoice.tax)}
-                </p>
-                <p className="text-lg font-bold">
-                  {t('total') || 'Total'}: {formatCurrency(selectedInvoice.total)}
-                </p>
+              {/* Tableau des articles */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>{t('description') || 'Description'}</TableHead>
+                      <TableHead className="text-right">{t('quantity') || 'Qté'}</TableHead>
+                      <TableHead className="text-right">{t('unitPrice') || 'Prix U.'}</TableHead>
+                      <TableHead className="text-right">{t('total') || 'Total'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedInvoice.items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.description}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(item.total)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Totaux */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t('subtotal') || 'Sous-total'}</span>
+                    <span>{formatCurrency(selectedInvoice.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t('vat') || 'TVA'}</span>
+                    <span>{formatCurrency(selectedInvoice.tax)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t font-bold text-lg">
+                    <span>{t('total') || 'Total'}</span>
+                    <span className="text-primary">{formatCurrency(selectedInvoice.total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2 pt-4 border-t">
+                <Button onClick={() => handleDownloadInvoice(selectedInvoice)} className="flex-1 sm:flex-none">
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger HTML
+                </Button>
+                <Button variant="outline" onClick={() => handlePrintInvoice(selectedInvoice)} className="flex-1 sm:flex-none">
+                  <Printer className="w-4 h-4 mr-2" />
+                  Imprimer
+                </Button>
+                <Button variant="outline" onClick={() => setSelectedInvoice(null)} className="ml-auto">
+                  <X className="w-4 h-4 mr-2" />
+                  Fermer
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
