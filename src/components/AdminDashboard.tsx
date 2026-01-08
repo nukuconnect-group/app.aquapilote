@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -503,7 +503,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -523,6 +523,11 @@ const AdminDashboard = () => {
             <Activity className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Activités</span>
             <span className="sm:hidden">Logs</span>
+          </TabsTrigger>
+          <TabsTrigger value="privacy">
+            <Eye className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Confidentialité</span>
+            <span className="sm:hidden">RGPD</span>
           </TabsTrigger>
           <TabsTrigger value="errors">
             <AlertTriangle className="w-4 h-4 mr-2" />
@@ -970,6 +975,89 @@ const AdminDashboard = () => {
                     Aucune activité enregistrée
                   </p>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Données de confidentialité collectées
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Informations collectées lors de l'acceptation de la politique de confidentialité par les utilisateurs.
+              </p>
+              <div className="space-y-3">
+                <Card className="border-dashed">
+                  <CardContent className="pt-4">
+                    <h4 className="font-medium mb-2">Données collectées lors de l'inscription</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Nom complet</li>
+                      <li>Adresse email</li>
+                      <li>Pays de connexion (détection automatique)</li>
+                      <li>Date et heure d'inscription</li>
+                      <li>Acceptation des CGU et politique de confidentialité</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-dashed">
+                  <CardContent className="pt-4">
+                    <h4 className="font-medium mb-2">Données de session</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Adresse IP de connexion</li>
+                      <li>Agent utilisateur (navigateur)</li>
+                      <li>Historique des connexions</li>
+                      <li>Dernière activité</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                
+                <div className="rounded-md border overflow-x-auto mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Utilisateur</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Pays</TableHead>
+                        <TableHead>Date d'inscription</TableHead>
+                        <TableHead>Dernière connexion</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.slice(0, 20).map(user => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.full_name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            {user.country ? (
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3 h-3 text-muted-foreground" />
+                                <span>{user.country}</span>
+                                {user.countryCode && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {user.countryCode}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{format(new Date(user.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
+                          <TableCell>
+                            {user.lastLogin ? format(new Date(user.lastLogin), 'dd/MM/yyyy HH:mm') : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>

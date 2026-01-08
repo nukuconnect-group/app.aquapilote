@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { Fish, Factory, Thermometer, Activity, TrendingUp, Settings, AlertTriangle, Clock, Heart, Egg, Scale, Droplets, UtensilsCrossed, DollarSign, ShoppingCart, Users, TrendingDown } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +18,7 @@ import { useReproductionRecords } from '@/hooks/useReproductionRecords';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
+import { differenceInDays, parseISO } from 'date-fns';
 
 const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -27,7 +28,11 @@ const IntelligentDashboard = () => {
     getUnitInfrastructures,
     getUnitEquipment,
     getUnitFinancialData,
-    getGlobalFinancialData
+    getGlobalFinancialData,
+    depreciableAssets,
+    calculateDepreciation,
+    convertCurrency,
+    currency
   } = useProductionUnits();
   const {
     formatCurrency,
@@ -752,37 +757,59 @@ const IntelligentDashboard = () => {
 
       {/* Onglets pour données spécifiques à l'unité */}
       {viewMode === 'unit' && activeUnit && <Tabs defaultValue="cycles" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-4 text-xs sm:text-sm">
             <TabsTrigger value="cycles">Cycles</TabsTrigger>
             <TabsTrigger value="equipment">Équipements</TabsTrigger>
             <TabsTrigger value="infrastructure">Infrastructures</TabsTrigger>
+            <TabsTrigger value="depreciation">Amortissements</TabsTrigger>
           </TabsList>
 
           {/* tabs content */}
           <TabsContent value="cycles" className="space-y-4">
             <div className="grid gap-3 sm:gap-4">
-              {unitCycles.length > 0 ? unitCycles.map(cycle => <Card key={cycle.id} className="hover:shadow-sm transition-shadow">
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm sm:text-base truncate">{cycle.name}</h4>
-                          <p className="text-xs sm:text-sm text-gray-600">
-                            Démarré le {cycle.start_date}
-                          </p>
-                          <div className="mt-2">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span>Progression</span>
-                              <span>{(cycle.current_quantity || 0).toLocaleString()}/{(cycle.target_quantity || 0).toLocaleString()}</span>
+              {unitCycles.length > 0 ? unitCycles.map(cycle => {
+                    // Calculer la progression temporelle basée sur la durée du cycle
+                    const startDate = parseISO(cycle.start_date);
+                    const today = new Date();
+                    const daysPassed = differenceInDays(today, startDate);
+                    const totalDays = (cycle.duration_months || 6) * 30;
+                    const temporalProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
+                    
+                    // Progression par quantité
+                    const quantityProgress = (cycle.current_quantity || 0) / (cycle.target_quantity || 1) * 100;
+                    
+                    return <Card key={cycle.id} className="hover:shadow-sm transition-shadow">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm sm:text-base truncate">{cycle.name}</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              Démarré le {new Date(cycle.start_date).toLocaleDateString('fr-FR')} • {daysPassed} jours
+                            </p>
+                            <div className="mt-2 space-y-2">
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>Progression temporelle</span>
+                                  <span>{temporalProgress.toFixed(0)}%</span>
+                                </div>
+                                <Progress value={temporalProgress} className="h-2" />
+                              </div>
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>Production</span>
+                                  <span>{(cycle.current_quantity || 0).toLocaleString()}/{(cycle.target_quantity || 0).toLocaleString()}</span>
+                                </div>
+                                <Progress value={quantityProgress} className="h-2 bg-blue-100 [&>div]:bg-blue-500" />
+                              </div>
                             </div>
-                            <Progress value={(cycle.current_quantity || 0) / (cycle.target_quantity || 1) * 100} className="h-2" />
                           </div>
+                          <Badge variant={cycle.status === 'active' ? 'default' : 'secondary'} className="text-xs shrink-0">
+                            {cycle.status === 'active' ? 'En cours' : cycle.status === 'completed' ? 'Terminé' : cycle.status}
+                          </Badge>
                         </div>
-                        <Badge variant={cycle.status === 'active' ? 'default' : 'secondary'} className="text-xs shrink-0">
-                          {cycle.status}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>) : <div className="text-center py-6 sm:py-8 text-gray-500">
+                      </CardContent>
+                    </Card>;
+                  }) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
                   <p className="text-sm">Aucun cycle actif</p>
                 </div>}
@@ -843,6 +870,100 @@ const IntelligentDashboard = () => {
                   <p className="text-sm">Aucune infrastructure configurée</p>
                 </div>}
             </div>
+          </TabsContent>
+
+          <TabsContent value="depreciation" className="space-y-4">
+            {(() => {
+              const unitAssets = activeUnit 
+                ? depreciableAssets.filter(a => a.unitId === activeUnit.id)
+                : depreciableAssets;
+              
+              const getCurrencySymbol = (code: string) => {
+                switch(code) {
+                  case 'XOF': return 'F CFA';
+                  case 'EUR': return '€';
+                  case 'USD': return '$';
+                  case 'MAD': return 'DH';
+                  default: return code;
+                }
+              };
+
+              const totalValue = unitAssets.reduce((sum, a) => sum + convertCurrency(a.purchasePrice, a.currency, currency), 0);
+              const totalDepreciation = unitAssets.reduce((sum, a) => sum + convertCurrency(calculateDepreciation(a.id), a.currency, currency), 0);
+              const totalCurrentValue = totalValue - totalDepreciation;
+
+              return (
+                <div className="space-y-4">
+                  {/* Résumé des amortissements */}
+                  {unitAssets.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Card className="bg-blue-50/50 dark:bg-blue-900/20">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">Valeur d'acquisition</p>
+                          <p className="text-lg font-bold text-blue-600">{totalValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-orange-50/50 dark:bg-orange-900/20">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">Amortissements cumulés</p>
+                          <p className="text-lg font-bold text-orange-600">{totalDepreciation.toLocaleString()} {getCurrencySymbol(currency)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-50/50 dark:bg-green-900/20">
+                        <CardContent className="p-3 text-center">
+                          <p className="text-xs text-muted-foreground">Valeur nette actuelle</p>
+                          <p className="text-lg font-bold text-green-600">{totalCurrentValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-3 sm:gap-4">
+                    {unitAssets.length > 0 ? unitAssets.map(asset => {
+                      const depreciation = calculateDepreciation(asset.id);
+                      const currentValue = Math.max(0, asset.purchasePrice - depreciation);
+                      const depreciationPercent = asset.purchasePrice > 0 ? (depreciation / asset.purchasePrice) * 100 : 0;
+                      
+                      return <Card key={asset.id} className="hover:shadow-sm transition-shadow">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-sm sm:text-base truncate">{asset.name}</h4>
+                                <Badge variant="outline" className="text-xs">{asset.category}</Badge>
+                              </div>
+                              <p className="text-xs sm:text-sm text-gray-600">
+                                Acquis le {new Date(asset.purchaseDate).toLocaleDateString('fr-FR')} • {asset.usefulLife} ans
+                              </p>
+                              <div className="mt-2">
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>Amortissement</span>
+                                  <span>{depreciationPercent.toFixed(0)}%</span>
+                                </div>
+                                <Progress value={depreciationPercent} className="h-2 bg-orange-100 [&>div]:bg-orange-500" />
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs text-gray-500">Valeur actuelle</p>
+                              <p className="font-semibold text-green-600">
+                                {convertCurrency(currentValue, asset.currency, currency).toLocaleString()} {getCurrencySymbol(currency)}
+                              </p>
+                              <p className="text-xs text-gray-400 line-through">
+                                {asset.purchasePrice.toLocaleString()} {getCurrencySymbol(asset.currency)}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>;
+                    }) : <div className="text-center py-6 sm:py-8 text-gray-500">
+                      <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
+                      <p className="text-sm">Aucun équipement amortissable configuré</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ajoutez des équipements dans Comptabilité &gt; Amortissements</p>
+                    </div>}
+                  </div>
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>}
 

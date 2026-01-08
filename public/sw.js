@@ -1,9 +1,10 @@
-// Service Worker AQUA PILOT - Optimisé pour iOS avec cache intelligent
-const CACHE_VERSION = 'aqua-pilot-v5';
+// Service Worker AQUA PILOT - Optimisé pour tous les appareils avec cache intelligent
+const CACHE_VERSION = 'aqua-pilot-v6';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const API_CACHE = `${CACHE_VERSION}-api`;
+const APP_SHELL_CACHE = `${CACHE_VERSION}-app-shell`;
 
 // Ressources essentielles à pré-cacher
 const STATIC_FILES = [
@@ -13,37 +14,51 @@ const STATIC_FILES = [
   '/favicon.png'
 ];
 
-// Configuration du cache
+// Configuration du cache optimisée pour desktop/tablette
 const CACHE_CONFIG = {
   static: {
     maxAge: 60 * 60 * 24 * 30, // 30 jours
-    maxEntries: 50
-  },
-  images: {
-    maxAge: 60 * 60 * 24 * 14, // 14 jours
     maxEntries: 100
   },
+  images: {
+    maxAge: 60 * 60 * 24 * 30, // 30 jours
+    maxEntries: 200
+  },
   api: {
-    maxAge: 60 * 5, // 5 minutes
-    maxEntries: 50
+    maxAge: 60 * 10, // 10 minutes
+    maxEntries: 100
   },
   dynamic: {
-    maxAge: 60 * 60 * 24 * 7, // 7 jours
-    maxEntries: 75
+    maxAge: 60 * 60 * 24 * 14, // 14 jours
+    maxEntries: 150
+  },
+  appShell: {
+    maxAge: 60 * 60 * 24 * 365, // 1 an
+    maxEntries: 50
   }
 };
 
-// Installation - Simplifiée pour iOS
+// Installation - Optimisée pour tous les appareils
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing new version...');
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        return cache.addAll(STATIC_FILES).catch((err) => {
-          console.warn('[SW] Cache failed, continuing anyway:', err);
-          return Promise.resolve();
-        });
-      })
+    Promise.all([
+      caches.open(STATIC_CACHE)
+        .then((cache) => {
+          return cache.addAll(STATIC_FILES).catch((err) => {
+            console.warn('[SW] Cache failed, continuing anyway:', err);
+            return Promise.resolve();
+          });
+        }),
+      caches.open(APP_SHELL_CACHE)
+        .then((cache) => {
+          // Pré-cacher les ressources critiques de l'app shell
+          return cache.addAll([
+            '/index.html',
+            '/manifest.json'
+          ]).catch(() => Promise.resolve());
+        })
+    ])
       .then(() => {
         console.log('[SW] Skip waiting to activate immediately');
         return self.skipWaiting();
@@ -57,7 +72,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
-        const validCaches = [STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE, API_CACHE];
+        const validCaches = [STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE, API_CACHE, APP_SHELL_CACHE];
         return Promise.all(
           cacheNames
             .filter((name) => name.startsWith('aqua-pilot-') && !validCaches.includes(name))
