@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode, Link2, Repeat } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,9 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { useProductionCycles } from '@/hooks/useProductionCycles';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
 import ControlFishingForm from './ControlFishingForm';
 import ReproductionManagement from './reproduction/ReproductionManagement';
 import { generateControlFishingPdf } from '@/lib/controlFishingPdf';
@@ -82,6 +85,42 @@ const LivestockManagement = () => {
   
   // Charger les infrastructures pour les noms
   const { infrastructures: allCycleInfras } = useCycleInfrastructures(undefined, true);
+  
+  // Charger les cycles de production pour afficher les dates de fin
+  const { cycles: allCycles } = useProductionCycles();
+  
+  // Charger les fournisseurs pour le formulaire d'ajout
+  const { allSuppliers } = useSuppliers();
+  
+  // Charger les stocks d'aliments pour le plan d'alimentation
+  const { stocks: feedStocks } = useFeedStocks(activeUnit?.id);
+  
+  // Helper pour trouver le cycle associé à un lot via infrastructure
+  const getBatchCycleInfo = (batchId: string) => {
+    // Trouver l'infrastructure qui a ce lot rattaché
+    const infra = allCycleInfras.find(i => i.livestock_batch_id === batchId);
+    if (!infra) return null;
+    
+    // Trouver le cycle associé
+    const cycle = allCycles.find(c => c.id === infra.cycle_id);
+    if (!cycle) return null;
+    
+    // Calculer la date de fin si elle n'est pas définie
+    let endDate = cycle.end_date;
+    if (!endDate && cycle.start_date && cycle.duration_months) {
+      const start = new Date(cycle.start_date);
+      start.setMonth(start.getMonth() + cycle.duration_months);
+      endDate = start.toISOString().split('T')[0];
+    }
+    
+    return {
+      cycleId: cycle.id,
+      cycleName: cycle.name,
+      cycleStatus: cycle.status,
+      endDate,
+      infrastructureName: infra.infrastructure_name
+    };
+  };
   
   // Fonction pour changer l'unité sélectionnée
   const handleUnitChange = (unitId: string) => {
@@ -578,11 +617,45 @@ const LivestockManagement = () => {
 
                   <div>
                     <Label>Source/Fournisseur</Label>
-                    <Input
-                      value={formData.source}
-                      onChange={(e) => setFormData({...formData, source: e.target.value})}
-                      placeholder="Nom du fournisseur"
-                    />
+                    <Select 
+                      value={formData.source} 
+                      onValueChange={(value) => setFormData({...formData, source: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un fournisseur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allSuppliers.filter(s => s.status === 'active').length > 0 ? (
+                          <>
+                            {allSuppliers.filter(s => s.status === 'active').map(supplier => (
+                              <SelectItem key={supplier.id} value={supplier.name}>
+                                <div className="flex items-center gap-2">
+                                  <span>{supplier.name}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {supplier.category}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="Autre">Autre (saisie libre)</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="Production interne">Production interne</SelectItem>
+                            <SelectItem value="Écloserie partenaire">Écloserie partenaire</SelectItem>
+                            <SelectItem value="Achat externe">Achat externe</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {formData.source === 'Autre' && (
+                      <Input
+                        className="mt-2"
+                        value=""
+                        onChange={(e) => setFormData({...formData, source: e.target.value})}
+                        placeholder="Nom du fournisseur personnalisé"
+                      />
+                    )}
                   </div>
 
                   {units.find(u => u.id === formData.unitId)?.type !== 'transformation' && 
@@ -598,6 +671,24 @@ const LivestockManagement = () => {
                           <SelectItem value="Intensif">Intensif</SelectItem>
                           <SelectItem value="Extensif">Extensif</SelectItem>
                           <SelectItem value="Finition">Finition</SelectItem>
+                          {/* Aliments disponibles depuis les stocks */}
+                          {feedStocks.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1">
+                                Aliments en stock
+                              </div>
+                              {feedStocks.map(stock => (
+                                <SelectItem key={stock.id} value={stock.custom_name || stock.feed_type}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{stock.custom_name || stock.feed_type}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {stock.quantity} {stock.unit}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -797,7 +888,11 @@ const LivestockManagement = () => {
                       Effacer la recherche
                     </Button>
                   </div>
-                ) : filteredBatches.map((batch, index) => (
+                ) : filteredBatches.map((batch, index) => {
+                  // Récupérer les infos du cycle rattaché
+                  const cycleInfo = getBatchCycleInfo(batch.id);
+                  
+                  return (
                   <div key={batch.id} className="border rounded-lg p-3 sm:p-4 hover:bg-accent/50">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -817,7 +912,47 @@ const LivestockManagement = () => {
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
                             {batch.unitName}
                           </Badge>
+                          {/* Indicateur de cycle rattaché */}
+                          {cycleInfo && (
+                            <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs flex items-center gap-1">
+                              <Repeat className="w-3 h-3" />
+                              {cycleInfo.cycleName}
+                            </Badge>
+                          )}
                         </div>
+                        
+                        {/* Info cycle rattaché avec date de fin */}
+                        {cycleInfo && (
+                          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-2 mb-3">
+                            <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300">
+                              <Link2 className="w-3 h-3 flex-shrink-0" />
+                              <span className="font-medium">Cycle: {cycleInfo.cycleName}</span>
+                              <span className="text-purple-500">•</span>
+                              <span>Infra: {cycleInfo.infrastructureName}</span>
+                              {cycleInfo.endDate && (
+                                <>
+                                  <span className="text-purple-500">•</span>
+                                  <span className="font-semibold">
+                                    Fin: {new Date(cycleInfo.endDate).toLocaleDateString('fr-FR')}
+                                  </span>
+                                </>
+                              )}
+                              <Badge 
+                                variant="outline" 
+                                className={`text-[10px] ml-auto ${
+                                  cycleInfo.cycleStatus === 'active' 
+                                    ? 'bg-green-50 text-green-700 border-green-200' 
+                                    : cycleInfo.cycleStatus === 'completed'
+                                    ? 'bg-gray-50 text-gray-700 border-gray-200'
+                                    : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                }`}
+                              >
+                                {cycleInfo.cycleStatus === 'active' ? 'Actif' : 
+                                 cycleInfo.cycleStatus === 'completed' ? 'Terminé' : 'Planifié'}
+                              </Badge>
+                            </div>
+                          </div>
+                        )}
                         
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm mb-3">
                           <div>
@@ -1066,7 +1201,8 @@ const LivestockManagement = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
