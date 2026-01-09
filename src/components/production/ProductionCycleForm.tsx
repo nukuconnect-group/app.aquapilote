@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Save, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Save, Calendar, AlertCircle, Lock } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface ProductionCycleFormProps {
   unitId: string;
@@ -24,7 +25,7 @@ interface ProductionCycleFormProps {
 const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionCycleFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { createCycle } = useProductionCycles();
-  const { createInfrastructures } = useCycleInfrastructures();
+  const { createInfrastructures, isInfrastructureInActiveCycle, allCycleInfrastructures } = useCycleInfrastructures(undefined, true);
   const { getUnitInfrastructures } = useProductionUnits();
   const { batches } = useLivestockBatches(unitId);
   
@@ -308,13 +309,19 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                           ? batches.find(b => b.id === attachedBatchId)
                           : null;
                         
+                        // Vérifier si cette infrastructure est déjà rattachée à un autre cycle
+                        const cycleCheck = isInfrastructureInActiveCycle(infra.name);
+                        const isAlreadyInCycle = cycleCheck.isAttached;
+                        
                         return (
-                          <div key={infra.id} className="p-3 border rounded-lg space-y-2">
+                          <div key={infra.id} className={`p-3 border rounded-lg space-y-2 ${isAlreadyInCycle ? 'opacity-60 bg-muted/50' : ''}`}>
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id={`infra-${infra.id}`}
                                 checked={formData.infrastructures.includes(infra.name)}
+                                disabled={isAlreadyInCycle}
                                 onCheckedChange={(checked) => {
+                                  if (isAlreadyInCycle) return;
                                   if (checked) {
                                     // Auto-sélectionner le lot attaché à cette infrastructure
                                     const batchIdToUse = attachedBatchId || '';
@@ -339,14 +346,27 @@ const ProductionCycleForm = ({ unitId, unitName, unitType, onSave }: ProductionC
                               />
                               <Label
                                 htmlFor={`infra-${infra.id}`}
-                                className="text-sm font-normal cursor-pointer flex-1"
+                                className={`text-sm font-normal flex-1 ${isAlreadyInCycle ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <div>
-                                  <div className="font-medium">{infra.name}</div>
+                                  <div className="font-medium flex items-center gap-2">
+                                    {infra.name}
+                                    {isAlreadyInCycle && (
+                                      <Badge variant="secondary" className="text-xs gap-1">
+                                        <Lock className="w-3 h-3" />
+                                        Déjà rattachée
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <div className="text-xs text-muted-foreground">
                                     {infra.customTypeName || infra.type} - Capacité: {infra.capacity}
                                   </div>
-                                  {attachedBatch && (
+                                  {isAlreadyInCycle && (
+                                    <div className="text-xs text-orange-600 mt-1">
+                                      ⚠️ Cette infrastructure est déjà utilisée dans un autre cycle
+                                    </div>
+                                  )}
+                                  {attachedBatch && !isAlreadyInCycle && (
                                     <div className="text-xs text-primary mt-1 font-medium">
                                       → Lot attaché: {attachedBatch.species} - {attachedBatch.quantity.toLocaleString()} individus ({attachedBatch.average_weight || 0}g)
                                     </div>
