@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign, FileText, UserPlus } from 'lucide-react';
+import { Plus, Filter, Download, Edit, Trash2, Search, ShoppingCart, CheckCircle, Clock, XCircle, Package, DollarSign, FileText, UserPlus, CreditCard, AlertTriangle, CalendarClock } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useToast } from '@/hooks/use-toast';
@@ -73,7 +73,10 @@ const PurchaseManager = () => {
     reference: '',
     unitId: activeUnit?.id || '',
     deliveryDate: '',
-    notes: ''
+    notes: '',
+    isCredit: false,
+    dueDate: '',
+    paymentTerms: ''
   });
 
   useEffect(() => {
@@ -210,7 +213,10 @@ const PurchaseManager = () => {
       reference: '',
       unitId: activeUnit?.id || '',
       deliveryDate: '',
-      notes: ''
+      notes: '',
+      isCredit: false,
+      dueDate: '',
+      paymentTerms: ''
     });
     setShowPurchaseForm(false);
     setEditingPurchase(null);
@@ -231,7 +237,10 @@ const PurchaseManager = () => {
       reference: purchase.reference || '',
       unitId: purchase.unitId || '',
       deliveryDate: purchase.deliveryDate || '',
-      notes: purchase.notes || ''
+      notes: purchase.notes || '',
+      isCredit: purchase.isCredit || false,
+      dueDate: purchase.dueDate || '',
+      paymentTerms: purchase.paymentTerms || ''
     });
     setShowPurchaseForm(true);
   };
@@ -460,6 +469,10 @@ const PurchaseManager = () => {
           <div className="overflow-x-auto">
             <TabsList className="w-full sm:w-auto">
               <TabsTrigger value="list" className="text-xs sm:text-sm">Liste des achats</TabsTrigger>
+              <TabsTrigger value="credits" className="text-xs sm:text-sm">
+                <CreditCard className="w-3 h-3 mr-1" />
+                Échéances
+              </TabsTrigger>
               <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analyses</TabsTrigger>
             </TabsList>
           </div>
@@ -710,6 +723,114 @@ const PurchaseManager = () => {
                   );
                 })}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Échéances et Crédits Fournisseurs */}
+        <TabsContent value="credits" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" />
+                Achats à Crédit & Échéances Fournisseurs
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              {(() => {
+                const creditPurchases = filteredPurchases.filter(p => p.isCredit);
+                const today = new Date().toISOString().split('T')[0];
+                const overduePurchases = creditPurchases.filter(p => p.dueDate && p.dueDate < today && p.status !== 'received');
+                const pendingCredit = creditPurchases.filter(p => !p.dueDate || p.dueDate >= today || p.status === 'received');
+                
+                return (
+                  <>
+                    {/* Statistiques rapides */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                      <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Achats à crédit</p>
+                        <p className="text-lg font-bold text-orange-600">{creditPurchases.length}</p>
+                      </div>
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Échéances dépassées</p>
+                        <p className="text-lg font-bold text-red-600">{overduePurchases.length}</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Montant dû</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {creditPurchases.reduce((sum, p) => sum + (p.amount - (p.paidAmount || 0)), 0).toLocaleString()} {getCurrencySymbol(currency)}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Déjà payé</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {creditPurchases.reduce((sum, p) => sum + (p.paidAmount || 0), 0).toLocaleString()} {getCurrencySymbol(currency)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {creditPurchases.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground">Aucun achat à crédit</p>
+                        <p className="text-sm text-muted-foreground mt-2">Les achats avec "Crédit fournisseur" apparaîtront ici</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Échéances dépassées d'abord */}
+                        {overduePurchases.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4" />
+                              Échéances dépassées
+                            </h4>
+                            {overduePurchases.map(purchase => (
+                              <div key={purchase.id} className="border border-red-200 bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-2">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div>
+                                    <h5 className="font-semibold">{purchase.description}</h5>
+                                    <p className="text-sm text-muted-foreground">
+                                      Fournisseur: {purchase.supplier} • Échéance: {purchase.dueDate}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-lg font-bold text-red-600">
+                                      {(purchase.amount - (purchase.paidAmount || 0)).toLocaleString()} {getCurrencySymbol(purchase.currency)}
+                                    </p>
+                                    <Badge variant="destructive">En retard</Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Autres crédits */}
+                        {pendingCredit.filter(p => p.status !== 'received').map(purchase => (
+                          <div key={purchase.id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div>
+                                <h5 className="font-semibold">{purchase.description}</h5>
+                                <p className="text-sm text-muted-foreground">
+                                  Fournisseur: {purchase.supplier} • {purchase.dueDate ? `Échéance: ${purchase.dueDate}` : 'Sans échéance'}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold">
+                                  {(purchase.amount - (purchase.paidAmount || 0)).toLocaleString()} {getCurrencySymbol(purchase.currency)}
+                                </p>
+                                <Badge variant="outline" className={getStatusColor(purchase.status)}>
+                                  {getStatusLabel(purchase.status)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

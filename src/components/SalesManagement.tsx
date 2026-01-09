@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -41,7 +41,10 @@ const SalesManagement = () => {
     unitId: activeUnit?.id || '',
     products: [{ name: '', quantity: 0, unitPrice: 0 }],
     paymentMethod: 'Espèces',
-    notes: ''
+    notes: '',
+    isCredit: false,
+    dueDate: '',
+    paymentTerms: ''
   });
 
   // Synchroniser la vente avec l'unité active
@@ -152,9 +155,13 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount,
-      status: 'confirmed',
+      status: newSale.isCredit ? 'confirmed' : 'confirmed',
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes
+      notes: newSale.notes,
+      isCredit: newSale.isCredit,
+      dueDate: newSale.dueDate || undefined,
+      paymentTerms: newSale.paymentTerms || undefined,
+      paidAmount: newSale.isCredit ? 0 : totalAmount
     });
 
     if (result) {
@@ -186,7 +193,10 @@ const SalesManagement = () => {
       unitId: activeUnit?.id || '',
       products: [{ name: '', quantity: 0, unitPrice: 0 }],
       paymentMethod: 'Espèces',
-      notes: ''
+      notes: '',
+      isCredit: false,
+      dueDate: '',
+      paymentTerms: ''
     });
     setShowSaleDialog(false);
     setShowReceiptPreview(false);
@@ -455,6 +465,53 @@ const SalesManagement = () => {
                     </div>
                   </div>
 
+                  {/* Section Crédit et Échéance */}
+                  <div className="p-3 border rounded-lg bg-muted/30 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="checkbox" 
+                        id="isCredit"
+                        checked={newSale.isCredit}
+                        onChange={(e) => setNewSale(prev => ({ ...prev, isCredit: e.target.checked }))}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="isCredit" className="flex items-center gap-2 cursor-pointer">
+                        <CreditCard className="w-4 h-4 text-orange-600" />
+                        Vente à crédit
+                      </Label>
+                    </div>
+                    
+                    {newSale.isCredit && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <Label className="text-sm">Date d'échéance</Label>
+                          <Input 
+                            type="date"
+                            value={newSale.dueDate}
+                            onChange={(e) => setNewSale(prev => ({ ...prev, dueDate: e.target.value }))}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm">Conditions de paiement</Label>
+                          <Select value={newSale.paymentTerms} onValueChange={(value) => setNewSale(prev => ({ ...prev, paymentTerms: value }))}>
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Sélectionner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="net_7">Net 7 jours</SelectItem>
+                              <SelectItem value="net_15">Net 15 jours</SelectItem>
+                              <SelectItem value="net_30">Net 30 jours</SelectItem>
+                              <SelectItem value="net_60">Net 60 jours</SelectItem>
+                              <SelectItem value="net_90">Net 90 jours</SelectItem>
+                              <SelectItem value="custom">Personnalisé</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
@@ -564,6 +621,11 @@ const SalesManagement = () => {
               <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Produits</span>
               <span className="sm:hidden">Prod.</span>
+            </TabsTrigger>
+            <TabsTrigger value="credits" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Échéances</span>
+              <span className="sm:hidden">Éch.</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -784,6 +846,110 @@ const SalesManagement = () => {
                   <p className="text-sm text-muted-foreground mt-2">Enregistrez des ventes pour voir les produits ici</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Échéances et Crédits */}
+        <TabsContent value="credits" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" />
+                Ventes à Crédit & Échéances
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              {(() => {
+                const creditSales = filteredSales.filter(s => s.isCredit);
+                const today = new Date().toISOString().split('T')[0];
+                const overdueSales = creditSales.filter(s => s.dueDate && s.dueDate < today && s.status !== 'paid');
+                const pendingSales = creditSales.filter(s => !s.dueDate || s.dueDate >= today || s.status === 'paid');
+                
+                return (
+                  <>
+                    {/* Statistiques rapides */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                      <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Total crédits</p>
+                        <p className="text-lg font-bold text-orange-600">{creditSales.length}</p>
+                      </div>
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">En retard</p>
+                        <p className="text-lg font-bold text-red-600">{overdueSales.length}</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Montant dû</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {formatCurrency(creditSales.reduce((sum, s) => sum + (s.totalAmount - (s.paidAmount || 0)), 0))}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Encaissé</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {formatCurrency(creditSales.reduce((sum, s) => sum + (s.paidAmount || 0), 0))}
+                        </p>
+                      </div>
+                    </div>
+
+                    {creditSales.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground">Aucune vente à crédit</p>
+                        <p className="text-sm text-muted-foreground mt-2">Les ventes marquées "à crédit" apparaîtront ici</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* En retard d'abord */}
+                        {overdueSales.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4" />
+                              En retard de paiement
+                            </h4>
+                            {overdueSales.map(sale => (
+                              <div key={sale.id} className="border border-red-200 bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-2">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div>
+                                    <h5 className="font-semibold">{sale.clientName}</h5>
+                                    <p className="text-sm text-muted-foreground">
+                                      Échéance: {sale.dueDate} • Vente du {sale.date}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-lg font-bold text-red-600">{formatCurrency(sale.totalAmount - (sale.paidAmount || 0))}</p>
+                                    <Badge variant="destructive">En retard</Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Autres crédits */}
+                        {pendingSales.filter(s => s.status !== 'paid').map(sale => (
+                          <div key={sale.id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div>
+                                <h5 className="font-semibold">{sale.clientName}</h5>
+                                <p className="text-sm text-muted-foreground">
+                                  {sale.dueDate ? `Échéance: ${sale.dueDate}` : 'Sans échéance'} • Vente du {sale.date}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold">{formatCurrency(sale.totalAmount - (sale.paidAmount || 0))}</p>
+                                <Badge variant="outline" className={getStatusColor(sale.status)}>
+                                  {getStatusText(sale.status)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

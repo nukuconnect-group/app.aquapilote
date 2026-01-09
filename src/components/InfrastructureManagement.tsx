@@ -1,12 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Settings, Activity, Thermometer, MapPin } from 'lucide-react';
+import { Building, Settings, Activity, Thermometer, MapPin, Calendar, Wrench } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import InfrastructureForm from './infrastructure/InfrastructureForm';
 import InfrastructureCard from './infrastructure/InfrastructureCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+
+// Composant pour programmer la maintenance
+const MaintenanceScheduleForm = ({ infrastructure }: { infrastructure: any }) => {
+  const { updateInfrastructure } = useProductionUnits();
+  const { toast } = useToast();
+  const [nextDate, setNextDate] = useState(infrastructure.nextMaintenanceDate || '');
+  const [frequency, setFrequency] = useState(infrastructure.maintenanceFrequencyDays?.toString() || '30');
+  const [notes, setNotes] = useState(infrastructure.maintenanceNotes || '');
+
+  const handleSave = async () => {
+    await updateInfrastructure(infrastructure.id, {
+      nextMaintenanceDate: nextDate || undefined,
+      maintenanceFrequencyDays: parseInt(frequency) || undefined,
+      maintenanceNotes: notes || undefined,
+      lastMaintenanceDate: infrastructure.lastMaintenanceDate
+    });
+    toast({ title: 'Maintenance programmée', description: `Prochaine maintenance le ${nextDate}` });
+  };
+
+  const handleMarkComplete = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMaintDate = new Date();
+    nextMaintDate.setDate(nextMaintDate.getDate() + (parseInt(frequency) || 30));
+    
+    await updateInfrastructure(infrastructure.id, {
+      lastMaintenanceDate: today,
+      nextMaintenanceDate: nextMaintDate.toISOString().split('T')[0],
+      maintenanceFrequencyDays: parseInt(frequency) || 30
+    });
+    toast({ title: 'Maintenance effectuée', description: 'La prochaine maintenance a été reprogrammée' });
+  };
+
+  return (
+    <div className="space-y-4 py-4">
+      <div>
+        <Label>Prochaine date de maintenance</Label>
+        <Input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
+      </div>
+      <div>
+        <Label>Fréquence (jours)</Label>
+        <Input type="number" value={frequency} onChange={(e) => setFrequency(e.target.value)} placeholder="30" />
+      </div>
+      <div>
+        <Label>Notes de maintenance</Label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Instructions, pièces à vérifier..." />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={handleSave} className="flex-1">Enregistrer</Button>
+        <Button variant="outline" onClick={handleMarkComplete}>Marquer comme effectuée</Button>
+      </div>
+    </div>
+  );
+};
 
 const InfrastructureManagement = () => {
   const { activeUnit, getUnitInfrastructures } = useProductionUnits();
@@ -212,30 +270,61 @@ const InfrastructureManagement = () => {
         <TabsContent value="maintenance">
           <Card>
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Planning de maintenance</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Wrench className="w-5 h-5" />
+                Planning de maintenance
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="space-y-3 sm:space-y-4">
-                {infrastructures.map((infrastructure) => (
-                  <div key={infrastructure.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 border rounded">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base truncate">
-                        {infrastructure.name}
-                      </h4>
-                      <p className="text-xs sm:text-sm text-gray-600 truncate">
-                        {getInfrastructureTypeLabel(infrastructure.type)}
-                      </p>
+                {infrastructures.map((infrastructure) => {
+                  const nextMaintenance = infrastructure.nextMaintenanceDate;
+                  const isOverdue = nextMaintenance && new Date(nextMaintenance) < new Date();
+                  
+                  return (
+                    <div key={infrastructure.id} className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-4 border rounded-lg ${isOverdue ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : ''}`}>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm sm:text-base truncate flex items-center gap-2">
+                          {infrastructure.name}
+                          {isOverdue && <Badge variant="destructive" className="text-xs">En retard</Badge>}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">
+                          {getInfrastructureTypeLabel(infrastructure.type)}
+                        </p>
+                        {nextMaintenance && (
+                          <p className={`text-xs mt-1 ${isOverdue ? 'text-red-600' : 'text-blue-600'}`}>
+                            <Calendar className="w-3 h-3 inline mr-1" />
+                            Prochaine maintenance: {new Date(nextMaintenance).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                        {infrastructure.lastMaintenanceDate && (
+                          <p className="text-xs text-muted-foreground">
+                            Dernière: {new Date(infrastructure.lastMaintenanceDate).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`${getStatusColor(infrastructure.status)} text-xs sm:text-sm`}>
+                          {infrastructure.status}
+                        </Badge>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                              <Settings className="w-3 h-3 mr-1" />
+                              Programmer
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Programmer maintenance - {infrastructure.name}</DialogTitle>
+                            </DialogHeader>
+                            <MaintenanceScheduleForm infrastructure={infrastructure} />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className={`${getStatusColor(infrastructure.status)} text-xs sm:text-sm`}>
-                        {infrastructure.status}
-                      </Badge>
-                      <Button size="sm" variant="outline" className="text-xs sm:text-sm">
-                        Programmer
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

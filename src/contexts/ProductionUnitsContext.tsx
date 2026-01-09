@@ -74,6 +74,10 @@ export interface Infrastructure {
   capacity: number;
   status: 'active' | 'maintenance' | 'inactive';
   specifications: Record<string, any>;
+  nextMaintenanceDate?: string;
+  maintenanceFrequencyDays?: number;
+  lastMaintenanceDate?: string;
+  maintenanceNotes?: string;
 }
 
 // Purchase interface intégrée
@@ -95,6 +99,10 @@ export interface Purchase {
   status: 'pending' | 'received' | 'cancelled';
   deliveryDate?: string;
   notes?: string;
+  dueDate?: string;
+  isCredit?: boolean;
+  paidAmount?: number;
+  paymentTerms?: string;
 }
 
 // Transaction interface pour le module comptabilité
