@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}']
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000000,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
@@ -155,6 +155,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -177,6 +178,9 @@ export default defineConfig(({ mode }) => ({
           ],
           'vendor-charts': ['recharts'],
           'vendor-form': ['react-hook-form', 'zod', '@hookform/resolvers'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          'vendor-tanstack': ['@tanstack/react-query'],
         },
       },
     },
