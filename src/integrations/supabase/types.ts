@@ -1042,9 +1042,13 @@ export type Database = {
           date: string
           delivery_date: string | null
           description: string | null
+          due_date: string | null
           id: string
+          is_credit: boolean | null
           notes: string | null
+          paid_amount: number | null
           payment_method: string | null
+          payment_terms: string | null
           quantity: number | null
           reference: string | null
           status: string | null
@@ -1064,9 +1068,13 @@ export type Database = {
           date: string
           delivery_date?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
+          is_credit?: boolean | null
           notes?: string | null
+          paid_amount?: number | null
           payment_method?: string | null
+          payment_terms?: string | null
           quantity?: number | null
           reference?: string | null
           status?: string | null
@@ -1086,9 +1094,13 @@ export type Database = {
           date?: string
           delivery_date?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
+          is_credit?: boolean | null
           notes?: string | null
+          paid_amount?: number | null
           payment_method?: string | null
+          payment_terms?: string | null
           quantity?: number | null
           reference?: string | null
           status?: string | null
@@ -1250,9 +1262,13 @@ export type Database = {
           client_name: string
           created_at: string
           date: string
+          due_date: string | null
           id: string
+          is_credit: boolean | null
           notes: string | null
+          paid_amount: number | null
           payment_method: string | null
+          payment_terms: string | null
           status: string
           total_amount: number
           unit_id: string
@@ -1264,9 +1280,13 @@ export type Database = {
           client_name: string
           created_at?: string
           date?: string
+          due_date?: string | null
           id?: string
+          is_credit?: boolean | null
           notes?: string | null
+          paid_amount?: number | null
           payment_method?: string | null
+          payment_terms?: string | null
           status?: string
           total_amount?: number
           unit_id: string
@@ -1278,9 +1298,13 @@ export type Database = {
           client_name?: string
           created_at?: string
           date?: string
+          due_date?: string | null
           id?: string
+          is_credit?: boolean | null
           notes?: string | null
+          paid_amount?: number | null
           payment_method?: string | null
+          payment_terms?: string | null
           status?: string
           total_amount?: number
           unit_id?: string
@@ -1536,7 +1560,11 @@ export type Database = {
           created_at: string | null
           custom_type_name: string | null
           id: string
+          last_maintenance_date: string | null
+          maintenance_frequency_days: number | null
+          maintenance_notes: string | null
           name: string
+          next_maintenance_date: string | null
           specifications: Json | null
           status: string | null
           type: string
@@ -1549,7 +1577,11 @@ export type Database = {
           created_at?: string | null
           custom_type_name?: string | null
           id?: string
+          last_maintenance_date?: string | null
+          maintenance_frequency_days?: number | null
+          maintenance_notes?: string | null
           name: string
+          next_maintenance_date?: string | null
           specifications?: Json | null
           status?: string | null
           type: string
@@ -1562,7 +1594,11 @@ export type Database = {
           created_at?: string | null
           custom_type_name?: string | null
           id?: string
+          last_maintenance_date?: string | null
+          maintenance_frequency_days?: number | null
+          maintenance_notes?: string | null
           name?: string
+          next_maintenance_date?: string | null
           specifications?: Json | null
           status?: string | null
           type?: string

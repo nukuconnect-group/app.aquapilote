@@ -21,6 +21,10 @@ export interface Sale {
   status: 'pending' | 'confirmed' | 'delivered' | 'paid';
   paymentMethod: string;
   notes: string;
+  dueDate?: string;
+  isCredit?: boolean;
+  paidAmount?: number;
+  paymentTerms?: string;
 }
 
 export const useSales = () => {
@@ -60,7 +64,11 @@ export const useSales = () => {
         totalAmount: s.total_amount,
         status: s.status as Sale['status'],
         paymentMethod: s.payment_method || '',
-        notes: s.notes || ''
+        notes: s.notes || '',
+        dueDate: s.due_date || undefined,
+        isCredit: s.is_credit || false,
+        paidAmount: s.paid_amount || 0,
+        paymentTerms: s.payment_terms || undefined
       })));
     } catch (err) {
       console.error('Error fetching sales:', err);
@@ -99,7 +107,11 @@ export const useSales = () => {
           total_amount: sale.totalAmount,
           status: sale.status,
           payment_method: sale.paymentMethod,
-          notes: sale.notes
+          notes: sale.notes,
+          due_date: sale.dueDate || null,
+          is_credit: sale.isCredit || false,
+          paid_amount: sale.paidAmount || 0,
+          payment_terms: sale.paymentTerms || null
         })
         .select()
         .single();
@@ -134,7 +146,11 @@ export const useSales = () => {
         totalAmount: saleData.total_amount,
         status: saleData.status as Sale['status'],
         paymentMethod: saleData.payment_method || '',
-        notes: saleData.notes || ''
+        notes: saleData.notes || '',
+        dueDate: saleData.due_date || undefined,
+        isCredit: saleData.is_credit || false,
+        paidAmount: saleData.paid_amount || 0,
+        paymentTerms: saleData.payment_terms || undefined
       };
 
       setSales(prev => [newSale, ...prev]);
@@ -205,6 +221,10 @@ export const useSales = () => {
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+      if (updates.isCredit !== undefined) dbUpdates.is_credit = updates.isCredit;
+      if (updates.paidAmount !== undefined) dbUpdates.paid_amount = updates.paidAmount;
+      if (updates.paymentTerms !== undefined) dbUpdates.payment_terms = updates.paymentTerms;
 
       const { error } = await supabase
         .from('sales')
