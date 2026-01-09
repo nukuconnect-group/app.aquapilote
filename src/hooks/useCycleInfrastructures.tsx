@@ -18,6 +18,7 @@ export interface CycleInfrastructure {
 
 export const useCycleInfrastructures = (cycleId?: string, fetchAll: boolean = false) => {
   const [infrastructures, setInfrastructures] = useState<CycleInfrastructure[]>([]);
+  const [allCycleInfrastructures, setAllCycleInfrastructures] = useState<CycleInfrastructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -43,26 +44,30 @@ export const useCycleInfrastructures = (cycleId?: string, fetchAll: boolean = fa
       setLoading(true);
       setError(null);
       
-      let query = supabase
+      // Toujours charger toutes les infrastructures pour vérifier les doublons
+      const { data: allData, error: allError } = await supabase
         .from('cycle_infrastructures')
         .select('*')
         .order('created_at', { ascending: true });
       
-      // Only filter by cycle_id if provided
-      if (cycleId) {
-        query = query.eq('cycle_id', cycleId as any);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        setError(fetchError.message);
-        throw fetchError;
+      if (allError) {
+        setError(allError.message);
+        throw allError;
       }
       
-      if (data) {
-        setInfrastructures(data as unknown as CycleInfrastructure[]);
+      if (allData) {
+        setAllCycleInfrastructures(allData as unknown as CycleInfrastructure[]);
       }
+      
+      // Filtrer par cycle si nécessaire
+      let filteredData = allData || [];
+      if (cycleId) {
+        filteredData = filteredData.filter(item => item.cycle_id === cycleId);
+      } else if (!fetchAll) {
+        filteredData = [];
+      }
+      
+      setInfrastructures(filteredData as unknown as CycleInfrastructure[]);
     } catch (err: any) {
       console.error('Error fetching infrastructures:', err);
       toast({
@@ -177,13 +182,24 @@ export const useCycleInfrastructures = (cycleId?: string, fetchAll: boolean = fa
     }
   };
 
+  // Fonction pour vérifier si une infrastructure est déjà rattachée à un cycle actif
+  const isInfrastructureInActiveCycle = useCallback((infrastructureName: string, excludeCycleId?: string): { isAttached: boolean; cycleName?: string } => {
+    const found = allCycleInfrastructures.find(ci => 
+      ci.infrastructure_name === infrastructureName && 
+      (excludeCycleId ? ci.cycle_id !== excludeCycleId : true)
+    );
+    return { isAttached: !!found, cycleName: found ? `Cycle ${found.cycle_id.slice(0, 8)}` : undefined };
+  }, [allCycleInfrastructures]);
+
   return {
     infrastructures,
+    allCycleInfrastructures,
     loading,
     error,
     createInfrastructures,
     updateInfrastructure,
     deleteInfrastructure,
+    isInfrastructureInActiveCycle,
     refetch: fetchInfrastructures,
   };
 };
