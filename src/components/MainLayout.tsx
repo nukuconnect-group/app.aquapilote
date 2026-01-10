@@ -25,7 +25,9 @@ import WeatherDashboard from './WeatherDashboard';
 import TeamManagement from './TeamManagement';
 import ReportsManagement from './ReportsManagement';
 import SettingsManagement from './SettingsManagement';
-
+import SupportModule from './SupportModule';
+import AquaAssistantModule from './AquaAssistantModule';
+import OfflineDataManager from './OfflineDataManager';
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -80,6 +82,12 @@ const MainLayout = () => {
         return <SettingsManagement />;
       case 'admin':
         return <AdminDashboard />;
+      case 'support':
+        return <SupportModule />;
+      case 'aqua-assistant':
+        return <AquaAssistantModule />;
+      case 'offline':
+        return <OfflineDataManager />;
       default:
         return <IntelligentDashboard />;
     }

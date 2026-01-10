@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye, CreditCard, Edit2 } from 'lucide-react';
+import { UserCheck, Plus, Users, TrendingUp, Calendar, Download, FileText, Eye, CreditCard, Edit2, Printer } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
@@ -18,6 +18,7 @@ import { useEmployees, Employee, PaySlip } from '@/hooks/useEmployees';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateProfessionalPayslipHTML } from '@/lib/payslipGenerator';
+import { printEmployeeList } from '@/lib/employeePrintUtils';
 import PayslipEditor from './PayslipEditor';
 
 const HRManagement = () => {
@@ -387,8 +388,23 @@ const HRManagement = () => {
 
         <TabsContent value="employees">
           <Card>
-            <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardHeader className="p-3 sm:p-4 md:p-6 flex flex-row items-center justify-between">
               <CardTitle className="text-base sm:text-lg">Liste des Employés</CardTitle>
+              {filteredEmployees.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => printEmployeeList(
+                    filteredEmployees, 
+                    'Mon Exploitation Aquacole',
+                    activeUnit?.name,
+                    formatCurrency
+                  )}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Imprimer
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-0 sm:p-3 md:p-6">
               {filteredEmployees.length === 0 ? (

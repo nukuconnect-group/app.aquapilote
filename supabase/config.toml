@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.detect-country]
 verify_jwt = false
+
+[functions.payment-maintenance-alerts]
+verify_jwt = false
