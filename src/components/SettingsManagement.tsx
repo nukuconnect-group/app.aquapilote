@@ -14,7 +14,7 @@ import {
   Smartphone, Mail, Lock, Globe, Moon, Sun, HelpCircle, Trash2, RefreshCw, 
   FileText, Zap, Volume2, VolumeX, Clock, MapPin, CreditCard, Link2, LogOut,
   AlertTriangle, Check, X, Vibrate, Languages, Monitor, Accessibility, Wifi, WifiOff,
-  HardDrive, CheckCircle, Building2
+  HardDrive, CheckCircle, Building2, Image, Loader2
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -76,6 +76,8 @@ const SettingsManagement = () => {
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [storageInfo, setStorageInfo] = useState({ used: 0, quota: 0 });
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
   
   // Charger les paramètres depuis localStorage
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
@@ -242,6 +244,122 @@ const SettingsManagement = () => {
         description: language === 'fr' ? 'Impossible de sauvegarder le profil' : 'Could not save profile',
         variant: 'destructive'
       });
+    }
+  };
+
+  // Upload du logo entreprise
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: language === 'fr' ? 'Erreur' : 'Error',
+        description: language === 'fr' ? 'Veuillez sélectionner une image' : 'Please select an image file',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Vérifier la taille (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: language === 'fr' ? 'Fichier trop volumineux' : 'File too large',
+        description: language === 'fr' ? 'La taille maximale est de 2 Mo' : 'Maximum size is 2 MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      // Supprimer l'ancien logo s'il existe
+      if (companyInfo.logoUrl) {
+        const oldPath = companyInfo.logoUrl.split('/').pop();
+        if (oldPath) {
+          await supabase.storage.from('company-logos').remove([`${user.id}/${oldPath}`]);
+        }
+      }
+
+      // Upload du nouveau logo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Obtenir l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      // Mettre à jour le contexte
+      setCompanyInfo({ logoUrl: publicUrl });
+
+      // Sauvegarder dans le profil utilisateur
+      await supabase
+        .from('profiles')
+        .update({ company_logo_url: publicUrl })
+        .eq('id', user.id);
+
+      toast({
+        title: language === 'fr' ? 'Logo téléchargé' : 'Logo uploaded',
+        description: language === 'fr' ? 'Votre logo a été mis à jour' : 'Your logo has been updated'
+      });
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: language === 'fr' ? 'Erreur' : 'Error',
+        description: language === 'fr' ? 'Impossible de télécharger le logo' : 'Could not upload logo',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Supprimer le logo
+  const handleRemoveLogo = async () => {
+    if (!user || !companyInfo.logoUrl) return;
+
+    setIsUploadingLogo(true);
+    try {
+      // Extraire le path du logo
+      const urlParts = companyInfo.logoUrl.split('/company-logos/');
+      if (urlParts.length > 1) {
+        await supabase.storage.from('company-logos').remove([urlParts[1]]);
+      }
+
+      // Mettre à jour le contexte
+      setCompanyInfo({ logoUrl: '' });
+
+      // Sauvegarder dans le profil utilisateur
+      await supabase
+        .from('profiles')
+        .update({ company_logo_url: null })
+        .eq('id', user.id);
+
+      toast({
+        title: language === 'fr' ? 'Logo supprimé' : 'Logo removed',
+        description: language === 'fr' ? 'Votre logo a été supprimé' : 'Your logo has been removed'
+      });
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast({
+        title: language === 'fr' ? 'Erreur' : 'Error',
+        description: language === 'fr' ? 'Impossible de supprimer le logo' : 'Could not remove logo',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -556,6 +674,69 @@ const SettingsManagement = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+              {/* Section Logo */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{language === 'fr' ? 'Logo de l\'entreprise' : 'Company logo'}</Label>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
+                    {companyInfo.logoUrl ? (
+                      <img 
+                        src={companyInfo.logoUrl} 
+                        alt="Logo" 
+                        className="w-full h-full object-contain p-2"
+                      />
+                    ) : (
+                      <Image className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      id="logo-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={isUploadingLogo}
+                    >
+                      {isUploadingLogo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {language === 'fr' ? 'Envoi...' : 'Uploading...'}
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          {language === 'fr' ? 'Télécharger un logo' : 'Upload logo'}
+                        </>
+                      )}
+                    </Button>
+                    {companyInfo.logoUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                        disabled={isUploadingLogo}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {language === 'fr' ? 'Supprimer' : 'Remove'}
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'fr' ? 'Format: JPG, PNG, WebP. Max 2 Mo' : 'Format: JPG, PNG, WebP. Max 2 MB'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm">{t('company_info_name')}</Label>
