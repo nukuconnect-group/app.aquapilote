@@ -26,6 +26,7 @@ import WeatherDashboard from '@/components/WeatherDashboard';
 import TeamManagement from '@/components/TeamManagement';
 import ReportsManagement from '@/components/ReportsManagement';
 import SettingsManagement from '@/components/SettingsManagement';
+import SupportModule from '@/components/SupportModule';
 import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
@@ -51,8 +52,8 @@ const Dashboard: React.FC = () => {
   // Vérifier si le membre d'équipe a accès à l'onglet actuel
   useEffect(() => {
     if (isTeamMember && teamMemberInfo && !isLoadingAccess) {
-      const allowedTabs = new Set<string>(['dashboard', 'settings']);
-      
+      const allowedTabs = new Set<string>(['dashboard', 'settings', 'support']);
+
       teamMemberInfo.assignedUnits.forEach(unit => {
         const perms = unit.permissions;
         if (perms.canView) {
@@ -185,6 +186,8 @@ const Dashboard: React.FC = () => {
         return <OfflineDataManager />;
       case 'settings':
         return <SettingsManagement />;
+      case 'support':
+        return <SupportModule />;
       case 'admin':
         return <AdminDashboard />;
       case 'aqua-assistant':

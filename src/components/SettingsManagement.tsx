@@ -597,69 +597,67 @@ const SettingsManagement = () => {
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-aqua-500 to-ocean-500 p-4 sm:p-6 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">{t('settings')}</h2>
-            <p className="text-aqua-100 text-xs sm:text-sm md:text-base">
+      <div className="border rounded-xl bg-card p-4 sm:p-6">
+        <div className="flex items-start sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold truncate">{t('settings')}</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
               {language === 'fr' ? 'Configuration et préférences du système' : 'System configuration and preferences'}
             </p>
           </div>
-          <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-aqua-100 shrink-0" />
+          <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-muted-foreground shrink-0" />
         </div>
       </div>
 
       {/* Tabs responsives */}
       <Tabs defaultValue="profile" className="space-y-4 w-full">
-        <div className="overflow-x-auto -mx-4 sm:-mx-0 px-4 sm:px-0 pb-2">
-          <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-9 gap-1 min-w-max sm:min-w-0 bg-muted p-1 rounded-lg">
-            <TabsTrigger value="profile" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <User className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">{t('profile')}</span>
-              <span className="sm:hidden">Profil</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Bell className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">{t('notifications')}</span>
-              <span className="sm:hidden">Notifs</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Palette className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">{t('appearance')}</span>
-              <span className="sm:hidden">Thème</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Shield className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{language === 'fr' ? 'Sécurité' : 'Security'}</span>
-              <span className="lg:hidden">Sécu</span>
-            </TabsTrigger>
-            <TabsTrigger value="accessibility" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Accessibility className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{language === 'fr' ? 'Accessibilité' : 'Accessibility'}</span>
-              <span className="lg:hidden">A11y</span>
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Lock className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{language === 'fr' ? 'Confidentialité' : 'Privacy'}</span>
-              <span className="lg:hidden">Privé</span>
-            </TabsTrigger>
-            <TabsTrigger value="system" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Database className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{language === 'fr' ? 'Système' : 'System'}</span>
-              <span className="lg:hidden">Sys</span>
-            </TabsTrigger>
-            <TabsTrigger value="backup" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Download className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{t('backup_restore')}</span>
-              <span className="lg:hidden">Backup</span>
-            </TabsTrigger>
-            <TabsTrigger value="company" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              <Building2 className="w-4 h-4 mr-1.5" />
-              <span className="hidden lg:inline">{t('company_info')}</span>
-              <span className="lg:hidden">Entrep.</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="w-full flex flex-wrap gap-1 bg-muted p-1 rounded-lg">
+          <TabsTrigger value="profile" className="text-xs sm:text-sm px-3 py-2">
+            <User className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{t('profile')}</span>
+            <span className="sm:hidden">Profil</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="text-xs sm:text-sm px-3 py-2">
+            <Bell className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{t('notifications')}</span>
+            <span className="sm:hidden">Notifs</span>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="text-xs sm:text-sm px-3 py-2">
+            <Palette className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{t('appearance')}</span>
+            <span className="sm:hidden">Thème</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="text-xs sm:text-sm px-3 py-2">
+            <Shield className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{language === 'fr' ? 'Sécurité' : 'Security'}</span>
+            <span className="lg:hidden">Sécu</span>
+          </TabsTrigger>
+          <TabsTrigger value="accessibility" className="text-xs sm:text-sm px-3 py-2">
+            <Accessibility className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{language === 'fr' ? 'Accessibilité' : 'Accessibility'}</span>
+            <span className="lg:hidden">A11y</span>
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="text-xs sm:text-sm px-3 py-2">
+            <Lock className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{language === 'fr' ? 'Confidentialité' : 'Privacy'}</span>
+            <span className="lg:hidden">Privé</span>
+          </TabsTrigger>
+          <TabsTrigger value="system" className="text-xs sm:text-sm px-3 py-2">
+            <Database className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{language === 'fr' ? 'Système' : 'System'}</span>
+            <span className="lg:hidden">Sys</span>
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="text-xs sm:text-sm px-3 py-2">
+            <Download className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{t('backup_restore')}</span>
+            <span className="lg:hidden">Backup</span>
+          </TabsTrigger>
+          <TabsTrigger value="company" className="text-xs sm:text-sm px-3 py-2">
+            <Building2 className="w-4 h-4 mr-1.5" />
+            <span className="hidden lg:inline">{t('company_info')}</span>
+            <span className="lg:hidden">Entrep.</span>
+          </TabsTrigger>
+        </TabsList>
 
         {/* Onglet Entreprise */}
         <TabsContent value="company" className="space-y-4 sm:space-y-6">
@@ -676,20 +674,21 @@ const SettingsManagement = () => {
             <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
               {/* Section Logo */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">{language === 'fr' ? 'Logo de l\'entreprise' : 'Company logo'}</Label>
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
+                <Label className="text-sm font-medium">{language === 'fr' ? "Logo de l'entreprise" : 'Company logo'}</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden shrink-0">
                     {companyInfo.logoUrl ? (
-                      <img 
-                        src={companyInfo.logoUrl} 
-                        alt="Logo" 
+                      <img
+                        src={companyInfo.logoUrl}
+                        alt={language === 'fr' ? "Logo de l'entreprise" : 'Company logo'}
                         className="w-full h-full object-contain p-2"
+                        loading="lazy"
                       />
                     ) : (
                       <Image className="w-8 h-8 text-muted-foreground/50" />
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full">
                     <input
                       ref={logoInputRef}
                       type="file"
@@ -698,36 +697,39 @@ const SettingsManagement = () => {
                       className="hidden"
                       id="logo-upload"
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => logoInputRef.current?.click()}
-                      disabled={isUploadingLogo}
-                    >
-                      {isUploadingLogo ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {language === 'fr' ? 'Envoi...' : 'Uploading...'}
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          {language === 'fr' ? 'Télécharger un logo' : 'Upload logo'}
-                        </>
-                      )}
-                    </Button>
-                    {companyInfo.logoUrl && (
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={handleRemoveLogo}
+                        onClick={() => logoInputRef.current?.click()}
                         disabled={isUploadingLogo}
-                        className="text-destructive hover:text-destructive"
+                        className="w-full sm:w-auto"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {language === 'fr' ? 'Supprimer' : 'Remove'}
+                        {isUploadingLogo ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {language === 'fr' ? 'Envoi...' : 'Uploading...'}
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            {language === 'fr' ? 'Télécharger un logo' : 'Upload logo'}
+                          </>
+                        )}
                       </Button>
-                    )}
+                      {companyInfo.logoUrl && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveLogo}
+                          disabled={isUploadingLogo}
+                          className="w-full sm:w-auto text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {language === 'fr' ? 'Supprimer' : 'Remove'}
+                        </Button>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {language === 'fr' ? 'Format: JPG, PNG, WebP. Max 2 Mo' : 'Format: JPG, PNG, WebP. Max 2 MB'}
                     </p>

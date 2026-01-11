@@ -169,39 +169,42 @@ const SupportModule = () => {
   return (
     <div className="space-y-4 md:space-y-6 min-h-[500px]">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 md:p-6 rounded-xl text-white">
+      <div className="border rounded-xl bg-card p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Headphones className="w-8 h-8" />
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold">{t('support')}</h2>
-              <p className="text-purple-100 text-sm">
-                {isAdmin 
-                  ? (language === 'fr' ? 'Gérer les demandes de support' : 'Manage support requests')
-                  : (language === 'fr' ? 'Besoin d\'aide ? Contactez-nous !' : 'Need help? Contact us!')}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="shrink-0">
+              <Headphones className="w-7 h-7" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg md:text-xl font-semibold truncate">{t('support')}</h2>
+              <p className="text-muted-foreground text-sm">
+                {isAdmin
+                  ? (language === 'fr' ? 'Demandes clients (vue admin)' : 'Customer requests (admin view)')
+                  : (language === 'fr' ? 'Soumettez vos doléances et suivez les réponses' : 'Submit your request and track replies')}
               </p>
             </div>
           </div>
+
           <Dialog open={showNewTicket} onOpenChange={setShowNewTicket}>
             <DialogTrigger asChild>
-              <Button className="bg-white/20 hover:bg-white/30 border-white/30">
+              <Button variant="default" className="w-full md:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 {t('new_ticket')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Nouvelle demande de support</DialogTitle>
+                <DialogTitle>{language === 'fr' ? 'Nouvelle demande de support' : 'New support request'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Catégorie</Label>
-                  <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v, subject: ''})}>
+                  <Label>{language === 'fr' ? 'Catégorie' : 'Category'}</Label>
+                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v, subject: '' })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une catégorie" />
+                      <SelectValue placeholder={language === 'fr' ? 'Sélectionner une catégorie' : 'Select a category'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(cat => (
+                      {CATEGORIES.map((cat) => (
                         <SelectItem key={cat.value} value={cat.value}>
                           <div className="flex items-center gap-2">
                             <cat.icon className="w-4 h-4" />
@@ -215,14 +218,14 @@ const SupportModule = () => {
 
                 {formData.category && (
                   <div>
-                    <Label>Sujet suggéré</Label>
+                    <Label>{language === 'fr' ? 'Sujet suggéré' : 'Suggested subject'}</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {suggestedSubjects.map(subject => (
+                      {suggestedSubjects.map((subject) => (
                         <Button
                           key={subject}
-                          variant={formData.subject === subject ? "default" : "outline"}
+                          variant={formData.subject === subject ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setFormData({...formData, subject})}
+                          onClick={() => setFormData({ ...formData, subject })}
                         >
                           {subject}
                         </Button>
@@ -232,42 +235,42 @@ const SupportModule = () => {
                 )}
 
                 <div>
-                  <Label>Sujet personnalisé</Label>
+                  <Label>{language === 'fr' ? 'Sujet' : 'Subject'}</Label>
                   <Input
                     value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    placeholder="Décrivez votre problème en quelques mots"
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    placeholder={language === 'fr' ? 'Décrivez votre problème en quelques mots' : 'Describe your issue in a few words'}
                   />
                 </div>
 
                 <div>
-                  <Label>Message</Label>
+                  <Label>{language === 'fr' ? 'Message' : 'Message'}</Label>
                   <Textarea
                     value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    placeholder="Décrivez votre problème en détail..."
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    placeholder={language === 'fr' ? 'Décrivez votre problème en détail...' : 'Describe your issue in detail...'}
                     rows={4}
                   />
                 </div>
 
                 <div>
-                  <Label>Priorité</Label>
-                  <Select value={formData.priority} onValueChange={(v) => setFormData({...formData, priority: v})}>
+                  <Label>{language === 'fr' ? 'Priorité' : 'Priority'}</Label>
+                  <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Basse</SelectItem>
-                      <SelectItem value="normal">Normale</SelectItem>
-                      <SelectItem value="high">Haute</SelectItem>
-                      <SelectItem value="urgent">Urgente</SelectItem>
+                      <SelectItem value="low">{language === 'fr' ? 'Basse' : 'Low'}</SelectItem>
+                      <SelectItem value="normal">{language === 'fr' ? 'Normale' : 'Normal'}</SelectItem>
+                      <SelectItem value="high">{language === 'fr' ? 'Haute' : 'High'}</SelectItem>
+                      <SelectItem value="urgent">{language === 'fr' ? 'Urgente' : 'Urgent'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <Button onClick={handleCreateTicket} className="w-full">
                   <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
+                  {language === 'fr' ? 'Envoyer' : 'Send'}
                 </Button>
               </div>
             </DialogContent>
