@@ -81,6 +81,11 @@ const SupportModule = () => {
 
   const isAdmin = user?.role === 'admin';
 
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('SupportModule mounted - user:', user?.id, 'loading:', loading, 'tickets:', tickets.length);
+  }, [user?.id, loading, tickets.length]);
+
   // Charger les messages quand un ticket est sélectionné
   useEffect(() => {
     if (selectedTicket) {
@@ -149,8 +154,20 @@ const SupportModule = () => {
     ? tickets 
     : tickets.filter(t => t.user_id === user?.id);
 
+  // Si pas d'utilisateur, afficher un message
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <Headphones className="w-16 h-16 text-muted-foreground" />
+        <p className="text-muted-foreground text-center">
+          {language === 'fr' ? 'Veuillez vous connecter pour accéder au support' : 'Please log in to access support'}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 min-h-[500px]">
       {/* En-tête */}
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 md:p-6 rounded-xl text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
