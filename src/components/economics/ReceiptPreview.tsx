@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Separator } from '@/components/ui/separator';
 import { Download, Printer, FileText } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { generateCompanyHeaderHTML } from '@/lib/companyHeaderUtils';
 
 export interface ReceiptItem {
   name: string;
@@ -48,7 +49,12 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   onConfirm,
   showConfirmButton = false
 }) => {
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, companyInfo } = useSettings();
+  
+  // Utiliser les infos entreprise du contexte si non fournies dans data
+  const displayCompanyName = data.companyName || companyInfo.name;
+  const displayCompanyAddress = data.companyAddress || companyInfo.address;
+  const displayCompanyContact = data.companyContact || (companyInfo.phone ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}` : companyInfo.email);
 
   const getDocumentTitle = () => {
     switch (data.type) {
@@ -58,6 +64,17 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
       default: return 'DOCUMENT';
     }
   };
+
+  // Générer l'en-tête entreprise pour l'impression
+  const companyHeader = generateCompanyHeaderHTML({
+    name: displayCompanyName,
+    address: displayCompanyAddress,
+    phone: companyInfo.phone,
+    email: companyInfo.email,
+    logoUrl: companyInfo.logoUrl,
+    registrationNumber: companyInfo.registrationNumber,
+    taxId: companyInfo.taxId
+  });
 
   const generateReceiptHTML = () => {
     return `
@@ -229,16 +246,17 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
         </head>
         <body>
           <div class="receipt-container">
-            <div class="header">
-              <h1>${getDocumentTitle()}</h1>
-              <div class="doc-number">${data.number}</div>
-            </div>
-
-            ${data.companyName ? `
-              <div class="company-info">
-                <h3>${data.companyName}</h3>
-                ${data.companyAddress ? `<p>${data.companyAddress}</p>` : ''}
-                ${data.companyContact ? `<p>${data.companyContact}</p>` : ''}
+            ${companyHeader || `
+              <div class="header">
+                <h1>${getDocumentTitle()}</h1>
+                <div class="doc-number">${data.number}</div>
+              </div>
+            `}
+            
+            ${companyHeader ? `
+              <div class="header" style="border-bottom: none; margin-bottom: 20px;">
+                <h1>${getDocumentTitle()}</h1>
+                <div class="doc-number">${data.number}</div>
               </div>
             ` : ''}
 
@@ -353,11 +371,13 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           </CardHeader>
           <CardContent className="p-3 sm:p-6">
             {/* Company Info */}
-            {data.companyName && (
+            {displayCompanyName && (
               <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 truncate">{data.companyName}</h3>
-                {data.companyAddress && <p className="text-xs sm:text-sm text-muted-foreground truncate">{data.companyAddress}</p>}
-                {data.companyContact && <p className="text-xs sm:text-sm text-muted-foreground truncate">{data.companyContact}</p>}
+                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 truncate">{displayCompanyName}</h3>
+                {displayCompanyAddress && <p className="text-xs sm:text-sm text-muted-foreground truncate">{displayCompanyAddress}</p>}
+                {displayCompanyContact && <p className="text-xs sm:text-sm text-muted-foreground truncate">{displayCompanyContact}</p>}
+                {companyInfo.registrationNumber && <p className="text-xs text-muted-foreground">N° Reg: {companyInfo.registrationNumber}</p>}
+                {companyInfo.taxId && <p className="text-xs text-muted-foreground">ID Fiscal: {companyInfo.taxId}</p>}
               </div>
             )}
 

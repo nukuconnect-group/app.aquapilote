@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Printer, Download, X } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { generateCompanyHeaderHTML } from '@/lib/companyHeaderUtils';
 
 interface PurchaseInvoiceProps {
   purchase: {
@@ -33,6 +35,18 @@ interface PurchaseInvoiceProps {
 const PurchaseInvoice: React.FC<PurchaseInvoiceProps> = ({ purchase, isOpen, onClose }) => {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const { currency: displayCurrency } = useProductionUnits();
+  const { companyInfo } = useSettings();
+
+  // Générer l'en-tête entreprise
+  const companyHeader = generateCompanyHeaderHTML({
+    name: companyInfo.name,
+    address: companyInfo.address,
+    phone: companyInfo.phone,
+    email: companyInfo.email,
+    logoUrl: companyInfo.logoUrl,
+    registrationNumber: companyInfo.registrationNumber,
+    taxId: companyInfo.taxId
+  });
 
   const invoiceNumber = `FAC-${new Date(purchase.date).getFullYear()}-${String(purchase.id).slice(-6).toUpperCase()}`;
 
@@ -101,10 +115,18 @@ const PurchaseInvoice: React.FC<PurchaseInvoiceProps> = ({ purchase, isOpen, onC
         </head>
         <body>
           <div class="invoice-container">
-            <div class="header">
-              <h1>FACTURE D'ACHAT</h1>
-              <p style="color: #6b7280;">AquaPilote - Gestion Aquacole</p>
-            </div>
+            ${companyHeader || `
+              <div class="header">
+                <h1>FACTURE D'ACHAT</h1>
+                <p style="color: #6b7280;">AquaPilote - Gestion Aquacole</p>
+              </div>
+            `}
+            
+            ${companyHeader ? `
+              <div class="header" style="text-align: center; margin-bottom: 20px;">
+                <h1>FACTURE D'ACHAT</h1>
+              </div>
+            ` : ''}
             
             <div class="details-grid">
               <div class="section">
@@ -195,10 +217,30 @@ const PurchaseInvoice: React.FC<PurchaseInvoiceProps> = ({ purchase, isOpen, onC
         </DialogHeader>
 
         <div ref={invoiceRef} className="space-y-6 p-4 bg-white rounded-lg">
-          {/* En-tête */}
+          {/* En-tête entreprise */}
+          {companyInfo.name && (
+            <div className="p-4 bg-muted rounded-lg border-l-4 border-primary">
+              <h2 className="text-xl font-bold text-foreground">{companyInfo.name}</h2>
+              {companyInfo.address && <p className="text-sm text-muted-foreground">{companyInfo.address}</p>}
+              <p className="text-xs text-muted-foreground">
+                {companyInfo.phone && `Tél: ${companyInfo.phone}`}
+                {companyInfo.phone && companyInfo.email && ' | '}
+                {companyInfo.email && `Email: ${companyInfo.email}`}
+              </p>
+              {(companyInfo.registrationNumber || companyInfo.taxId) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {companyInfo.registrationNumber && `N° Reg: ${companyInfo.registrationNumber}`}
+                  {companyInfo.registrationNumber && companyInfo.taxId && ' | '}
+                  {companyInfo.taxId && `ID Fiscal: ${companyInfo.taxId}`}
+                </p>
+              )}
+            </div>
+          )}
+          
+          {/* Titre document */}
           <div className="text-center border-b-2 border-primary pb-4">
             <h2 className="text-2xl font-bold text-primary">FACTURE D'ACHAT</h2>
-            <p className="text-muted-foreground">AquaPilote - Gestion Aquacole</p>
+            {!companyInfo.name && <p className="text-muted-foreground">AquaPilote - Gestion Aquacole</p>}
           </div>
 
           {/* Informations principales */}

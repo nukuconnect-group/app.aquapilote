@@ -2,12 +2,15 @@
  * Utilitaires pour l'export des rapports en différents formats
  */
 
+import { CompanyInfoForPrint, generateCompanyHeaderHTML } from './companyHeaderUtils';
+
 export interface ReportData {
   title: string;
   period: string;
   generatedAt: string;
   unitName?: string;
   sections: ReportSection[];
+  companyInfo?: CompanyInfoForPrint;
 }
 
 export interface ReportSection {
@@ -23,6 +26,16 @@ export interface ReportSection {
  */
 export const exportToCSV = (data: ReportData, filename: string) => {
   let csvContent = '';
+  
+  // En-tête entreprise
+  if (data.companyInfo?.name) {
+    csvContent += `"${data.companyInfo.name}"\n`;
+    if (data.companyInfo.address) csvContent += `"${data.companyInfo.address}"\n`;
+    if (data.companyInfo.phone || data.companyInfo.email) {
+      csvContent += `"${data.companyInfo.phone || ''} ${data.companyInfo.email || ''}"\n`;
+    }
+    csvContent += '\n';
+  }
   
   // En-tête du rapport
   csvContent += `"${data.title}"\n`;
@@ -59,6 +72,16 @@ export const exportToCSV = (data: ReportData, filename: string) => {
 export const exportToExcel = (data: ReportData, filename: string) => {
   let content = '';
   
+  // En-tête entreprise
+  if (data.companyInfo?.name) {
+    content += `${data.companyInfo.name}\n`;
+    if (data.companyInfo.address) content += `${data.companyInfo.address}\n`;
+    if (data.companyInfo.phone || data.companyInfo.email) {
+      content += `${data.companyInfo.phone || ''}\t${data.companyInfo.email || ''}\n`;
+    }
+    content += '\n';
+  }
+  
   // En-tête du rapport
   content += `${data.title}\n`;
   content += `Période: ${data.period}\n`;
@@ -93,6 +116,9 @@ export const exportToExcel = (data: ReportData, filename: string) => {
  * Génère un fichier Word (format HTML compatible)
  */
 export const exportToWord = (data: ReportData, filename: string) => {
+  // Générer l'en-tête entreprise HTML
+  const companyHeader = data.companyInfo ? generateCompanyHeaderHTML(data.companyInfo) : '';
+  
   let htmlContent = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
     <head>
@@ -112,6 +138,7 @@ export const exportToWord = (data: ReportData, filename: string) => {
       </style>
     </head>
     <body>
+      ${companyHeader}
       <h1>${data.title}</h1>
       <p class="header-info"><strong>Période:</strong> ${data.period}</p>
       <p class="header-info"><strong>Généré le:</strong> ${data.generatedAt}</p>
@@ -150,6 +177,9 @@ export const exportToPDF = (data: ReportData, filename: string) => {
     return;
   }
 
+  // Générer l'en-tête entreprise HTML
+  const companyHeader = data.companyInfo ? generateCompanyHeaderHTML(data.companyInfo) : '';
+
   let htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -175,6 +205,7 @@ export const exportToPDF = (data: ReportData, filename: string) => {
       </style>
     </head>
     <body>
+      ${companyHeader}
       <h1>${data.title}</h1>
       <p class="header-info"><strong>Période:</strong> ${data.period}</p>
       <p class="header-info"><strong>Date de génération:</strong> ${data.generatedAt}</p>
