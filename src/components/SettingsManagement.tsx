@@ -611,53 +611,46 @@ const SettingsManagement = () => {
 
       {/* Tabs responsives */}
       <Tabs defaultValue="profile" className="space-y-4 w-full">
-        <TabsList className="w-full flex flex-wrap gap-1 bg-muted p-1 rounded-lg">
-          <TabsTrigger value="profile" className="text-xs sm:text-sm px-3 py-2">
-            <User className="w-4 h-4 mr-1.5" />
-            <span className="hidden sm:inline">{t('profile')}</span>
-            <span className="sm:hidden">Profil</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="text-xs sm:text-sm px-3 py-2">
-            <Bell className="w-4 h-4 mr-1.5" />
-            <span className="hidden sm:inline">{t('notifications')}</span>
-            <span className="sm:hidden">Notifs</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="text-xs sm:text-sm px-3 py-2">
-            <Palette className="w-4 h-4 mr-1.5" />
-            <span className="hidden sm:inline">{t('appearance')}</span>
-            <span className="sm:hidden">Thème</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="text-xs sm:text-sm px-3 py-2">
-            <Shield className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{language === 'fr' ? 'Sécurité' : 'Security'}</span>
-            <span className="lg:hidden">Sécu</span>
-          </TabsTrigger>
-          <TabsTrigger value="accessibility" className="text-xs sm:text-sm px-3 py-2">
-            <Accessibility className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{language === 'fr' ? 'Accessibilité' : 'Accessibility'}</span>
-            <span className="lg:hidden">A11y</span>
-          </TabsTrigger>
-          <TabsTrigger value="privacy" className="text-xs sm:text-sm px-3 py-2">
-            <Lock className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{language === 'fr' ? 'Confidentialité' : 'Privacy'}</span>
-            <span className="lg:hidden">Privé</span>
-          </TabsTrigger>
-          <TabsTrigger value="system" className="text-xs sm:text-sm px-3 py-2">
-            <Database className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{language === 'fr' ? 'Système' : 'System'}</span>
-            <span className="lg:hidden">Sys</span>
-          </TabsTrigger>
-          <TabsTrigger value="backup" className="text-xs sm:text-sm px-3 py-2">
-            <Download className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{t('backup_restore')}</span>
-            <span className="lg:hidden">Backup</span>
-          </TabsTrigger>
-          <TabsTrigger value="company" className="text-xs sm:text-sm px-3 py-2">
-            <Building2 className="w-4 h-4 mr-1.5" />
-            <span className="hidden lg:inline">{t('company_info')}</span>
-            <span className="lg:hidden">Entrep.</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="inline-flex min-w-max h-auto flex-wrap gap-1 bg-muted p-1.5 rounded-lg md:grid md:grid-cols-5 lg:grid-cols-9 md:min-w-full">
+            <TabsTrigger value="profile" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <User className="w-4 h-4 mr-1" />
+              Profil
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Bell className="w-4 h-4 mr-1" />
+              Notifs
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Palette className="w-4 h-4 mr-1" />
+              Thème
+            </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Shield className="w-4 h-4 mr-1" />
+              Sécu
+            </TabsTrigger>
+            <TabsTrigger value="accessibility" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Accessibility className="w-4 h-4 mr-1" />
+              A11y
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Lock className="w-4 h-4 mr-1" />
+              Privé
+            </TabsTrigger>
+            <TabsTrigger value="system" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Database className="w-4 h-4 mr-1" />
+              Système
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Download className="w-4 h-4 mr-1" />
+              Backup
+            </TabsTrigger>
+            <TabsTrigger value="company" className="text-xs px-2.5 py-2 data-[state=active]:bg-background whitespace-nowrap">
+              <Building2 className="w-4 h-4 mr-1" />
+              Entreprise
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Onglet Entreprise */}
         <TabsContent value="company" className="space-y-4 sm:space-y-6">
