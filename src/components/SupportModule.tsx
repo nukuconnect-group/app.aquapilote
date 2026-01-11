@@ -15,8 +15,9 @@ import {
 } from 'lucide-react';
 import { useSupportTickets, SupportTicket, SupportMessage } from '@/hooks/useSupportTickets';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 
 const SUBJECT_SUGGESTIONS = [
   { category: 'technical', subjects: [
@@ -52,6 +53,7 @@ const CATEGORIES = [
 
 const SupportModule = () => {
   const { user } = useAuth();
+  const { t, language } = useSettings();
   const { 
     tickets, 
     messages, 
@@ -68,6 +70,7 @@ const SupportModule = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dateLocale = language === 'fr' ? fr : enUS;
 
   const [formData, setFormData] = useState({
     category: '',
@@ -122,13 +125,13 @@ const SupportModule = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'open':
-        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">{t('awaiting')}</Badge>;
       case 'in_progress':
-        return <Badge className="bg-blue-100 text-blue-800">En cours</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{t('in_progress')}</Badge>;
       case 'resolved':
-        return <Badge className="bg-green-100 text-green-800">Résolu</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t('resolved')}</Badge>;
       case 'closed':
-        return <Badge variant="secondary">Fermé</Badge>;
+        return <Badge variant="secondary">{t('closed')}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -154,9 +157,11 @@ const SupportModule = () => {
           <div className="flex items-center gap-3">
             <Headphones className="w-8 h-8" />
             <div>
-              <h2 className="text-xl md:text-2xl font-bold">Support Client</h2>
+              <h2 className="text-xl md:text-2xl font-bold">{t('support')}</h2>
               <p className="text-purple-100 text-sm">
-                {isAdmin ? 'Gérer les demandes de support' : 'Besoin d\'aide ? Contactez-nous !'}
+                {isAdmin 
+                  ? (language === 'fr' ? 'Gérer les demandes de support' : 'Manage support requests')
+                  : (language === 'fr' ? 'Besoin d\'aide ? Contactez-nous !' : 'Need help? Contact us!')}
               </p>
             </div>
           </div>
@@ -164,7 +169,7 @@ const SupportModule = () => {
             <DialogTrigger asChild>
               <Button className="bg-white/20 hover:bg-white/30 border-white/30">
                 <Plus className="w-4 h-4 mr-2" />
-                Nouvelle demande
+                {t('new_ticket')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
@@ -341,9 +346,9 @@ const SupportModule = () => {
                             )}
                             <div className="flex items-center gap-2 mt-1">
                               {getStatusBadge(ticket.status)}
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(ticket.created_at), 'dd MMM', { locale: fr })}
-                              </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(ticket.created_at), 'dd MMM', { locale: dateLocale })}
+                                </span>
                             </div>
                           </div>
                         </div>
@@ -415,7 +420,7 @@ const SupportModule = () => {
                             </div>
                             <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                             <p className="text-xs opacity-50 mt-1">
-                              {format(new Date(msg.created_at), 'HH:mm', { locale: fr })}
+                              {format(new Date(msg.created_at), 'HH:mm', { locale: dateLocale })}
                             </p>
                           </div>
                         </div>

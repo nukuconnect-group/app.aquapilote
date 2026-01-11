@@ -1,6 +1,16 @@
 // React core imports
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export interface CompanyInfo {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  logoUrl: string;
+  registrationNumber: string;
+  taxId: string;
+}
+
 interface SettingsContextType {
   theme: 'light' | 'dark' | 'auto';
   language: 'fr' | 'en';
@@ -9,6 +19,7 @@ interface SettingsContextType {
   country: string;
   offlineMode: boolean;
   showOfflineIndicator: boolean;
+  companyInfo: CompanyInfo;
   setTheme: (theme: 'light' | 'dark' | 'auto') => void;
   setLanguage: (language: 'fr' | 'en') => void;
   setCurrency: (currency: 'EUR' | 'USD' | 'XOF' | 'MAD') => void;
@@ -16,6 +27,7 @@ interface SettingsContextType {
   setCountry: (country: string) => void;
   setOfflineMode: (enabled: boolean) => void;
   setShowOfflineIndicator: (show: boolean) => void;
+  setCompanyInfo: (info: Partial<CompanyInfo>) => void;
   t: (key: string) => string;
   formatCurrency: (amount: number) => string;
 }
@@ -670,7 +682,41 @@ const translations: Record<string, Record<string, string>> = {
     status_cancelled: 'Annulé',
     // Units
     select_production_unit: 'Sélectionner une unité de production',
-    no_units_available: 'Aucune unité disponible'
+    no_units_available: 'Aucune unité disponible',
+    // Support
+    support: 'Support Client',
+    support_subtitle: 'Aide et assistance technique',
+    new_ticket: 'Nouvelle demande',
+    my_requests: 'Mes demandes',
+    no_requests: 'Aucune demande',
+    ticket_created: 'Ticket créé',
+    ticket_sent: 'Votre demande a été envoyée',
+    send_message: 'Envoyer',
+    type_message: 'Tapez votre message...',
+    awaiting: 'En attente',
+    in_progress: 'En cours',
+    resolved: 'Résolu',
+    closed: 'Fermé',
+    urgent: 'Urgent',
+    priority_low: 'Basse',
+    priority_normal: 'Normale',
+    priority_high: 'Haute',
+    priority_urgent: 'Urgente',
+    technical_issue: 'Problème technique',
+    subscription_issue: 'Abonnement / Paiement',
+    feature_request: 'Fonctionnalités',
+    general_question: 'Question générale',
+    // Company Info
+    company_info: 'Informations de l\'entreprise',
+    company_info_desc: 'Ces informations apparaîtront sur vos documents imprimés',
+    company_info_name: 'Nom de l\'entreprise',
+    company_info_address: 'Adresse de l\'entreprise',
+    company_info_phone: 'Téléphone de l\'entreprise',
+    company_info_email: 'Email professionnel',
+    company_info_logo: 'Logo de l\'entreprise',
+    company_info_registration: 'Numéro d\'enregistrement',
+    company_info_tax: 'Numéro fiscal / RCCM',
+    save_company_info: 'Sauvegarder les informations'
   },
   en: {
     // Navigation
@@ -1319,8 +1365,52 @@ const translations: Record<string, Record<string, string>> = {
     status_cancelled: 'Cancelled',
     // Units
     select_production_unit: 'Select a production unit',
-    no_units_available: 'No units available'
+    no_units_available: 'No units available',
+    // Support
+    support: 'Customer Support',
+    support_subtitle: 'Help and technical assistance',
+    new_ticket: 'New request',
+    my_requests: 'My requests',
+    no_requests: 'No requests',
+    ticket_created: 'Ticket created',
+    ticket_sent: 'Your request has been sent',
+    send_message: 'Send',
+    type_message: 'Type your message...',
+    awaiting: 'Awaiting',
+    in_progress: 'In progress',
+    resolved: 'Resolved',
+    closed: 'Closed',
+    urgent: 'Urgent',
+    priority_low: 'Low',
+    priority_normal: 'Normal',
+    priority_high: 'High',
+    priority_urgent: 'Urgent',
+    technical_issue: 'Technical issue',
+    subscription_issue: 'Subscription / Payment',
+    feature_request: 'Features',
+    general_question: 'General question',
+    // Company Info
+    company_info: 'Company Information',
+    company_info_desc: 'This information will appear on your printed documents',
+    company_info_name: 'Company name',
+    company_info_address: 'Company address',
+    company_info_phone: 'Company phone',
+    company_info_email: 'Business email',
+    company_info_logo: 'Company logo',
+    company_info_registration: 'Registration number',
+    company_info_tax: 'Tax ID / Business registration',
+    save_company_info: 'Save company info'
   }
+};
+
+const defaultCompanyInfo: CompanyInfo = {
+  name: '',
+  address: '',
+  phone: '',
+  email: '',
+  logoUrl: '',
+  registrationNumber: '',
+  taxId: ''
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -1331,6 +1421,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [country, setCountryState] = useState<string>('');
   const [offlineMode, setOfflineModeState] = useState<boolean>(true);
   const [showOfflineIndicator, setShowOfflineIndicatorState] = useState<boolean>(false);
+  const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(defaultCompanyInfo);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Détecter automatiquement le fuseau horaire et le pays
@@ -1382,6 +1473,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
       if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
+      
+      // Charger les informations de l'entreprise
+      const savedCompanyInfo = localStorage.getItem('app-company-info');
+      if (savedCompanyInfo) {
+        try {
+          setCompanyInfoState({ ...defaultCompanyInfo, ...JSON.parse(savedCompanyInfo) });
+        } catch {
+          console.error('Error parsing company info');
+        }
+      }
     } catch (error) {
       console.error('Error loading settings from localStorage:', error);
     } finally {
@@ -1484,6 +1585,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCountryState(c);
   };
 
+  const handleSetCompanyInfo = (info: Partial<CompanyInfo>) => {
+    const newInfo = { ...companyInfo, ...info };
+    try {
+      localStorage.setItem('app-company-info', JSON.stringify(newInfo));
+    } catch (error) {
+      console.error('Error saving company info:', error);
+    }
+    setCompanyInfoState(newInfo);
+  };
+
   const t = (key: string): string => {
     return translations[language]?.[key] || key;
   };
@@ -1529,6 +1640,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         country,
         offlineMode,
         showOfflineIndicator,
+        companyInfo,
         setTheme: handleSetTheme,
         setLanguage: handleSetLanguage,
         setCurrency: handleSetCurrency,
@@ -1536,6 +1648,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCountry: handleSetCountry,
         setOfflineMode: handleSetOfflineMode,
         setShowOfflineIndicator: handleSetShowOfflineIndicator,
+        setCompanyInfo: handleSetCompanyInfo,
         t,
         formatCurrency,
       }}
