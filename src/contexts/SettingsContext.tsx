@@ -1,5 +1,6 @@
 // React core imports
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CompanyInfo {
   name: string;
@@ -1422,6 +1423,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [offlineMode, setOfflineModeState] = useState<boolean>(true);
   const [showOfflineIndicator, setShowOfflineIndicatorState] = useState<boolean>(false);
   const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(defaultCompanyInfo);
+  const [companyInfoUserId, setCompanyInfoUserId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Détecter automatiquement le fuseau horaire et le pays
@@ -1474,15 +1476,35 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedOfflineMode !== null) setOfflineModeState(savedOfflineMode === 'true');
       if (savedShowOfflineIndicator !== null) setShowOfflineIndicatorState(savedShowOfflineIndicator === 'true');
       
-      // Charger les informations de l'entreprise
-      const savedCompanyInfo = localStorage.getItem('app-company-info');
-      if (savedCompanyInfo) {
-        try {
-          setCompanyInfoState({ ...defaultCompanyInfo, ...JSON.parse(savedCompanyInfo) });
-        } catch {
-          console.error('Error parsing company info');
-        }
-      }
+      // Charger les informations de l'entreprise (isolées par utilisateur)
+      // IMPORTANT: localStorage est partagé sur un même appareil/navigateur.
+      // On scope donc par user_id pour éviter le "mélange" entre comptes.
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          const uid = data.session?.user?.id ?? null;
+          setCompanyInfoUserId(uid);
+
+          const scopedKey = uid ? `app-company-info:${uid}` : 'app-company-info';
+          const savedCompanyInfo = localStorage.getItem(scopedKey) || localStorage.getItem('app-company-info');
+          if (savedCompanyInfo) {
+            try {
+              setCompanyInfoState({ ...defaultCompanyInfo, ...JSON.parse(savedCompanyInfo) });
+            } catch {
+              console.error('Error parsing company info');
+            }
+          }
+        })
+        .catch(() => {
+          const savedCompanyInfo = localStorage.getItem('app-company-info');
+          if (savedCompanyInfo) {
+            try {
+              setCompanyInfoState({ ...defaultCompanyInfo, ...JSON.parse(savedCompanyInfo) });
+            } catch {
+              console.error('Error parsing company info');
+            }
+          }
+        });
     } catch (error) {
       console.error('Error loading settings from localStorage:', error);
     } finally {
@@ -1588,7 +1610,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const handleSetCompanyInfo = (info: Partial<CompanyInfo>) => {
     const newInfo = { ...companyInfo, ...info };
     try {
-      localStorage.setItem('app-company-info', JSON.stringify(newInfo));
+      const scopedKey = companyInfoUserId ? `app-company-info:${companyInfoUserId}` : 'app-company-info';
+      localStorage.setItem(scopedKey, JSON.stringify(newInfo));
     } catch (error) {
       console.error('Error saving company info:', error);
     }

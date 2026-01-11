@@ -70,6 +70,7 @@ const SupportModule = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageCountRef = useRef(0);
   const dateLocale = language === 'fr' ? fr : enUS;
 
   const [formData, setFormData] = useState({
@@ -94,10 +95,17 @@ const SupportModule = () => {
     }
   }, [selectedTicket, fetchMessages, markMessagesAsRead]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom uniquement quand un nouveau message arrive (évite les "sauts" pendant le défilement)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const prev = lastMessageCountRef.current;
+    const next = messages.length;
+
+    if (next > prev) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    }
+
+    lastMessageCountRef.current = next;
+  }, [messages.length]);
 
   const handleCreateTicket = async () => {
     if (!formData.subject || !formData.category || !formData.message) return;
