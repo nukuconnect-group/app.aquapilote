@@ -14,7 +14,7 @@ import {
   Smartphone, Mail, Lock, Globe, Moon, Sun, HelpCircle, Trash2, RefreshCw, 
   FileText, Zap, Volume2, VolumeX, Clock, MapPin, CreditCard, Link2, LogOut,
   AlertTriangle, Check, X, Vibrate, Languages, Monitor, Accessibility, Wifi, WifiOff,
-  HardDrive, CheckCircle
+  HardDrive, CheckCircle, Building2
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,6 +62,7 @@ interface NotificationSettings {
 const SettingsManagement = () => {
   const { 
     theme, language, currency, offlineMode, showOfflineIndicator, timezone, country,
+    companyInfo, setCompanyInfo,
     setTheme, setLanguage, setCurrency, setOfflineMode, setShowOfflineIndicator, setTimezone, setCountry, t 
   } = useSettings();
   const { user, logout } = useAuth();
@@ -493,7 +494,7 @@ const SettingsManagement = () => {
       {/* Tabs responsives */}
       <Tabs defaultValue="profile" className="space-y-4 w-full">
         <div className="overflow-x-auto -mx-4 sm:-mx-0 px-4 sm:px-0 pb-2">
-          <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-8 gap-1 min-w-max sm:min-w-0 bg-muted p-1 rounded-lg">
+          <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-9 gap-1 min-w-max sm:min-w-0 bg-muted p-1 rounded-lg">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
               <User className="w-4 h-4 mr-1.5" />
               <span className="hidden sm:inline">{t('profile')}</span>
@@ -534,8 +535,94 @@ const SettingsManagement = () => {
               <span className="hidden lg:inline">{t('backup_restore')}</span>
               <span className="lg:hidden">Backup</span>
             </TabsTrigger>
+            <TabsTrigger value="company" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+              <Building2 className="w-4 h-4 mr-1.5" />
+              <span className="hidden lg:inline">{t('company_info')}</span>
+              <span className="lg:hidden">Entrep.</span>
+            </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* Onglet Entreprise */}
+        <TabsContent value="company" className="space-y-4 sm:space-y-6">
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Building2 className="w-5 h-5 text-aqua-600" />
+                {t('company_info')}
+              </CardTitle>
+              <CardDescription className="text-sm">
+                {t('company_info_desc')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm">{t('company_info_name')}</Label>
+                  <Input 
+                    value={companyInfo.name}
+                    onChange={e => setCompanyInfo({ name: e.target.value })}
+                    placeholder={language === 'fr' ? "Nom de votre entreprise" : "Your company name"}
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{t('company_info_email')}</Label>
+                  <Input 
+                    type="email"
+                    value={companyInfo.email}
+                    onChange={e => setCompanyInfo({ email: e.target.value })}
+                    placeholder="contact@entreprise.com"
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{t('company_info_phone')}</Label>
+                  <Input 
+                    value={companyInfo.phone}
+                    onChange={e => setCompanyInfo({ phone: e.target.value })}
+                    placeholder="+228 XX XX XX XX"
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{t('company_info_registration')}</Label>
+                  <Input 
+                    value={companyInfo.registrationNumber}
+                    onChange={e => setCompanyInfo({ registrationNumber: e.target.value })}
+                    placeholder="RCCM / Numéro"
+                    className="mt-1.5"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm">{t('company_info_address')}</Label>
+                <Textarea 
+                  value={companyInfo.address}
+                  onChange={e => setCompanyInfo({ address: e.target.value })}
+                  placeholder={language === 'fr' ? "Adresse complète de l'entreprise" : "Complete company address"}
+                  rows={2}
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">{t('company_info_tax')}</Label>
+                <Input 
+                  value={companyInfo.taxId}
+                  onChange={e => setCompanyInfo({ taxId: e.target.value })}
+                  placeholder={language === 'fr' ? "Numéro fiscal / NIF" : "Tax ID / VAT number"}
+                  className="mt-1.5"
+                />
+              </div>
+              <div className="pt-3">
+                <Badge variant="outline" className="text-xs">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  {language === 'fr' ? 'Ces informations apparaîtront sur vos documents imprimés' : 'This info will appear on printed documents'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Profil utilisateur */}
         <TabsContent value="profile" className="space-y-4 sm:space-y-6">

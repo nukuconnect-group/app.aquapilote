@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ import OnlineUsersPanel from './admin/OnlineUsersPanel';
 import UserSessionHistory from './admin/UserSessionHistory';
 import UserUnitsDisplay from './admin/UserUnitsDisplay';
 import AddUserWithUnitsDialog from './admin/AddUserWithUnitsDialog';
+import SupportModule from './SupportModule';
 
 interface UserProfile {
   id: string;
@@ -503,7 +504,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -513,6 +514,11 @@ const AdminDashboard = () => {
             <Users className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Utilisateurs</span>
             <span className="sm:hidden">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="support">
+            <Headphones className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Support</span>
+            <span className="sm:hidden">Support</span>
           </TabsTrigger>
           <TabsTrigger value="database">
             <Database className="w-4 h-4 mr-2" />
@@ -925,6 +931,10 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="support" className="space-y-4">
+          <SupportModule />
         </TabsContent>
 
         <TabsContent value="database" className="space-y-4">
