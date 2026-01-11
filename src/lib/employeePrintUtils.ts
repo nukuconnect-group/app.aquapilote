@@ -1,8 +1,18 @@
 import { Employee } from '@/hooks/useEmployees';
 
+export interface CompanyInfoForPrint {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  logoUrl?: string;
+  registrationNumber?: string;
+  taxId?: string;
+}
+
 export const generateEmployeeListHTML = (
   employees: Employee[], 
-  companyName: string,
+  companyInfo?: CompanyInfoForPrint,
   unitName?: string,
   formatCurrency?: (value: number) => string
 ) => {
@@ -16,6 +26,14 @@ export const generateEmployeeListHTML = (
 
   const totalSalary = employees.reduce((sum, emp) => sum + emp.salary, 0);
   const activeCount = employees.filter(e => e.status === 'active').length;
+
+  const companyName = companyInfo?.name || 'Mon Exploitation Aquacole';
+  const companyAddress = companyInfo?.address || '';
+  const companyPhone = companyInfo?.phone || '';
+  const companyEmail = companyInfo?.email || '';
+  const companyLogo = companyInfo?.logoUrl || '';
+  const companyRegNumber = companyInfo?.registrationNumber || '';
+  const companyTaxId = companyInfo?.taxId || '';
 
   const getContractColor = (type: string) => {
     switch (type) {
@@ -63,25 +81,73 @@ export const generateEmployeeListHTML = (
           padding: 40px 20px;
         }
         
+        .company-header {
+          background: white;
+          padding: 20px 30px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .company-left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .company-logo {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+          border-radius: 8px;
+        }
+        
+        .company-info h2 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #0284c7;
+          margin-bottom: 5px;
+        }
+        
+        .company-info p {
+          font-size: 13px;
+          color: #64748b;
+          margin: 2px 0;
+        }
+        
+        .company-right {
+          text-align: right;
+          font-size: 12px;
+          color: #64748b;
+        }
+        
+        .company-right p {
+          margin: 3px 0;
+        }
+        
         .header {
           background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
           color: white;
-          padding: 30px 40px;
-          border-radius: 16px;
-          margin-bottom: 30px;
+          padding: 20px 30px;
+          border-radius: 12px;
+          margin-bottom: 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         
         .header h1 {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 700;
         }
         
         .header p {
           opacity: 0.9;
           margin-top: 5px;
+          font-size: 14px;
         }
         
         .header-right {
@@ -89,15 +155,15 @@ export const generateEmployeeListHTML = (
         }
         
         .header-right .date {
-          font-size: 14px;
+          font-size: 13px;
           opacity: 0.8;
         }
         
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
-          margin-bottom: 30px;
+          gap: 15px;
+          margin-bottom: 20px;
         }
         
         .stat-card {
@@ -208,13 +274,31 @@ export const generateEmployeeListHTML = (
     </head>
     <body>
       <div class="container">
+        <!-- En-tête entreprise -->
+        <div class="company-header">
+          <div class="company-left">
+            ${companyLogo ? `<img src="${companyLogo}" alt="Logo" class="company-logo" />` : ''}
+            <div class="company-info">
+              <h2>${companyName}</h2>
+              ${companyAddress ? `<p>📍 ${companyAddress}</p>` : ''}
+              ${companyPhone ? `<p>📞 ${companyPhone}</p>` : ''}
+              ${companyEmail ? `<p>✉️ ${companyEmail}</p>` : ''}
+            </div>
+          </div>
+          <div class="company-right">
+            ${companyRegNumber ? `<p>RC: ${companyRegNumber}</p>` : ''}
+            ${companyTaxId ? `<p>NIF: ${companyTaxId}</p>` : ''}
+            <p>${today}</p>
+          </div>
+        </div>
+
         <div class="header">
           <div>
             <h1>📋 Liste des Employés</h1>
-            <p>${companyName}${unitName ? ` - ${unitName}` : ''}</p>
+            <p>${unitName ? `Unité: ${unitName}` : 'Toutes les unités'}</p>
           </div>
           <div class="header-right">
-            <div class="date">${today}</div>
+            <div class="date">${employees.length} employé(s)</div>
           </div>
         </div>
         
@@ -297,11 +381,11 @@ export const generateEmployeeListHTML = (
 
 export const printEmployeeList = (
   employees: Employee[], 
-  companyName: string,
+  companyInfo?: CompanyInfoForPrint,
   unitName?: string,
   formatCurrency?: (value: number) => string
 ) => {
-  const html = generateEmployeeListHTML(employees, companyName, unitName, formatCurrency);
+  const html = generateEmployeeListHTML(employees, companyInfo, unitName, formatCurrency);
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);

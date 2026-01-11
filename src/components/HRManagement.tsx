@@ -25,7 +25,7 @@ const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units, activeUnit } = useProductionUnits();
-  const { formatCurrency } = useSettings();
+const { formatCurrency, companyInfo } = useSettings();
   const { user } = useAuth();
   const { 
     employees, 
@@ -390,13 +390,21 @@ const HRManagement = () => {
           <Card>
             <CardHeader className="p-3 sm:p-4 md:p-6 flex flex-row items-center justify-between">
               <CardTitle className="text-base sm:text-lg">Liste des Employés</CardTitle>
-              {filteredEmployees.length > 0 && (
+{filteredEmployees.length > 0 && (
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => printEmployeeList(
                     filteredEmployees, 
-                    'Mon Exploitation Aquacole',
+                    {
+                      name: companyInfo.name,
+                      address: companyInfo.address,
+                      phone: companyInfo.phone,
+                      email: companyInfo.email,
+                      logoUrl: companyInfo.logoUrl,
+                      registrationNumber: companyInfo.registrationNumber,
+                      taxId: companyInfo.taxId
+                    },
                     activeUnit?.name,
                     formatCurrency
                   )}

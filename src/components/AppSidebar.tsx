@@ -52,8 +52,9 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       }
     });
     
-    // Toujours accès aux paramètres de base
+    // Toujours accès aux paramètres de base et support
     allowedTabs.add('settings');
+    allowedTabs.add('support');
     
     return allowedTabs;
   };
