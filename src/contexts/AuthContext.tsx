@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Set up auth state listener with improved session persistence
+  // Set up auth state listener with improved session persistence (OPTIMIZED - no "verification de session" delay)
   useEffect(() => {
     let mounted = true;
     let refreshInterval: NodeJS.Timeout | null = null;
@@ -152,11 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state changed:', event);
+        // Immediate update for session (no console log to reduce noise)
         setSession(session);
         
         if (session?.user) {
-          // Utiliser setTimeout pour éviter les deadlocks
+          // Utiliser setTimeout pour éviter les deadlocks - IMMEDIATE
           setTimeout(async () => {
             if (mounted) {
               await fetchUserData(session.user);
@@ -173,68 +173,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setSession(null);
           setIsDemoMode(false);
-        } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully');
         }
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session - FAST PATH with timeout
     const initializeSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setIsLoading(false);
+        // Fast timeout for session check - don't block UI
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        );
+
+        let sessionResult;
+        try {
+          sessionResult = await Promise.race([sessionPromise, timeoutPromise]) as { data: { session: Session | null }, error: any };
+        } catch {
+          // Timeout - continue without session, let auth listener handle it
+          if (mounted) setIsLoading(false);
           return;
         }
 
-        if (!mounted) return;
+        const { data: { session }, error } = sessionResult;
+        
+        if (error || !mounted) {
+          if (mounted) setIsLoading(false);
+          return;
+        }
         
         setSession(session);
         
         if (session?.user) {
           await fetchUserData(session.user);
-          
-          // Vérifier si le token doit être rafraîchi
-          if (session.expires_at) {
-            const expiresAt = new Date(session.expires_at * 1000);
-            const now = new Date();
-            const timeUntilExpiry = expiresAt.getTime() - now.getTime();
-            
-            // Si le token expire dans moins de 10 minutes, le rafraîchir
-            if (timeUntilExpiry < 10 * 60 * 1000) {
-              console.log('Token expiring soon, refreshing...');
-              await supabase.auth.refreshSession();
-            }
-          }
         }
         
         setIsLoading(false);
       } catch (error) {
-        console.error('Session initialization error:', error);
-        if (mounted) {
-          setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       }
     };
 
     initializeSession();
 
-    // Rafraîchir la session périodiquement (toutes les 10 minutes)
+    // Rafraîchir la session périodiquement (toutes les 15 minutes - less aggressive)
     refreshInterval = setInterval(async () => {
-      if (session?.user) {
+      if (session?.user && navigator.onLine) {
         try {
-          const { error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.error('Session refresh error:', error);
-          }
-        } catch (err) {
-          console.error('Failed to refresh session:', err);
+          await supabase.auth.refreshSession();
+        } catch {
+          // Silent error - don't spam console
         }
       }
-    }, 10 * 60 * 1000);
+    }, 15 * 60 * 1000);
 
     // Set up realtime subscription for profile updates
     let profileChannel: ReturnType<typeof supabase.channel> | null = null;

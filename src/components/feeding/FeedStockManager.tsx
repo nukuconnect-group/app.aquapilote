@@ -360,85 +360,106 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 <span className="sm:hidden">Ajouter</span>
               </Button>
             </DialogTrigger>
-          <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>{editingStock ? 'Modifier le stock' : 'Ajouter un nouveau stock'}</DialogTitle>
+              <DialogTitle>{editingStock ? 'Modifier le stock' : 'Ajouter un stock d\'aliment'}</DialogTitle>
             </DialogHeader>
             
-            <Tabs defaultValue="basic" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="basic">Informations de base</TabsTrigger>
-                <TabsTrigger value="advanced">Détails avancés</TabsTrigger>
-              </TabsList>
+            {/* Formulaire simplifié - champs essentiels uniquement */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm">Nom de l'aliment *</Label>
+                  <Input 
+                    value={newStock.custom_name}
+                    onChange={(e) => setNewStock(prev => ({ ...prev, custom_name: e.target.value }))}
+                    placeholder="Ex: Granulés Tilapia 3mm"
+                    className="text-sm"
+                  />
+                </div>
 
-              <TabsContent value="basic" className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm">Nom personnalisé de l'aliment</Label>
-                    <Input 
-                      value={newStock.custom_name}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, custom_name: e.target.value }))}
-                      placeholder="Ex: Granulés Premium Tilapia"
-                      className="text-sm"
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm">Type *</Label>
+                  <Select value={newStock.feed_type} onValueChange={handleFeedTypeChange}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Sélectionner le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allFeedTypes.map(type => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <Label className="text-sm">Type d'aliment</Label>
-                    <Select value={newStock.feed_type} onValueChange={handleFeedTypeChange}>
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Sélectionner le type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allFeedTypes.map(type => (
-                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {showCustomTypeInput && (
-                    <div className="sm:col-span-2">
-                      <Label className="text-sm">Nom du type personnalisé</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          value={customFeedTypeName}
-                          onChange={(e) => setCustomFeedTypeName(e.target.value)}
-                          placeholder="Ex: Granulés bio artisanaux"
-                          className="text-sm"
-                        />
-                        <Button size="sm" onClick={handleSaveCustomFeedType}>
-                          Ajouter
-                        </Button>
-                      </div>
+                {showCustomTypeInput && (
+                  <div className="sm:col-span-2">
+                    <Label className="text-sm">Nom du type personnalisé</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={customFeedTypeName}
+                        onChange={(e) => setCustomFeedTypeName(e.target.value)}
+                        placeholder="Ex: Granulés bio"
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={handleSaveCustomFeedType}>OK</Button>
                     </div>
-                  )}
-
-                  <div>
-                    <Label className="text-sm">Quantité</Label>
-                    <Input 
-                      type="number"
-                      value={newStock.quantity}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                      className="text-sm"
-                    />
                   </div>
+                )}
 
-                  <div>
-                    <Label className="text-sm">Unité</Label>
-                    <Select value={newStock.unit} onValueChange={(value) => setNewStock(prev => ({ ...prev, unit: value }))}>
-                      <SelectTrigger className="text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="tonnes">tonnes</SelectItem>
-                        <SelectItem value="sacs">sacs</SelectItem>
-                        <SelectItem value="litres">litres</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label className="text-sm">Quantité *</Label>
+                  <Input 
+                    type="number"
+                    value={newStock.quantity}
+                    onChange={(e) => setNewStock(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+                    className="text-sm"
+                    placeholder="0"
+                  />
+                </div>
 
+                <div>
+                  <Label className="text-sm">Unité</Label>
+                  <Select value={newStock.unit} onValueChange={(value) => setNewStock(prev => ({ ...prev, unit: value }))}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="tonnes">tonnes</SelectItem>
+                      <SelectItem value="sacs">sacs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm">Fournisseur</Label>
+                  <Input 
+                    value={newStock.supplier}
+                    onChange={(e) => setNewStock(prev => ({ ...prev, supplier: e.target.value }))}
+                    placeholder="Nom du fournisseur"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm">Coût/kg (FCFA)</Label>
+                  <Input 
+                    type="number"
+                    value={newStock.cost}
+                    onChange={(e) => setNewStock(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                    className="text-sm"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              
+              {/* Options avancées dans un collapsible */}
+              <details className="border rounded-lg p-3">
+                <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground font-medium">
+                  ▶ Options avancées (composition, expiration...)
+                </summary>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div>
                     <Label className="text-sm">Date d'expiration</Label>
                     <Input 
@@ -448,32 +469,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                       className="text-sm"
                     />
                   </div>
-
-                  <div>
-                    <Label className="text-sm">Fournisseur</Label>
-                    <Input 
-                      value={newStock.supplier}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, supplier: e.target.value }))}
-                      placeholder="Nom du fournisseur"
-                      className="text-sm"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="advanced" className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm">Coût unitaire (F CFA)</Label>
-                    <Input 
-                      type="number"
-                      step="0.01"
-                      value={newStock.cost}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
-                      className="text-sm"
-                    />
-                  </div>
-
+                  
                   <div>
                     <Label className="text-sm">Seuil minimum</Label>
                     <Input 
@@ -516,32 +512,37 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     />
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSaveStock} className="flex-1">
-                {editingStock ? 'Modifier' : 'Ajouter'} le stock
-              </Button>
-              <Button variant="outline" onClick={() => {
-                setShowDialog(false);
-                setEditingStock(null);
-                setNewStock({
-                  custom_name: '',
-                  feed_type: '',
-                  quantity: 0,
-                  unit: 'kg',
-                  expiration_date: '',
-                  supplier: '',
-                  cost: 0,
-                  protein_content: 0,
-                  fat_content: 0,
-                  notes: '',
-                  min_threshold: 50
-                });
-              }}>
-                Annuler
-              </Button>
+              </details>
+              
+              {/* Boutons toujours visibles */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button 
+                  onClick={handleSaveStock} 
+                  className="flex-1 min-h-[44px]"
+                  disabled={!newStock.feed_type || newStock.quantity <= 0}
+                >
+                  {editingStock ? 'Modifier' : 'Ajouter'} le stock
+                </Button>
+                <Button variant="outline" className="min-h-[44px]" onClick={() => {
+                  setShowDialog(false);
+                  setEditingStock(null);
+                  setNewStock({
+                    custom_name: '',
+                    feed_type: '',
+                    quantity: 0,
+                    unit: 'kg',
+                    expiration_date: '',
+                    supplier: '',
+                    cost: 0,
+                    protein_content: 0,
+                    fat_content: 0,
+                    notes: '',
+                    min_threshold: 50
+                  });
+                }}>
+                  Annuler
+                </Button>
+              </div>
             </div>
           </DialogContent>
           </Dialog>

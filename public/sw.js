@@ -1,12 +1,12 @@
-// Service Worker AQUA PILOT - Optimisé pour tous les appareils avec cache intelligent
-const CACHE_VERSION = 'aqua-pilot-v6';
+// Service Worker AQUA PILOT - Optimisé pour démarrage RAPIDE + offline complet
+const CACHE_VERSION = 'aqua-pilot-v7';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 const APP_SHELL_CACHE = `${CACHE_VERSION}-app-shell`;
 
-// Ressources essentielles à pré-cacher
+// Ressources essentielles à pré-cacher (minimal pour démarrage rapide)
 const STATIC_FILES = [
   '/',
   '/index.html',
@@ -14,7 +14,7 @@ const STATIC_FILES = [
   '/favicon.png'
 ];
 
-// Configuration du cache optimisée pour desktop/tablette
+// Configuration du cache optimisée - priorité au démarrage rapide
 const CACHE_CONFIG = {
   static: {
     maxAge: 60 * 60 * 24 * 30, // 30 jours
@@ -25,8 +25,8 @@ const CACHE_CONFIG = {
     maxEntries: 200
   },
   api: {
-    maxAge: 60 * 10, // 10 minutes
-    maxEntries: 100
+    maxAge: 60 * 30, // 30 minutes - plus long pour offline
+    maxEntries: 200
   },
   dynamic: {
     maxAge: 60 * 60 * 24 * 14, // 14 jours
@@ -38,30 +38,26 @@ const CACHE_CONFIG = {
   }
 };
 
-// Installation - Optimisée pour tous les appareils
+// Installation - INSTANTANÉE sans blocage
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing new version...');
+  // Skip waiting immédiatement pour activation instantanée
+  self.skipWaiting();
+  
+  // Cache en arrière-plan (ne bloque pas l'installation)
   event.waitUntil(
-    Promise.all([
-      caches.open(STATIC_CACHE)
-        .then((cache) => {
-          return cache.addAll(STATIC_FILES).catch((err) => {
-            console.warn('[SW] Cache failed, continuing anyway:', err);
-            return Promise.resolve();
-          });
-        }),
-      caches.open(APP_SHELL_CACHE)
-        .then((cache) => {
-          // Pré-cacher les ressources critiques de l'app shell
-          return cache.addAll([
-            '/index.html',
-            '/manifest.json'
-          ]).catch(() => Promise.resolve());
-        })
-    ])
-      .then(() => {
-        console.log('[SW] Skip waiting to activate immediately');
-        return self.skipWaiting();
+    caches.open(STATIC_CACHE)
+      .then((cache) => {
+        // Ajouter les fichiers un par un pour éviter tout échec
+        return Promise.allSettled(
+          STATIC_FILES.map(file => 
+            cache.add(file).catch(() => {
+              // Ignorer les erreurs individuelles
+            })
+          )
+        );
+      })
+      .catch(() => {
+        // Ignorer les erreurs de cache - l'app fonctionne quand même
       })
   );
 });
@@ -109,9 +105,9 @@ function getCacheStrategy(request) {
     return { strategy: 'CacheFirst', cacheName: IMAGE_CACHE, config: CACHE_CONFIG.images };
   }
   
-  // API Supabase - Network First avec timeout court
+  // API Supabase - Network First avec timeout TRÈS court pour réactivité
   if (url.hostname.includes('supabase.co') && url.pathname.includes('/rest/')) {
-    return { strategy: 'NetworkFirst', cacheName: API_CACHE, config: CACHE_CONFIG.api, timeout: 3000 };
+    return { strategy: 'NetworkFirst', cacheName: API_CACHE, config: CACHE_CONFIG.api, timeout: 2000 };
   }
   
   // Storage Supabase - Cache First
@@ -129,8 +125,8 @@ function getCacheStrategy(request) {
     return { strategy: 'CacheFirst', cacheName: STATIC_CACHE, config: CACHE_CONFIG.static };
   }
   
-  // Par défaut - Network First
-  return { strategy: 'NetworkFirst', cacheName: DYNAMIC_CACHE, config: CACHE_CONFIG.dynamic, timeout: 5000 };
+  // Par défaut - Network First avec timeout court pour réactivité
+  return { strategy: 'NetworkFirst', cacheName: DYNAMIC_CACHE, config: CACHE_CONFIG.dynamic, timeout: 3000 };
 }
 
 // Fonction pour nettoyer les vieux items du cache

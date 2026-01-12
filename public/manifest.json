@@ -4,18 +4,59 @@
   "description": "Application professionnelle de gestion aquacole avec monitoring IoT et analytics avancés",
   "start_url": "/",
   "scope": "/",
+  "id": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "background_color": "#ffffff",
-  "theme_color": "#0EA5E9",
+  "theme_color": "#047857",
   "orientation": "any",
   "prefer_related_applications": false,
   "icons": [
     {
       "src": "/favicon.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "384x384",
+      "type": "image/png"
     },
     {
       "src": "/favicon.png",
@@ -27,6 +68,22 @@
   "categories": ["productivity", "business", "utilities"],
   "lang": "fr-FR",
   "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AQUA PILOT Dashboard"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AQUA PILOT Mobile"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Tableau de bord",
@@ -42,5 +99,12 @@
       "url": "/auth",
       "icons": [{ "src": "/favicon.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "handle_links": "preferred",
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
