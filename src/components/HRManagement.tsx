@@ -253,8 +253,9 @@ const { formatCurrency, companyInfo } = useSettings();
     }
   };
 
-  // Formater en F CFA par défaut
-  const formatCFA = (value: number) => {
+  // Formater en F CFA par défaut - utilisé dans ce module RH
+  // FCFA par défaut, change seulement si langue = 'en'
+  const formatSalary = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'decimal',
       minimumFractionDigits: 0,
@@ -526,8 +527,8 @@ const { formatCurrency, companyInfo } = useSettings();
                       <TableRow key={paySlip.id}>
                         <TableCell>{paySlip.employeeName}</TableCell>
                         <TableCell>{paySlip.period}</TableCell>
-                        <TableCell>{formatCFA(paySlip.baseSalary)}</TableCell>
-                        <TableCell className="font-bold">{formatCFA(paySlip.netSalary)}</TableCell>
+                        <TableCell>{formatSalary(paySlip.baseSalary)}</TableCell>
+                        <TableCell className="font-bold">{formatSalary(paySlip.netSalary)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
