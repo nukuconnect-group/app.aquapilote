@@ -26,11 +26,32 @@ export const useAuthReady = () => {
 
     const initAuth = async () => {
       try {
-        // Attendre la récupération de la session depuis localStorage
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Timeout rapide pour ne pas bloquer l'UI - 2 secondes max
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 2000)
+        );
+
+        let result;
+        try {
+          result = await Promise.race([sessionPromise, timeoutPromise]);
+        } catch {
+          // Timeout - marquer comme prêt sans session (mode offline possible)
+          if (mounted) {
+            setState({
+              isReady: true,
+              isAuthenticated: false,
+              user: null,
+              session: null
+            });
+          }
+          return;
+        }
+
+        const { data: { session }, error } = result as { data: { session: any }, error: any };
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.warn('Session check warning:', error.message);
         }
 
         if (mounted) {
@@ -42,7 +63,7 @@ export const useAuthReady = () => {
           });
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        // Erreur - continuer quand même (mode offline)
         if (mounted) {
           setState({
             isReady: true,

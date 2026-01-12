@@ -287,7 +287,7 @@ const ProductionUnitsManagement = () => {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-sm">Photo de l'unité</Label>
+                  <Label className="text-sm">Photo de l'unité (optionnel)</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -302,7 +302,7 @@ const ProductionUnitsManagement = () => {
                           <img
                             src={selectedPhoto}
                             alt="Photo de l'unité"
-                            className="w-full h-48 object-cover rounded-lg border-2 border-border"
+                            className="w-full h-32 sm:h-48 object-cover rounded-lg border-2 border-border"
                           />
                           <Button
                             type="button"
@@ -320,7 +320,7 @@ const ProductionUnitsManagement = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full"
+                        className="w-full h-10"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploadingPhoto}
                       >
@@ -330,11 +330,12 @@ const ProductionUnitsManagement = () => {
                     )}
                   </div>
                 </div>
-                <div className="sm:col-span-2 flex gap-2">
-                  <Button onClick={handleSaveUnit} className="flex-1">
+                {/* Boutons TOUJOURS visibles - fixés en bas */}
+                <div className="sm:col-span-2 flex gap-2 pt-4 border-t sticky bottom-0 bg-background pb-2">
+                  <Button onClick={handleSaveUnit} className="flex-1 min-h-[44px]" disabled={!newUnit.name || !newUnit.type}>
                     {editingUnit ? 'Modifier' : 'Créer'} l'unité
                   </Button>
-                  <Button variant="outline" onClick={() => {
+                  <Button variant="outline" className="min-h-[44px]" onClick={() => {
                     setShowAddDialog(false);
                     setEditingUnit(null);
                     setSelectedPhoto(null);
