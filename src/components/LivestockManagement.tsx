@@ -1152,22 +1152,43 @@ const LivestockManagement = () => {
                                   size="sm"
                                   className="flex-1"
                                   onClick={() => {
-                                    const svg = document.querySelector('.qr-code-container svg');
+                                    // Chercher le SVG dans le dialogue actuel
+                                    const dialogContent = document.querySelector('[role="dialog"] .qr-code-container svg');
+                                    const svg = dialogContent || document.querySelector('.qr-code-container svg');
                                     if (svg) {
                                       const svgData = new XMLSerializer().serializeToString(svg);
                                       const canvas = document.createElement('canvas');
+                                      canvas.width = 200;
+                                      canvas.height = 200;
                                       const ctx = canvas.getContext('2d');
                                       const img = new Image();
                                       img.onload = () => {
-                                        canvas.width = img.width;
-                                        canvas.height = img.height;
-                                        ctx?.drawImage(img, 0, 0);
+                                        ctx?.drawImage(img, 0, 0, 200, 200);
                                         const a = document.createElement('a');
                                         a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}.png`;
                                         a.href = canvas.toDataURL('image/png');
+                                        document.body.appendChild(a);
                                         a.click();
+                                        document.body.removeChild(a);
+                                        toast({
+                                          title: "QR Code téléchargé",
+                                          description: `Fichier QR-LOT-${String(index + 1).padStart(4, '0')}.png sauvegardé`
+                                        });
+                                      };
+                                      img.onerror = () => {
+                                        toast({
+                                          title: "Erreur",
+                                          description: "Impossible de générer l'image QR",
+                                          variant: "destructive"
+                                        });
                                       };
                                       img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                                    } else {
+                                      toast({
+                                        title: "Erreur",
+                                        description: "QR Code introuvable",
+                                        variant: "destructive"
+                                      });
                                     }
                                   }}
                                 >

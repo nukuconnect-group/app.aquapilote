@@ -148,7 +148,10 @@ const PurchaseManager = () => {
       unitName: selectedUnit?.name || undefined,
       status: 'pending',
       deliveryDate: newPurchase.deliveryDate || undefined,
-      notes: newPurchase.notes || undefined
+      notes: newPurchase.notes || undefined,
+      isCredit: newPurchase.isCredit || false,
+      dueDate: newPurchase.isCredit ? newPurchase.dueDate : undefined,
+      paymentTerms: newPurchase.isCredit ? newPurchase.paymentTerms : undefined
     });
     
     addLog('Achat enregistré', 'Achats', `${newPurchase.category}: ${newPurchase.description} - ${newPurchase.amount} ${newPurchase.currency}`, 'success');
@@ -192,7 +195,10 @@ const PurchaseManager = () => {
       unitId: newPurchase.unitId || undefined,
       unitName: selectedUnit?.name || undefined,
       deliveryDate: newPurchase.deliveryDate || undefined,
-      notes: newPurchase.notes || undefined
+      notes: newPurchase.notes || undefined,
+      isCredit: newPurchase.isCredit || false,
+      dueDate: newPurchase.isCredit ? newPurchase.dueDate : undefined,
+      paymentTerms: newPurchase.isCredit ? newPurchase.paymentTerms : undefined
     });
     
     addLog('Achat modifié', 'Achats', `Achat modifié: ${newPurchase.description}`, 'info');
@@ -1182,6 +1188,56 @@ const PurchaseManager = () => {
                   onChange={(e) => setNewPurchase({...newPurchase, deliveryDate: e.target.value})}
                 />
               </div>
+            </div>
+
+            {/* Section Crédit Fournisseur */}
+            <div className="border rounded-lg p-4 bg-orange-50/50 dark:bg-orange-900/10">
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="isCredit"
+                  checked={newPurchase.isCredit}
+                  onChange={(e) => setNewPurchase({...newPurchase, isCredit: e.target.checked})}
+                  className="w-4 h-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                />
+                <Label htmlFor="isCredit" className="flex items-center gap-2 cursor-pointer font-medium text-orange-700 dark:text-orange-400">
+                  <CreditCard className="w-4 h-4" />
+                  Achat à crédit (échéance fournisseur)
+                </Label>
+              </div>
+              
+              {newPurchase.isCredit && (
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Label className="text-sm">Date d'échéance *</Label>
+                    <Input
+                      type="date"
+                      value={newPurchase.dueDate}
+                      onChange={(e) => setNewPurchase({...newPurchase, dueDate: e.target.value})}
+                      className="border-orange-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Conditions de paiement</Label>
+                    <Select
+                      value={newPurchase.paymentTerms}
+                      onValueChange={(value) => setNewPurchase({...newPurchase, paymentTerms: value})}
+                    >
+                      <SelectTrigger className="border-orange-200">
+                        <SelectValue placeholder="Sélectionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30_jours">30 jours</SelectItem>
+                        <SelectItem value="60_jours">60 jours</SelectItem>
+                        <SelectItem value="90_jours">90 jours</SelectItem>
+                        <SelectItem value="fin_mois">Fin de mois</SelectItem>
+                        <SelectItem value="reception">À réception</SelectItem>
+                        <SelectItem value="personnalise">Personnalisé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

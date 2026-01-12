@@ -457,25 +457,30 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
               {/* Options avancées dans un collapsible */}
               <details className="border rounded-lg p-3">
                 <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground font-medium">
-                  ▶ Options avancées (composition, expiration...)
+                  ▶ Options avancées (composition, seuil d'alerte...)
                 </summary>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div>
-                    <Label className="text-sm">Date d'expiration</Label>
-                    <Input 
-                      type="date"
-                      value={newStock.expiration_date}
-                      onChange={(e) => setNewStock(prev => ({ ...prev, expiration_date: e.target.value }))}
-                      className="text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm">Seuil minimum</Label>
+                    <Label className="text-sm">Seuil minimum (alerte stock bas)</Label>
                     <Input 
                       type="number"
                       value={newStock.min_threshold}
                       onChange={(e) => setNewStock(prev => ({ ...prev, min_threshold: parseFloat(e.target.value) || 0 }))}
+                      className="text-sm"
+                      placeholder="50"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Alerte déclenchée quand le stock atteint ce seuil
+                    </p>
+                  </div>
+                  
+                  <div className="hidden">
+                    {/* Date d'expiration masquée - les stocks s'épuisent par utilisation */}
+                    <Label className="text-sm">Date d'expiration (optionnel)</Label>
+                    <Input 
+                      type="date"
+                      value={newStock.expiration_date}
+                      onChange={(e) => setNewStock(prev => ({ ...prev, expiration_date: e.target.value }))}
                       className="text-sm"
                     />
                   </div>
