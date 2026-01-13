@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2 } from 'lucide-react';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { generateFeedingPlanHTML, printHTML } from '@/lib/feedingPrintUtils';
 
 interface FeedingPlanSchedulerProps {
@@ -23,6 +24,7 @@ interface FeedingPlanSchedulerProps {
 const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingPlanSchedulerProps) => {
   const { plans, loading, createPlan, updatePlan, deletePlan } = useFeedingPlans(unitId, cycleId);
   const { infrastructures, loading: loadingInfra } = useCycleInfrastructures(cycleId || '');
+  const { stocks } = useFeedStocks(unitId);
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,7 +47,9 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
     { key: 'dimanche', label: 'Dimanche' }
   ];
 
-  const feedTypes = [
+  // Combiner les types d'aliment prédéfinis avec ceux en stock
+  const stockFeedTypes = stocks.map(stock => stock.custom_name || stock.feed_type);
+  const defaultFeedTypes = [
     'Aliment starter (0.5-1mm)',
     'Aliment croissance (2-3mm)',
     'Aliment finition (4-6mm)',
@@ -53,6 +57,9 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
     'Aliment médiqué',
     'Complément vitaminé'
   ];
+  
+  // Afficher d'abord les aliments en stock, puis les types par défaut
+  const feedTypes = [...new Set([...stockFeedTypes, ...defaultFeedTypes])];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,11 +203,35 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                     <SelectValue placeholder="Sélectionner un type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {feedTypes.map((type) => (
+                    {stocks.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted">
+                          Aliments en stock
+                        </div>
+                        {stocks.map((stock) => (
+                          <SelectItem 
+                            key={stock.id} 
+                            value={stock.custom_name || stock.feed_type} 
+                            className="text-xs sm:text-sm"
+                          >
+                            {stock.custom_name || stock.feed_type} ({stock.quantity} {stock.unit})
+                          </SelectItem>
+                        ))}
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted mt-1">
+                          Autres types
+                        </div>
+                      </>
+                    )}
+                    {defaultFeedTypes.map((type) => (
                       <SelectItem key={type} value={type} className="text-xs sm:text-sm">{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {stocks.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Aucun stock d'aliment ajouté. Ajoutez des stocks pour les voir ici.
+                  </p>
+                )}
               </div>
 
               {cycleId && infrastructures.length > 0 && (

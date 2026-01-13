@@ -877,7 +877,35 @@ const TeamManagement = () => {
 
             {/* Sélection des unités avec checkboxes */}
             <div>
-              <Label className="mb-3 block">Unités de production assignées * (sélectionnez plusieurs)</Label>
+              <div className="flex justify-between items-center mb-3">
+                <Label>Unités de production assignées * (sélectionnez plusieurs)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedUnitsForInvite.size === units.length) {
+                      // Désélectionner tout
+                      setSelectedUnitsForInvite(new Set());
+                      setInviteData(prev => ({ ...prev, unitPermissions: [] }));
+                    } else {
+                      // Sélectionner tout
+                      const allUnitIds = new Set(units.map(u => u.id));
+                      setSelectedUnitsForInvite(allUnitIds);
+                      setInviteData(prev => ({
+                        ...prev,
+                        unitPermissions: units.map(unit => ({
+                          unitId: unit.id,
+                          unitName: unit.name,
+                          permissions: {}
+                        }))
+                      }));
+                    }
+                  }}
+                >
+                  {selectedUnitsForInvite.size === units.length ? 'Désélectionner tout' : 'Sélectionner tout'}
+                </Button>
+              </div>
               <div className="border rounded-lg p-3 mb-3">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {units.map(unit => (
@@ -1047,6 +1075,7 @@ const TeamManagement = () => {
                 <Label className="text-muted-foreground text-xs">Mot de passe</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input 
+                    type="text"
                     value={generatedPassword} 
                     readOnly 
                     className="font-mono text-sm"
@@ -1062,6 +1091,9 @@ const TeamManagement = () => {
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mot de passe visible - vous pouvez le modifier avant la création.
+                </p>
               </div>
 
               <div>
@@ -1397,6 +1429,7 @@ const TeamManagement = () => {
                   <Label className="text-muted-foreground">Mot de passe temporaire</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <Input 
+                      type="text"
                       value={createdCredentials.password} 
                       readOnly 
                       className="font-mono text-sm"
@@ -1412,6 +1445,9 @@ const TeamManagement = () => {
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le mot de passe est visible. Communiquez-le de manière sécurisée au membre.
+                  </p>
                 </div>
               </div>
 

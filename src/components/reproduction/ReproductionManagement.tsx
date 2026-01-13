@@ -37,8 +37,10 @@ const ReproductionManagement: React.FC<ReproductionManagementProps> = ({ selecte
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ReproductionRecord | null>(null);
   const [activeTab, setActiveTab] = useState('list');
+  const [editFormData, setEditFormData] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     species: '',
@@ -138,6 +140,67 @@ const ReproductionManagement: React.FC<ReproductionManagementProps> = ({ selecte
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     await updateRecord(id, { status: newStatus });
+  };
+
+  const handleOpenEdit = (record: ReproductionRecord) => {
+    setEditFormData({
+      species: record.species,
+      broodstock_male_count: record.broodstock_male_count || 0,
+      broodstock_female_count: record.broodstock_female_count || 0,
+      broodstock_batch_id: record.broodstock_batch_id || '',
+      reproduction_date: record.reproduction_date,
+      reproduction_method: record.reproduction_method,
+      hormone_used: record.hormone_used || '',
+      hormone_dose: record.hormone_dose || 0,
+      spawning_date: record.spawning_date || '',
+      egg_count: record.egg_count || 0,
+      spawning_rate: record.spawning_rate || 0,
+      fertilization_rate: record.fertilization_rate || 0,
+      incubation_start_date: record.incubation_start_date || '',
+      incubation_temperature: record.incubation_temperature || 0,
+      hatching_date: record.hatching_date || '',
+      hatching_rate: record.hatching_rate || 0,
+      larvae_count: record.larvae_count || 0,
+      larvae_transfer_date: record.larvae_transfer_date || '',
+      fry_count: record.fry_count || 0,
+      survival_rate: record.survival_rate || 0,
+      status: record.status,
+      notes: record.notes || ''
+    });
+    setSelectedRecord(record);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedRecord || !editFormData) return;
+    
+    await updateRecord(selectedRecord.id, {
+      species: editFormData.species,
+      broodstock_male_count: editFormData.broodstock_male_count,
+      broodstock_female_count: editFormData.broodstock_female_count,
+      broodstock_batch_id: editFormData.broodstock_batch_id || null,
+      reproduction_date: editFormData.reproduction_date,
+      reproduction_method: editFormData.reproduction_method,
+      hormone_used: editFormData.hormone_used || null,
+      hormone_dose: editFormData.hormone_dose || null,
+      spawning_date: editFormData.spawning_date || null,
+      egg_count: editFormData.egg_count || null,
+      spawning_rate: editFormData.spawning_rate || null,
+      fertilization_rate: editFormData.fertilization_rate || null,
+      incubation_start_date: editFormData.incubation_start_date || null,
+      incubation_temperature: editFormData.incubation_temperature || null,
+      hatching_date: editFormData.hatching_date || null,
+      hatching_rate: editFormData.hatching_rate || null,
+      larvae_count: editFormData.larvae_count || null,
+      larvae_transfer_date: editFormData.larvae_transfer_date || null,
+      fry_count: editFormData.fry_count || null,
+      survival_rate: editFormData.survival_rate || null,
+      status: editFormData.status,
+      notes: editFormData.notes || null
+    });
+    
+    setShowEditDialog(false);
+    setEditFormData(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -632,6 +695,14 @@ const ReproductionManagement: React.FC<ReproductionManagementProps> = ({ selecte
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleOpenEdit(record)}
+                        title="Modifier l'historique"
+                      >
+                        <Edit className="w-4 h-4 text-blue-500" />
+                      </Button>
                       {record.status === 'en_cours' && (
                         <Button 
                           variant="ghost" 
@@ -767,6 +838,167 @@ const ReproductionManagement: React.FC<ReproductionManagementProps> = ({ selecte
               </div>
             </ScrollArea>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { setShowEditDialog(open); if (!open) setEditFormData(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Modifier l'enregistrement
+            </DialogTitle>
+          </DialogHeader>
+          {editFormData && (
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6 py-4">
+                {/* Informations de base */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Espèce</Label>
+                    <Select 
+                      value={editFormData.species} 
+                      onValueChange={(v) => setEditFormData({...editFormData, species: v})}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {species.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Statut</Label>
+                    <Select 
+                      value={editFormData.status} 
+                      onValueChange={(v) => setEditFormData({...editFormData, status: v})}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en_cours">En cours</SelectItem>
+                        <SelectItem value="terminé">Terminé</SelectItem>
+                        <SelectItem value="échoué">Échoué</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Géniteurs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Nombre de mâles</Label>
+                    <Input 
+                      type="number" 
+                      value={editFormData.broodstock_male_count}
+                      onChange={(e) => setEditFormData({...editFormData, broodstock_male_count: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Nombre de femelles</Label>
+                    <Input 
+                      type="number" 
+                      value={editFormData.broodstock_female_count}
+                      onChange={(e) => setEditFormData({...editFormData, broodstock_female_count: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+
+                {/* Ponte */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Nombre d'œufs</Label>
+                    <Input 
+                      type="number" 
+                      value={editFormData.egg_count}
+                      onChange={(e) => setEditFormData({...editFormData, egg_count: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Taux de fécondation (%)</Label>
+                    <Input 
+                      type="number"
+                      step="0.1"
+                      max="100" 
+                      value={editFormData.fertilization_rate}
+                      onChange={(e) => setEditFormData({...editFormData, fertilization_rate: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+
+                {/* Éclosion */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date d'éclosion</Label>
+                    <Input 
+                      type="date" 
+                      value={editFormData.hatching_date}
+                      onChange={(e) => setEditFormData({...editFormData, hatching_date: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Taux d'éclosion (%)</Label>
+                    <Input 
+                      type="number"
+                      step="0.1"
+                      max="100" 
+                      value={editFormData.hatching_rate}
+                      onChange={(e) => setEditFormData({...editFormData, hatching_rate: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+
+                {/* Alevins */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Nombre de larves</Label>
+                    <Input 
+                      type="number" 
+                      value={editFormData.larvae_count}
+                      onChange={(e) => setEditFormData({...editFormData, larvae_count: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Nombre d'alevins final</Label>
+                    <Input 
+                      type="number" 
+                      value={editFormData.fry_count}
+                      onChange={(e) => setEditFormData({...editFormData, fry_count: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Taux de survie global (%)</Label>
+                  <Input 
+                    type="number"
+                    step="0.1"
+                    max="100" 
+                    value={editFormData.survival_rate}
+                    onChange={(e) => setEditFormData({...editFormData, survival_rate: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <Label>Notes et observations</Label>
+                  <Textarea 
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                    placeholder="Observations, mises à jour, etc."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => { setShowEditDialog(false); setEditFormData(null); }}>
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Enregistrer les modifications
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

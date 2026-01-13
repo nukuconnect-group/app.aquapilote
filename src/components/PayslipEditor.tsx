@@ -55,10 +55,22 @@ interface PayslipEditorProps {
   employee: Employee | null;
 }
 
+// Taux de conversion des devises vers FCFA
+const CURRENCY_TO_FCFA: Record<string, number> = {
+  'EUR': 655.957,
+  'USD': 615.00,
+  'GBP': 780.00,
+  'XOF': 1,
+  'FCFA': 1,
+  'CFA': 1,
+  'XAF': 1
+};
+
 const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip, employee }) => {
   const [activeTab, setActiveTab] = useState('preview');
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('FCFA');
   
   // Charger les préférences sauvegardées
   const loadSavedCompanyInfo = (): CompanyInfo => {
@@ -174,13 +186,34 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
     }
   };
 
-  // Formater en F CFA
+  // Convertir vers FCFA si une autre devise est sélectionnée
+  const convertToFCFA = (value: number): number => {
+    const rate = CURRENCY_TO_FCFA[selectedCurrency] || 1;
+    return Math.round(value * rate);
+  };
+
+  // Formater en F CFA (conversion automatique)
   const formatCFA = (value: number) => {
+    const convertedValue = selectedCurrency !== 'FCFA' && selectedCurrency !== 'XOF' && selectedCurrency !== 'XAF' && selectedCurrency !== 'CFA'
+      ? convertToFCFA(value)
+      : value;
     return new Intl.NumberFormat('fr-FR', {
       style: 'decimal',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value) + ' F CFA';
+    }).format(convertedValue) + ' F CFA';
+  };
+
+  // Affichage de la devise originale pour référence
+  const formatOriginalCurrency = (value: number) => {
+    if (selectedCurrency === 'FCFA' || selectedCurrency === 'XOF' || selectedCurrency === 'XAF' || selectedCurrency === 'CFA') {
+      return null;
+    }
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: selectedCurrency === 'EUR' ? 'EUR' : selectedCurrency === 'USD' ? 'USD' : 'GBP',
+      minimumFractionDigits: 0
+    }).format(value);
   };
 
   // Calculs automatiques basés sur les taux
@@ -648,6 +681,33 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
           </TabsContent>
 
           <TabsContent value="edit" className="mt-4 space-y-4">
+            {/* Sélection devise avec conversion automatique */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Devise de saisie</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {['FCFA', 'EUR', 'USD', 'GBP'].map((curr) => (
+                    <Button
+                      key={curr}
+                      variant={selectedCurrency === curr ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCurrency(curr)}
+                    >
+                      {curr}
+                    </Button>
+                  ))}
+                </div>
+                {selectedCurrency !== 'FCFA' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Taux de conversion: 1 {selectedCurrency} = {CURRENCY_TO_FCFA[selectedCurrency]} FCFA.
+                    Les montants seront automatiquement convertis en FCFA sur le bulletin.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Rémunération</CardTitle>
@@ -655,7 +715,7 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Salaire de base (F CFA)</Label>
+                    <Label>Salaire de base ({selectedCurrency})</Label>
                     <Input
                       type="number"
                       value={editablePayslip.baseSalary}
