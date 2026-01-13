@@ -1076,9 +1076,13 @@ const TeamManagement = () => {
                 <div className="flex items-center gap-2 mt-1">
                   <Input 
                     type="text"
-                    value={generatedPassword} 
-                    readOnly 
+                    value={generatedPassword}
+                    onChange={(e) => {
+                      setGeneratedPassword(e.target.value);
+                      setInviteData(prev => ({ ...prev, password: e.target.value }));
+                    }}
                     className="font-mono text-sm"
+                    placeholder="Mot de passe"
                   />
                   <Button
                     variant="outline"
@@ -1090,9 +1094,22 @@ const TeamManagement = () => {
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const newPass = generatePasswordLocal();
+                      setGeneratedPassword(newPass);
+                      setInviteData(prev => ({ ...prev, password: newPass }));
+                      toast({ title: "Nouveau mot de passe généré" });
+                    }}
+                    title="Générer un nouveau mot de passe"
+                  >
+                    <Key className="w-4 h-4" />
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mot de passe visible - vous pouvez le modifier avant la création.
+                  Mot de passe visible et modifiable. Cliquez sur l'icône clé pour en générer un nouveau.
                 </p>
               </div>
 
