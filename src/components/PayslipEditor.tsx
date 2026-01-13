@@ -70,7 +70,8 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
   const [activeTab, setActiveTab] = useState('preview');
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('FCFA');
+  // FCFA (XOF) par défaut pour les bulletins de paie
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('XOF');
   
   // Charger les préférences sauvegardées
   const loadSavedCompanyInfo = (): CompanyInfo => {

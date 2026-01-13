@@ -225,6 +225,7 @@ const LivestockManagement = () => {
     species: '',
     variety: '',
     type: 'alevins',
+    sex: '' as '' | 'male' | 'female' | 'mixed',
     quantity: 0,
     averageWeight: 0,
     acquisitionDate: '',
@@ -282,6 +283,7 @@ const LivestockManagement = () => {
         species: '',
         variety: '',
         type: 'alevins',
+        sex: '',
         quantity: 0,
         averageWeight: 0,
         acquisitionDate: '',
@@ -547,7 +549,7 @@ const LivestockManagement = () => {
 
                   <div>
                     <Label>Type de lot *</Label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                    <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value, sex: value === 'geniteurs' ? formData.sex : ''})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner le type" />
                       </SelectTrigger>
@@ -560,6 +562,26 @@ const LivestockManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Champ sexe visible uniquement pour les géniteurs */}
+                  {formData.type === 'geniteurs' && (
+                    <div>
+                      <Label>Sexe des géniteurs *</Label>
+                      <Select value={formData.sex} onValueChange={(value: '' | 'male' | 'female' | 'mixed') => setFormData({...formData, sex: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le sexe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Mâles uniquement</SelectItem>
+                          <SelectItem value="female">Femelles uniquement</SelectItem>
+                          <SelectItem value="mixed">Mixte (mâles et femelles)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Spécifiez si ce lot contient des mâles, femelles ou un mélange
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <Label>Unité de production *</Label>
