@@ -67,6 +67,206 @@ interface ControlFishing {
   rendementM2?: number;
 }
 
+// Composant de formulaire d'édition de lot
+interface EditBatchFormProps {
+  batch: LivestockBatch;
+  units: any[];
+  allSuppliers: any[];
+  feedStocks: any[];
+  onSave: (updates: any) => Promise<void>;
+  onCancel: () => void;
+}
+
+const EditBatchForm: React.FC<EditBatchFormProps> = ({ batch, units, allSuppliers, feedStocks, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    species: batch.species,
+    variety: batch.variety,
+    type: 'adultes', // Par défaut
+    sex: '' as '' | 'male' | 'female' | 'mixed',
+    quantity: batch.quantity,
+    averageWeight: batch.averageWeight,
+    acquisitionDate: batch.acquisitionDate,
+    source: batch.source,
+    unitId: batch.unitId,
+    unitName: batch.unitName,
+    notes: batch.notes,
+    expectedHarvestDate: batch.expectedHarvestDate,
+    feedingPlan: batch.feedingPlan,
+    status: batch.status as 'healthy' | 'sick' | 'quarantine' | 'sold',
+    expectedSurvivalRate: 95
+  });
+  const [saving, setSaving] = useState(false);
+  const speciesList = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade'];
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>Espèce *</Label>
+          <Select value={formData.species} onValueChange={(value) => setFormData({...formData, species: value})}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+            <SelectContent>
+              {speciesList.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Souche/Variété</Label>
+          <Input value={formData.variety} onChange={(e) => setFormData({...formData, variety: e.target.value})} placeholder="Ex: Monosex, Red, etc." />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>Type de lot</Label>
+          <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value, sex: value === 'geniteurs' ? formData.sex : ''})}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner le type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alevins">Alevins</SelectItem>
+              <SelectItem value="geniteurs">Géniteurs</SelectItem>
+              <SelectItem value="juveniles">Juvéniles</SelectItem>
+              <SelectItem value="adultes">Adultes</SelectItem>
+              <SelectItem value="autres">Autres</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Sexe pour géniteurs */}
+        {formData.type === 'geniteurs' && (
+          <div>
+            <Label>Sexe des géniteurs</Label>
+            <Select value={formData.sex} onValueChange={(value: '' | 'male' | 'female' | 'mixed') => setFormData({...formData, sex: value})}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner le sexe" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Mâle</SelectItem>
+                <SelectItem value="female">Femelle</SelectItem>
+                <SelectItem value="mixed">Mixte</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <Label>Unité de production *</Label>
+        <Select value={formData.unitId} onValueChange={(value) => {
+          const unit = units.find((u: any) => u.id === value);
+          setFormData({...formData, unitId: value, unitName: unit?.name || ''});
+        }}>
+          <SelectTrigger><SelectValue placeholder="Sélectionner une unité" /></SelectTrigger>
+          <SelectContent>
+            {units.map((unit: any) => (
+              <SelectItem key={unit.id} value={unit.id}>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">{unit.type}</Badge>
+                  {unit.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>Quantité *</Label>
+          <Input type="number" value={formData.quantity} onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} placeholder="Nombre d'individus" />
+        </div>
+        <div>
+          <Label>Poids moyen (g)</Label>
+          <Input type="number" value={formData.averageWeight} onChange={(e) => setFormData({...formData, averageWeight: parseInt(e.target.value) || 0})} placeholder="Poids en grammes" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>Date d'acquisition</Label>
+          <Input type="date" value={formData.acquisitionDate} onChange={(e) => setFormData({...formData, acquisitionDate: e.target.value})} />
+        </div>
+        <div>
+          <Label>Date de récolte prévue</Label>
+          <Input type="date" value={formData.expectedHarvestDate} onChange={(e) => setFormData({...formData, expectedHarvestDate: e.target.value})} />
+        </div>
+      </div>
+
+      <div>
+        <Label>Source/Fournisseur</Label>
+        <Select value={formData.source} onValueChange={(value) => setFormData({...formData, source: value})}>
+          <SelectTrigger><SelectValue placeholder="Sélectionner un fournisseur" /></SelectTrigger>
+          <SelectContent>
+            {allSuppliers.filter((s: any) => s.status === 'active').length > 0 ? (
+              <>
+                {allSuppliers.filter((s: any) => s.status === 'active').map((supplier: any) => (
+                  <SelectItem key={supplier.id} value={supplier.name}>{supplier.name}</SelectItem>
+                ))}
+                <SelectItem value="Autre">Autre</SelectItem>
+              </>
+            ) : (
+              <>
+                <SelectItem value="Production interne">Production interne</SelectItem>
+                <SelectItem value="Écloserie partenaire">Écloserie partenaire</SelectItem>
+                <SelectItem value="Achat externe">Achat externe</SelectItem>
+              </>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label>Statut</Label>
+        <Select value={formData.status} onValueChange={(value: 'healthy' | 'sick' | 'quarantine' | 'sold') => setFormData({...formData, status: value})}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="healthy">Sain</SelectItem>
+            <SelectItem value="sick">Malade</SelectItem>
+            <SelectItem value="quarantine">Quarantaine</SelectItem>
+            <SelectItem value="sold">Vendu</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label>Plan d'alimentation</Label>
+        <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
+          <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Standard croissance">Standard croissance</SelectItem>
+            <SelectItem value="Intensif">Intensif</SelectItem>
+            <SelectItem value="Extensif">Extensif</SelectItem>
+            <SelectItem value="Finition">Finition</SelectItem>
+            {feedStocks.length > 0 && feedStocks.map((stock: any) => (
+              <SelectItem key={stock.id} value={stock.custom_name || stock.feed_type}>
+                {stock.custom_name || stock.feed_type} ({stock.quantity} {stock.unit})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label>Notes</Label>
+        <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Observations, remarques..." rows={3} />
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button variant="outline" onClick={onCancel} disabled={saving}>Annuler</Button>
+        <Button onClick={handleSubmit} disabled={saving}>
+          {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const LivestockManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
@@ -572,13 +772,13 @@ const LivestockManagement = () => {
                           <SelectValue placeholder="Sélectionner le sexe" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Mâles uniquement</SelectItem>
-                          <SelectItem value="female">Femelles uniquement</SelectItem>
+                          <SelectItem value="male">Mâle</SelectItem>
+                          <SelectItem value="female">Femelle</SelectItem>
                           <SelectItem value="mixed">Mixte (mâles et femelles)</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Spécifiez si ce lot contient des mâles, femelles ou un mélange
+                        Spécifiez le sexe: mâle, femelle, ou mixte
                       </p>
                     </div>
                   )}
@@ -750,6 +950,51 @@ const LivestockManagement = () => {
                     Ajouter le lot
                   </Button>
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Dialog d'édition de lot */}
+            <Dialog open={!!editingBatch} onOpenChange={(open) => !open && setEditingBatch(null)}>
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Edit className="w-5 h-5" />
+                    Modifier le lot
+                  </DialogTitle>
+                  <DialogDescription>
+                    Modifiez les informations du lot de poissons
+                  </DialogDescription>
+                </DialogHeader>
+                {editingBatch && (
+                  <EditBatchForm 
+                    batch={editingBatch}
+                    units={units}
+                    allSuppliers={allSuppliers}
+                    feedStocks={feedStocks}
+                    onSave={async (updates) => {
+                      await updateBatch(editingBatch.id, {
+                        species: updates.species,
+                        variety: updates.variety,
+                        type: updates.type,
+                        quantity: updates.quantity,
+                        average_weight: updates.averageWeight,
+                        total_weight: updates.quantity * updates.averageWeight / 1000,
+                        acquisition_date: updates.acquisitionDate || null,
+                        source: updates.source,
+                        unit_id: updates.unitId,
+                        unit_name: updates.unitName,
+                        status: updates.status,
+                        notes: updates.notes,
+                        expected_harvest_date: updates.expectedHarvestDate || null,
+                        feeding_plan: updates.feedingPlan,
+                        expected_survival_rate: updates.expectedSurvivalRate
+                      });
+                      setEditingBatch(null);
+                      addLog('Modification cheptel', 'Cheptel', `Lot modifié: ${updates.species} - ${updates.quantity} individus`, 'info');
+                    }}
+                    onCancel={() => setEditingBatch(null)}
+                  />
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -1057,49 +1302,22 @@ const LivestockManagement = () => {
                                 <p className="text-xs font-mono mt-1">LOT-{String(index + 1).padStart(4, '0')}-{batch.id.slice(0, 8).toUpperCase()}</p>
                               </div>
 
-                              {/* QR Code avec données complètes */}
-                              <div className="bg-white p-4 rounded-lg border">
-                                <p className="text-xs text-muted-foreground mb-2 text-center">QR Code - Scannez pour détails</p>
-                                <div className="flex justify-center qr-code-container">
+                              {/* QR Code professionnel */}
+                              <div className="bg-white p-6 rounded-lg border-2 border-primary/20 shadow-sm">
+                                <p className="text-sm font-medium text-center mb-3 text-primary">QR Code - Traçabilité</p>
+                                <div id={`qr-code-${batch.id}`} className="flex justify-center qr-code-container bg-white p-4 rounded-lg">
                                   <QRCodeSVG 
-                                    value={JSON.stringify({
-                                      type: 'AQUAPILOT_LOT',
-                                      lot_id: `LOT-${String(index + 1).padStart(4, '0')}`,
-                                      internal_id: batch.id,
-                                      product: {
-                                        species: batch.species,
-                                        variety: batch.variety || 'Standard',
-                                        type: 'Poisson frais'
-                                      },
-                                      quantity: {
-                                        count: batch.quantity,
-                                        unit: 'individus',
-                                        average_weight_g: batch.averageWeight,
-                                        total_weight_kg: batch.totalWeight
-                                      },
-                                      traceability: {
-                                        production_unit: batch.unitName,
-                                        acquisition_date: batch.acquisitionDate,
-                                        source: batch.source || 'Production interne',
-                                        age_days: batch.currentAge,
-                                        expected_harvest: batch.expectedHarvestDate,
-                                        status: batch.status
-                                      },
-                                      quality: {
-                                        last_health_check: batch.lastHealthCheck,
-                                        feeding_plan: batch.feedingPlan,
-                                        health_status: batch.status
-                                      },
-                                      certification: {
-                                        system: 'AquaPilot',
-                                        generated_at: new Date().toISOString(),
-                                        version: '2.0'
-                                      }
-                                    })}
-                                    size={180}
+                                    value={`AQUAPILOT|LOT-${String(index + 1).padStart(4, '0')}|${batch.species}|${batch.quantity}|${batch.unitName}|${batch.acquisitionDate || 'N/A'}|${batch.source || 'Interne'}`}
+                                    size={200}
                                     level="H"
                                     includeMargin
+                                    bgColor="#ffffff"
+                                    fgColor="#1e3a5f"
                                   />
+                                </div>
+                                <div className="text-center mt-3">
+                                  <p className="text-xs font-mono font-bold text-primary">LOT-{String(index + 1).padStart(4, '0')}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">{batch.species} • {batch.quantity} ind.</p>
                                 </div>
                               </div>
 
@@ -1170,52 +1388,61 @@ const LivestockManagement = () => {
                               {/* Boutons d'action */}
                               <div className="flex gap-2">
                                 <Button 
-                                  variant="outline" 
+                                  variant="default" 
                                   size="sm"
                                   className="flex-1"
                                   onClick={() => {
-                                    // Chercher le SVG dans le dialogue actuel
-                                    const dialogContent = document.querySelector('[role="dialog"] .qr-code-container svg');
-                                    const svg = dialogContent || document.querySelector('.qr-code-container svg');
+                                    // Utiliser un ID unique pour le QR code de ce lot
+                                    const qrContainer = document.getElementById(`qr-code-${batch.id}`);
+                                    const svg = qrContainer?.querySelector('svg');
                                     if (svg) {
-                                      const svgData = new XMLSerializer().serializeToString(svg);
+                                      // Cloner le SVG pour éviter les problèmes de rendu
+                                      const svgClone = svg.cloneNode(true) as SVGElement;
+                                      const svgData = new XMLSerializer().serializeToString(svgClone);
                                       const canvas = document.createElement('canvas');
-                                      canvas.width = 200;
-                                      canvas.height = 200;
+                                      const scale = 3; // Haute résolution
+                                      canvas.width = 200 * scale;
+                                      canvas.height = 200 * scale;
                                       const ctx = canvas.getContext('2d');
+                                      if (ctx) {
+                                        ctx.fillStyle = '#ffffff';
+                                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                        ctx.scale(scale, scale);
+                                      }
                                       const img = new Image();
                                       img.onload = () => {
                                         ctx?.drawImage(img, 0, 0, 200, 200);
                                         const a = document.createElement('a');
-                                        a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}.png`;
-                                        a.href = canvas.toDataURL('image/png');
+                                        a.download = `QR-LOT-${String(index + 1).padStart(4, '0')}-${batch.species}.png`;
+                                        a.href = canvas.toDataURL('image/png', 1.0);
                                         document.body.appendChild(a);
                                         a.click();
                                         document.body.removeChild(a);
                                         toast({
-                                          title: "QR Code téléchargé",
-                                          description: `Fichier QR-LOT-${String(index + 1).padStart(4, '0')}.png sauvegardé`
+                                          title: "QR Code téléchargé ✓",
+                                          description: `Image haute résolution sauvegardée`
                                         });
                                       };
                                       img.onerror = () => {
                                         toast({
                                           title: "Erreur",
-                                          description: "Impossible de générer l'image QR",
+                                          description: "Impossible de générer l'image",
                                           variant: "destructive"
                                         });
                                       };
-                                      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                                      const base64 = btoa(unescape(encodeURIComponent(svgData)));
+                                      img.src = `data:image/svg+xml;base64,${base64}`;
                                     } else {
                                       toast({
                                         title: "Erreur",
-                                        description: "QR Code introuvable",
+                                        description: "QR Code non trouvé",
                                         variant: "destructive"
                                       });
                                     }
                                   }}
                                 >
-                                  <Download className="w-3 h-3 mr-1" />
-                                  QR Code
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Télécharger QR
                                 </Button>
                                 <Button 
                                   variant="outline" 
@@ -1225,7 +1452,7 @@ const LivestockManagement = () => {
                                     window.print();
                                   }}
                                 >
-                                  <Printer className="w-3 h-3 mr-1" />
+                                  <Printer className="w-4 h-4 mr-2" />
                                   Imprimer
                                 </Button>
                               </div>
