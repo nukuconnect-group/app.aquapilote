@@ -39,48 +39,67 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      console.log('No authorization header provided')
-      return new Response(
-        JSON.stringify({ country: null, countryCode: null }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-    }
-
-    // Create Supabase client and verify user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      console.log('Authentication failed:', authError?.message)
-      return new Response(
-        JSON.stringify({ country: null, countryCode: null }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-    }
-
     // Get client IP from headers
     const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                      req.headers.get('x-real-ip') || 
                      'unknown'
 
-    console.log('Detecting country for IP:', clientIP, 'User:', user.id)
+    console.log('Detecting country for IP:', clientIP)
+
+    // Parse request body for optional user_id (for updating profile after detection)
+    let userId: string | null = null;
+    let updateProfile = false;
+    
+    try {
+      const body = await req.json();
+      userId = body?.user_id || null;
+      updateProfile = body?.update_profile === true;
+    } catch {
+      // No body or invalid JSON - that's fine, we'll just return the country
+    }
 
     // Validate IP to prevent SSRF attacks
     if (!isValidPublicIP(clientIP)) {
-      console.log('Invalid or private IP rejected:', clientIP)
+      console.log('Invalid or private IP, using fallback geolocation service')
+      
+      // Try ipify + ip-api as fallback for development/private IPs
+      try {
+        const publicIpResponse = await fetch('https://api.ipify.org?format=json');
+        if (publicIpResponse.ok) {
+          const publicIpData = await publicIpResponse.json();
+          const publicIP = publicIpData.ip;
+          
+          console.log('Got public IP from ipify:', publicIP);
+          
+          const geoResponse = await fetch(`http://ip-api.com/json/${encodeURIComponent(publicIP)}?fields=status,country,countryCode`);
+          if (geoResponse.ok) {
+            const geoData = await geoResponse.json();
+            console.log('Geolocation response from fallback:', geoData);
+            
+            if (geoData.status === 'success') {
+              // Update profile if requested and user_id provided
+              if (updateProfile && userId) {
+                await updateUserProfile(userId, geoData.country, geoData.countryCode);
+              }
+              
+              return new Response(
+                JSON.stringify({
+                  country: geoData.country,
+                  countryCode: geoData.countryCode,
+                  source: 'ipify-fallback'
+                }),
+                { 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 200 
+                }
+              )
+            }
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback geolocation failed:', fallbackError);
+      }
+      
       return new Response(
         JSON.stringify({
           country: null,
@@ -104,10 +123,16 @@ serve(async (req) => {
     console.log('Geolocation response:', data)
 
     if (data.status === 'success') {
+      // Update profile if requested and user_id provided
+      if (updateProfile && userId) {
+        await updateUserProfile(userId, data.country, data.countryCode);
+      }
+      
       return new Response(
         JSON.stringify({
           country: data.country,
           countryCode: data.countryCode,
+          source: 'direct-ip'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -141,3 +166,29 @@ serve(async (req) => {
     )
   }
 })
+
+// Helper function to update user profile with detected country
+async function updateUserProfile(userId: string, country: string, countryCode: string) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        country: country,
+        country_code: countryCode
+      })
+      .eq('id', userId);
+      
+    if (error) {
+      console.error('Error updating profile with country:', error);
+    } else {
+      console.log('Successfully updated profile with country:', country, countryCode);
+    }
+  } catch (err) {
+    console.error('Error in updateUserProfile:', err);
+  }
+}
