@@ -393,10 +393,13 @@ const TeamManagement = () => {
     setIsSubmitting(true);
     
     const result = await updateTeamMember(selectedMember.id, {
+      member_name: selectedMember.member_name,
+      member_email: selectedMember.member_email,
       permissions: selectedMember.permissions,
       role: selectedMember.role,
       custom_role: selectedMember.custom_role,
-      department: selectedMember.department
+      department: selectedMember.department,
+      status: selectedMember.status
     });
     
     if (result.success) {
@@ -415,14 +418,14 @@ const TeamManagement = () => {
       }
 
       toast({
-        title: "Permissions mises à jour",
-        description: `Les permissions de ${selectedMember.member_name} ont été mises à jour`
+        title: "Membre mis à jour",
+        description: `Les informations de ${selectedMember.member_name} ont été mises à jour`
       });
       setShowMemberDetails(false);
     } else {
       toast({
         title: "Erreur",
-        description: result.error || "Impossible de mettre à jour les permissions",
+        description: result.error || "Impossible de mettre à jour le membre",
         variant: "destructive"
       });
     }
@@ -1198,16 +1201,62 @@ const TeamManagement = () => {
           </DialogHeader>
           {selectedMember && (
             <div className="space-y-4">
+              {/* Section Identifiants - Modifiable */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                  <Key className="w-4 h-4" />
+                  Identifiants de connexion
+                </h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label>Email (identifiant de connexion)</Label>
+                    <Input 
+                      value={selectedMember.member_email} 
+                      onChange={(e) => setSelectedMember({...selectedMember, member_email: e.target.value})}
+                      placeholder="email@example.com"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      L'email sert d'identifiant de connexion
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Nom complet</Label>
+                    <Input 
+                      value={selectedMember.member_name} 
+                      onChange={(e) => setSelectedMember({...selectedMember, member_name: e.target.value})}
+                      placeholder="Nom du membre"
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Email</Label>
-                  <Input value={selectedMember.member_email} disabled />
-                </div>
-                <div>
                   <Label>Statut</Label>
-                  <Badge className={getStatusColor(selectedMember.status)}>
-                    {getStatusLabel(selectedMember.status)}
-                  </Badge>
+                  <Select 
+                    value={selectedMember.status} 
+                    onValueChange={(value: 'active' | 'inactive' | 'pending') => setSelectedMember({...selectedMember, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Actif</SelectItem>
+                      <SelectItem value="inactive">Inactif</SelectItem>
+                      <SelectItem value="pending">En attente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => openResetPasswordDialog(selectedMember)}
+                    className="w-full"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    Réinitialiser mot de passe
+                  </Button>
                 </div>
               </div>
               

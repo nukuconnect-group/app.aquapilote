@@ -819,7 +819,7 @@ const AdminDashboard = () => {
                             {user.country ? (
                               <div className="flex items-center gap-1.5">
                                 <Globe className="w-3 h-3 text-muted-foreground" />
-                                <span className="text-sm">{user.country}</span>
+                                <span className="text-sm font-medium">{user.country}</span>
                                 {user.countryCode && (
                                   <Badge variant="outline" className="text-xs ml-1">
                                     {user.countryCode}
@@ -827,7 +827,10 @@ const AdminDashboard = () => {
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3 h-3 text-muted-foreground opacity-50" />
+                                <span className="text-muted-foreground text-sm italic">Non spécifié</span>
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>

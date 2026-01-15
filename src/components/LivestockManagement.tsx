@@ -426,6 +426,8 @@ const LivestockManagement = () => {
     variety: '',
     type: 'alevins',
     sex: '' as '' | 'male' | 'female' | 'mixed',
+    maleCount: 0,
+    femaleCount: 0,
     quantity: 0,
     averageWeight: 0,
     acquisitionDate: '',
@@ -483,7 +485,9 @@ const LivestockManagement = () => {
         species: '',
         variety: '',
         type: 'alevins',
-        sex: '',
+        sex: '' as '' | 'male' | 'female' | 'mixed',
+        maleCount: 0,
+        femaleCount: 0,
         quantity: 0,
         averageWeight: 0,
         acquisitionDate: '',
@@ -763,24 +767,59 @@ const LivestockManagement = () => {
                     </Select>
                   </div>
 
-                  {/* Champ sexe visible uniquement pour les géniteurs */}
+                  {/* Champs pour géniteurs - nombre de mâles et femelles */}
                   {formData.type === 'geniteurs' && (
-                    <div>
-                      <Label>Sexe des géniteurs *</Label>
-                      <Select value={formData.sex} onValueChange={(value: '' | 'male' | 'female' | 'mixed') => setFormData({...formData, sex: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le sexe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Mâle</SelectItem>
-                          <SelectItem value="female">Femelle</SelectItem>
-                          <SelectItem value="mixed">Mixte (mâles et femelles)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Spécifiez le sexe: mâle, femelle, ou mixte
-                      </p>
-                    </div>
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Nombre de géniteurs mâles *</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={formData.maleCount}
+                            onChange={(e) => {
+                              const maleCount = parseInt(e.target.value) || 0;
+                              const femaleCount = formData.femaleCount;
+                              setFormData({
+                                ...formData, 
+                                maleCount,
+                                quantity: maleCount + femaleCount,
+                                sex: maleCount > 0 && femaleCount > 0 ? 'mixed' : (maleCount > 0 ? 'male' : 'female')
+                              });
+                            }}
+                            placeholder="Nombre de mâles"
+                          />
+                        </div>
+                        <div>
+                          <Label>Nombre de géniteurs femelles *</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={formData.femaleCount}
+                            onChange={(e) => {
+                              const femaleCount = parseInt(e.target.value) || 0;
+                              const maleCount = formData.maleCount;
+                              setFormData({
+                                ...formData, 
+                                femaleCount,
+                                quantity: maleCount + femaleCount,
+                                sex: maleCount > 0 && femaleCount > 0 ? 'mixed' : (femaleCount > 0 ? 'female' : 'male')
+                              });
+                            }}
+                            placeholder="Nombre de femelles"
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          <strong>Total géniteurs:</strong> {formData.maleCount + formData.femaleCount} 
+                          ({formData.maleCount} ♂ mâles, {formData.femaleCount} ♀ femelles)
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Ces données seront synchronisées avec le tableau de bord reproduction.
+                        </p>
+                      </div>
+                    </>
                   )}
 
                   <div>
@@ -807,16 +846,30 @@ const LivestockManagement = () => {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Quantité *</Label>
-                      <Input
-                        type="number"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
-                        placeholder="Nombre d'individus"
-                      />
+                  {/* Quantité - caché pour géniteurs car calculée automatiquement */}
+                  {formData.type !== 'geniteurs' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Quantité *</Label>
+                        <Input
+                          type="number"
+                          value={formData.quantity}
+                          onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
+                          placeholder="Nombre d'individus"
+                        />
+                      </div>
+                      <div>
+                        <Label>Poids moyen (g)</Label>
+                        <Input
+                          type="number"
+                          value={formData.averageWeight}
+                          onChange={(e) => setFormData({...formData, averageWeight: parseInt(e.target.value) || 0})}
+                          placeholder="Poids en grammes"
+                        />
+                      </div>
                     </div>
+                  )}
+                  {formData.type === 'geniteurs' && (
                     <div>
                       <Label>Poids moyen (g)</Label>
                       <Input
@@ -826,7 +879,7 @@ const LivestockManagement = () => {
                         placeholder="Poids en grammes"
                       />
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <Label>Date d'acquisition</Label>
