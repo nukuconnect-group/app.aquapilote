@@ -446,20 +446,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        // Detect country automatically
+        // Detect country automatically and update profile
         try {
-          const { data: countryData } = await supabase.functions.invoke('detect-country');
-          if (countryData?.country) {
-            await supabase
-              .from('profiles')
-              .update({
-                country: countryData.country,
-                country_code: countryData.countryCode
-              })
-              .eq('id', data.user.id);
+          console.log('Detecting country for new user:', data.user.id);
+          const { data: countryData, error: countryError } = await supabase.functions.invoke('detect-country', {
+            body: {
+              user_id: data.user.id,
+              update_profile: true
+            }
+          });
+          
+          if (countryError) {
+            console.error('Country detection error:', countryError);
+          } else if (countryData?.country) {
+            console.log('Country detected:', countryData.country, countryData.countryCode);
+          } else {
+            console.log('No country detected from IP');
           }
-        } catch (countryError) {
-          console.error('Country detection failed:', countryError);
+        } catch (countryDetectionError) {
+          console.error('Country detection failed:', countryDetectionError);
         }
         
         setIsLoading(false);
