@@ -18,6 +18,35 @@ interface EnhancedRegistrationProps {
   onSwitchToLogin: () => void;
   selectedPlan?: string | null;
 }
+// Liste des pays avec codes
+const countryOptions = [
+  { code: 'TG', name: 'Togo' },
+  { code: 'BJ', name: 'Bénin' },
+  { code: 'CI', name: 'Côte d\'Ivoire' },
+  { code: 'SN', name: 'Sénégal' },
+  { code: 'ML', name: 'Mali' },
+  { code: 'BF', name: 'Burkina Faso' },
+  { code: 'NE', name: 'Niger' },
+  { code: 'GN', name: 'Guinée' },
+  { code: 'CM', name: 'Cameroun' },
+  { code: 'GA', name: 'Gabon' },
+  { code: 'CG', name: 'Congo' },
+  { code: 'CD', name: 'RD Congo' },
+  { code: 'TD', name: 'Tchad' },
+  { code: 'CF', name: 'Centrafrique' },
+  { code: 'MG', name: 'Madagascar' },
+  { code: 'MU', name: 'Maurice' },
+  { code: 'MA', name: 'Maroc' },
+  { code: 'DZ', name: 'Algérie' },
+  { code: 'TN', name: 'Tunisie' },
+  { code: 'EG', name: 'Égypte' },
+  { code: 'FR', name: 'France' },
+  { code: 'BE', name: 'Belgique' },
+  { code: 'CH', name: 'Suisse' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'OTHER', name: 'Autre pays' }
+];
+
 interface FormData {
   // Étape 1: Informations personnelles
   firstName: string;
@@ -29,6 +58,8 @@ interface FormData {
   // Étape 2: Informations entreprise
   companyName: string;
   sector: string;
+  country: string;
+  countryCode: string;
   location: string;
   phone: string;
   employeeCount: string;
@@ -57,6 +88,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     confirmPassword: '',
     companyName: '',
     sector: '',
+    country: '',
+    countryCode: '',
     location: '',
     phone: '',
     employeeCount: '',
@@ -82,6 +115,15 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       [field]: value
     }));
   };
+  
+  const handleCountryChange = (countryCode: string) => {
+    const selectedCountry = countryOptions.find(c => c.code === countryCode);
+    setFormData(prev => ({
+      ...prev,
+      countryCode: countryCode,
+      country: selectedCountry?.name || ''
+    }));
+  };
   const handleProductionUnitChange = (unit: string, checked: boolean) => {
     if (checked) {
       setFormData(prev => ({
@@ -100,7 +142,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       case 1:
         return formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
       case 2:
-        return formData.companyName && formData.sector && formData.location && formData.phone && formData.employeeCount;
+        return formData.companyName && formData.sector && formData.country && formData.location && formData.phone && formData.employeeCount;
       case 3:
         return formData.productionUnits.length > 0;
       default:
@@ -331,8 +373,24 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="location" className="text-card-foreground">Localisation *</Label>
-                  <Input id="location" type="text" placeholder="Ville, Région, Pays" value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required className="bg-background text-foreground" />
+                  <Label htmlFor="country" className="text-card-foreground">Pays *</Label>
+                  <Select value={formData.countryCode} onValueChange={handleCountryChange}>
+                    <SelectTrigger className="bg-background text-foreground">
+                      <SelectValue placeholder="Sélectionnez votre pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countryOptions.map(country => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="location" className="text-card-foreground">Ville / Région *</Label>
+                  <Input id="location" type="text" placeholder="Ville, Région" value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required className="bg-background text-foreground" />
                 </div>
 
                 <div>
