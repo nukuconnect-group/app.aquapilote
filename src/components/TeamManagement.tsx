@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle, Key } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle, Key, Eye } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -53,6 +53,8 @@ const TeamManagement = () => {
   const [resetPasswordMember, setResetPasswordMember] = useState<TeamMember | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; loginUrl: string; emailSent: boolean } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showMemberCredentials, setShowMemberCredentials] = useState(false);
+  const [viewMemberCredentials, setViewMemberCredentials] = useState<{ member: TeamMember; loginUrl: string } | null>(null);
 
   const [inviteData, setInviteData] = useState<{
     name: string;
@@ -605,6 +607,28 @@ const TeamManagement = () => {
     setShowMemberDetails(true);
   };
 
+  const openMemberCredentialsView = (member: TeamMember) => {
+    const loginUrl = `${window.location.origin}/auth`;
+    setViewMemberCredentials({ member, loginUrl });
+    setShowMemberCredentials(true);
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copié !",
+        description: `${label} copié dans le presse-papiers`
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -732,14 +756,24 @@ const TeamManagement = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-right text-sm text-muted-foreground hidden sm:block">
                           <p>Ajouté le {new Date(member.invited_at).toLocaleDateString('fr-FR')}</p>
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openMemberCredentialsView(member)}
+                          title="Voir les identifiants"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => openMemberDetails(member)}
+                          title="Modifier le membre"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -747,6 +781,7 @@ const TeamManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleToggleStatus(member)}
+                          title="Activer/Désactiver"
                         >
                           <Settings className="w-4 h-4" />
                         </Button>
@@ -762,6 +797,7 @@ const TeamManagement = () => {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDeleteMember(member)}
+                          title="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -1692,6 +1728,146 @@ const TeamManagement = () => {
                   </div>
                 </>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour voir les identifiants d'un membre */}
+      <Dialog open={showMemberCredentials} onOpenChange={setShowMemberCredentials}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Détails du membre
+            </DialogTitle>
+          </DialogHeader>
+          {viewMemberCredentials && (
+            <div className="space-y-4">
+              {/* Informations du profil */}
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                      {viewMemberCredentials.member.member_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-semibold">{viewMemberCredentials.member.member_name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {viewMemberCredentials.member.custom_role || viewMemberCredentials.member.role}
+                    </p>
+                  </div>
+                </div>
+                
+                {viewMemberCredentials.member.department && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{viewMemberCredentials.member.department}</Badge>
+                    <Badge className={getStatusColor(viewMemberCredentials.member.status)}>
+                      {getStatusLabel(viewMemberCredentials.member.status)}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
+              {/* Identifiants de connexion */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <Key className="w-4 h-4" />
+                  Identifiants de connexion
+                </h4>
+                
+                <div>
+                  <Label className="text-muted-foreground text-xs">Email (identifiant)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={viewMemberCredentials.member.member_email} 
+                      readOnly 
+                      className="font-mono text-sm bg-background"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(viewMemberCredentials.member.member_email, 'Email')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground text-xs">Lien de connexion</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={viewMemberCredentials.loginUrl} 
+                      readOnly 
+                      className="font-mono text-sm bg-background"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(viewMemberCredentials.loginUrl, 'Lien')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-700">
+                  <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      Le mot de passe n'est pas stocké en clair pour des raisons de sécurité. 
+                      Utilisez le bouton <strong>"Réinitialiser le mot de passe"</strong> pour générer un nouveau mot de passe.
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const message = `Identifiants AquaPilote\n\nNom: ${viewMemberCredentials.member.member_name}\nEmail: ${viewMemberCredentials.member.member_email}\nLien de connexion: ${viewMemberCredentials.loginUrl}`;
+                    copyToClipboard(message, 'Informations');
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copier les informations
+                </Button>
+                
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => {
+                    setShowMemberCredentials(false);
+                    openResetPasswordDialog(viewMemberCredentials.member);
+                  }}
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Réinitialiser le mot de passe
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => {
+                    setShowMemberCredentials(false);
+                    openMemberDetails(viewMemberCredentials.member);
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifier le membre
+                </Button>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowMemberCredentials(false)}>
+                  Fermer
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

@@ -75,6 +75,7 @@ const AdminDashboard = () => {
   const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterCountry, setFilterCountry] = useState<string>('all');
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -278,8 +279,16 @@ const AdminDashboard = () => {
       filtered = filtered.filter(user => user.role === filterRole);
     }
 
+    if (filterCountry !== 'all') {
+      if (filterCountry === 'none') {
+        filtered = filtered.filter(user => !user.country);
+      } else {
+        filtered = filtered.filter(user => user.countryCode === filterCountry);
+      }
+    }
+
     setFilteredUsers(filtered);
-  }, [searchTerm, filterRole, users]);
+  }, [searchTerm, filterRole, filterCountry, users]);
 
   // Écouter les changements de sessions en temps réel
   useEffect(() => {
@@ -894,18 +903,47 @@ const AdminDashboard = () => {
                     className="pl-10"
                   />
                 </div>
-                <Select value={filterRole} onValueChange={setFilterRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrer par rôle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les rôles</SelectItem>
-                    <SelectItem value="admin">Administrateurs</SelectItem>
-                    <SelectItem value="manager">Managers</SelectItem>
-                    <SelectItem value="operator">Opérateurs</SelectItem>
-                    <SelectItem value="user">Utilisateurs</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Select value={filterRole} onValueChange={setFilterRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrer par rôle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
+                      <SelectItem value="admin">Administrateurs</SelectItem>
+                      <SelectItem value="manager">Managers</SelectItem>
+                      <SelectItem value="operator">Opérateurs</SelectItem>
+                      <SelectItem value="user">Utilisateurs</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterCountry} onValueChange={setFilterCountry}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrer par pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les pays</SelectItem>
+                      <SelectItem value="none">Sans pays défini</SelectItem>
+                      <SelectItem value="TG">🇹🇬 Togo</SelectItem>
+                      <SelectItem value="BJ">🇧🇯 Bénin</SelectItem>
+                      <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
+                      <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
+                      <SelectItem value="ML">🇲🇱 Mali</SelectItem>
+                      <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
+                      <SelectItem value="NE">🇳🇪 Niger</SelectItem>
+                      <SelectItem value="GN">🇬🇳 Guinée</SelectItem>
+                      <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
+                      <SelectItem value="GA">🇬🇦 Gabon</SelectItem>
+                      <SelectItem value="CG">🇨🇬 Congo</SelectItem>
+                      <SelectItem value="CD">🇨🇩 RD Congo</SelectItem>
+                      <SelectItem value="MG">🇲🇬 Madagascar</SelectItem>
+                      <SelectItem value="MA">🇲🇦 Maroc</SelectItem>
+                      <SelectItem value="FR">🇫🇷 France</SelectItem>
+                      <SelectItem value="BE">🇧🇪 Belgique</SelectItem>
+                      <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="rounded-md border overflow-x-auto">
