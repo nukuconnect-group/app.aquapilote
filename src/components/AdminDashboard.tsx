@@ -81,6 +81,9 @@ const AdminDashboard = () => {
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+  const [isAssigningCountry, setIsAssigningCountry] = useState(false);
+  const [defaultCountryDialogOpen, setDefaultCountryDialogOpen] = useState(false);
+  const [selectedDefaultCountry, setSelectedDefaultCountry] = useState<string>('');
 
   // Statistiques calculées
   const stats = {
@@ -523,6 +526,70 @@ const AdminDashboard = () => {
     }
   };
 
+  const usersWithoutCountry = users.filter(u => !u.country);
+
+  const handleAssignDefaultCountry = async () => {
+    if (!selectedDefaultCountry) {
+      toast({
+        title: t('error'),
+        description: 'Veuillez sélectionner un pays',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const countryName = countryCodeToName[selectedDefaultCountry] || selectedDefaultCountry;
+    const usersToUpdate = users.filter(u => !u.country);
+    
+    if (usersToUpdate.length === 0) {
+      toast({
+        title: 'Info',
+        description: 'Tous les utilisateurs ont déjà un pays défini'
+      });
+      return;
+    }
+
+    setIsAssigningCountry(true);
+    
+    try {
+      // Update all users without country in batch
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          country: countryName,
+          country_code: selectedDefaultCountry 
+        })
+        .is('country', null);
+
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: `${usersToUpdate.length} utilisateur(s) mis à jour avec le pays ${countryName}`
+      });
+
+      setDefaultCountryDialogOpen(false);
+      setSelectedDefaultCountry('');
+      loadUsers();
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Error assigning default country:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors de l\'attribution du pays',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsAssigningCountry(false);
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin': return 'destructive';
@@ -725,10 +792,22 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  Répartition géographique
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Répartition géographique
+                  </CardTitle>
+                  {usersWithoutCountry.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setDefaultCountryDialogOpen(true)}
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      {usersWithoutCountry.length} sans pays
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {countryData.length === 0 ? (
@@ -1244,6 +1323,83 @@ const AdminDashboard = () => {
         onOpenChange={setIsAddUserDialogOpen}
         onUserAdded={loadUsers}
       />
+
+      {/* Dialog pour attribuer un pays par défaut */}
+      <Dialog open={defaultCountryDialogOpen} onOpenChange={setDefaultCountryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5" />
+              Attribuer un pays par défaut
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>{usersWithoutCountry.length}</strong> utilisateur(s) n'ont pas de pays défini. 
+                Sélectionnez un pays à attribuer à tous ces utilisateurs.
+              </p>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Pays par défaut</label>
+              <Select value={selectedDefaultCountry} onValueChange={setSelectedDefaultCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un pays" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TG">🇹🇬 Togo</SelectItem>
+                  <SelectItem value="BJ">🇧🇯 Bénin</SelectItem>
+                  <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
+                  <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
+                  <SelectItem value="ML">🇲🇱 Mali</SelectItem>
+                  <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
+                  <SelectItem value="NE">🇳🇪 Niger</SelectItem>
+                  <SelectItem value="GN">🇬🇳 Guinée</SelectItem>
+                  <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
+                  <SelectItem value="GA">🇬🇦 Gabon</SelectItem>
+                  <SelectItem value="CG">🇨🇬 Congo</SelectItem>
+                  <SelectItem value="CD">🇨🇩 RD Congo</SelectItem>
+                  <SelectItem value="TD">🇹🇩 Tchad</SelectItem>
+                  <SelectItem value="CF">🇨🇫 Centrafrique</SelectItem>
+                  <SelectItem value="MG">🇲🇬 Madagascar</SelectItem>
+                  <SelectItem value="MU">🇲🇺 Maurice</SelectItem>
+                  <SelectItem value="MA">🇲🇦 Maroc</SelectItem>
+                  <SelectItem value="DZ">🇩🇿 Algérie</SelectItem>
+                  <SelectItem value="TN">🇹🇳 Tunisie</SelectItem>
+                  <SelectItem value="EG">🇪🇬 Égypte</SelectItem>
+                  <SelectItem value="FR">🇫🇷 France</SelectItem>
+                  <SelectItem value="BE">🇧🇪 Belgique</SelectItem>
+                  <SelectItem value="CH">🇨🇭 Suisse</SelectItem>
+                  <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setDefaultCountryDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleAssignDefaultCountry}
+                disabled={!selectedDefaultCountry || isAssigningCountry}
+              >
+                {isAssigningCountry ? (
+                  <>
+                    <Activity className="w-4 h-4 mr-2 animate-spin" />
+                    Attribution...
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-4 h-4 mr-2" />
+                    Attribuer à {usersWithoutCountry.length} utilisateur(s)
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
