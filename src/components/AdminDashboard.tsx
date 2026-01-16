@@ -457,6 +457,72 @@ const AdminDashboard = () => {
     }
   };
 
+  const countryCodeToName: Record<string, string> = {
+    'TG': 'Togo',
+    'BJ': 'Bénin',
+    'CI': "Côte d'Ivoire",
+    'SN': 'Sénégal',
+    'ML': 'Mali',
+    'BF': 'Burkina Faso',
+    'NE': 'Niger',
+    'GN': 'Guinée',
+    'CM': 'Cameroun',
+    'GA': 'Gabon',
+    'CG': 'Congo',
+    'CD': 'RD Congo',
+    'TD': 'Tchad',
+    'CF': 'Centrafrique',
+    'MG': 'Madagascar',
+    'MU': 'Maurice',
+    'MA': 'Maroc',
+    'DZ': 'Algérie',
+    'TN': 'Tunisie',
+    'EG': 'Égypte',
+    'FR': 'France',
+    'BE': 'Belgique',
+    'CH': 'Suisse',
+    'CA': 'Canada'
+  };
+
+  const handleChangeCountry = async (userId: string, countryCode: string) => {
+    if (countryCode === 'none') return;
+    
+    const countryName = countryCodeToName[countryCode] || countryCode;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          country: countryName,
+          country_code: countryCode 
+        })
+        .eq('id', userId);
+
+      if (error) {
+        toast({
+          title: t('error'),
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: `Pays modifié en ${countryName}`
+      });
+
+      loadUsers();
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Error changing country:', error);
+      toast({
+        title: t('error'),
+        description: 'Erreur lors de la modification du pays',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin': return 'destructive';
@@ -816,22 +882,51 @@ const AdminDashboard = () => {
                           <TableCell className="font-medium">{user.full_name}</TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
-                            {user.country ? (
-                              <div className="flex items-center gap-1.5">
-                                <Globe className="w-3 h-3 text-muted-foreground" />
-                                <span className="text-sm font-medium">{user.country}</span>
-                                {user.countryCode && (
-                                  <Badge variant="outline" className="text-xs ml-1">
-                                    {user.countryCode}
-                                  </Badge>
+                            <Select 
+                              value={user.countryCode || 'none'} 
+                              onValueChange={(value) => handleChangeCountry(user.id, value)}
+                            >
+                              <SelectTrigger className="w-36">
+                                {user.country ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Globe className="w-3 h-3 text-muted-foreground" />
+                                    <span className="text-sm font-medium truncate">{user.country}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <Globe className="w-3 h-3 text-muted-foreground opacity-50" />
+                                    <span className="text-muted-foreground text-sm italic">Sélectionner</span>
+                                  </div>
                                 )}
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <Globe className="w-3 h-3 text-muted-foreground opacity-50" />
-                                <span className="text-muted-foreground text-sm italic">Non spécifié</span>
-                              </div>
-                            )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none" disabled>Sélectionner un pays</SelectItem>
+                                <SelectItem value="TG">🇹🇬 Togo</SelectItem>
+                                <SelectItem value="BJ">🇧🇯 Bénin</SelectItem>
+                                <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
+                                <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
+                                <SelectItem value="ML">🇲🇱 Mali</SelectItem>
+                                <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
+                                <SelectItem value="NE">🇳🇪 Niger</SelectItem>
+                                <SelectItem value="GN">🇬🇳 Guinée</SelectItem>
+                                <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
+                                <SelectItem value="GA">🇬🇦 Gabon</SelectItem>
+                                <SelectItem value="CG">🇨🇬 Congo</SelectItem>
+                                <SelectItem value="CD">🇨🇩 RD Congo</SelectItem>
+                                <SelectItem value="TD">🇹🇩 Tchad</SelectItem>
+                                <SelectItem value="CF">🇨🇫 Centrafrique</SelectItem>
+                                <SelectItem value="MG">🇲🇬 Madagascar</SelectItem>
+                                <SelectItem value="MU">🇲🇺 Maurice</SelectItem>
+                                <SelectItem value="MA">🇲🇦 Maroc</SelectItem>
+                                <SelectItem value="DZ">🇩🇿 Algérie</SelectItem>
+                                <SelectItem value="TN">🇹🇳 Tunisie</SelectItem>
+                                <SelectItem value="EG">🇪🇬 Égypte</SelectItem>
+                                <SelectItem value="FR">🇫🇷 France</SelectItem>
+                                <SelectItem value="BE">🇧🇪 Belgique</SelectItem>
+                                <SelectItem value="CH">🇨🇭 Suisse</SelectItem>
+                                <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell>
                             <Select 
