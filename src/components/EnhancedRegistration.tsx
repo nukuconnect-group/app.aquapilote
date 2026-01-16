@@ -18,34 +18,40 @@ interface EnhancedRegistrationProps {
   onSwitchToLogin: () => void;
   selectedPlan?: string | null;
 }
-// Liste des pays avec codes
+// Liste des pays avec codes et préfixes téléphoniques
 const countryOptions = [
-  { code: 'TG', name: 'Togo' },
-  { code: 'BJ', name: 'Bénin' },
-  { code: 'CI', name: 'Côte d\'Ivoire' },
-  { code: 'SN', name: 'Sénégal' },
-  { code: 'ML', name: 'Mali' },
-  { code: 'BF', name: 'Burkina Faso' },
-  { code: 'NE', name: 'Niger' },
-  { code: 'GN', name: 'Guinée' },
-  { code: 'CM', name: 'Cameroun' },
-  { code: 'GA', name: 'Gabon' },
-  { code: 'CG', name: 'Congo' },
-  { code: 'CD', name: 'RD Congo' },
-  { code: 'TD', name: 'Tchad' },
-  { code: 'CF', name: 'Centrafrique' },
-  { code: 'MG', name: 'Madagascar' },
-  { code: 'MU', name: 'Maurice' },
-  { code: 'MA', name: 'Maroc' },
-  { code: 'DZ', name: 'Algérie' },
-  { code: 'TN', name: 'Tunisie' },
-  { code: 'EG', name: 'Égypte' },
-  { code: 'FR', name: 'France' },
-  { code: 'BE', name: 'Belgique' },
-  { code: 'CH', name: 'Suisse' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'OTHER', name: 'Autre pays' }
+  { code: 'TG', name: 'Togo', phonePrefix: '+228' },
+  { code: 'BJ', name: 'Bénin', phonePrefix: '+229' },
+  { code: 'CI', name: 'Côte d\'Ivoire', phonePrefix: '+225' },
+  { code: 'SN', name: 'Sénégal', phonePrefix: '+221' },
+  { code: 'ML', name: 'Mali', phonePrefix: '+223' },
+  { code: 'BF', name: 'Burkina Faso', phonePrefix: '+226' },
+  { code: 'NE', name: 'Niger', phonePrefix: '+227' },
+  { code: 'GN', name: 'Guinée', phonePrefix: '+224' },
+  { code: 'CM', name: 'Cameroun', phonePrefix: '+237' },
+  { code: 'GA', name: 'Gabon', phonePrefix: '+241' },
+  { code: 'CG', name: 'Congo', phonePrefix: '+242' },
+  { code: 'CD', name: 'RD Congo', phonePrefix: '+243' },
+  { code: 'TD', name: 'Tchad', phonePrefix: '+235' },
+  { code: 'CF', name: 'Centrafrique', phonePrefix: '+236' },
+  { code: 'MG', name: 'Madagascar', phonePrefix: '+261' },
+  { code: 'MU', name: 'Maurice', phonePrefix: '+230' },
+  { code: 'MA', name: 'Maroc', phonePrefix: '+212' },
+  { code: 'DZ', name: 'Algérie', phonePrefix: '+213' },
+  { code: 'TN', name: 'Tunisie', phonePrefix: '+216' },
+  { code: 'EG', name: 'Égypte', phonePrefix: '+20' },
+  { code: 'FR', name: 'France', phonePrefix: '+33' },
+  { code: 'BE', name: 'Belgique', phonePrefix: '+32' },
+  { code: 'CH', name: 'Suisse', phonePrefix: '+41' },
+  { code: 'CA', name: 'Canada', phonePrefix: '+1' },
+  { code: 'OTHER', name: 'Autre pays', phonePrefix: '' }
 ];
+
+// Fonction pour obtenir le préfixe téléphonique selon le code pays
+const getPhonePrefix = (countryCode: string): string => {
+  const country = countryOptions.find(c => c.code === countryCode);
+  return country?.phonePrefix || '';
+};
 
 interface FormData {
   // Étape 1: Informations personnelles
@@ -124,13 +130,17 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
               c => c.code === data.countryCode || c.name.toLowerCase() === data.country.toLowerCase()
             );
 
+            const detectedCountryCode = matchedCountry?.code || data.countryCode;
+            const phonePrefix = getPhonePrefix(detectedCountryCode);
+            
             setFormData(prev => ({
               ...prev,
               country: matchedCountry?.name || data.country,
-              countryCode: matchedCountry?.code || data.countryCode,
+              countryCode: detectedCountryCode,
               location: data.city && data.region 
                 ? `${data.city}, ${data.region}` 
-                : data.city || data.region || ''
+                : data.city || data.region || '',
+              phone: phonePrefix ? `${phonePrefix} ` : prev.phone
             }));
             setLocationDetected(true);
           }
@@ -163,11 +173,21 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   
   const handleCountryChange = (countryCode: string) => {
     const selectedCountry = countryOptions.find(c => c.code === countryCode);
-    setFormData(prev => ({
-      ...prev,
-      countryCode: countryCode,
-      country: selectedCountry?.name || ''
-    }));
+    const phonePrefix = getPhonePrefix(countryCode);
+    
+    setFormData(prev => {
+      // Si le téléphone est vide ou ne contient qu'un ancien préfixe, mettre le nouveau préfixe
+      const currentPhone = prev.phone.trim();
+      const hasOnlyPrefix = countryOptions.some(c => c.phonePrefix && currentPhone === c.phonePrefix);
+      const isEmpty = !currentPhone;
+      
+      return {
+        ...prev,
+        countryCode: countryCode,
+        country: selectedCountry?.name || '',
+        phone: (isEmpty || hasOnlyPrefix) && phonePrefix ? `${phonePrefix} ` : prev.phone
+      };
+    });
   };
   const handleProductionUnitChange = (unit: string, checked: boolean) => {
     if (checked) {
@@ -470,8 +490,26 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-card-foreground">Téléphone *</Label>
-                  <Input id="phone" type="tel" placeholder="+228 XX XX XX XX" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} required className="bg-background text-foreground" />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="phone" className="text-card-foreground">Téléphone *</Label>
+                    {formData.countryCode && getPhonePrefix(formData.countryCode) && (
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        Préfixe: {getPhonePrefix(formData.countryCode)}
+                      </span>
+                    )}
+                  </div>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    placeholder={formData.countryCode ? `${getPhonePrefix(formData.countryCode)} XX XX XX XX` : "+XXX XX XX XX XX"} 
+                    value={formData.phone} 
+                    onChange={e => handleInputChange('phone', e.target.value)} 
+                    required 
+                    className="bg-background text-foreground" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le préfixe est détecté selon votre pays
+                  </p>
                 </div>
 
                 <div>
