@@ -71,7 +71,7 @@ serve(async (req) => {
           
           console.log('Got public IP from ipify:', publicIP);
           
-          const geoResponse = await fetch(`http://ip-api.com/json/${encodeURIComponent(publicIP)}?fields=status,country,countryCode`);
+          const geoResponse = await fetch(`http://ip-api.com/json/${encodeURIComponent(publicIP)}?fields=status,country,countryCode,city,regionName`);
           if (geoResponse.ok) {
             const geoData = await geoResponse.json();
             console.log('Geolocation response from fallback:', geoData);
@@ -86,6 +86,8 @@ serve(async (req) => {
                 JSON.stringify({
                   country: geoData.country,
                   countryCode: geoData.countryCode,
+                  city: geoData.city || null,
+                  region: geoData.regionName || null,
                   source: 'ipify-fallback'
                 }),
                 { 
@@ -104,6 +106,8 @@ serve(async (req) => {
         JSON.stringify({
           country: null,
           countryCode: null,
+          city: null,
+          region: null
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -113,7 +117,7 @@ serve(async (req) => {
     }
 
     // Use ip-api.com (free, no API key required, 45 requests/minute)
-    const response = await fetch(`http://ip-api.com/json/${encodeURIComponent(clientIP)}?fields=status,country,countryCode`)
+    const response = await fetch(`http://ip-api.com/json/${encodeURIComponent(clientIP)}?fields=status,country,countryCode,city,regionName`)
     
     if (!response.ok) {
       throw new Error('Failed to fetch geolocation data')
@@ -132,6 +136,8 @@ serve(async (req) => {
         JSON.stringify({
           country: data.country,
           countryCode: data.countryCode,
+          city: data.city || null,
+          region: data.regionName || null,
           source: 'direct-ip'
         }),
         { 
@@ -145,6 +151,8 @@ serve(async (req) => {
         JSON.stringify({
           country: null,
           countryCode: null,
+          city: null,
+          region: null
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -157,7 +165,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         country: null, 
-        countryCode: null
+        countryCode: null,
+        city: null,
+        region: null
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
