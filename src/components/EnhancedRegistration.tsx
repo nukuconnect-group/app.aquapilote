@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -80,6 +80,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationDetected, setLocationDetected] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -99,6 +101,49 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     hasAlgaeCulture: false,
     otherActivities: ''
   });
+
+  // Détecter automatiquement le pays et la ville au chargement
+  useEffect(() => {
+    const detectLocation = async () => {
+      setIsDetectingLocation(true);
+      try {
+        const response = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/detect-country', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Location detected:', data);
+
+          if (data.country && data.countryCode) {
+            // Trouver le code pays correspondant dans notre liste
+            const matchedCountry = countryOptions.find(
+              c => c.code === data.countryCode || c.name.toLowerCase() === data.country.toLowerCase()
+            );
+
+            setFormData(prev => ({
+              ...prev,
+              country: matchedCountry?.name || data.country,
+              countryCode: matchedCountry?.code || data.countryCode,
+              location: data.city && data.region 
+                ? `${data.city}, ${data.region}` 
+                : data.city || data.region || ''
+            }));
+            setLocationDetected(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error detecting location:', error);
+      } finally {
+        setIsDetectingLocation(false);
+      }
+    };
+
+    detectLocation();
+  }, []);
   const {
     register,
     isLoading
@@ -373,10 +418,23 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="country" className="text-card-foreground">Pays *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="country" className="text-card-foreground">Pays *</Label>
+                    {isDetectingLocation && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Détection...
+                      </span>
+                    )}
+                    {locationDetected && !isDetectingLocation && (
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        ✓ Détecté automatiquement
+                      </span>
+                    )}
+                  </div>
                   <Select value={formData.countryCode} onValueChange={handleCountryChange}>
                     <SelectTrigger className="bg-background text-foreground">
-                      <SelectValue placeholder="Sélectionnez votre pays" />
+                      <SelectValue placeholder={isDetectingLocation ? "Détection en cours..." : "Sélectionnez votre pays"} />
                     </SelectTrigger>
                     <SelectContent>
                       {countryOptions.map(country => (
@@ -389,8 +447,26 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="location" className="text-card-foreground">Ville / Région *</Label>
-                  <Input id="location" type="text" placeholder="Ville, Région" value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required className="bg-background text-foreground" />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="location" className="text-card-foreground">Ville / Région *</Label>
+                    {locationDetected && formData.location && !isDetectingLocation && (
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        ✓ Détecté automatiquement
+                      </span>
+                    )}
+                  </div>
+                  <Input 
+                    id="location" 
+                    type="text" 
+                    placeholder={isDetectingLocation ? "Détection en cours..." : "Ville, Région"} 
+                    value={formData.location} 
+                    onChange={e => handleInputChange('location', e.target.value)} 
+                    required 
+                    className="bg-background text-foreground" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Vous pouvez modifier ces informations si nécessaire
+                  </p>
                 </div>
 
                 <div>
