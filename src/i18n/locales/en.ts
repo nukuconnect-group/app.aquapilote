@@ -40,6 +40,8 @@ export const en = {
   aqua_assistant: 'AquaAssistant AI',
   customer_support: 'Customer Support',
   offline_mode_menu: 'Offline Mode',
+  more: 'More',
+  team_member: 'Team member',
   
   // Header
   app_title: 'AQUA PILOT',

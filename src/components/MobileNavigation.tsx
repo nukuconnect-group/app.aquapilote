@@ -74,7 +74,7 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
             onClick={handleMenuClick}
           >
             <Menu className="w-4 h-4 mb-0.5 text-muted-foreground" />
-            <span className="text-xs leading-tight truncate max-w-full font-medium">Plus</span>
+            <span className="text-xs leading-tight truncate max-w-full font-medium">{t('more')}</span>
           </Button>
         </div>
       </div>

@@ -147,7 +147,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           <div className="px-3 py-2 border-b border-border">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Shield className="w-3 h-3" />
-              <span>Membre d'équipe</span>
+              <span>{t('team_member')}</span>
             </div>
             <Badge variant="outline" className="mt-1 text-xs">
               {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
