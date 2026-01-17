@@ -50,8 +50,9 @@ import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { useSales } from '@/hooks/useSales';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { format, subDays, subMonths, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr as frLocale } from 'date-fns/locale';
 
 // Couleurs du thème
 const COLORS = {
@@ -130,6 +131,7 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, change, changeLabel, ic
 };
 
 const AnalyticsDashboard: React.FC = () => {
+  const { t, language } = useSettings();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '12m'>('30d');
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
 
@@ -139,6 +141,8 @@ const AnalyticsDashboard: React.FC = () => {
   const { batches, loading: batchesLoading } = useLivestockBatches();
   const { sales, loading: salesLoading } = useSales();
   const { units } = useProductionUnits();
+  
+  const dateLocale = language === 'fr' ? frLocale : undefined;
 
   const isLoading = cyclesLoading || feedingLoading || healthLoading || batchesLoading || salesLoading;
 
@@ -240,7 +244,7 @@ const AnalyticsDashboard: React.FC = () => {
       const dayHealth = filteredHealthRecords.filter(r => r.date === dateStr);
       
       return {
-        date: format(day, 'dd/MM', { locale: fr }),
+        date: format(day, 'dd/MM', { locale: dateLocale }),
         alimentation: dayFeeding.reduce((sum, r) => sum + (r.quantity || 0), 0),
         temperature: dayHealth.length > 0 
           ? dayHealth.reduce((sum, r) => sum + (r.temperature || 0), 0) / dayHealth.length 
@@ -272,7 +276,7 @@ const AnalyticsDashboard: React.FC = () => {
       });
 
       return {
-        month: format(month, 'MMM', { locale: fr }),
+        month: format(month, 'MMM', { locale: dateLocale }),
         production: monthCycles.reduce((sum, c) => sum + (c.current_quantity || 0), 0),
         objectif: monthCycles.reduce((sum, c) => sum + (c.target_quantity || 0), 0),
         alimentation: monthFeeding.reduce((sum, r) => sum + (r.quantity || 0), 0)

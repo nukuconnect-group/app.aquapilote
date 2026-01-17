@@ -873,6 +873,12 @@ export const fr = {
   stock_type: 'Stock',
   unit_alert: 'Unité',
   value_alert: 'Valeur',
+  alert_type_temperature: 'Température',
+  alert_type_oxygen: 'Oxygène',
+  alert_type_mortality: 'Mortalité',
+  stock: 'Stock',
+  unit_label: 'Unité',
+  value_label: 'Valeur',
   
   // Invoice Manager - unique keys
   invoice_management: 'Factures',
@@ -976,3 +982,4 @@ export const fr = {
   could_not_clear_data: 'Impossible d\'effacer les données',
   could_not_export: 'Impossible d\'exporter les données',
 };
+
