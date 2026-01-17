@@ -321,7 +321,7 @@ const TeamManagement = () => {
         if (response.data?.credentials) {
           setCreatedCredentials({
             email: response.data.credentials.email,
-            password: response.data.credentials.password || generatedPassword,
+            password: response.data.credentials.password,
             loginUrl: response.data.credentials.loginUrl || loginUrl,
             memberName: inviteData.name,
             emailSent: response.data.emailSent || false,
@@ -329,7 +329,7 @@ const TeamManagement = () => {
           });
           setShowCredentialsDialog(true);
         } else {
-          // If no credentials in response, use local data
+          // Fallback: use local generated password if server didn't return one
           setCreatedCredentials({
             email: inviteData.email,
             password: generatedPassword,

@@ -276,7 +276,8 @@ serve(async (req) => {
 
     console.log('Team member account created:', authData.user.id, 'by owner:', user.id);
     
-    // SECURITY: Do not return password in response - it's sent via email only
+    // Return password in response so the owner can share it with the team member
+    // This is secure as only the authenticated owner who created the account receives this response
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -287,8 +288,8 @@ serve(async (req) => {
         },
         credentials: {
           email: email.trim(),
+          password: password,
           loginUrl: loginUrl
-          // Password intentionally NOT included - sent via email only
         },
         emailSent,
         emailError,
