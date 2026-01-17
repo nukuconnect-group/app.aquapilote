@@ -16,6 +16,27 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // SECURITY: Validate CRON_SECRET_TOKEN for scheduled function calls
+    const authHeader = req.headers.get('Authorization');
+    const expectedToken = Deno.env.get('CRON_SECRET_TOKEN');
+
+    if (!expectedToken) {
+      console.error("CRON_SECRET_TOKEN not configured");
+      return new Response(
+        JSON.stringify({ error: 'CRON_SECRET_TOKEN not configured' }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const providedToken = authHeader?.replace('Bearer ', '');
+    if (!authHeader || providedToken !== expectedToken) {
+      console.error("Unauthorized access attempt to payment-maintenance-alerts");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log("Payment/Maintenance alerts function triggered at:", new Date().toISOString());
 
     const supabase = createClient(

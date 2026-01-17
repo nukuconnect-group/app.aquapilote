@@ -2,6 +2,19 @@
  * Utilitaires pour l'export de données en différents formats
  */
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ */
+const escapeHtml = (unsafe: string | number | null | undefined): string => {
+  if (unsafe == null) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 export interface ExportColumn {
   key: string;
   label: string;
@@ -76,7 +89,7 @@ export const exportToWord = (options: ExportOptions) => {
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
     <head>
       <meta charset="utf-8">
-      <title>${title}</title>
+      <title>${escapeHtml(title)}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1 { color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; }
@@ -89,18 +102,18 @@ export const exportToWord = (options: ExportOptions) => {
       </style>
     </head>
     <body>
-      ${companyName ? `<div class="company">${companyName}</div>` : ''}
-      <h1>${title}</h1>
-      ${subtitle ? `<h2>${subtitle}</h2>` : ''}
-      ${unitName ? `<p class="header-info"><strong>Unité:</strong> ${unitName}</p>` : ''}
+      ${companyName ? `<div class="company">${escapeHtml(companyName)}</div>` : ''}
+      <h1>${escapeHtml(title)}</h1>
+      ${subtitle ? `<h2>${escapeHtml(subtitle)}</h2>` : ''}
+      ${unitName ? `<p class="header-info"><strong>Unité:</strong> ${escapeHtml(unitName)}</p>` : ''}
       <p class="header-info"><strong>Généré le:</strong> ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
       
       <table>
-        <tr>${columns.map(col => `<th>${col.label}</th>`).join('')}</tr>
+        <tr>${columns.map(col => `<th>${escapeHtml(col.label)}</th>`).join('')}</tr>
         ${data.map(row => `
           <tr>${columns.map(col => {
             const value = col.format ? col.format(row[col.key], row) : row[col.key];
-            return `<td>${value ?? ''}</td>`;
+            return `<td>${escapeHtml(value)}</td>`;
           }).join('')}</tr>
         `).join('')}
       </table>
@@ -126,7 +139,7 @@ export const exportToPDF = (options: ExportOptions) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>${title}</title>
+      <title>${escapeHtml(title)}</title>
       <style>
         @media print { body { margin: 0; padding: 15px; } }
         body { font-family: Arial, sans-serif; padding: 20px; color: #333; font-size: 12px; }
@@ -142,18 +155,18 @@ export const exportToPDF = (options: ExportOptions) => {
       </style>
     </head>
     <body>
-      ${companyName ? `<div class="company">${companyName}</div>` : ''}
-      <h1>${title}</h1>
-      ${subtitle ? `<h2>${subtitle}</h2>` : ''}
-      ${unitName ? `<p class="header-info"><strong>Unité:</strong> ${unitName}</p>` : ''}
+      ${companyName ? `<div class="company">${escapeHtml(companyName)}</div>` : ''}
+      <h1>${escapeHtml(title)}</h1>
+      ${subtitle ? `<h2>${escapeHtml(subtitle)}</h2>` : ''}
+      ${unitName ? `<p class="header-info"><strong>Unité:</strong> ${escapeHtml(unitName)}</p>` : ''}
       <p class="header-info"><strong>Généré le:</strong> ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
       
       <table>
-        <tr>${columns.map(col => `<th>${col.label}</th>`).join('')}</tr>
+        <tr>${columns.map(col => `<th>${escapeHtml(col.label)}</th>`).join('')}</tr>
         ${data.map(row => `
           <tr>${columns.map(col => {
             const value = col.format ? col.format(row[col.key], row) : row[col.key];
-            return `<td>${value ?? ''}</td>`;
+            return `<td>${escapeHtml(value)}</td>`;
           }).join('')}</tr>
         `).join('')}
       </table>
