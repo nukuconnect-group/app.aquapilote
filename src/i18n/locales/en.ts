@@ -854,7 +854,6 @@ export const en = {
   
   // Performance Alerts Panel - additional keys
   unacknowledged_alerts: 'unacknowledged alert(s)',
-  unacknowledged_alerts: 'unacknowledged alert(s)',
   critical_alerts_count: 'critical',
   including: 'including',
   verify_btn: 'Verify',
