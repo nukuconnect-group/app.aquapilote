@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -51,7 +51,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     'aqua-assistant': 'dashboard',
     'offline': 'settings',
     'weather': 'environment',
-    'admin': 'admin'
+    'admin': 'admin',
+    'analytics': 'reports'
   };
 
   // Vérifier si un tab est accessible
@@ -99,6 +100,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     {
       label: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
       items: [
+        { id: 'analytics', label: language === 'fr' ? 'Analytique' : 'Analytics', icon: BarChart3 },
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText },
       ]
