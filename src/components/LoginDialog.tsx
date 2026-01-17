@@ -334,75 +334,161 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
           {/* MFA Verification Screen */}
           {showMFAVerification ? (
-            <>
-              <DialogHeader>
-                <div className="flex items-center justify-center mb-6">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Shield className="h-8 w-8 text-primary" />
+            showRecoveryCodeInput ? (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Key className="h-8 w-8 text-primary" />
+                    </div>
                   </div>
-                </div>
-                <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
-                  Vérification 2FA requise
-                </DialogTitle>
-                <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
-                  Entrez le code à 6 chiffres de votre application d'authentification
-                </DialogDescription>
-              </DialogHeader>
+                  <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
+                    Code de récupération
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
+                    Entrez l'un de vos codes de récupération à 8 caractères
+                  </DialogDescription>
+                </DialogHeader>
 
-              <form onSubmit={handleMFAVerify} className="space-y-6 mt-6">
-                {mfaError && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>{mfaError}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="mfaCode" className="sr-only">Code 2FA</Label>
-                  <Input
-                    id="mfaCode"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="text-center text-3xl tracking-widest font-mono h-16"
-                    autoComplete="one-time-code"
-                    autoFocus
-                  />
-                  <p className="text-xs text-muted-foreground text-center">
-                    Ouvrez Google Authenticator, Authy ou votre app 2FA
-                  </p>
-                </div>
+                <form onSubmit={handleRecoveryCodeVerify} className="space-y-6 mt-6">
+                  {mfaError && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{mfaError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="recoveryCode" className="sr-only">Code de récupération</Label>
+                    <Input
+                      id="recoveryCode"
+                      type="text"
+                      maxLength={10}
+                      placeholder="XXXXXXXX"
+                      value={recoveryCode}
+                      onChange={(e) => setRecoveryCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
+                      className="text-center text-2xl tracking-widest font-mono h-16 uppercase"
+                      autoComplete="off"
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Les codes sont composés de 8 caractères alphanumériques
+                    </p>
+                  </div>
 
-                <div className="flex gap-3">
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => { setShowRecoveryCodeInput(false); setRecoveryCode(''); setMfaError(null); }}
+                      className="flex-1"
+                    >
+                      Retour
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isLoading || recoveryCode.length !== 8}
+                      className="flex-1"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Vérification...
+                        </>
+                      ) : (
+                        'Vérifier'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+
+                <p className="text-xs text-muted-foreground text-center mt-4">
+                  Chaque code ne peut être utilisé qu'une seule fois
+                </p>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Shield className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+                  <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
+                    Vérification 2FA requise
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
+                    Entrez le code à 6 chiffres de votre application d'authentification
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleMFAVerify} className="space-y-6 mt-6">
+                  {mfaError && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{mfaError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="mfaCode" className="sr-only">Code 2FA</Label>
+                    <Input
+                      id="mfaCode"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="text-center text-3xl tracking-widest font-mono h-16"
+                      autoComplete="one-time-code"
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Ouvrez Google Authenticator, Authy ou votre app 2FA
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelMFA}
+                      className="flex-1"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isLoading || mfaCode.length !== 6}
+                      className="flex-1"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Vérification...
+                        </>
+                      ) : (
+                        'Vérifier'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+
+                <div className="mt-4 pt-4 border-t">
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={handleCancelMFA}
-                    className="flex-1"
+                    variant="ghost"
+                    onClick={() => { setShowRecoveryCodeInput(true); setMfaCode(''); setMfaError(null); }}
+                    className="w-full text-muted-foreground"
                   >
-                    Annuler
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading || mfaCode.length !== 6}
-                    className="flex-1"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Vérification...
-                      </>
-                    ) : (
-                      'Vérifier'
-                    )}
+                    <Key className="h-4 w-4 mr-2" />
+                    Utiliser un code de récupération
                   </Button>
                 </div>
-              </form>
-            </>
+              </>
+            )
           ) : (
             <>
           <DialogHeader>
