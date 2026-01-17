@@ -1001,5 +1001,36 @@ export const en = {
   critical_alerts_badge: 'critical alert(s)',
   check_now: 'Check now',
   water: 'Water',
+  
+  // Module headers descriptions (new unique keys)
+  accounting_management_desc: 'Complete accounting and financial management',
+  select_unit_for_accounting: 'Select a unit to access its accounting',
+  purchases_management_desc: 'Tracking and categorization of operating expenses',
+  sales_management_desc: 'Sales tracking and customer management',
+  feeding_management_desc: 'Technical sheets and nutritional tracking',
+  no_feeding_required: 'No feeding required',
+  select_unit_for_feeding: 'Select a production unit to manage its feeding',
+  units_not_needing_feeding: 'This unit does not require feeding management',
+  hr_management_desc: 'Employee and salary management',
+  team_management_desc: 'Invite and manage your team members',
+  planning_management_desc: 'Calendar and task planning',
+  reports_management_desc: 'Report generation and export',
+  offline_management_desc: 'Access your data even without Internet connection',
+  prophylaxis_management_desc: 'Prophylaxis and health monitoring',
+  infrastructure_management_desc: 'Equipment and facility management',
+  livestock_management_desc: 'Fish batches and population tracking',
+  production_units_management_desc: 'Management of your production units',
+  financial_summary_title: 'Financial Summary',
+  all_units_label: 'All Units',
+  revenues_label: 'Revenue',
+  expenses_label: 'Expenses',
+  salaries_label: 'Salaries',
+  balance_label: 'Balance',
+  benefit_label: 'Profit',
+  deficit_label: 'Deficit',
+  financial_evolution: 'Financial Evolution',
+  hatchery_livestock: 'Hatchery Livestock',
 };
+
+
 
