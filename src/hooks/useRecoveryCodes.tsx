@@ -30,6 +30,41 @@ export const useRecoveryCodes = () => {
   const [remainingCodes, setRemainingCodes] = useState<number>(0);
   const { toast } = useToast();
 
+  // Send email notification when recovery code is used
+  const sendRecoveryCodeNotification = useCallback(async (
+    userEmail: string,
+    userName: string | undefined,
+    codesRemaining: number
+  ) => {
+    try {
+      console.log('Sending recovery code usage notification to:', userEmail);
+      
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.warn('No session available for notification');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('notify-recovery-code-used', {
+        body: {
+          userEmail,
+          userName,
+          remainingCodes: codesRemaining,
+          userAgent: navigator.userAgent
+        }
+      });
+
+      if (response.error) {
+        console.error('Failed to send recovery code notification:', response.error);
+      } else {
+        console.log('Recovery code notification sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending recovery code notification:', error);
+      // Don't throw - notification failure shouldn't break the login flow
+    }
+  }, []);
+
   // Generate new recovery codes
   const generateRecoveryCodes = useCallback(async (): Promise<string[] | null> => {
     setIsGenerating(true);
@@ -97,6 +132,8 @@ export const useRecoveryCodes = () => {
     
     try {
       let targetUserId = userId;
+      let userEmail: string | undefined;
+      let userName: string | undefined;
       
       if (!targetUserId) {
         const { data: { user } } = await supabase.auth.getUser();
@@ -104,6 +141,8 @@ export const useRecoveryCodes = () => {
           throw new Error('Utilisateur non connecté');
         }
         targetUserId = user.id;
+        userEmail = user.email;
+        userName = user.user_metadata?.full_name;
       }
 
       const codeHash = await hashCode(code.toUpperCase());
@@ -138,8 +177,23 @@ export const useRecoveryCodes = () => {
         throw updateError;
       }
 
-      // Update remaining codes count
-      await checkRecoveryCodes();
+      // Get remaining codes count
+      const { data: remainingCodesData } = await supabase
+        .from('mfa_recovery_codes')
+        .select('id')
+        .eq('user_id', targetUserId)
+        .eq('is_used', false);
+
+      const codesRemaining = remainingCodesData?.length || 0;
+      
+      // Update state
+      setRemainingCodes(codesRemaining);
+      setHasRecoveryCodes(codesRemaining > 0);
+
+      // Send email notification (don't await - fire and forget)
+      if (userEmail) {
+        sendRecoveryCodeNotification(userEmail, userName, codesRemaining);
+      }
 
       return true;
     } catch (error: any) {
@@ -148,7 +202,7 @@ export const useRecoveryCodes = () => {
     } finally {
       setIsVerifying(false);
     }
-  }, []);
+  }, [sendRecoveryCodeNotification]);
 
   // Check if user has recovery codes
   const checkRecoveryCodes = useCallback(async (): Promise<void> => {
