@@ -1016,15 +1016,12 @@ export const fr = {
   livestock_management_desc: 'Lots de poissons et suivi des populations',
   production_units_management_desc: 'Gestion de vos unités de production',
   financial_summary_title: 'Résumé Financier',
-  all_units_label: 'Toutes Unités',
   revenues_label: 'Revenus',
   expenses_label: 'Dépenses',
   salaries_label: 'Salaires',
   balance_label: 'Solde',
   benefit_label: 'Bénéfice',
   deficit_label: 'Déficit',
-  financial_evolution: 'Évolution Financière',
-  hatchery_livestock: 'Cheptel - Écloserie',
 };
 
 
