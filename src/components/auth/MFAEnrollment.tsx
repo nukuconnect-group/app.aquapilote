@@ -16,10 +16,31 @@ interface MFAEnrollmentProps {
   onCancel: () => void;
 }
 
+type QrPayload =
+  | { kind: 'uri'; value: string }
+  | { kind: 'img'; src: string }
+  | { kind: 'svg'; svg: string }
+  | null;
+
+function buildQrPayload(totp: { uri?: string | null; qr_code?: string | null }): QrPayload {
+  const uri = (totp.uri ?? '').trim();
+  if (uri) return { kind: 'uri', value: uri };
+
+  const qr = (totp.qr_code ?? '').trim();
+  if (!qr) return null;
+
+  if (qr.startsWith('otpauth://')) return { kind: 'uri', value: qr };
+  if (qr.startsWith('data:image/')) return { kind: 'img', src: qr };
+  if (qr.startsWith('<svg')) return { kind: 'svg', svg: qr };
+
+  // Fallback: treat as URI content
+  return { kind: 'uri', value: qr };
+}
+
 const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) => {
   const [step, setStep] = useState<'loading' | 'qr' | 'verify' | 'recovery'>('loading');
   const [factorId, setFactorId] = useState<string | null>(null);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrPayload, setQrPayload] = useState<QrPayload>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -40,7 +61,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
       // First, check for existing unverified factors and remove them
       const { data: existingFactors } = await supabase.auth.mfa.listFactors();
-      
+
       if (existingFactors?.totp) {
         // Remove any unverified factors to allow re-enrollment
         for (const factor of existingFactors.totp) {
@@ -59,7 +80,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName
+        friendlyName,
       });
 
       if (error) {
@@ -67,25 +88,25 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
         if (error.message?.includes('already exists') || error.code === 'mfa_factor_name_conflict') {
           // Try to find and use existing unverified factor
           const { data: factors } = await supabase.auth.mfa.listFactors();
-          const unverifiedFactor = factors?.totp?.find(f => f.status !== 'verified');
-          
+          const unverifiedFactor = factors?.totp?.find((f) => f.status !== 'verified');
+
           if (unverifiedFactor) {
             // We need to re-enroll, so delete and retry
             await supabase.auth.mfa.unenroll({ factorId: unverifiedFactor.id });
-            
+
             // Retry enrollment with new name
             const retryResult = await supabase.auth.mfa.enroll({
               factorType: 'totp',
-              friendlyName: `AQUA PILOT App ${Date.now()}`
+              friendlyName: `AQUA PILOT App ${Date.now()}`,
             });
-            
+
             if (retryResult.error) {
               throw retryResult.error;
             }
-            
+
             if (retryResult.data) {
               setFactorId(retryResult.data.id);
-              setQrCode(retryResult.data.totp.qr_code);
+              setQrPayload(buildQrPayload(retryResult.data.totp));
               setSecret(retryResult.data.totp.secret);
               setStep('qr');
               return;
@@ -97,7 +118,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
       if (data) {
         setFactorId(data.id);
-        setQrCode(data.totp.qr_code);
+        setQrPayload(buildQrPayload(data.totp));
         setSecret(data.totp.secret);
         setStep('qr');
       }
@@ -110,7 +131,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!factorId || verifyCode.length !== 6) {
       setError('Veuillez entrer un code à 6 chiffres');
       return;
@@ -121,7 +142,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
     try {
       const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId
+        factorId,
       });
 
       if (challengeError) {
@@ -131,7 +152,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
       const { error: verifyError } = await supabase.auth.mfa.verify({
         factorId,
         challengeId: challengeData.id,
-        code: verifyCode
+        code: verifyCode,
       });
 
       if (verifyError) {
@@ -147,8 +168,9 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
         // If code generation fails, still complete but warn user
         toast({
           title: "⚠️ 2FA activé",
-          description: "L'authentification à deux facteurs est active, mais les codes de récupération n'ont pas pu être générés.",
-          variant: "destructive",
+          description:
+            "L'authentification à deux facteurs est active, mais les codes de récupération n'ont pas pu être générés.",
+          variant: 'destructive',
         });
         onComplete();
       }
@@ -162,7 +184,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
   const handleRecoveryComplete = () => {
     toast({
-      title: "✅ 2FA activé",
+      title: '✅ 2FA activé',
       description: "L'authentification à deux facteurs et les codes de récupération sont configurés.",
     });
     onComplete();
@@ -174,8 +196,8 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
-        title: "Copié !",
-        description: "La clé secrète a été copiée dans le presse-papiers.",
+        title: 'Copié !',
+        description: 'La clé secrète a été copiée dans le presse-papiers.',
       });
     }
   };
@@ -193,11 +215,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
   if (step === 'recovery') {
     return (
-      <RecoveryCodesDisplay
-        codes={recoveryCodes}
-        onComplete={handleRecoveryComplete}
-        isNewEnrollment={true}
-      />
+      <RecoveryCodesDisplay codes={recoveryCodes} onComplete={handleRecoveryComplete} isNewEnrollment={true} />
     );
   }
 
@@ -212,7 +230,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
           Scannez le QR code avec votre application d'authentification (Google Authenticator, Authy, etc.)
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {error && (
           <Alert variant="destructive">
@@ -221,12 +239,18 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
           </Alert>
         )}
 
-        {qrCode && (
+        {(qrPayload?.kind === 'uri' || qrPayload?.kind === 'img' || qrPayload?.kind === 'svg') && (
           <div className="flex flex-col items-center space-y-4">
-            <div className="p-4 bg-white rounded-lg border">
-              <QRCodeSVG value={qrCode} size={200} />
+            <div className="p-4 bg-white rounded-lg border" aria-label="QR code 2FA" role="img">
+              {qrPayload?.kind === 'uri' && <QRCodeSVG value={qrPayload.value} size={200} />}
+              {qrPayload?.kind === 'img' && (
+                <img src={qrPayload.src} alt="QR code 2FA" width={200} height={200} loading="lazy" />
+              )}
+              {qrPayload?.kind === 'svg' && (
+                <div className="w-[200px] h-[200px]" dangerouslySetInnerHTML={{ __html: qrPayload.svg }} />
+              )}
             </div>
-            
+
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Smartphone className="h-4 w-4" />
               <span>Scannez avec votre application</span>
@@ -236,19 +260,10 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 
         {secret && (
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">
-              Ou entrez la clé manuellement :
-            </Label>
+            <Label className="text-sm text-muted-foreground">Ou entrez la clé manuellement :</Label>
             <div className="flex items-center gap-2">
-              <code className="flex-1 p-2 bg-muted rounded text-xs font-mono break-all">
-                {secret}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={copySecret}
-              >
+              <code className="flex-1 p-2 bg-muted rounded text-xs font-mono break-all">{secret}</code>
+              <Button type="button" variant="outline" size="icon" onClick={copySecret}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
@@ -276,12 +291,7 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
           </div>
 
           <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="flex-1"
-            >
+            <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
               Annuler
             </Button>
             <Button
@@ -306,3 +316,4 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
 };
 
 export default MFAEnrollment;
+
