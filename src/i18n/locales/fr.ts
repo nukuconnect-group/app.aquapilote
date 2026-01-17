@@ -981,5 +981,18 @@ export const fr = {
   could_not_clear_cache: 'Impossible de vider le cache',
   could_not_clear_data: 'Impossible d\'effacer les données',
   could_not_export: 'Impossible d\'exporter les données',
+  
+  // Analytics & Alerts Config (unique keys only)
+  analytics_dashboard_title: 'Tableau de bord analytique',
+  performance_indicators: 'Performance et indicateurs de production',
+  days_7: '7 jours',
+  days_30: '30 jours',
+  days_90: '90 jours',
+  months_12: '12 mois',
+  alerts_config_title: 'Configuration des Alertes',
+  alerts_config_desc: 'Définissez les seuils de performance pour déclencher des alertes automatiques',
+  critical_alerts_badge: 'alerte(s) critique(s)',
+  check_now: 'Vérifier maintenant',
+  water: 'Eau',
 };
 

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { usePerformanceAlerts, AlertThresholds } from '@/hooks/usePerformanceAlerts';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ThresholdInputProps {
   label: string;
@@ -90,6 +91,7 @@ const ThresholdInput: React.FC<ThresholdInputProps> = ({
 );
 
 const PerformanceAlertsConfig: React.FC = () => {
+  const { t } = useSettings();
   const { thresholds, updateThresholds, checkThresholds, checking, criticalAlerts } = usePerformanceAlerts();
   const { toast } = useToast();
   const [localThresholds, setLocalThresholds] = useState<AlertThresholds>(thresholds);
@@ -120,16 +122,16 @@ const PerformanceAlertsConfig: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Settings2 className="h-6 w-6 text-primary" />
-            Configuration des Alertes
+            {t('alerts_config_title')}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Définissez les seuils de performance pour déclencher des alertes automatiques
+            {t('alerts_config_desc')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {criticalAlerts.length > 0 && (
             <Badge variant="destructive" className="animate-pulse">
-              {criticalAlerts.length} alerte(s) critique(s)
+              {criticalAlerts.length} {t('critical_alerts_badge')}
             </Badge>
           )}
           <Button 
@@ -142,14 +144,14 @@ const PerformanceAlertsConfig: React.FC = () => {
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Vérifier maintenant
+            {t('check_now')}
           </Button>
           <Button 
             onClick={handleSave}
             disabled={!hasChanges}
           >
             <Save className="h-4 w-4 mr-2" />
-            Enregistrer
+            {t('save')}
           </Button>
         </div>
       </div>
@@ -162,23 +164,23 @@ const PerformanceAlertsConfig: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="water" className="flex items-center gap-1">
             <Droplets className="h-4 w-4" />
-            <span className="hidden sm:inline">Eau</span>
+            <span className="hidden sm:inline">{t('water')}</span>
           </TabsTrigger>
           <TabsTrigger value="mortality" className="flex items-center gap-1">
             <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Mortalité</span>
+            <span className="hidden sm:inline">{t('mortality_type')}</span>
           </TabsTrigger>
           <TabsTrigger value="production" className="flex items-center gap-1">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Production</span>
+            <span className="hidden sm:inline">{t('production')}</span>
           </TabsTrigger>
           <TabsTrigger value="stock" className="flex items-center gap-1">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Stock</span>
+            <span className="hidden sm:inline">{t('stock')}</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-1">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifs</span>
+            <span className="hidden sm:inline">{t('notifications')}</span>
           </TabsTrigger>
         </TabsList>
 
