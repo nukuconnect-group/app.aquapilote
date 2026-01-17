@@ -1825,6 +1825,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_team_member_owner_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1832,6 +1833,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_team_member_of: { Args: { owner_user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
