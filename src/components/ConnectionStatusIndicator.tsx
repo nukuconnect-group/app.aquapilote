@@ -18,7 +18,7 @@ interface ConnectionStatusIndicatorProps {
 }
 
 export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({ showTextOnMobile = false }) => {
-  const { language } = useSettings();
+  const { t } = useSettings();
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     network: 'connected',
     database: 'connecting'
@@ -114,32 +114,25 @@ export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps>
   };
 
   const getStatusText = () => {
-    if (language === 'fr') {
-      if (connectionState.network === 'disconnected') return 'Hors ligne';
-      if (connectionState.database === 'error') return 'Erreur de connexion';
-      if (connectionState.database === 'connecting') return 'Connexion...';
-      return 'En ligne';
-    } else {
-      if (connectionState.network === 'disconnected') return 'Offline';
-      if (connectionState.database === 'error') return 'Connection error';
-      if (connectionState.database === 'connecting') return 'Connecting...';
-      return 'Online';
-    }
+    if (connectionState.network === 'disconnected') return t('offline');
+    if (connectionState.database === 'error') return t('database_error');
+    if (connectionState.database === 'connecting') return t('loading');
+    return t('online');
   };
 
   const getTooltipContent = () => {
     const networkStatus = connectionState.network === 'connected' 
-      ? (language === 'fr' ? 'Réseau : Connecté' : 'Network: Connected')
-      : (language === 'fr' ? 'Réseau : Déconnecté' : 'Network: Disconnected');
+      ? t('network_connected')
+      : t('network_disconnected');
 
     const databaseStatus = connectionState.database === 'connected'
-      ? (language === 'fr' ? 'Base de données : Connectée' : 'Database: Connected')
+      ? t('database_connected')
       : connectionState.database === 'error'
-      ? (language === 'fr' ? 'Base de données : Erreur' : 'Database: Error')
-      : (language === 'fr' ? 'Base de données : Connexion...' : 'Database: Connecting...');
+      ? t('database_error')
+      : t('database_connecting');
 
     const lastSyncText = connectionState.lastSync
-      ? `${language === 'fr' ? 'Dernière sync' : 'Last sync'}: ${connectionState.lastSync.toLocaleTimeString()}`
+      ? `${t('last_sync')}: ${connectionState.lastSync.toLocaleTimeString()}`
       : '';
 
     return (

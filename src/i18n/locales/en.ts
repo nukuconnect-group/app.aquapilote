@@ -27,6 +27,20 @@ export const en = {
   reproduction: 'Reproduction',
   economics: 'Economics',
   
+  // Menu categories
+  category_dashboard: 'Dashboard',
+  category_production: 'Production & Livestock',
+  category_financial: 'Financial Management',
+  category_hr: 'Human Resources',
+  category_planning: 'Planning & Reports',
+  category_tools: 'Tools & Help',
+  category_config: 'Configuration',
+  category_admin: 'Administration',
+  main_menu: 'Main Menu',
+  aqua_assistant: 'AquaAssistant AI',
+  customer_support: 'Customer Support',
+  offline_mode_menu: 'Offline Mode',
+  
   // Header
   app_title: 'AQUA PILOT',
   app_subtitle: 'Intelligent Aquaculture Management',

@@ -41,7 +41,7 @@ interface MobileMenuModalProps {
 }
 
 const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenuModalProps) => {
-  const { t, language } = useSettings();
+  const { t } = useSettings();
   const { user } = useAuth();
   const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
 
@@ -81,28 +81,28 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   const menuItems = [
     // Tableau de bord
     {
-      category: language === 'fr' ? 'Tableau de bord' : 'Dashboard',
+      category: t('category_dashboard'),
       items: [
         { id: 'dashboard', label: t('dashboard'), icon: Home },
-        { id: 'performance-alerts', label: language === 'fr' ? 'Alertes Performance' : 'Performance Alerts', icon: Bell },
+        { id: 'performance-alerts', label: t('performance_alerts'), icon: Bell },
         { id: 'iot-control', label: t('iot-control'), icon: Wifi },
         { id: 'units', label: t('units'), icon: Factory },
       ]
     },
     // Production & Élevage
     { 
-      category: language === 'fr' ? 'Production & Élevage' : 'Production & Livestock',
+      category: t('category_production'),
       items: [
         { id: 'infrastructures', label: t('infrastructures'), icon: Building },
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
         { id: 'health', label: t('health'), icon: Heart },
-        { id: 'production', label: 'Cycles de production', icon: Package },
+        { id: 'production', label: t('production_cycles'), icon: Package },
       ]
     },
     // Gestion financière
     {
-      category: language === 'fr' ? 'Gestion Financière' : 'Financial Management',
+      category: t('category_financial'),
       items: [
         { id: 'accounting', label: t('accounting'), icon: Calculator },
         { id: 'purchases', label: t('purchases'), icon: ShoppingCart },
@@ -112,7 +112,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     },
     // Ressources humaines
     {
-      category: language === 'fr' ? 'Ressources Humaines' : 'Human Resources',
+      category: t('category_hr'),
       items: [
         { id: 'hr', label: t('hr'), icon: UserCheck },
         { id: 'team', label: t('team'), icon: Users },
@@ -120,26 +120,26 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     },
     // Planification et rapports
     {
-      category: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
+      category: t('category_planning'),
       items: [
-        { id: 'analytics', label: language === 'fr' ? 'Analytique' : 'Analytics', icon: BarChart3 },
+        { id: 'analytics', label: t('analytics'), icon: BarChart3 },
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText }
       ]
     },
     // Outils & Aide
     {
-      category: language === 'fr' ? 'Outils & Aide' : 'Tools & Help',
+      category: t('category_tools'),
       items: [
-        { id: 'aqua-assistant', label: 'AquaAssistant IA', icon: MessageCircle },
-        { id: 'support', label: language === 'fr' ? 'Support Client' : 'Customer Support', icon: Headphones }
+        { id: 'aqua-assistant', label: t('aqua_assistant'), icon: MessageCircle },
+        { id: 'support', label: t('customer_support'), icon: Headphones }
       ]
     },
     // Configuration
     {
-      category: language === 'fr' ? 'Configuration' : 'Configuration',
+      category: t('category_config'),
       items: [
-        { id: 'offline', label: language === 'fr' ? 'Mode hors ligne' : 'Offline Mode', icon: Database },
+        { id: 'offline', label: t('offline_mode_menu'), icon: Database },
         { id: 'settings', label: t('settings'), icon: Settings }
       ]
     }
@@ -148,7 +148,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   // Ajouter section Admin si l'utilisateur est admin et non membre d'équipe
   if (user?.role === 'admin' && !isTeamMember) {
     menuItems.push({
-      category: language === 'fr' ? 'Administration' : 'Administration',
+      category: t('category_admin'),
       items: [
         { id: 'admin', label: t('admin'), icon: UserCog }
       ]
@@ -171,7 +171,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       <DialogContent className="max-w-sm max-h-[85vh] p-0 mobile-friendly-modal">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-responsive-title">
-            {language === 'fr' ? 'Menu principal' : 'Main Menu'}
+            {t('main_menu')}
           </DialogTitle>
           
           {/* Indicateur membre d'équipe */}
