@@ -317,9 +317,36 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     
     try {
       setIsLoadingUnits(true);
+      
+      // Vérifier si l'utilisateur est un membre d'équipe
+      let ownerId = user.id;
+      let allowedUnitIds: string[] = [];
+      
+      if (user.isTeamMember && user.teamMemberOwnerId) {
+        ownerId = user.teamMemberOwnerId;
+        
+        // Charger les unités assignées au membre
+        const { data: teamMember } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('member_email', user.email.toLowerCase())
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        if (teamMember) {
+          const { data: memberUnits } = await supabase
+            .from('team_member_units')
+            .select('unit_id')
+            .eq('team_member_id', teamMember.id);
+          
+          allowedUnitIds = (memberUnits || []).map((u: any) => u.unit_id);
+        }
+      }
+      
       const { data, error } = await (supabase as any)
         .from('production_units')
         .select('*')
+        .eq('user_id', ownerId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -328,7 +355,14 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       }
 
       if (data) {
-        const convertedUnits: ProductionUnit[] = data.map((unit: any) => ({
+        let filteredData = data;
+        
+        // Si membre d'équipe, filtrer par unités assignées
+        if (user.isTeamMember && allowedUnitIds.length > 0) {
+          filteredData = data.filter((unit: any) => allowedUnitIds.includes(unit.id));
+        }
+        
+        const convertedUnits: ProductionUnit[] = filteredData.map((unit: any) => ({
           id: unit.id,
           name: unit.name,
           type: unit.type as ProductionUnitType,
@@ -352,7 +386,7 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     } finally {
       setIsLoadingUnits(false);
     }
-  }, [user?.id]);
+  }, [user?.id, user?.isTeamMember, user?.teamMemberOwnerId, user?.email]);
 
   // Charger les infrastructures depuis la base de données
   const fetchInfrastructuresFromDB = useCallback(async () => {

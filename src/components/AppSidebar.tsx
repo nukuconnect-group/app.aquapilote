@@ -25,41 +25,41 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const { open } = useSidebar();
   const { t, language } = useSettings();
   const { user } = useAuth();
-  const { isTeamMember, teamMemberInfo } = useTeamMemberAccess();
+  const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
 
-  // Modules accessibles aux membres d'équipe selon leurs permissions
-  const getTeamMemberAllowedTabs = () => {
-    if (!isTeamMember || !teamMemberInfo) return null;
-    
-    const allowedTabs = new Set<string>();
-    allowedTabs.add('dashboard'); // Toujours accès au dashboard
-    
-    teamMemberInfo.assignedUnits.forEach(unit => {
-      const perms = unit.permissions;
-      if (perms.canView) {
-        allowedTabs.add('units');
-        allowedTabs.add('infrastructures');
-      }
-      if (perms.canManageFeeding) {
-        allowedTabs.add('feeding');
-      }
-      if (perms.canManageHealth) {
-        allowedTabs.add('health');
-      }
-      if (perms.canManageProduction) {
-        allowedTabs.add('production');
-        allowedTabs.add('livestock');
-      }
-    });
-    
-    // Toujours accès aux paramètres de base et support
-    allowedTabs.add('settings');
-    allowedTabs.add('support');
-    
-    return allowedTabs;
+  // Mapping des IDs de tabs vers les IDs de modules/permissions
+  const tabToModuleMapping: Record<string, string> = {
+    'dashboard': 'dashboard',
+    'iot-control': 'iot',
+    'units': 'infrastructure',
+    'infrastructures': 'infrastructure',
+    'livestock': 'livestock',
+    'feeding': 'feeding',
+    'health': 'health',
+    'transformation': 'production',
+    'production': 'production',
+    'accounting': 'accounting',
+    'purchases': 'purchases',
+    'sales': 'sales',
+    'suppliers': 'suppliers',
+    'hr': 'accounting',
+    'team': 'settings',
+    'planning': 'planning',
+    'reports': 'reports',
+    'settings': 'settings',
+    'support': 'support',
+    'aqua-assistant': 'dashboard',
+    'offline': 'settings',
+    'weather': 'environment',
+    'admin': 'admin'
   };
 
-  const allowedTabs = getTeamMemberAllowedTabs();
+  // Vérifier si un tab est accessible
+  const isTabAllowed = (tabId: string): boolean => {
+    if (!isTeamMember) return true; // Non-membre = accès complet
+    const moduleId = tabToModuleMapping[tabId] || tabId;
+    return hasAccessToModule(moduleId);
+  };
 
   const navigationGroups = [
     {
@@ -132,10 +132,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   // Filtrer les groupes et items selon les permissions du membre d'équipe
   const filteredGroups = navigationGroups.map(group => ({
     ...group,
-    items: group.items.filter(item => {
-      if (!allowedTabs) return true; // Non membre = accès complet
-      return allowedTabs.has(item.id);
-    })
+    items: group.items.filter(item => isTabAllowed(item.id))
   })).filter(group => group.items.length > 0);
 
   return (
