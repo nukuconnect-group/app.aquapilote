@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { useOfflineContext } from '@/contexts/OfflineContext';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useSettings } from '@/contexts/SettingsContext';
 import FileUploadManager from './FileUploadManager';
 import OfflineFilesSync from './OfflineFilesSync';
 
@@ -33,6 +34,9 @@ export const OfflineDataManager = () => {
     preloadData,
     clearCache,
   } = useOfflineContext();
+  
+  const { t, language } = useSettings();
+  const dateLocale = language === 'fr' ? fr : enUS;
 
   const [isPreloading, setIsPreloading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -71,22 +75,22 @@ export const OfflineDataManager = () => {
           <div className="min-w-0 flex-1">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 flex items-center gap-2">
               <Database className="h-5 h-5 sm:h-6 sm:w-6 flex-shrink-0" />
-              <span className="break-words">Gestion des données hors ligne</span>
+              <span className="break-words">{t('offline_mode')}</span>
             </h2>
             <p className="text-blue-100 text-sm sm:text-base">
-              Consultez vos données même sans connexion Internet
+              {t('offline_management_desc')}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {isOnline ? (
               <Badge className="bg-green-500 text-white text-xs sm:text-sm">
                 <Wifi className="h-3 h-3 sm:h-4 sm:w-4 mr-1" />
-                En ligne
+                {t('online')}
               </Badge>
             ) : (
               <Badge className="bg-yellow-500 text-white text-xs sm:text-sm">
                 <WifiOff className="h-3 h-3 sm:h-4 sm:w-4 mr-1" />
-                Hors ligne
+                {t('offline')}
               </Badge>
             )}
           </div>

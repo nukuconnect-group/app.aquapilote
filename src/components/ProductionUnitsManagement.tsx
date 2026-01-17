@@ -26,12 +26,14 @@ import {
 } from 'lucide-react';
 import { useProductionUnits, ProductionUnitType } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 
 const ProductionUnitsManagement = () => {
   const { units, addUnit, updateUnit, deleteUnit } = useProductionUnits();
   const { addLog } = useLogs();
+  const { t } = useSettings();
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -206,19 +208,19 @@ const ProductionUnitsManagement = () => {
       <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 sm:p-6 rounded-xl text-white">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Gestion des Unités</h2>
-            <p className="text-purple-100 text-sm sm:text-base">Configuration et administration des unités de production</p>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('production_units')}</h2>
+            <p className="text-purple-100 text-sm sm:text-base">{t('production_units_management_desc')}</p>
           </div>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
                 <Plus className="w-4 h-4 mr-2" />
-                Nouvelle unité
+                {t('add')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-full sm:max-w-2xl mx-2">
               <DialogHeader>
-                <DialogTitle>{editingUnit ? 'Modifier l\'unité' : 'Créer une nouvelle unité'}</DialogTitle>
+                <DialogTitle>{editingUnit ? t('edit') : t('create')}</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -333,7 +335,7 @@ const ProductionUnitsManagement = () => {
                 {/* Boutons TOUJOURS visibles - fixés en bas */}
                 <div className="sm:col-span-2 flex gap-2 pt-4 border-t sticky bottom-0 bg-background pb-2">
                   <Button onClick={handleSaveUnit} className="flex-1 min-h-[44px]" disabled={!newUnit.name || !newUnit.type}>
-                    {editingUnit ? 'Modifier' : 'Créer'} l'unité
+                    {editingUnit ? t('edit') : t('create')}
                   </Button>
                   <Button variant="outline" className="min-h-[44px]" onClick={() => {
                     setShowAddDialog(false);
@@ -350,7 +352,7 @@ const ProductionUnitsManagement = () => {
                       photoUrl: ''
                     });
                   }}>
-                    Annuler
+                    {t('cancel')}
                   </Button>
                 </div>
               </div>
@@ -379,10 +381,10 @@ const ProductionUnitsManagement = () => {
                     <CardTitle className="text-base sm:text-lg">{unit.name}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Badge className={unit.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                        {unit.isActive ? 'Active' : 'Inactive'}
+                        {unit.isActive ? t('active') : t('inactive')}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {unitTypes.find(t => t.value === unit.type)?.label}
+                        {unitTypes.find(type => type.value === unit.type)?.label}
                       </Badge>
                     </div>
                   </div>
@@ -420,19 +422,18 @@ const ProductionUnitsManagement = () => {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer l'unité</AlertDialogTitle>
+                        <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer définitivement l'unité "{unit.name}" ? 
-                          Cette action est irréversible et supprimera toutes les données associées.
+                          {t('confirm_delete')} "{unit.name}"?
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={() => handleDeleteUnit(unit.id, unit.name)}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          Supprimer
+                          {t('delete')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -443,25 +444,25 @@ const ProductionUnitsManagement = () => {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Capacité:</span>
+                  <span className="text-gray-600">{t('capacity')}:</span>
                   <span className="ml-1 font-medium">{unit.capacity.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Stock:</span>
+                  <span className="text-gray-600">{t('stock')}:</span>
                   <span className="ml-1 font-medium">{unit.currentStock.toLocaleString()}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Utilisation:</span>
+                  <span className="text-gray-600">%:</span>
                   <span className="ml-1 font-medium">{((unit.currentStock / unit.capacity) * 100).toFixed(1)}%</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Responsable:</span>
+                  <span className="text-gray-600">{t('name')}:</span>
                   <span className="ml-1 font-medium">{unit.manager}</span>
                 </div>
               </div>
               {unit.description && (
                 <div className="mt-3 p-2 bg-gray-50 rounded text-xs sm:text-sm">
-                  <strong>Description:</strong> {unit.description}
+                  <strong>{t('description')}:</strong> {unit.description}
                 </div>
               )}
             </CardContent>

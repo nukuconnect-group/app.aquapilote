@@ -230,10 +230,10 @@ const SalesManagement = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'En attente';
-      case 'confirmed': return 'Confirmée';
-      case 'delivered': return 'Livrée';
-      case 'paid': return 'Payée';
+      case 'pending': return t('status_pending');
+      case 'confirmed': return t('status_confirmed');
+      case 'delivered': return t('status_delivered');
+      case 'paid': return t('status_paid');
       default: return status;
     }
   };
@@ -338,16 +338,16 @@ const SalesManagement = () => {
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2 truncate">Gestion des Ventes</h2>
-              <p className="text-sm sm:text-base text-green-100">Suivi des ventes, clients et facturation par unité</p>
+              <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2 truncate">{t('sales_management')}</h2>
+              <p className="text-sm sm:text-base text-green-100">{t('sales_management_desc')}</p>
             </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base">
                   <Plus className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Nouvelle Vente</span>
-                  <span className="sm:hidden">Nouveau</span>
+                  <span className="hidden sm:inline">{t('new_sale')}</span>
+                  <span className="sm:hidden">{t('add')}</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
