@@ -16,33 +16,37 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Feeding reminders function triggered at:", new Date().toISOString());
 
-    // Verify scheduler authentication token
+    // Verify scheduler authentication token - MANDATORY
     const authHeader = req.headers.get('Authorization');
     const expectedToken = Deno.env.get('CRON_SECRET_TOKEN');
     
-    // If CRON_SECRET_TOKEN is set, enforce authentication
-    if (expectedToken) {
-      if (!authHeader) {
-        console.error('Missing authorization header for scheduled function');
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized - Missing authorization header' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      const providedToken = authHeader.replace('Bearer ', '');
-      if (providedToken !== expectedToken) {
-        console.error('Invalid authorization token for scheduled function');
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized - Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      console.log('Scheduler authentication verified');
-    } else {
-      console.warn('CRON_SECRET_TOKEN not configured - function is publicly accessible');
+    // CRON_SECRET_TOKEN is required for security
+    if (!expectedToken) {
+      console.error('CRON_SECRET_TOKEN not configured - rejecting request for security');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error - CRON_SECRET_TOKEN not set' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    
+    if (!authHeader) {
+      console.error('Missing authorization header for scheduled function');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const providedToken = authHeader.replace('Bearer ', '');
+    if (providedToken !== expectedToken) {
+      console.error('Invalid authorization token for scheduled function');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('Scheduler authentication verified');
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
