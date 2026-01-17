@@ -3,6 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
+  Home,
+  Wifi,
+  Factory,
   Utensils, 
   Heart, 
   Building, 
@@ -20,7 +23,8 @@ import {
   UserCog,
   Database,
   Shield,
-  MessageCircle
+  MessageCircle,
+  Headphones
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +45,9 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
 
   // Mapping des IDs de tabs vers les IDs de modules
   const tabToModuleMapping: Record<string, string> = {
+    'dashboard': 'dashboard',
+    'iot-control': 'iot',
+    'units': 'infrastructure',
     'infrastructures': 'infrastructure',
     'livestock': 'livestock',
     'feeding': 'feeding',
@@ -55,6 +62,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     'planning': 'planning',
     'reports': 'reports',
     'aqua-assistant': 'dashboard',
+    'support': 'support',
     'offline': 'settings',
     'settings': 'settings',
     'admin': 'admin'
@@ -67,6 +75,15 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   };
   
   const menuItems = [
+    // Tableau de bord
+    {
+      category: language === 'fr' ? 'Tableau de bord' : 'Dashboard',
+      items: [
+        { id: 'dashboard', label: t('dashboard'), icon: Home },
+        { id: 'iot-control', label: t('iot-control'), icon: Wifi },
+        { id: 'units', label: t('units'), icon: Factory },
+      ]
+    },
     // Production & Élevage
     { 
       category: language === 'fr' ? 'Production & Élevage' : 'Production & Livestock',
@@ -104,11 +121,12 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'reports', label: t('reports'), icon: FileText }
       ]
     },
-    // Outils
+    // Outils & Aide
     {
-      category: language === 'fr' ? 'Outils' : 'Tools',
+      category: language === 'fr' ? 'Outils & Aide' : 'Tools & Help',
       items: [
-        { id: 'aqua-assistant', label: 'AquaAssistant IA', icon: MessageCircle }
+        { id: 'aqua-assistant', label: 'AquaAssistant IA', icon: MessageCircle },
+        { id: 'support', label: language === 'fr' ? 'Support Client' : 'Customer Support', icon: Headphones }
       ]
     },
     // Configuration

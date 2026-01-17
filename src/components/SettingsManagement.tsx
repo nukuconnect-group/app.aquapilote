@@ -76,6 +76,7 @@ const SettingsManagement = () => {
   const [showClearDataDialog, setShowClearDataDialog] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
+  const [isForcingUpdate, setIsForcingUpdate] = useState(false);
   const [storageInfo, setStorageInfo] = useState({ used: 0, quota: 0 });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
@@ -442,6 +443,62 @@ const SettingsManagement = () => {
     } finally {
       setIsClearingCache(false);
       setShowClearCacheDialog(false);
+    }
+  };
+
+  const handleForceUpdate = async () => {
+    setIsForcingUpdate(true);
+    try {
+      // 1) Demande au Service Worker de vider les caches
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.controller?.postMessage({ type: 'CLEAR_CACHE' });
+
+        // 2) Forcer la recherche d'une nouvelle version du SW
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.update().catch(() => undefined)));
+
+        // 3) Si une nouvelle version est en attente, l'activer immédiatement
+        regs.forEach((r) => r.waiting?.postMessage({ type: 'SKIP_WAITING' }));
+
+        // 4) Attendre un éventuel controllerchange (max 2s), puis recharger
+        await new Promise<void>((resolve) => {
+          let done = false;
+          const timeout = setTimeout(() => {
+            if (done) return;
+            done = true;
+            resolve();
+          }, 2000);
+
+          navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            () => {
+              if (done) return;
+              done = true;
+              clearTimeout(timeout);
+              resolve();
+            },
+            { once: true }
+          );
+        });
+      }
+
+      toast({
+        title: language === 'fr' ? 'Mise à jour forcée' : 'Update forced',
+        description: language === 'fr'
+          ? 'L\'application va se recharger avec la dernière version.'
+          : 'The app will reload with the latest version.'
+      });
+    } catch (error) {
+      toast({
+        title: language === 'fr' ? 'Erreur' : 'Error',
+        description: language === 'fr'
+          ? 'Impossible de forcer la mise à jour. Essayez de rafraîchir la page.'
+          : 'Could not force update. Try refreshing the page.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsForcingUpdate(false);
+      window.location.reload();
     }
   };
 
@@ -1531,6 +1588,10 @@ const SettingsManagement = () => {
               <div className="space-y-4">
                 <h4 className="font-medium text-sm">{language === 'fr' ? 'Cache et stockage' : 'Cache and storage'}</h4>
                 <div className="flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" onClick={handleForceUpdate} disabled={isForcingUpdate} className="flex-1 sm:flex-none">
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isForcingUpdate ? 'animate-spin' : ''}`} />
+                    {language === 'fr' ? 'Forcer la mise à jour' : 'Force update'}
+                  </Button>
                   <Button variant="outline" onClick={() => setShowClearCacheDialog(true)} className="flex-1 sm:flex-none">
                     <RefreshCw className="w-4 h-4 mr-2" />
                     {language === 'fr' ? 'Vider le cache' : 'Clear cache'}
