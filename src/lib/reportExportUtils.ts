@@ -4,6 +4,19 @@
 
 import { CompanyInfoForPrint, generateCompanyHeaderHTML } from './companyHeaderUtils';
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ */
+const escapeHtml = (unsafe: string | number | null | undefined): string => {
+  if (unsafe == null) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 export interface ReportData {
   title: string;
   period: string;
@@ -123,7 +136,7 @@ export const exportToWord = (data: ReportData, filename: string) => {
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
     <head>
       <meta charset="utf-8">
-      <title>${data.title}</title>
+      <title>${escapeHtml(data.title)}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1 { color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; }
@@ -139,25 +152,25 @@ export const exportToWord = (data: ReportData, filename: string) => {
     </head>
     <body>
       ${companyHeader}
-      <h1>${data.title}</h1>
-      <p class="header-info"><strong>Période:</strong> ${data.period}</p>
-      <p class="header-info"><strong>Généré le:</strong> ${data.generatedAt}</p>
-      ${data.unitName ? `<p class="header-info"><strong>Unité:</strong> ${data.unitName}</p>` : ''}
+      <h1>${escapeHtml(data.title)}</h1>
+      <p class="header-info"><strong>Période:</strong> ${escapeHtml(data.period)}</p>
+      <p class="header-info"><strong>Généré le:</strong> ${escapeHtml(data.generatedAt)}</p>
+      ${data.unitName ? `<p class="header-info"><strong>Unité:</strong> ${escapeHtml(data.unitName)}</p>` : ''}
   `;
 
   data.sections.forEach(section => {
-    htmlContent += `<h2>${section.title}</h2>`;
+    htmlContent += `<h2>${escapeHtml(section.title)}</h2>`;
     
     if (section.type === 'table' && section.headers && section.rows) {
       htmlContent += '<table>';
-      htmlContent += '<tr>' + section.headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      htmlContent += '<tr>' + section.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
       section.rows.forEach(row => {
-        htmlContent += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+        htmlContent += '<tr>' + row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>';
       });
       htmlContent += '</table>';
     } else if (section.type === 'summary' && section.summary) {
       section.summary.forEach(item => {
-        htmlContent += `<div class="summary-item"><span class="summary-label">${item.label}:</span> <span class="summary-value">${item.value}</span></div>`;
+        htmlContent += `<div class="summary-item"><span class="summary-label">${escapeHtml(item.label)}:</span> <span class="summary-value">${escapeHtml(item.value)}</span></div>`;
       });
     }
   });
@@ -185,7 +198,7 @@ export const exportToPDF = (data: ReportData, filename: string) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>${data.title}</title>
+      <title>${escapeHtml(data.title)}</title>
       <style>
         @media print {
           body { margin: 0; padding: 20px; }
@@ -206,32 +219,32 @@ export const exportToPDF = (data: ReportData, filename: string) => {
     </head>
     <body>
       ${companyHeader}
-      <h1>${data.title}</h1>
-      <p class="header-info"><strong>Période:</strong> ${data.period}</p>
-      <p class="header-info"><strong>Date de génération:</strong> ${data.generatedAt}</p>
-      ${data.unitName ? `<p class="header-info"><strong>Unité de production:</strong> ${data.unitName}</p>` : ''}
+      <h1>${escapeHtml(data.title)}</h1>
+      <p class="header-info"><strong>Période:</strong> ${escapeHtml(data.period)}</p>
+      <p class="header-info"><strong>Date de génération:</strong> ${escapeHtml(data.generatedAt)}</p>
+      ${data.unitName ? `<p class="header-info"><strong>Unité de production:</strong> ${escapeHtml(data.unitName)}</p>` : ''}
   `;
 
   data.sections.forEach(section => {
-    htmlContent += `<h2>${section.title}</h2>`;
+    htmlContent += `<h2>${escapeHtml(section.title)}</h2>`;
     
     if (section.type === 'table' && section.headers && section.rows) {
       htmlContent += '<table>';
-      htmlContent += '<tr>' + section.headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      htmlContent += '<tr>' + section.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
       section.rows.forEach(row => {
-        htmlContent += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+        htmlContent += '<tr>' + row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>';
       });
       htmlContent += '</table>';
     } else if (section.type === 'summary' && section.summary) {
       section.summary.forEach(item => {
-        htmlContent += `<div class="summary-item"><span class="summary-label">${item.label}:</span> <span class="summary-value">${item.value}</span></div>`;
+        htmlContent += `<div class="summary-item"><span class="summary-label">${escapeHtml(item.label)}:</span> <span class="summary-value">${escapeHtml(item.value)}</span></div>`;
       });
     }
   });
 
   htmlContent += `
       <div class="footer">
-        <p>Rapport généré automatiquement par AquaPilot - ${data.generatedAt}</p>
+        <p>Rapport généré automatiquement par AquaPilot - ${escapeHtml(data.generatedAt)}</p>
       </div>
       <script>
         window.onload = function() {
