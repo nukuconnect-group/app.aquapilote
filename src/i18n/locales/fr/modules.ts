@@ -139,4 +139,12 @@ export const modules = {
   support_subtitle: 'Aide et assistance technique',
   new_ticket: 'Nouvelle demande',
   my_requests: 'Mes demandes',
+  
+  // Additional common labels
+  stock: 'Stock',
+  maintenance: 'Maintenance',
+  type: 'Type',
+  reports: 'Rapports',
+  no_unit_selected: 'Aucune unité sélectionnée',
+  confirm_delete: 'Êtes-vous sûr de vouloir supprimer',
 };

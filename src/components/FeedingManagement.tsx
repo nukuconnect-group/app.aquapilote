@@ -46,8 +46,8 @@ const FeedingManagement = () => {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 sm:p-6 rounded-xl text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">Gestion de l'Alimentation</h2>
-              <p className="text-orange-100 text-sm sm:text-base">Fiches techniques et suivi nutritionnel</p>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('feeding_management_title')}</h2>
+              <p className="text-orange-100 text-sm sm:text-base">{t('feeding_management_desc')}</p>
             </div>
           </div>
           <div className="mt-4">
@@ -58,10 +58,10 @@ const FeedingManagement = () => {
         <div className="text-center py-12">
           <Utensils className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            Aucune unité sélectionnée
+            {t('no_unit_selected')}
           </h3>
           <p className="text-gray-500">
-            Sélectionnez une unité de production pour gérer son alimentation
+            {t('select_unit_for_feeding')}
           </p>
         </div>
       </div>
@@ -118,8 +118,8 @@ const FeedingManagement = () => {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 sm:p-6 rounded-xl text-white">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">Gestion de l'Alimentation</h2>
-              <p className="text-orange-100 text-sm sm:text-base">Unité: {activeUnit.name}</p>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">{t('feeding_management_title')}</h2>
+              <p className="text-orange-100 text-sm sm:text-base">{t('unit')}: {activeUnit.name}</p>
             </div>
           </div>
           <div className="mt-4">
@@ -130,10 +130,10 @@ const FeedingManagement = () => {
         <div className="text-center py-12">
           <Utensils className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            Pas d'alimentation requise
+            {t('no_feeding_required')}
           </h3>
           <p className="text-gray-500">
-            Cette unité ({activeUnit.type}) ne nécessite pas de gestion d'alimentation
+            {t('units_not_needing_feeding')}
           </p>
         </div>
       </div>

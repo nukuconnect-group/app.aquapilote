@@ -16,7 +16,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 const AccountingManagement = () => {
   const { activeUnit, getUnitFinancialData, getGlobalFinancialData } = useProductionUnits();
-  const { currency, setCurrency } = useSettings();
+  const { currency, setCurrency, t } = useSettings();
 
   const currencies = [
     { code: 'XOF', symbol: 'F CFA', name: 'Franc CFA' },
@@ -30,8 +30,8 @@ const AccountingManagement = () => {
         <div className="bg-gradient-ocean p-responsive rounded-xl text-primary-foreground">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-responsive">
             <div>
-              <h2 className="text-responsive-title font-bold mb-2">Gestion Comptable</h2>
-              <p className="text-primary-foreground/80 text-responsive">Comptabilité complète et gestion financière</p>
+              <h2 className="text-responsive-title font-bold mb-2">{t('accounting_management')}</h2>
+              <p className="text-primary-foreground/80 text-responsive">{t('accounting_management_desc')}</p>
             </div>
             <div className="flex items-center gap-responsive">
               <div className="flex items-center gap-2">
@@ -58,10 +58,10 @@ const AccountingManagement = () => {
         <div className="text-center py-12">
           <Calculator className="icon-responsive-lg mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-responsive-subtitle font-semibold text-foreground mb-2">
-            Aucune unité sélectionnée
+            {t('no_unit_selected')}
           </h3>
           <p className="text-muted-foreground text-responsive">
-            Sélectionnez une unité pour accéder à sa comptabilité
+            {t('select_unit_for_accounting')}
           </p>
         </div>
       </div>
@@ -92,10 +92,10 @@ const AccountingManagement = () => {
       <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-responsive rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-responsive">
           <div className="flex-1">
-            <h2 className="text-responsive-title font-bold mb-2">Comptabilité - {activeUnit.name}</h2>
-            <p className="text-emerald-100 text-responsive mb-2">Gestion comptable complète et reporting financier</p>
+            <h2 className="text-responsive-title font-bold mb-2">{t('accounting_management')} - {activeUnit.name}</h2>
+            <p className="text-emerald-100 text-responsive mb-2">{t('accounting_management_desc')}</p>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
-              <span className="text-sm">Type: {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}</span>
+              <span className="text-sm">{t('type')}: {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}</span>
               <Badge variant="secondary" className="bg-white/20 text-white w-fit">
                 {activeUnit.type}
               </Badge>
@@ -118,7 +118,7 @@ const AccountingManagement = () => {
             </div>
             <Button variant="secondary" size="sm" className="text-xs sm:text-sm whitespace-nowrap">
               <AlertTriangle className="icon-responsive mr-1" />
-              Alertes ({cashFlowData.overdueInvoices})
+              {t('active_alerts')} ({cashFlowData.overdueInvoices})
             </Button>
           </div>
         </div>
@@ -131,27 +131,27 @@ const AccountingManagement = () => {
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 overflow-x-auto">
           <TabsTrigger value="dashboard" className="text-xs sm:text-sm whitespace-nowrap">
             <TrendingUp className="icon-responsive mr-1" />
-            <span className="hidden sm:inline">Tableau de bord</span>
-            <span className="sm:hidden">Bord</span>
+            <span className="hidden sm:inline">{t('dashboard')}</span>
+            <span className="sm:hidden">{t('dashboard')}</span>
           </TabsTrigger>
           <TabsTrigger value="transactions" className="text-xs sm:text-sm whitespace-nowrap">
             <Plus className="icon-responsive mr-1" />
-            <span className="hidden sm:inline">Transactions</span>
+            <span className="hidden sm:inline">{t('transactions')}</span>
             <span className="sm:hidden">Trans.</span>
           </TabsTrigger>
           <TabsTrigger value="depreciation" className="text-xs sm:text-sm whitespace-nowrap">
             <Calculator className="icon-responsive mr-1" />
-            <span className="hidden sm:inline">Amortissements</span>
+            <span className="hidden sm:inline">{t('depreciation')}</span>
             <span className="sm:hidden">Amort.</span>
           </TabsTrigger>
           <TabsTrigger value="cashflow" className="text-xs sm:text-sm whitespace-nowrap">
             <CreditCard className="icon-responsive mr-1" />
-            <span className="hidden sm:inline">Trésorerie</span>
+            <span className="hidden sm:inline">{t('cash_flow')}</span>
             <span className="sm:hidden">Trés.</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="text-xs sm:text-sm whitespace-nowrap">
             <FileText className="icon-responsive mr-1" />
-            <span className="hidden sm:inline">Rapports</span>
+            <span className="hidden sm:inline">{t('reports')}</span>
             <span className="sm:hidden">Rapp.</span>
           </TabsTrigger>
         </TabsList>

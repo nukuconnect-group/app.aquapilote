@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building, Settings, Activity, Thermometer, MapPin, Calendar, Wrench } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import InfrastructureForm from './infrastructure/InfrastructureForm';
 import InfrastructureCard from './infrastructure/InfrastructureCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -17,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 const MaintenanceScheduleForm = ({ infrastructure }: { infrastructure: any }) => {
   const { updateInfrastructure } = useProductionUnits();
   const { toast } = useToast();
+  const { t } = useSettings();
   const [nextDate, setNextDate] = useState(infrastructure.nextMaintenanceDate || '');
   const [frequency, setFrequency] = useState(infrastructure.maintenanceFrequencyDays?.toString() || '30');
   const [notes, setNotes] = useState(infrastructure.maintenanceNotes || '');
@@ -28,7 +30,7 @@ const MaintenanceScheduleForm = ({ infrastructure }: { infrastructure: any }) =>
       maintenanceNotes: notes || undefined,
       lastMaintenanceDate: infrastructure.lastMaintenanceDate
     });
-    toast({ title: 'Maintenance programmée', description: `Prochaine maintenance le ${nextDate}` });
+    toast({ title: t('success'), description: `${t('maintenance')} ${nextDate}` });
   };
 
   const handleMarkComplete = async () => {
@@ -41,26 +43,26 @@ const MaintenanceScheduleForm = ({ infrastructure }: { infrastructure: any }) =>
       nextMaintenanceDate: nextMaintDate.toISOString().split('T')[0],
       maintenanceFrequencyDays: parseInt(frequency) || 30
     });
-    toast({ title: 'Maintenance effectuée', description: 'La prochaine maintenance a été reprogrammée' });
+    toast({ title: t('success'), description: t('maintenance') });
   };
 
   return (
     <div className="space-y-4 py-4">
       <div>
-        <Label>Prochaine date de maintenance</Label>
+        <Label>{t('start_date')}</Label>
         <Input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
       </div>
       <div>
-        <Label>Fréquence (jours)</Label>
+        <Label>{t('days')}</Label>
         <Input type="number" value={frequency} onChange={(e) => setFrequency(e.target.value)} placeholder="30" />
       </div>
       <div>
-        <Label>Notes de maintenance</Label>
-        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Instructions, pièces à vérifier..." />
+        <Label>{t('notes_label')}</Label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="..." />
       </div>
       <div className="flex gap-2">
-        <Button onClick={handleSave} className="flex-1">Enregistrer</Button>
-        <Button variant="outline" onClick={handleMarkComplete}>Marquer comme effectuée</Button>
+        <Button onClick={handleSave} className="flex-1">{t('save')}</Button>
+        <Button variant="outline" onClick={handleMarkComplete}>{t('completed')}</Button>
       </div>
     </div>
   );
@@ -68,6 +70,7 @@ const MaintenanceScheduleForm = ({ infrastructure }: { infrastructure: any }) =>
 
 const InfrastructureManagement = () => {
   const { activeUnit, getUnitInfrastructures } = useProductionUnits();
+  const { t } = useSettings();
 
   const handleInfrastructureSave = (infrastructure: any) => {
     console.log('Infrastructure saved:', infrastructure);
@@ -80,10 +83,10 @@ const InfrastructureManagement = () => {
         <div className="text-center py-8 sm:py-12 px-4">
           <Building className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-base sm:text-lg font-semibold text-gray-600 mb-2">
-            Aucune unité sélectionnée
+            {t('no_unit_selected')}
           </h3>
           <p className="text-sm sm:text-base text-gray-500">
-            Sélectionnez une unité de production pour voir ses infrastructures
+            {t('select_production_unit')}
           </p>
         </div>
       </div>
@@ -126,17 +129,17 @@ const InfrastructureManagement = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 truncate">
-              Infrastructures - {activeUnit.name}
+              {t('infrastructures')} - {activeUnit.name}
             </h2>
             <p className="text-gray-100 text-sm sm:text-base">
-              Gestion des équipements et installations
+              {t('infrastructure_management_desc')}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
               <span className="truncate">
-                Type: {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}
+                {t('type')}: {activeUnit.type.charAt(0).toUpperCase() + activeUnit.type.slice(1)}
               </span>
               <Badge variant="secondary" className="bg-white/20 text-white text-xs sm:text-sm">
-                {infrastructures.length} infrastructures
+                {infrastructures.length} {t('infrastructures').toLowerCase()}
               </Badge>
             </div>
           </div>
@@ -154,7 +157,7 @@ const InfrastructureManagement = () => {
               <Building className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 flex-shrink-0" />
             </div>
             <p className="text-xl sm:text-2xl font-bold truncate">{infrastructures.length}</p>
-            <p className="text-xs sm:text-sm text-gray-600">Total infrastructures</p>
+            <p className="text-xs sm:text-sm text-gray-600">{t('total')}</p>
           </CardContent>
         </Card>
         
@@ -166,7 +169,7 @@ const InfrastructureManagement = () => {
             <p className="text-xl sm:text-2xl font-bold truncate">
               {infrastructures.filter(i => i.status === 'active').length}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600">Actives</p>
+            <p className="text-xs sm:text-sm text-gray-600">{t('active')}</p>
           </CardContent>
         </Card>
         
@@ -178,7 +181,7 @@ const InfrastructureManagement = () => {
             <p className="text-xl sm:text-2xl font-bold truncate">
               {infrastructures.filter(i => i.status === 'maintenance').length}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600">En maintenance</p>
+            <p className="text-xs sm:text-sm text-gray-600">{t('maintenance')}</p>
           </CardContent>
         </Card>
         
@@ -190,7 +193,7 @@ const InfrastructureManagement = () => {
             <p className="text-lg sm:text-2xl font-bold truncate">
               {infrastructures.reduce((sum, i) => sum + i.capacity, 0).toLocaleString()}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600">Capacité totale</p>
+            <p className="text-xs sm:text-sm text-gray-600">{t('capacity')}</p>
           </CardContent>
         </Card>
       </div>

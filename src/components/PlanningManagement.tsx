@@ -8,9 +8,11 @@ import ProductionUnitSelector from './ProductionUnitSelector';
 import { usePlannedTasks } from '@/hooks/usePlannedTasks';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const PlanningManagement = () => {
   const { activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const { tasks, todayTasks, upcomingTasks } = usePlannedTasks(activeUnit?.id);
   const { plans: feedingPlans } = useFeedingPlans(activeUnit?.id || '');
 

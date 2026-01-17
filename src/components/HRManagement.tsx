@@ -25,7 +25,7 @@ const HRManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { units, activeUnit } = useProductionUnits();
-const { formatCurrency, companyInfo } = useSettings();
+  const { formatCurrency, companyInfo, t } = useSettings();
   const { user } = useAuth();
   const { 
     employees, 
