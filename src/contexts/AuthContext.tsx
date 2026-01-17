@@ -29,9 +29,18 @@ interface User {
   };
 }
 
+interface MFAChallenge {
+  factorId: string;
+  email: string;
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string }>;
+  completeMFALogin: (code: string) => Promise<boolean>;
+  cancelMFALogin: () => void;
+  mfaChallenge: MFAChallenge | null;
   logout: () => void;
   register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<boolean>;
@@ -70,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<string | null>(null);
   const [hasSelectedPlan, setHasSelectedPlan] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
 
   // Fetch user profile and roles from Supabase
   const fetchUserData = async (supabaseUser: SupabaseUser) => {
@@ -304,20 +314,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string }> => {
     setIsLoading(true);
     
     // Validation basique
     if (!email || !password) {
       setIsLoading(false);
-      return false;
+      return { success: false };
     }
 
     // Validation format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setIsLoading(false);
-      return false;
+      return { success: false };
     }
     
     try {
@@ -329,22 +339,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         if (import.meta.env.DEV) console.error('Login error:', error.message);
         setIsLoading(false);
-        return false;
+        return { success: false };
       }
 
       if (data.user && data.session) {
-        // Effacer les données de démonstration pour un utilisateur réel
+        // Check if MFA is required
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        
+        if (factorsData && factorsData.totp.length > 0) {
+          const verifiedFactors = factorsData.totp.filter(f => f.status === 'verified');
+          
+          if (verifiedFactors.length > 0) {
+            // MFA is required - store challenge info and return
+            const factorId = verifiedFactors[0].id;
+            setMfaChallenge({
+              factorId,
+              email: email.trim().toLowerCase(),
+              password
+            });
+            setIsLoading(false);
+            return { success: false, requiresMFA: true, factorId };
+          }
+        }
+
+        // No MFA required - complete login
         clearDemoData();
         setIsDemoMode(false);
-        
-        // La session est automatiquement persistée par Supabase
         await fetchUserData(data.user);
         
-        // Marquer le splash screen et l'onboarding comme vus lors de la connexion
         localStorage.setItem('aqua_pilot_splash', 'true');
         localStorage.setItem('privacy_accepted', 'true');
         localStorage.setItem('onboarding_complete', 'true');
         
+        setIsLoading(false);
+        return { success: true };
+      }
+      
+      setIsLoading(false);
+      return { success: false };
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Login error:', error);
+      setIsLoading(false);
+      return { success: false };
+    }
+  };
+
+  const completeMFALogin = async (code: string): Promise<boolean> => {
+    if (!mfaChallenge) return false;
+    
+    setIsLoading(true);
+    
+    try {
+      // Create MFA challenge
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: mfaChallenge.factorId
+      });
+
+      if (challengeError) {
+        throw challengeError;
+      }
+
+      // Verify the code
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaChallenge.factorId,
+        challengeId: challengeData.id,
+        code
+      });
+
+      if (verifyError) {
+        throw verifyError;
+      }
+
+      // MFA verified - complete login
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        clearDemoData();
+        setIsDemoMode(false);
+        await fetchUserData(user);
+        
+        localStorage.setItem('aqua_pilot_splash', 'true');
+        localStorage.setItem('privacy_accepted', 'true');
+        localStorage.setItem('onboarding_complete', 'true');
+        
+        setMfaChallenge(null);
         setIsLoading(false);
         return true;
       }
@@ -352,10 +430,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Login error:', error);
+      if (import.meta.env.DEV) console.error('MFA verification error:', error);
       setIsLoading(false);
       return false;
     }
+  };
+
+  const cancelMFALogin = () => {
+    setMfaChallenge(null);
+    // Sign out the partial session
+    supabase.auth.signOut();
   };
 
   const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<{ success: boolean; error?: string }> => {
@@ -551,6 +635,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user,
       login,
+      completeMFALogin,
+      cancelMFALogin,
+      mfaChallenge,
       logout,
       register,
       resetPassword,

@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff, Loader2, Shield, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/clientConfig';
@@ -30,6 +31,9 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -37,7 +41,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     confirmPassword: ''
   });
   
-  const { login, register, resetPassword, isLoading, enterDemoMode } = useAuth();
+  const { login, register, resetPassword, completeMFALogin, cancelMFALogin, isLoading, enterDemoMode } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,6 +64,40 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     } catch (error) {
       console.error('Google login error:', error);
     }
+  };
+
+  const handleMFAVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError(null);
+    
+    if (mfaCode.length !== 6) {
+      setMfaError('Veuillez entrer un code à 6 chiffres');
+      return;
+    }
+
+    const success = await completeMFALogin(mfaCode);
+    
+    if (success) {
+      toast({
+        title: "✅ Connexion réussie",
+        description: "Bon retour sur AQUA PILOT !",
+      });
+      setShowMFAVerification(false);
+      setMfaCode('');
+      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      onClose();
+      navigate('/dashboard', { replace: true });
+    } else {
+      setMfaError('Code invalide. Veuillez réessayer.');
+      setMfaCode('');
+    }
+  };
+
+  const handleCancelMFA = () => {
+    cancelMFALogin();
+    setShowMFAVerification(false);
+    setMfaCode('');
+    setMfaError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -184,8 +222,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       }
 
       try {
-        const success = await login(email, password);
-        if (success) {
+        const result = await login(email, password);
+        
+        if (result.requiresMFA) {
+          // MFA is required - show verification screen
+          setShowMFAVerification(true);
+          return;
+        }
+        
+        if (result.success) {
           toast({
             title: "✅ Connexion réussie",
             description: "Bon retour sur AQUA PILOT !",
@@ -254,6 +299,79 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         
         {/* Contenu au-dessus du fond - centré verticalement et horizontalement */}
         <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-md mx-auto my-auto overflow-y-auto max-h-[90vh]">
+          {/* MFA Verification Screen */}
+          {showMFAVerification ? (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-center mb-6">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-primary" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
+                  Vérification 2FA requise
+                </DialogTitle>
+                <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
+                  Entrez le code à 6 chiffres de votre application d'authentification
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleMFAVerify} className="space-y-6 mt-6">
+                {mfaError && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>{mfaError}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mfaCode" className="sr-only">Code 2FA</Label>
+                  <Input
+                    id="mfaCode"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="text-center text-3xl tracking-widest font-mono h-16"
+                    autoComplete="one-time-code"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Ouvrez Google Authenticator, Authy ou votre app 2FA
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelMFA}
+                    className="flex-1"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading || mfaCode.length !== 6}
+                    className="flex-1"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Vérification...
+                      </>
+                    ) : (
+                      'Vérifier'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <>
           <DialogHeader>
             <div className="flex items-center justify-center mb-6">
               <img 
@@ -433,6 +551,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               )}
             </div>
           </form>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

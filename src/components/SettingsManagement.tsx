@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import BackupManagement from '@/components/BackupManagement';
+import MFASettings from '@/components/auth/MFASettings';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1263,6 +1264,9 @@ const SettingsManagement = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Authentification à deux facteurs (2FA) */}
+          <MFASettings />
         </TabsContent>
 
         {/* Accessibilité */}
