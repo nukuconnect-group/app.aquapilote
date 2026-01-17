@@ -986,5 +986,18 @@ export const en = {
   could_not_clear_cache: 'Could not clear cache',
   could_not_clear_data: 'Could not clear data',
   could_not_export: 'Could not export data',
+  
+  // Analytics & Alerts Config (unique keys only)
+  analytics_dashboard_title: 'Analytics Dashboard',
+  performance_indicators: 'Performance and production indicators',
+  days_7: '7 days',
+  days_30: '30 days',
+  days_90: '90 days',
+  months_12: '12 months',
+  alerts_config_title: 'Alerts Configuration',
+  alerts_config_desc: 'Set performance thresholds to trigger automatic alerts',
+  critical_alerts_badge: 'critical alert(s)',
+  check_now: 'Check now',
+  water: 'Water',
 };
 

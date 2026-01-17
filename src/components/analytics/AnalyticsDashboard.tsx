@@ -338,8 +338,8 @@ const AnalyticsDashboard: React.FC = () => {
       {/* En-tête avec filtres */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Tableau de bord analytique</h2>
-          <p className="text-muted-foreground mt-1">Performance et indicateurs de production</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{t('analytics_dashboard_title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('performance_indicators')}</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -349,20 +349,20 @@ const AnalyticsDashboard: React.FC = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">7 jours</SelectItem>
-              <SelectItem value="30d">30 jours</SelectItem>
-              <SelectItem value="90d">90 jours</SelectItem>
-              <SelectItem value="12m">12 mois</SelectItem>
+              <SelectItem value="7d">{t('days_7')}</SelectItem>
+              <SelectItem value="30d">{t('days_30')}</SelectItem>
+              <SelectItem value="90d">{t('days_90')}</SelectItem>
+              <SelectItem value="12m">{t('months_12')}</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={selectedUnit} onValueChange={setSelectedUnit}>
             <SelectTrigger className="w-40">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Toutes les unités" />
+              <SelectValue placeholder={t('all_units')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes les unités</SelectItem>
+              <SelectItem value="all">{t('all_units')}</SelectItem>
               {units.map(unit => (
                 <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
               ))}
@@ -378,37 +378,37 @@ const AnalyticsDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Production Totale"
+          title={t('total_production_kpi')}
           value={`${(kpis.totalQuantity / 1000).toFixed(1)}T`}
           change={kpis.productionChange}
-          changeLabel="vs mois dernier"
+          changeLabel={t('vs_last_month')}
           icon={Fish}
           color={COLORS.primary}
           loading={isLoading}
         />
         <KPICard
-          title="Taux de Survie"
+          title={t('survival_rate')}
           value={`${kpis.survivalRate.toFixed(1)}%`}
           change={kpis.survivalChange}
-          changeLabel="vs mois dernier"
+          changeLabel={t('vs_last_month')}
           icon={Activity}
           color={COLORS.success}
           loading={isLoading}
         />
         <KPICard
-          title="FCR Moyen"
+          title={t('average_fcr')}
           value={kpis.avgFCR.toFixed(2)}
           change={kpis.feedingChange}
-          changeLabel="amélioration"
+          changeLabel={t('improvement')}
           icon={Target}
           color={COLORS.secondary}
           loading={isLoading}
         />
         <KPICard
-          title="Ventes Totales"
+          title={t('total_sales_kpi')}
           value={`${(kpis.totalSales / 1000).toFixed(0)}K`}
           change={kpis.salesChange}
-          changeLabel="vs mois dernier"
+          changeLabel={t('vs_last_month')}
           icon={TrendingUp}
           color={COLORS.warning}
           loading={isLoading}
@@ -420,21 +420,21 @@ const AnalyticsDashboard: React.FC = () => {
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Vue d'ensemble</span>
-            <span className="sm:hidden">Général</span>
+            <span className="hidden sm:inline">{t('overview_tab')}</span>
+            <span className="sm:hidden">{t('general')}</span>
           </TabsTrigger>
           <TabsTrigger value="production" className="flex items-center gap-2">
             <Fish className="h-4 w-4" />
-            <span>Production</span>
+            <span>{t('production')}</span>
           </TabsTrigger>
           <TabsTrigger value="feeding" className="flex items-center gap-2">
             <Scale className="h-4 w-4" />
-            <span className="hidden sm:inline">Alimentation</span>
-            <span className="sm:hidden">Aliment.</span>
+            <span className="hidden sm:inline">{t('feeding')}</span>
+            <span className="sm:hidden">{t('feeding')}</span>
           </TabsTrigger>
           <TabsTrigger value="performance" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
-            <span>Performance</span>
+            <span>{t('performance_kpi')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -446,9 +446,9 @@ const AnalyticsDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-primary" />
-                  Production vs Objectifs
+                  {t('production_vs_objectives')}
                 </CardTitle>
-                <CardDescription>Évolution mensuelle de la production</CardDescription>
+                <CardDescription>{t('monthly_production_evolution')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
@@ -474,7 +474,7 @@ const AnalyticsDashboard: React.FC = () => {
                       <Area
                         type="monotone"
                         dataKey="production"
-                        name="Production"
+                        name={t('production')}
                         stroke={COLORS.primary}
                         strokeWidth={2}
                         fill="url(#productionGrad)"
@@ -482,7 +482,7 @@ const AnalyticsDashboard: React.FC = () => {
                       <Line
                         type="monotone"
                         dataKey="objectif"
-                        name="Objectif"
+                        name={t('objective_label')}
                         stroke={COLORS.secondary}
                         strokeWidth={2}
                         strokeDasharray="5 5"
@@ -499,9 +499,9 @@ const AnalyticsDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="h-5 w-5 text-primary" />
-                  Répartition par Espèce
+                  {t('species_distribution')}
                 </CardTitle>
-                <CardDescription>Distribution du cheptel actif</CardDescription>
+                <CardDescription>{t('current_distribution')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
