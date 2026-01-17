@@ -99,6 +99,11 @@ self.addEventListener('activate', (event) => {
 // Fonction pour déterminer la stratégie de cache appropriée
 function getCacheStrategy(request) {
   const url = new URL(request.url);
+
+  // Navigation/HTML - Network First avec timeout plus long (évite de servir un index.html trop ancien)
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    return { strategy: 'NetworkFirst', cacheName: DYNAMIC_CACHE, config: CACHE_CONFIG.dynamic, timeout: 12000 };
+  }
   
   // Images - Cache First
   if (/\.(png|jpg|jpeg|svg|gif|webp|ico)$/i.test(url.pathname)) {
