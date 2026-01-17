@@ -1021,15 +1021,12 @@ export const en = {
   livestock_management_desc: 'Fish batches and population tracking',
   production_units_management_desc: 'Management of your production units',
   financial_summary_title: 'Financial Summary',
-  all_units_label: 'All Units',
   revenues_label: 'Revenue',
   expenses_label: 'Expenses',
   salaries_label: 'Salaries',
   balance_label: 'Balance',
   benefit_label: 'Profit',
   deficit_label: 'Deficit',
-  financial_evolution: 'Financial Evolution',
-  hatchery_livestock: 'Hatchery Livestock',
 };
 
 
