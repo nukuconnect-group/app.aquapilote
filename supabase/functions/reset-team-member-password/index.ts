@@ -226,13 +226,17 @@ serve(async (req) => {
 
     console.log('Password reset successfully for:', email, 'by owner:', user.id);
     
+    // SECURITY: Do not return password in response - it's sent via email only
     return new Response(
       JSON.stringify({ 
         success: true,
-        newPassword,
         loginUrl,
         emailSent,
-        emailError
+        emailError,
+        message: emailSent 
+          ? 'Mot de passe réinitialisé avec succès. Les nouveaux identifiants ont été envoyés par email.' 
+          : 'Mot de passe réinitialisé avec succès. Veuillez noter que l\'email n\'a pas pu être envoyé.'
+        // newPassword intentionally NOT included - sent via email only
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

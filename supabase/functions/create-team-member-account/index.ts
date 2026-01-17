@@ -276,6 +276,7 @@ serve(async (req) => {
 
     console.log('Team member account created:', authData.user.id, 'by owner:', user.id);
     
+    // SECURITY: Do not return password in response - it's sent via email only
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -286,11 +287,14 @@ serve(async (req) => {
         },
         credentials: {
           email: email.trim(),
-          password: password,
           loginUrl: loginUrl
+          // Password intentionally NOT included - sent via email only
         },
         emailSent,
-        emailError
+        emailError,
+        message: emailSent 
+          ? 'Compte créé avec succès. Les identifiants ont été envoyés par email.' 
+          : 'Compte créé avec succès. Veuillez noter que l\'email n\'a pas pu être envoyé.'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
