@@ -847,6 +847,171 @@ export type Database = {
           },
         ]
       }
+      performance_alert_thresholds: {
+        Row: {
+          created_at: string | null
+          email_notifications: boolean | null
+          fcr_critical_threshold: number | null
+          fcr_enabled: boolean | null
+          fcr_warning_threshold: number | null
+          id: string
+          mortality_daily_critical: number | null
+          mortality_daily_warning: number | null
+          mortality_enabled: boolean | null
+          oxygen_critical: number | null
+          oxygen_enabled: boolean | null
+          oxygen_warning: number | null
+          ph_enabled: boolean | null
+          ph_max_critical: number | null
+          ph_max_warning: number | null
+          ph_min_critical: number | null
+          ph_min_warning: number | null
+          production_behind_critical: number | null
+          production_behind_warning: number | null
+          production_enabled: boolean | null
+          push_notifications: boolean | null
+          stock_days_critical: number | null
+          stock_days_warning: number | null
+          stock_enabled: boolean | null
+          temp_enabled: boolean | null
+          temp_max_critical: number | null
+          temp_max_warning: number | null
+          temp_min_critical: number | null
+          temp_min_warning: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          fcr_critical_threshold?: number | null
+          fcr_enabled?: boolean | null
+          fcr_warning_threshold?: number | null
+          id?: string
+          mortality_daily_critical?: number | null
+          mortality_daily_warning?: number | null
+          mortality_enabled?: boolean | null
+          oxygen_critical?: number | null
+          oxygen_enabled?: boolean | null
+          oxygen_warning?: number | null
+          ph_enabled?: boolean | null
+          ph_max_critical?: number | null
+          ph_max_warning?: number | null
+          ph_min_critical?: number | null
+          ph_min_warning?: number | null
+          production_behind_critical?: number | null
+          production_behind_warning?: number | null
+          production_enabled?: boolean | null
+          push_notifications?: boolean | null
+          stock_days_critical?: number | null
+          stock_days_warning?: number | null
+          stock_enabled?: boolean | null
+          temp_enabled?: boolean | null
+          temp_max_critical?: number | null
+          temp_max_warning?: number | null
+          temp_min_critical?: number | null
+          temp_min_warning?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          fcr_critical_threshold?: number | null
+          fcr_enabled?: boolean | null
+          fcr_warning_threshold?: number | null
+          id?: string
+          mortality_daily_critical?: number | null
+          mortality_daily_warning?: number | null
+          mortality_enabled?: boolean | null
+          oxygen_critical?: number | null
+          oxygen_enabled?: boolean | null
+          oxygen_warning?: number | null
+          ph_enabled?: boolean | null
+          ph_max_critical?: number | null
+          ph_max_warning?: number | null
+          ph_min_critical?: number | null
+          ph_min_warning?: number | null
+          production_behind_critical?: number | null
+          production_behind_warning?: number | null
+          production_enabled?: boolean | null
+          push_notifications?: boolean | null
+          stock_days_critical?: number | null
+          stock_days_warning?: number | null
+          stock_enabled?: boolean | null
+          temp_enabled?: boolean | null
+          temp_max_critical?: number | null
+          temp_max_warning?: number | null
+          temp_min_critical?: number | null
+          temp_min_warning?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      performance_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          cycle_id: string | null
+          cycle_name: string | null
+          id: string
+          is_acknowledged: boolean | null
+          message: string
+          metadata: Json | null
+          metric_name: string | null
+          metric_value: number | null
+          severity: string
+          threshold_value: number | null
+          title: string
+          unit_id: string | null
+          unit_name: string | null
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          cycle_id?: string | null
+          cycle_name?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          message: string
+          metadata?: Json | null
+          metric_name?: string | null
+          metric_value?: number | null
+          severity?: string
+          threshold_value?: number | null
+          title: string
+          unit_id?: string | null
+          unit_name?: string | null
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          cycle_id?: string | null
+          cycle_name?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          message?: string
+          metadata?: Json | null
+          metric_name?: string | null
+          metric_value?: number | null
+          severity?: string
+          threshold_value?: number | null
+          title?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       planned_tasks: {
         Row: {
           alert_sent: boolean | null

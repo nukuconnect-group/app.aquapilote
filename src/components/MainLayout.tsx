@@ -29,6 +29,8 @@ import SupportModule from './SupportModule';
 import AquaAssistantModule from './AquaAssistantModule';
 import OfflineDataManager from './OfflineDataManager';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
+import PerformanceAlertsConfig from './alerts/PerformanceAlertsConfig';
+import PerformanceAlertsPanel from './alerts/PerformanceAlertsPanel';
 
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -92,6 +94,13 @@ const MainLayout = () => {
         return <OfflineDataManager />;
       case 'analytics':
         return <AnalyticsDashboard />;
+      case 'performance-alerts':
+        return (
+          <div className="space-y-6">
+            <PerformanceAlertsPanel />
+            <PerformanceAlertsConfig />
+          </div>
+        );
       default:
         return <IntelligentDashboard />;
     }

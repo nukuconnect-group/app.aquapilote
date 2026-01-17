@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3 } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -52,7 +52,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     'offline': 'settings',
     'weather': 'environment',
     'admin': 'admin',
-    'analytics': 'reports'
+    'analytics': 'reports',
+    'performance-alerts': 'dashboard'
   };
 
   // Vérifier si un tab est accessible
@@ -67,6 +68,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       label: language === 'fr' ? 'Tableau de bord' : 'Dashboard',
       items: [
         { id: 'dashboard', label: t('dashboard'), icon: Home },
+        { id: 'performance-alerts', label: language === 'fr' ? 'Alertes Performance' : 'Performance Alerts', icon: Bell },
         { id: 'iot-control', label: t('iot-control'), icon: Wifi },
         { id: 'units', label: t('units'), icon: Building2 },
       ]
