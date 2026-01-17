@@ -60,7 +60,7 @@ serve(async (req) => {
     const body = await req.json();
     const { email, member_name, sendEmail } = body;
 
-    console.log('Resetting password for:', { email, member_name, sendEmail });
+    console.log('Resetting password for:', { email, member_name, sendEmail, requestedBy: user.id });
 
     if (!email) {
       return new Response(
@@ -74,6 +74,43 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // SECURITY: Verify that the caller owns this team member
+    const { data: teamMember, error: teamError } = await supabaseAdmin
+      .from('team_members')
+      .select('owner_id, id, member_name')
+      .eq('member_email', email.trim().toLowerCase())
+      .single();
+
+    if (teamError || !teamMember) {
+      console.error('Team member not found:', teamError);
+      return new Response(
+        JSON.stringify({ error: 'Membre d\'équipe non trouvé' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check ownership - only allow if the caller is the owner of the team member
+    if (teamMember.owner_id !== user.id) {
+      // Check if user is an admin
+      const { data: roleData } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!roleData || roleData.role !== 'admin') {
+        console.error('Unauthorized password reset attempt:', { 
+          requestedBy: user.id, 
+          teamMemberOwnerId: teamMember.owner_id,
+          targetEmail: email 
+        });
+        return new Response(
+          JSON.stringify({ error: 'Vous n\'avez pas les droits pour réinitialiser ce mot de passe' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Find the user by email
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
@@ -149,7 +186,7 @@ serve(async (req) => {
                 <h1>🔐 Mot de passe réinitialisé</h1>
               </div>
               <div class="content">
-                <p>Bonjour <strong>${member_name || 'Membre'}</strong>,</p>
+                <p>Bonjour <strong>${member_name || teamMember.member_name || 'Membre'}</strong>,</p>
                 <p>Votre mot de passe AquaPilote a été réinitialisé par un administrateur. Voici vos nouveaux identifiants de connexion:</p>
                 
                 <div class="credentials">
@@ -187,7 +224,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Password reset successfully for:', email);
+    console.log('Password reset successfully for:', email, 'by owner:', user.id);
     
     return new Response(
       JSON.stringify({ 

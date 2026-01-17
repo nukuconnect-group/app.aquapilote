@@ -61,7 +61,7 @@ serve(async (req) => {
     const body = await req.json();
     const { email, full_name, team_member_id, password: providedPassword, sendEmail: shouldSendEmail } = body;
 
-    console.log('Creating team member account:', { email, full_name, team_member_id, shouldSendEmail });
+    console.log('Creating team member account:', { email, full_name, team_member_id, shouldSendEmail, requestedBy: user.id });
 
     if (!email || !full_name) {
       return new Response(
@@ -77,6 +77,59 @@ serve(async (req) => {
         JSON.stringify({ error: 'Format d\'email invalide' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Create admin client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // SECURITY: If team_member_id is provided, verify ownership
+    if (team_member_id) {
+      const { data: teamMember, error: teamError } = await supabaseAdmin
+        .from('team_members')
+        .select('owner_id, member_email')
+        .eq('id', team_member_id)
+        .single();
+
+      if (teamError || !teamMember) {
+        console.error('Team member not found:', teamError);
+        return new Response(
+          JSON.stringify({ error: 'Membre d\'équipe non trouvé' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check ownership - only allow if the caller is the owner
+      if (teamMember.owner_id !== user.id) {
+        // Check if user is an admin
+        const { data: roleData } = await supabaseAdmin
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!roleData || roleData.role !== 'admin') {
+          console.error('Unauthorized account creation attempt:', {
+            requestedBy: user.id,
+            teamMemberOwnerId: teamMember.owner_id,
+            teamMemberId: team_member_id
+          });
+          return new Response(
+            JSON.stringify({ error: 'Vous n\'avez pas les droits pour créer ce compte' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
+      // Verify that the email matches the team member's email
+      if (teamMember.member_email.toLowerCase() !== email.trim().toLowerCase()) {
+        return new Response(
+          JSON.stringify({ error: 'L\'email ne correspond pas au membre d\'équipe' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Use provided password if present, else generate one
@@ -97,12 +150,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Create admin client
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Check if user already exists
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
@@ -227,7 +274,7 @@ serve(async (req) => {
       console.log('Email not sent: shouldSendEmail =', shouldSendEmail, ', resendApiKey configured:', !!resendApiKey);
     }
 
-    console.log('Team member account created:', authData.user.id);
+    console.log('Team member account created:', authData.user.id, 'by owner:', user.id);
     
     return new Response(
       JSON.stringify({ 

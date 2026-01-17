@@ -66,6 +66,17 @@ const CURRENCY_TO_FCFA: Record<string, number> = {
   'XAF': 1
 };
 
+// Escape HTML to prevent XSS attacks
+const escapeHtml = (unsafe: string | undefined | null): string => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip, employee }) => {
   const [activeTab, setActiveTab] = useState('preview');
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -274,13 +285,28 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
     const hireDate = safeFormatDate(employee?.hireDate);
     const generatedDate = safeFormatDate(paySlip.generatedAt, format(new Date(), 'dd/MM/yyyy'));
 
+    // Escape all user-controlled data to prevent XSS
+    const safeCompanyName = escapeHtml(companyInfo.name);
+    const safeCompanyAddress = escapeHtml(companyInfo.address);
+    const safeCompanyPhone = escapeHtml(companyInfo.phone);
+    const safeCompanyEmail = escapeHtml(companyInfo.email);
+    const safeCompanySiret = escapeHtml(companyInfo.siret);
+    const safeEmployeeName = escapeHtml(paySlip.employeeName);
+    const safeEmployeeEmail = escapeHtml(employee?.email);
+    const safeEmployeePhone = escapeHtml(employee?.phone);
+    const safeEmployeePosition = escapeHtml(employee?.position);
+    const safeEmployeeUnitName = escapeHtml(employee?.unitName);
+    const safeEmployeeContractType = escapeHtml(employee?.contractType);
+    const safePeriodLabel = escapeHtml(periodLabel);
+    // Note: logoUrl is validated as base64 data URL from file upload, but still escaped in src attribute
+
     return `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bulletin de Paie - ${paySlip.employeeName} - ${periodLabel}</title>
+  <title>Bulletin de Paie - ${safeEmployeeName} - ${safePeriodLabel}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -434,15 +460,15 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
   <div class="container">
     <div class="header">
       <div class="company-info">
-        ${companyInfo.logoUrl ? `<img src="${companyInfo.logoUrl}" alt="Logo" style="max-height: 50px; margin-bottom: 10px;" />` : ''}
-        <h1>${companyInfo.name}</h1>
-        <p>${companyInfo.address}</p>
-        <p>Tél: ${companyInfo.phone} | Email: ${companyInfo.email}</p>
-        ${companyInfo.siret ? `<p>N° RCCM: ${companyInfo.siret}</p>` : ''}
+        ${companyInfo.logoUrl ? `<img src="${escapeHtml(companyInfo.logoUrl)}" alt="Logo" style="max-height: 50px; margin-bottom: 10px;" />` : ''}
+        <h1>${safeCompanyName}</h1>
+        <p>${safeCompanyAddress}</p>
+        <p>Tél: ${safeCompanyPhone} | Email: ${safeCompanyEmail}</p>
+        ${companyInfo.siret ? `<p>N° RCCM: ${safeCompanySiret}</p>` : ''}
       </div>
       <div class="document-title">
         <h2>BULLETIN DE PAIE</h2>
-        <p>Période: ${periodLabel.toUpperCase()}</p>
+        <p>Période: ${safePeriodLabel.toUpperCase()}</p>
         <p style="font-size: 10px; color: #666; margin-top: 5px;">Émis le: ${generatedDate}</p>
       </div>
     </div>
@@ -451,17 +477,17 @@ const PayslipEditor: React.FC<PayslipEditorProps> = ({ isOpen, onClose, paySlip,
       <div class="info-box">
         <h3>IDENTIFICATION DU SALARIÉ</h3>
         <table>
-          <tr><td>Nom et Prénom:</td><td>${paySlip.employeeName}</td></tr>
-          <tr><td>Email:</td><td>${employee?.email || 'N/A'}</td></tr>
-          <tr><td>Téléphone:</td><td>${employee?.phone || 'N/A'}</td></tr>
+          <tr><td>Nom et Prénom:</td><td>${safeEmployeeName}</td></tr>
+          <tr><td>Email:</td><td>${safeEmployeeEmail || 'N/A'}</td></tr>
+          <tr><td>Téléphone:</td><td>${safeEmployeePhone || 'N/A'}</td></tr>
         </table>
       </div>
       <div class="info-box">
         <h3>SITUATION PROFESSIONNELLE</h3>
         <table>
-          <tr><td>Emploi:</td><td>${employee?.position || 'N/A'}</td></tr>
-          <tr><td>Unité:</td><td>${employee?.unitName || 'N/A'}</td></tr>
-          <tr><td>Type de contrat:</td><td>${employee?.contractType || 'N/A'}</td></tr>
+          <tr><td>Emploi:</td><td>${safeEmployeePosition || 'N/A'}</td></tr>
+          <tr><td>Unité:</td><td>${safeEmployeeUnitName || 'N/A'}</td></tr>
+          <tr><td>Type de contrat:</td><td>${safeEmployeeContractType || 'N/A'}</td></tr>
           <tr><td>Date d'embauche:</td><td>${hireDate}</td></tr>
         </table>
       </div>
