@@ -13,25 +13,20 @@ interface MobileNavigationProps {
 const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => {
   const { t } = useSettings();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isTeamMember, teamMemberInfo } = useTeamMemberAccess();
+  const { isTeamMember, hasAccessToModule } = useTeamMemberAccess();
   
-  // Filtrer les items selon les permissions du membre d'équipe
-  const getAllowedTabs = () => {
-    if (!isTeamMember || !teamMemberInfo) return null;
-    
-    const allowedTabs = new Set<string>(['dashboard']);
-    
-    teamMemberInfo.assignedUnits.forEach(unit => {
-      const perms = unit.permissions;
-      if (perms.canView) {
-        allowedTabs.add('units');
-      }
-    });
-    
-    return allowedTabs;
+  // Mapping des IDs de tabs vers les IDs de modules
+  const tabToModuleMapping: Record<string, string> = {
+    'dashboard': 'dashboard',
+    'iot-control': 'iot',
+    'units': 'infrastructure',
   };
 
-  const allowedTabs = getAllowedTabs();
+  const isTabAllowed = (tabId: string): boolean => {
+    if (!isTeamMember) return true;
+    const moduleId = tabToModuleMapping[tabId] || tabId;
+    return hasAccessToModule(moduleId);
+  };
   
   const allMainItems = [
     { id: 'dashboard', label: t('dashboard'), icon: Home },
@@ -39,10 +34,7 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
     { id: 'units', label: t('units'), icon: Factory },
   ];
 
-  const mainItems = allMainItems.filter(item => {
-    if (!allowedTabs) return true;
-    return allowedTabs.has(item.id);
-  });
+  const mainItems = allMainItems.filter(item => isTabAllowed(item.id));
 
   const handleMenuClick = () => {
     setIsMenuOpen(true);

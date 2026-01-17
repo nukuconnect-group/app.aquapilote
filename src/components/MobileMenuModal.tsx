@@ -37,36 +37,34 @@ interface MobileMenuModalProps {
 const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenuModalProps) => {
   const { t, language } = useSettings();
   const { user } = useAuth();
-  const { isTeamMember, teamMemberInfo } = useTeamMemberAccess();
+  const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
 
-  // Obtenir les onglets autorisés pour les membres d'équipe
-  const getAllowedTabs = () => {
-    if (!isTeamMember || !teamMemberInfo) return null;
-    
-    const allowedTabs = new Set<string>(['dashboard', 'settings']);
-    
-    teamMemberInfo.assignedUnits.forEach(unit => {
-      const perms = unit.permissions;
-      if (perms.canView) {
-        allowedTabs.add('units');
-        allowedTabs.add('infrastructures');
-      }
-      if (perms.canManageFeeding) {
-        allowedTabs.add('feeding');
-      }
-      if (perms.canManageHealth) {
-        allowedTabs.add('health');
-      }
-      if (perms.canManageProduction) {
-        allowedTabs.add('production');
-        allowedTabs.add('livestock');
-      }
-    });
-    
-    return allowedTabs;
+  // Mapping des IDs de tabs vers les IDs de modules
+  const tabToModuleMapping: Record<string, string> = {
+    'infrastructures': 'infrastructure',
+    'livestock': 'livestock',
+    'feeding': 'feeding',
+    'health': 'health',
+    'production': 'production',
+    'accounting': 'accounting',
+    'purchases': 'purchases',
+    'sales': 'sales',
+    'suppliers': 'suppliers',
+    'hr': 'accounting',
+    'team': 'settings',
+    'planning': 'planning',
+    'reports': 'reports',
+    'aqua-assistant': 'dashboard',
+    'offline': 'settings',
+    'settings': 'settings',
+    'admin': 'admin'
   };
 
-  const allowedTabs = getAllowedTabs();
+  const isTabAllowed = (tabId: string): boolean => {
+    if (!isTeamMember) return true;
+    const moduleId = tabToModuleMapping[tabId] || tabId;
+    return hasAccessToModule(moduleId);
+  };
   
   const menuItems = [
     // Production & Élevage
@@ -136,10 +134,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   // Filtrer les items selon les permissions
   const filteredMenuItems = menuItems.map(category => ({
     ...category,
-    items: category.items.filter(item => {
-      if (!allowedTabs) return true;
-      return allowedTabs.has(item.id);
-    })
+    items: category.items.filter(item => isTabAllowed(item.id))
   })).filter(category => category.items.length > 0);
 
   const handleItemClick = (tabId: string) => {

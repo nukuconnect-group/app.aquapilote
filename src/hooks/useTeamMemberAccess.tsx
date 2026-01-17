@@ -2,19 +2,32 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export interface TeamMemberPermissions {
-  canView: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
-  canManageFeeding: boolean;
-  canManageHealth: boolean;
-  canManageProduction: boolean;
+// Permissions basées sur les modules réels de l'application
+export interface TeamMemberModulePermissions {
+  dashboard?: boolean;
+  production?: boolean;
+  feeding?: boolean;
+  livestock?: boolean;
+  health?: boolean;
+  reproduction?: boolean;
+  infrastructure?: boolean;
+  environment?: boolean;
+  iot?: boolean;
+  accounting?: boolean;
+  economics?: boolean;
+  sales?: boolean;
+  purchases?: boolean;
+  suppliers?: boolean;
+  planning?: boolean;
+  reports?: boolean;
+  settings?: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface TeamMemberUnitAccess {
   unitId: string;
   unitName: string;
-  permissions: TeamMemberPermissions;
+  permissions: TeamMemberModulePermissions;
 }
 
 export interface TeamMemberInfo {
@@ -26,6 +39,7 @@ export interface TeamMemberInfo {
   customRole?: string;
   department?: string;
   status: string;
+  globalPermissions: TeamMemberModulePermissions;
   assignedUnits: TeamMemberUnitAccess[];
 }
 
@@ -34,6 +48,7 @@ export const useTeamMemberAccess = () => {
   const [isTeamMember, setIsTeamMember] = useState(false);
   const [teamMemberInfo, setTeamMemberInfo] = useState<TeamMemberInfo | null>(null);
   const [allowedUnitIds, setAllowedUnitIds] = useState<string[]>([]);
+  const [allowedModules, setAllowedModules] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +57,7 @@ export const useTeamMemberAccess = () => {
         setIsTeamMember(false);
         setTeamMemberInfo(null);
         setAllowedUnitIds([]);
+        setAllowedModules(new Set());
         setIsLoading(false);
         return;
       }
@@ -75,8 +91,31 @@ export const useTeamMemberAccess = () => {
           const assignedUnits: TeamMemberUnitAccess[] = (memberUnits || []).map(unit => ({
             unitId: unit.unit_id,
             unitName: unit.unit_name,
-            permissions: (unit.permissions as unknown) as TeamMemberPermissions
+            permissions: (unit.permissions as unknown) as TeamMemberModulePermissions
           }));
+
+          // Calculer les modules autorisés (union de toutes les permissions des unités + permissions globales)
+          const modules = new Set<string>();
+          modules.add('dashboard'); // Toujours accès au dashboard
+          modules.add('settings'); // Toujours accès aux paramètres basiques
+          modules.add('support'); // Toujours accès au support
+
+          // Permissions globales du membre
+          const globalPerms = (teamMember.permissions as unknown) as TeamMemberModulePermissions || {};
+          Object.keys(globalPerms).forEach(key => {
+            if (globalPerms[key]) {
+              modules.add(key);
+            }
+          });
+
+          // Permissions par unité
+          assignedUnits.forEach(unit => {
+            Object.keys(unit.permissions).forEach(key => {
+              if (unit.permissions[key]) {
+                modules.add(key);
+              }
+            });
+          });
 
           const info: TeamMemberInfo = {
             id: teamMember.id,
@@ -87,16 +126,19 @@ export const useTeamMemberAccess = () => {
             customRole: teamMember.custom_role || undefined,
             department: teamMember.department || undefined,
             status: teamMember.status,
+            globalPermissions: globalPerms,
             assignedUnits
           };
 
           setIsTeamMember(true);
           setTeamMemberInfo(info);
           setAllowedUnitIds(assignedUnits.map(u => u.unitId));
+          setAllowedModules(modules);
         } else {
           setIsTeamMember(false);
           setTeamMemberInfo(null);
           setAllowedUnitIds([]);
+          setAllowedModules(new Set());
         }
       } catch (error) {
         console.error('Error in team member check:', error);
@@ -114,27 +156,41 @@ export const useTeamMemberAccess = () => {
     return allowedUnitIds.includes(unitId);
   };
 
+  // Vérifier si l'utilisateur a accès à un module spécifique
+  const hasAccessToModule = (moduleId: string): boolean => {
+    if (!isTeamMember) return true; // Non-membre a accès à tout
+    return allowedModules.has(moduleId);
+  };
+
   // Obtenir les permissions pour une unité spécifique
-  const getUnitPermissions = (unitId: string): TeamMemberPermissions | null => {
+  const getUnitPermissions = (unitId: string): TeamMemberModulePermissions | null => {
     if (!isTeamMember || !teamMemberInfo) return null;
     const unitAccess = teamMemberInfo.assignedUnits.find(u => u.unitId === unitId);
     return unitAccess?.permissions || null;
   };
 
   // Vérifier une permission spécifique pour une unité
-  const hasPermission = (unitId: string, permission: keyof TeamMemberPermissions): boolean => {
+  const hasPermissionForUnit = (unitId: string, moduleId: string): boolean => {
     if (!isTeamMember) return true; // Non-membre a toutes les permissions
     const permissions = getUnitPermissions(unitId);
-    return permissions?.[permission] ?? false;
+    return permissions?.[moduleId] ?? false;
+  };
+
+  // Obtenir la liste des modules autorisés
+  const getAllowedModulesList = (): string[] => {
+    return Array.from(allowedModules);
   };
 
   return {
     isTeamMember,
     teamMemberInfo,
     allowedUnitIds,
+    allowedModules,
     isLoading,
     hasAccessToUnit,
+    hasAccessToModule,
     getUnitPermissions,
-    hasPermission
+    hasPermissionForUnit,
+    getAllowedModulesList
   };
 };
