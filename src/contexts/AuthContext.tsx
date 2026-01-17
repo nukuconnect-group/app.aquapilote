@@ -39,6 +39,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string }>;
   completeMFALogin: (code: string) => Promise<boolean>;
+  completeMFALoginWithRecoveryCode: (code: string) => Promise<boolean>;
   cancelMFALogin: () => void;
   mfaChallenge: MFAChallenge | null;
   logout: () => void;
@@ -436,6 +437,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Complete MFA login using recovery code
+  const completeMFALoginWithRecoveryCode = async (recoveryCode: string): Promise<boolean> => {
+    if (!mfaChallenge) return false;
+    
+    setIsLoading(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Hash the recovery code
+      const encoder = new TextEncoder();
+      const data = encoder.encode(recoveryCode.toUpperCase());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const codeHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Find unused code with matching hash
+      const { data: codes, error: fetchError } = await supabase
+        .from('mfa_recovery_codes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('code_hash', codeHash)
+        .eq('is_used', false)
+        .limit(1);
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!codes || codes.length === 0) {
+        setIsLoading(false);
+        return false;
+      }
+
+      // Mark the code as used
+      const { error: updateError } = await supabase
+        .from('mfa_recovery_codes')
+        .update({ 
+          is_used: true,
+          used_at: new Date().toISOString()
+        })
+        .eq('id', codes[0].id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Recovery code verified - complete login
+      clearDemoData();
+      setIsDemoMode(false);
+      await fetchUserData(user);
+      
+      localStorage.setItem('aqua_pilot_splash', 'true');
+      localStorage.setItem('privacy_accepted', 'true');
+      localStorage.setItem('onboarding_complete', 'true');
+      
+      setMfaChallenge(null);
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Recovery code verification error:', error);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   const cancelMFALogin = () => {
     setMfaChallenge(null);
     // Sign out the partial session
@@ -636,6 +708,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       login,
       completeMFALogin,
+      completeMFALoginWithRecoveryCode,
       cancelMFALogin,
       mfaChallenge,
       logout,
