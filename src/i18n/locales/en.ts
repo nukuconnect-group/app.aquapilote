@@ -878,6 +878,12 @@ export const en = {
   stock_type: 'Stock',
   unit_alert: 'Unit',
   value_alert: 'Value',
+  alert_type_temperature: 'Temperature',
+  alert_type_oxygen: 'Oxygen',
+  alert_type_mortality: 'Mortality',
+  stock: 'Stock',
+  unit_label: 'Unit',
+  value_label: 'Value',
   
   // Invoice Manager - unique keys
   invoice_management: 'Invoices',
@@ -981,3 +987,4 @@ export const en = {
   could_not_clear_data: 'Could not clear data',
   could_not_export: 'Could not export data',
 };
+

@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { usePerformanceAlerts, PerformanceAlert } from '@/hooks/usePerformanceAlerts';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr as frLocale } from 'date-fns/locale';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const getAlertIcon = (type: string) => {
   switch (type) {
@@ -43,22 +44,22 @@ const getAlertIcon = (type: string) => {
   }
 };
 
-const getAlertTypeName = (type: string) => {
+const getAlertTypeName = (type: string, t: (key: string) => string) => {
   switch (type) {
     case 'fcr':
       return 'FCR';
     case 'temperature':
-      return 'Température';
+      return t('alert_type_temperature');
     case 'oxygen':
-      return 'Oxygène';
+      return t('alert_type_oxygen');
     case 'ph':
       return 'pH';
     case 'mortality':
-      return 'Mortalité';
+      return t('alert_type_mortality');
     case 'production':
-      return 'Production';
+      return t('production');
     case 'stock':
-      return 'Stock';
+      return t('stock');
     default:
       return type;
   }
@@ -68,9 +69,11 @@ interface AlertCardProps {
   alert: PerformanceAlert;
   onAcknowledge: (id: string) => void;
   onDelete: (id: string) => void;
+  t: (key: string) => string;
+  language: string;
 }
 
-const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete }) => {
+const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete, t, language }) => {
   const isCritical = alert.severity === 'critical';
   
   return (
@@ -94,12 +97,12 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete })
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-medium text-sm">{alert.title}</h4>
               <Badge variant={isCritical ? 'destructive' : 'outline'} className="text-xs">
-                {getAlertTypeName(alert.alert_type)}
+                {getAlertTypeName(alert.alert_type, t)}
               </Badge>
               {alert.is_acknowledged && (
                 <Badge variant="secondary" className="text-xs">
                   <CheckCircle className="h-3 w-3 mr-1" />
-                  Acquittée
+                  {t('acknowledged_alert')}
                 </Badge>
               )}
             </div>
@@ -108,14 +111,14 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete })
             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {formatDistanceToNow(parseISO(alert.created_at), { addSuffix: true, locale: fr })}
+                {formatDistanceToNow(parseISO(alert.created_at), { addSuffix: true, locale: language === 'fr' ? frLocale : undefined })}
               </span>
               {alert.unit_name && (
-                <span>Unité: {alert.unit_name}</span>
+                <span>{t('unit_label')}: {alert.unit_name}</span>
               )}
               {alert.metric_value !== undefined && alert.metric_value !== null && (
                 <span>
-                  Valeur: {typeof alert.metric_value === 'number' ? alert.metric_value.toFixed(2) : alert.metric_value}
+                  {t('value_label')}: {typeof alert.metric_value === 'number' ? alert.metric_value.toFixed(2) : alert.metric_value}
                 </span>
               )}
             </div>
@@ -129,7 +132,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete })
               size="sm"
               onClick={() => onAcknowledge(alert.id)}
               className="h-8 w-8 p-0"
-              title="Acquitter"
+              title={t('acknowledge_btn')}
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -139,7 +142,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete })
             size="sm"
             onClick={() => onDelete(alert.id)}
             className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-            title="Supprimer"
+            title={t('delete')}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -150,6 +153,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onAcknowledge, onDelete })
 };
 
 const PerformanceAlertsPanel: React.FC = () => {
+  const { t, language } = useSettings();
   const { 
     alerts, 
     unacknowledgedAlerts, 
@@ -208,13 +212,13 @@ const PerformanceAlertsPanel: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Bell className="h-6 w-6 text-primary" />
-            Alertes de Performance
+            {t('performance_alerts_title')}
           </h2>
           <p className="text-muted-foreground mt-1">
-            {unacknowledgedAlerts.length} alerte(s) non acquittée(s)
+            {unacknowledgedAlerts.length} {t('unacknowledged_alerts')}
             {criticalAlerts.length > 0 && (
               <span className="text-red-500 font-medium ml-2">
-                dont {criticalAlerts.length} critique(s)
+                {t('including')} {criticalAlerts.length} {t('critical_alerts_count')}
               </span>
             )}
           </p>
@@ -226,7 +230,7 @@ const PerformanceAlertsPanel: React.FC = () => {
             size="sm"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Actualiser
+            {t('refresh')}
           </Button>
           <Button 
             onClick={() => checkThresholds()}
@@ -238,7 +242,7 @@ const PerformanceAlertsPanel: React.FC = () => {
             ) : (
               <AlertTriangle className="h-4 w-4 mr-2" />
             )}
-            Vérifier
+            {t('verify_btn')}
           </Button>
         </div>
       </div>
@@ -248,19 +252,19 @@ const PerformanceAlertsPanel: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilter('all')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{alerts.length}</div>
-            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-xs text-muted-foreground">{t('total_alerts')}</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilter('unacknowledged')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-yellow-600">{unacknowledgedAlerts.length}</div>
-            <div className="text-xs text-muted-foreground">Non acquittées</div>
+            <div className="text-xs text-muted-foreground">{t('unacknowledged_label')}</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilter('critical')}>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">{criticalAlerts.length}</div>
-            <div className="text-xs text-muted-foreground">Critiques</div>
+            <div className="text-xs text-muted-foreground">{t('critical_label')}</div>
           </CardContent>
         </Card>
         <Card>
@@ -268,7 +272,7 @@ const PerformanceAlertsPanel: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">
               {alerts.filter(a => a.is_acknowledged).length}
             </div>
-            <div className="text-xs text-muted-foreground">Acquittées</div>
+            <div className="text-xs text-muted-foreground">{t('acknowledged_alert')}</div>
           </CardContent>
         </Card>
       </div>
@@ -278,9 +282,9 @@ const PerformanceAlertsPanel: React.FC = () => {
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="w-auto">
           <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs px-2 h-6">Toutes</TabsTrigger>
-            <TabsTrigger value="unacknowledged" className="text-xs px-2 h-6">Non acquittées</TabsTrigger>
-            <TabsTrigger value="critical" className="text-xs px-2 h-6">Critiques</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs px-2 h-6">{t('all_filter')}</TabsTrigger>
+            <TabsTrigger value="unacknowledged" className="text-xs px-2 h-6">{t('unacknowledged_label')}</TabsTrigger>
+            <TabsTrigger value="critical" className="text-xs px-2 h-6">{t('critical_label')}</TabsTrigger>
           </TabsList>
         </Tabs>
         
@@ -290,9 +294,9 @@ const PerformanceAlertsPanel: React.FC = () => {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="text-xs h-8 px-2 rounded-md border bg-background"
           >
-            <option value="all">Tous les types</option>
+            <option value="all">{t('all_types')}</option>
             {alertTypes.map(type => (
-              <option key={type} value={type}>{getAlertTypeName(type)}</option>
+              <option key={type} value={type}>{getAlertTypeName(type, t)}</option>
             ))}
           </select>
         )}
@@ -304,13 +308,13 @@ const PerformanceAlertsPanel: React.FC = () => {
           {filteredAlerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-              <h3 className="font-medium text-lg">Aucune alerte</h3>
+              <h3 className="font-medium text-lg">{t('no_alerts')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {filter === 'all' 
-                  ? 'Aucune alerte de performance enregistrée'
+                  ? t('no_performance_alerts')
                   : filter === 'critical'
-                  ? 'Aucune alerte critique non acquittée'
-                  : 'Toutes les alertes ont été acquittées'}
+                  ? t('no_critical_alerts')
+                  : t('all_alerts_acknowledged')}
               </p>
             </div>
           ) : (
@@ -322,6 +326,8 @@ const PerformanceAlertsPanel: React.FC = () => {
                     alert={alert}
                     onAcknowledge={acknowledgeAlert}
                     onDelete={deleteAlert}
+                    t={t}
+                    language={language}
                   />
                 ))}
               </div>
