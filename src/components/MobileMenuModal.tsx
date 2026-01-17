@@ -25,7 +25,8 @@ import {
   Shield,
   MessageCircle,
   Headphones,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,7 +68,8 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     'offline': 'settings',
     'settings': 'settings',
     'admin': 'admin',
-    'analytics': 'reports'
+    'analytics': 'reports',
+    'performance-alerts': 'dashboard'
   };
 
   const isTabAllowed = (tabId: string): boolean => {
@@ -82,6 +84,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
       category: language === 'fr' ? 'Tableau de bord' : 'Dashboard',
       items: [
         { id: 'dashboard', label: t('dashboard'), icon: Home },
+        { id: 'performance-alerts', label: language === 'fr' ? 'Alertes Performance' : 'Performance Alerts', icon: Bell },
         { id: 'iot-control', label: t('iot-control'), icon: Wifi },
         { id: 'units', label: t('units'), icon: Factory },
       ]
