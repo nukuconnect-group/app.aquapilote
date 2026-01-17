@@ -38,12 +38,60 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
       setStep('loading');
       setError(null);
 
+      // First, check for existing unverified factors and remove them
+      const { data: existingFactors } = await supabase.auth.mfa.listFactors();
+      
+      if (existingFactors?.totp) {
+        // Remove any unverified factors to allow re-enrollment
+        for (const factor of existingFactors.totp) {
+          // Check if factor is not verified (status can be 'verified' or other values)
+          const isVerified = factor.status === 'verified';
+          if (!isVerified) {
+            console.log('Removing unverified factor:', factor.id);
+            await supabase.auth.mfa.unenroll({ factorId: factor.id });
+          }
+        }
+      }
+
+      // Generate a unique friendly name to avoid conflicts
+      const timestamp = Date.now();
+      const friendlyName = `AQUA PILOT ${timestamp}`;
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'AQUA PILOT Authenticator'
+        friendlyName
       });
 
       if (error) {
+        // If still getting conflict, try with a different approach
+        if (error.message?.includes('already exists') || error.code === 'mfa_factor_name_conflict') {
+          // Try to find and use existing unverified factor
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const unverifiedFactor = factors?.totp?.find(f => f.status !== 'verified');
+          
+          if (unverifiedFactor) {
+            // We need to re-enroll, so delete and retry
+            await supabase.auth.mfa.unenroll({ factorId: unverifiedFactor.id });
+            
+            // Retry enrollment with new name
+            const retryResult = await supabase.auth.mfa.enroll({
+              factorType: 'totp',
+              friendlyName: `AQUA PILOT App ${Date.now()}`
+            });
+            
+            if (retryResult.error) {
+              throw retryResult.error;
+            }
+            
+            if (retryResult.data) {
+              setFactorId(retryResult.data.id);
+              setQrCode(retryResult.data.totp.qr_code);
+              setSecret(retryResult.data.totp.secret);
+              setStep('qr');
+              return;
+            }
+          }
+        }
         throw error;
       }
 
