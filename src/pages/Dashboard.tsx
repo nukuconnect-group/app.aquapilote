@@ -25,6 +25,9 @@ import PlanningManagement from '@/components/PlanningManagement';
 import WeatherDashboard from '@/components/WeatherDashboard';
 import TeamManagement from '@/components/TeamManagement';
 import ReportsManagement from '@/components/ReportsManagement';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import PerformanceAlertsPanel from '@/components/alerts/PerformanceAlertsPanel';
+import PerformanceAlertsConfig from '@/components/alerts/PerformanceAlertsConfig';
 import SettingsManagement from '@/components/SettingsManagement';
 import SupportModule from '@/components/SupportModule';
 import AquaAssistant from '@/components/AquaAssistant';
@@ -182,6 +185,15 @@ const Dashboard: React.FC = () => {
         return <TeamManagement />;
       case 'reports':
         return <ReportsManagement />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
+      case 'performance-alerts':
+        return (
+          <div className="space-y-6">
+            <PerformanceAlertsPanel />
+            <PerformanceAlertsConfig />
+          </div>
+        );
       case 'offline':
         return <OfflineDataManager />;
       case 'settings':

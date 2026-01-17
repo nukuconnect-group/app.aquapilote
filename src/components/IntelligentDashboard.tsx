@@ -36,7 +36,8 @@ const IntelligentDashboard = () => {
   } = useProductionUnits();
   const {
     formatCurrency,
-    t
+    t,
+    language,
   } = useSettings();
   const { isDemoMode } = useAuth();
   const [viewMode, setViewMode] = useState<'unit' | 'global'>('unit');
@@ -87,10 +88,20 @@ const IntelligentDashboard = () => {
 
   const formatLastUpdate = () => {
     const now = new Date();
-    const today = now.toDateString() === lastUpdate.toDateString();
+    const isToday = now.toDateString() === lastUpdate.toDateString();
     const hours = lastUpdate.getHours().toString().padStart(2, '0');
     const minutes = lastUpdate.getMinutes().toString().padStart(2, '0');
-    return today ? `Aujourd'hui, ${hours}:${minutes}` : `${lastUpdate.toLocaleDateString('fr-FR')}, ${hours}:${minutes}`;
+
+    const locale =
+      language === 'fr' ? 'fr-FR' :
+      language === 'en' ? 'en-GB' :
+      language === 'es' ? 'es-ES' :
+      language === 'pt' ? 'pt-PT' :
+      'ar';
+
+    return isToday
+      ? `${t('today')}, ${hours}:${minutes}`
+      : `${lastUpdate.toLocaleDateString(locale)}, ${hours}:${minutes}`;
   };
 
   // Calculer les données d'alimentation des 7 derniers jours (vraies données)
