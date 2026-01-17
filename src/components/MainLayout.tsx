@@ -28,6 +28,8 @@ import SettingsManagement from './SettingsManagement';
 import SupportModule from './SupportModule';
 import AquaAssistantModule from './AquaAssistantModule';
 import OfflineDataManager from './OfflineDataManager';
+import AnalyticsDashboard from './analytics/AnalyticsDashboard';
+
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -88,6 +90,8 @@ const MainLayout = () => {
         return <AquaAssistantModule />;
       case 'offline':
         return <OfflineDataManager />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       default:
         return <IntelligentDashboard />;
     }

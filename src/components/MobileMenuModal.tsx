@@ -24,7 +24,8 @@ import {
   Database,
   Shield,
   MessageCircle,
-  Headphones
+  Headphones,
+  BarChart3
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,7 +66,8 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     'support': 'support',
     'offline': 'settings',
     'settings': 'settings',
-    'admin': 'admin'
+    'admin': 'admin',
+    'analytics': 'reports'
   };
 
   const isTabAllowed = (tabId: string): boolean => {
@@ -117,6 +119,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     {
       category: language === 'fr' ? 'Planification & Rapports' : 'Planning & Reports',
       items: [
+        { id: 'analytics', label: language === 'fr' ? 'Analytique' : 'Analytics', icon: BarChart3 },
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText }
       ]
