@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, Smartphone, Copy, Check, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeSVG } from 'qrcode.react';
+import { useRecoveryCodes } from '@/hooks/useRecoveryCodes';
+import RecoveryCodesDisplay from './RecoveryCodesDisplay';
 
 interface MFAEnrollmentProps {
   onComplete: () => void;
@@ -15,7 +17,7 @@ interface MFAEnrollmentProps {
 }
 
 const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) => {
-  const [step, setStep] = useState<'loading' | 'qr' | 'verify'>('loading');
+  const [step, setStep] = useState<'loading' | 'qr' | 'verify' | 'recovery'>('loading');
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -23,7 +25,9 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const { toast } = useToast();
+  const { generateRecoveryCodes, isGenerating } = useRecoveryCodes();
 
   useEffect(() => {
     enrollMFA();
@@ -86,18 +90,34 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
         throw verifyError;
       }
 
-      toast({
-        title: "✅ 2FA activé",
-        description: "L'authentification à deux facteurs est maintenant active sur votre compte.",
-      });
-
-      onComplete();
+      // Generate recovery codes after successful MFA enrollment
+      const codes = await generateRecoveryCodes();
+      if (codes) {
+        setRecoveryCodes(codes);
+        setStep('recovery');
+      } else {
+        // If code generation fails, still complete but warn user
+        toast({
+          title: "⚠️ 2FA activé",
+          description: "L'authentification à deux facteurs est active, mais les codes de récupération n'ont pas pu être générés.",
+          variant: "destructive",
+        });
+        onComplete();
+      }
     } catch (err: any) {
       console.error('MFA verification error:', err);
       setError(err.message || 'Code invalide. Vérifiez et réessayez.');
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleRecoveryComplete = () => {
+    toast({
+      title: "✅ 2FA activé",
+      description: "L'authentification à deux facteurs et les codes de récupération sont configurés.",
+    });
+    onComplete();
   };
 
   const copySecret = async () => {
@@ -120,6 +140,16 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
           <p className="mt-4 text-muted-foreground">Configuration du 2FA...</p>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (step === 'recovery') {
+    return (
+      <RecoveryCodesDisplay
+        codes={recoveryCodes}
+        onComplete={handleRecoveryComplete}
+        isNewEnrollment={true}
+      />
     );
   }
 
@@ -208,13 +238,13 @@ const MFAEnrollment: React.FC<MFAEnrollmentProps> = ({ onComplete, onCancel }) =
             </Button>
             <Button
               type="submit"
-              disabled={isVerifying || verifyCode.length !== 6}
+              disabled={isVerifying || isGenerating || verifyCode.length !== 6}
               className="flex-1"
             >
-              {isVerifying ? (
+              {isVerifying || isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Vérification...
+                  {isGenerating ? 'Génération codes...' : 'Vérification...'}
                 </>
               ) : (
                 'Activer 2FA'

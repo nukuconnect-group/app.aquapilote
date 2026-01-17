@@ -5,19 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { Loader2, Shield, AlertTriangle, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import RecoveryCodeLogin from './RecoveryCodeLogin';
 
 interface MFAVerificationProps {
   factorId: string;
   onVerified: () => void;
   onCancel: () => void;
+  onVerifyRecoveryCode?: (code: string) => Promise<boolean>;
 }
 
-const MFAVerification: React.FC<MFAVerificationProps> = ({ factorId, onVerified, onCancel }) => {
+const MFAVerification: React.FC<MFAVerificationProps> = ({ 
+  factorId, 
+  onVerified, 
+  onCancel,
+  onVerifyRecoveryCode
+}) => {
   const [code, setCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRecoveryCode, setShowRecoveryCode] = useState(false);
   const { toast } = useToast();
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -66,6 +74,23 @@ const MFAVerification: React.FC<MFAVerificationProps> = ({ factorId, onVerified,
       setIsVerifying(false);
     }
   };
+
+  const handleRecoveryCodeVerify = async (recoveryCode: string): Promise<boolean> => {
+    if (onVerifyRecoveryCode) {
+      return await onVerifyRecoveryCode(recoveryCode);
+    }
+    return false;
+  };
+
+  if (showRecoveryCode) {
+    return (
+      <RecoveryCodeLogin
+        onVerified={onVerified}
+        onBack={() => setShowRecoveryCode(false)}
+        onVerifyCode={handleRecoveryCodeVerify}
+      />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -133,6 +158,20 @@ const MFAVerification: React.FC<MFAVerificationProps> = ({ factorId, onVerified,
             </Button>
           </div>
         </form>
+
+        {onVerifyRecoveryCode && (
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowRecoveryCode(true)}
+              className="w-full text-muted-foreground"
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Utiliser un code de récupération
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Shield, AlertTriangle, Key } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/clientConfig';
@@ -32,7 +32,9 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [showRecoveryCodeInput, setShowRecoveryCodeInput] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -41,7 +43,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     confirmPassword: ''
   });
   
-  const { login, register, resetPassword, completeMFALogin, cancelMFALogin, isLoading, enterDemoMode } = useAuth();
+  const { login, register, resetPassword, completeMFALogin, completeMFALoginWithRecoveryCode, cancelMFALogin, isLoading, enterDemoMode } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -93,10 +95,41 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
   };
 
+  const handleRecoveryCodeVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError(null);
+    
+    const formattedCode = recoveryCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (formattedCode.length !== 8) {
+      setMfaError('Le code de récupération doit contenir 8 caractères');
+      return;
+    }
+
+    const success = await completeMFALoginWithRecoveryCode(formattedCode);
+    
+    if (success) {
+      toast({
+        title: "✅ Connexion réussie",
+        description: "Code de récupération validé. Pensez à en générer de nouveaux dans les paramètres.",
+      });
+      setShowMFAVerification(false);
+      setShowRecoveryCodeInput(false);
+      setRecoveryCode('');
+      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      onClose();
+      navigate('/dashboard', { replace: true });
+    } else {
+      setMfaError('Code de récupération invalide ou déjà utilisé');
+      setRecoveryCode('');
+    }
+  };
+
   const handleCancelMFA = () => {
     cancelMFALogin();
     setShowMFAVerification(false);
+    setShowRecoveryCodeInput(false);
     setMfaCode('');
+    setRecoveryCode('');
     setMfaError(null);
   };
 
