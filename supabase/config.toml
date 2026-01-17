@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.payment-maintenance-alerts]
 verify_jwt = false
+
+[functions.notify-recovery-code-used]
+verify_jwt = false
