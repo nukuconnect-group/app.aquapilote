@@ -89,7 +89,7 @@ serve(async (req) => {
     if (team_member_id) {
       const { data: teamMember, error: teamError } = await supabaseAdmin
         .from('team_members')
-        .select('owner_id, member_email')
+        .select('owner_id, member_email, user_id, status')
         .eq('id', team_member_id)
         .single();
 
@@ -98,6 +98,14 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ error: 'Membre d\'équipe non trouvé' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Prevent creating account if already linked to an auth user
+      if (teamMember.user_id) {
+        return new Response(
+          JSON.stringify({ error: 'Ce membre a déjà un compte utilisateur' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -156,6 +164,40 @@ serve(async (req) => {
     const existingUser = existingUsers?.users?.find(u => u.email === email.trim().toLowerCase());
     
     if (existingUser) {
+      // User exists - link them to the team member record instead of failing
+      if (team_member_id) {
+        const { error: updateError } = await supabaseAdmin
+          .from('team_members')
+          .update({ 
+            user_id: existingUser.id,
+            status: 'active', 
+            accepted_at: new Date().toISOString() 
+          })
+          .eq('id', team_member_id);
+        
+        if (updateError) {
+          console.error('Error linking existing user to team member:', updateError);
+          return new Response(
+            JSON.stringify({ error: 'Erreur lors de la liaison du compte existant' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            existingUser: true,
+            user: {
+              id: existingUser.id,
+              email: existingUser.email,
+              full_name: full_name.trim()
+            },
+            message: 'Utilisateur existant lié au membre d\'équipe. Il peut se connecter avec ses identifiants existants.'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Un utilisateur avec cet email existe déjà' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -188,15 +230,24 @@ serve(async (req) => {
       );
     }
 
-    // Update team member status if provided
+    // CRITICAL: Update team member with user_id and set status to active
     if (team_member_id) {
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from('team_members')
-        .update({ status: 'active', accepted_at: new Date().toISOString() })
+        .update({ 
+          user_id: authData.user.id,
+          status: 'active', 
+          accepted_at: new Date().toISOString() 
+        })
         .eq('id', team_member_id);
+
+      if (updateError) {
+        console.error('Error updating team member with user_id:', updateError);
+        // Don't fail the request, but log the error
+      }
     }
 
-    const appUrl = req.headers.get('origin') || 'https://hhsvraqchtqqgaezhnzn.lovableproject.com';
+    const appUrl = req.headers.get('origin') || 'https://aqua-pilote.lovable.app';
     const loginUrl = `${appUrl}/auth`;
 
     // Send email with credentials via Resend (only if shouldSendEmail is true or undefined)
@@ -274,7 +325,7 @@ serve(async (req) => {
       console.log('Email not sent: shouldSendEmail =', shouldSendEmail, ', resendApiKey configured:', !!resendApiKey);
     }
 
-    console.log('Team member account created:', authData.user.id, 'by owner:', user.id);
+    console.log('Team member account created:', authData.user.id, 'linked to team_member_id:', team_member_id, 'by owner:', user.id);
     
     // Return password in response so the owner can share it with the team member
     // This is secure as only the authenticated owner who created the account receives this response

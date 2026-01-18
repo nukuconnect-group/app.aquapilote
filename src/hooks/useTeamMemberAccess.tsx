@@ -53,7 +53,7 @@ export const useTeamMemberAccess = () => {
 
   useEffect(() => {
     const checkTeamMemberStatus = async () => {
-      if (!user?.email) {
+      if (!user?.id) {
         setIsTeamMember(false);
         setTeamMemberInfo(null);
         setAllowedUnitIds([]);
@@ -63,11 +63,11 @@ export const useTeamMemberAccess = () => {
       }
 
       try {
-        // Vérifier si l'utilisateur est un membre d'équipe
+        // Vérifier si l'utilisateur est un membre d'équipe via user_id (pas email - plus sécurisé)
         const { data: teamMember, error: teamError } = await supabase
           .from('team_members')
           .select('*')
-          .eq('member_email', user.email.toLowerCase())
+          .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle();
 
@@ -148,7 +148,7 @@ export const useTeamMemberAccess = () => {
     };
 
     checkTeamMemberStatus();
-  }, [user?.email]);
+  }, [user?.id]);
 
   // Vérifier si l'utilisateur a accès à une unité spécifique
   const hasAccessToUnit = (unitId: string): boolean => {
