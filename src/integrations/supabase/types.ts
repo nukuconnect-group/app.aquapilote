@@ -1778,6 +1778,7 @@ export type Database = {
           role: string
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -1793,6 +1794,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -1808,6 +1810,7 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2017,6 +2020,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_team_member_owner_by_user_id: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_team_member_owner_id: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -2025,6 +2032,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_team_member: { Args: { user_uuid: string }; Returns: boolean }
       is_team_member_of: { Args: { owner_user_id: string }; Returns: boolean }
     }
     Enums: {
