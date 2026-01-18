@@ -106,22 +106,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (import.meta.env.DEV) console.error('Error fetching roles:', rolesError);
       }
 
-      // Check if user is a team member (by email)
+      // Check if user is a team member (by user_id - more secure than email)
       let isTeamMember = false;
       let teamMemberOwnerId: string | undefined;
       
-      if (supabaseUser.email) {
-        const { data: teamMember } = await supabase
-          .from('team_members')
-          .select('owner_id, status')
-          .eq('member_email', supabaseUser.email.toLowerCase())
-          .eq('status', 'active')
-          .maybeSingle();
-        
-        if (teamMember) {
-          isTeamMember = true;
-          teamMemberOwnerId = teamMember.owner_id;
-        }
+      const { data: teamMember } = await supabase
+        .from('team_members')
+        .select('owner_id, status')
+        .eq('user_id', supabaseUser.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      if (teamMember) {
+        isTeamMember = true;
+        teamMemberOwnerId = teamMember.owner_id;
       }
 
       const role = userRoles && userRoles.length > 0 ? userRoles[0].role : 'user';
