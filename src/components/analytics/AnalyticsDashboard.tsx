@@ -191,46 +191,45 @@ const AnalyticsDashboard: React.FC = () => {
     });
   }, [healthRecords, selectedUnit, dateFilters]);
 
-  // KPIs calculés
+  // KPIs calculés - REAL DATA ONLY, no demo values
   const kpis = useMemo(() => {
     const activeCycles = filteredCycles.filter(c => c.status === 'active' || c.status === 'en_cours');
     const totalQuantity = activeCycles.reduce((sum, c) => sum + (c.current_quantity || 0), 0);
     const targetQuantity = activeCycles.reduce((sum, c) => sum + (c.target_quantity || 0), 0);
     
     const totalFeeding = filteredFeedingRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
-    const avgFCR = filteredFeedingRecords.length > 0
-      ? filteredFeedingRecords.reduce((sum, r) => sum + (r.fcr || 0), 0) / filteredFeedingRecords.filter(r => r.fcr).length
+    const fcrRecords = filteredFeedingRecords.filter(r => r.fcr && r.fcr > 0);
+    const avgFCR = fcrRecords.length > 0
+      ? fcrRecords.reduce((sum, r) => sum + (r.fcr || 0), 0) / fcrRecords.length
       : 0;
 
-    const avgTemperature = filteredHealthRecords.length > 0
-      ? filteredHealthRecords.reduce((sum, r) => sum + (r.temperature || 0), 0) / filteredHealthRecords.filter(r => r.temperature).length
+    const tempRecords = filteredHealthRecords.filter(r => r.temperature && r.temperature > 0);
+    const avgTemperature = tempRecords.length > 0
+      ? tempRecords.reduce((sum, r) => sum + (r.temperature || 0), 0) / tempRecords.length
       : 0;
 
     const totalMortality = filteredHealthRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
-    const survivalRate = totalQuantity > 0 ? ((totalQuantity - totalMortality) / totalQuantity) * 100 : 100;
+    const initialQuantity = activeCycles.reduce((sum, c) => sum + (c.initial_quantity || c.current_quantity || 0), 0);
+    const survivalRate = initialQuantity > 0 ? ((initialQuantity - totalMortality) / initialQuantity) * 100 : 0;
 
     const totalSales = sales?.reduce((sum, s) => sum + (s.totalAmount || 0), 0) || 0;
 
-    // Calcul des variations (simulées pour l'instant)
-    const productionChange = 12.5;
-    const feedingChange = -3.2;
-    const survivalChange = 0.8;
-    const salesChange = 18.4;
-
+    // NO DEMO DATA - show real values only (0 if no data)
     return {
       activeCycles: activeCycles.length,
       totalQuantity,
       targetQuantity,
       progressRate: targetQuantity > 0 ? (totalQuantity / targetQuantity) * 100 : 0,
       totalFeeding,
-      avgFCR: avgFCR || 1.8,
-      avgTemperature: avgTemperature || 25,
+      avgFCR,
+      avgTemperature,
       survivalRate,
       totalSales,
-      productionChange,
-      feedingChange,
-      survivalChange,
-      salesChange
+      // No hardcoded changes - would need historical data comparison
+      productionChange: undefined,
+      feedingChange: undefined,
+      survivalChange: undefined,
+      salesChange: undefined
     };
   }, [filteredCycles, filteredFeedingRecords, filteredHealthRecords, sales]);
 
@@ -321,17 +320,23 @@ const AnalyticsDashboard: React.FC = () => {
     }));
   }, [filteredCycles]);
 
-  // Données pour le radar de performance
+  // Données pour le radar de performance - REAL DATA ONLY
   const performanceRadarData = useMemo(() => {
+    // Calculate real metrics from actual data
+    const feedingEfficiency = kpis.avgFCR > 0 ? Math.max(0, 100 - (kpis.avgFCR - 1) * 50) : 0;
+    const waterQuality = filteredHealthRecords.length > 0 
+      ? filteredHealthRecords.filter(r => r.oxygen && r.oxygen >= 5 && r.ph && r.ph >= 6.5 && r.ph <= 8.5).length / filteredHealthRecords.length * 100
+      : 0;
+    
     return [
       { metric: 'Production', value: Math.min(kpis.progressRate, 100), fullMark: 100 },
       { metric: 'Survie', value: kpis.survivalRate, fullMark: 100 },
-      { metric: 'FCR', value: kpis.avgFCR > 0 ? Math.max(0, 100 - (kpis.avgFCR - 1) * 50) : 80, fullMark: 100 },
-      { metric: 'Alimentation', value: 75, fullMark: 100 },
-      { metric: 'Qualité eau', value: 85, fullMark: 100 },
-      { metric: 'Croissance', value: 70, fullMark: 100 }
+      { metric: 'FCR', value: feedingEfficiency, fullMark: 100 },
+      { metric: 'Alimentation', value: kpis.totalFeeding > 0 ? Math.min((kpis.totalFeeding / 1000) * 10, 100) : 0, fullMark: 100 },
+      { metric: 'Qualité eau', value: waterQuality, fullMark: 100 },
+      { metric: 'Croissance', value: kpis.avgTemperature > 0 ? Math.min(kpis.avgTemperature * 3, 100) : 0, fullMark: 100 }
     ];
-  }, [kpis]);
+  }, [kpis, filteredHealthRecords]);
 
   return (
     <div className="space-y-6">
@@ -375,40 +380,40 @@ const AnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards - Real data only */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title={t('total_production_kpi')}
-          value={`${(kpis.totalQuantity / 1000).toFixed(1)}T`}
+          value={kpis.totalQuantity > 0 ? `${(kpis.totalQuantity / 1000).toFixed(1)}T` : '0'}
           change={kpis.productionChange}
-          changeLabel={t('vs_last_month')}
+          changeLabel={kpis.productionChange !== undefined ? t('vs_last_month') : undefined}
           icon={Fish}
           color={COLORS.primary}
           loading={isLoading}
         />
         <KPICard
           title={t('survival_rate')}
-          value={`${kpis.survivalRate.toFixed(1)}%`}
+          value={kpis.survivalRate > 0 ? `${kpis.survivalRate.toFixed(1)}%` : '-'}
           change={kpis.survivalChange}
-          changeLabel={t('vs_last_month')}
+          changeLabel={kpis.survivalChange !== undefined ? t('vs_last_month') : undefined}
           icon={Activity}
           color={COLORS.success}
           loading={isLoading}
         />
         <KPICard
           title={t('average_fcr')}
-          value={kpis.avgFCR.toFixed(2)}
+          value={kpis.avgFCR > 0 ? kpis.avgFCR.toFixed(2) : '-'}
           change={kpis.feedingChange}
-          changeLabel={t('improvement')}
+          changeLabel={kpis.feedingChange !== undefined ? t('improvement') : undefined}
           icon={Target}
           color={COLORS.secondary}
           loading={isLoading}
         />
         <KPICard
           title={t('total_sales_kpi')}
-          value={`${(kpis.totalSales / 1000).toFixed(0)}K`}
+          value={kpis.totalSales > 0 ? `${(kpis.totalSales / 1000).toFixed(0)}K` : '0'}
           change={kpis.salesChange}
-          changeLabel={t('vs_last_month')}
+          changeLabel={kpis.salesChange !== undefined ? t('vs_last_month') : undefined}
           icon={TrendingUp}
           color={COLORS.warning}
           loading={isLoading}
