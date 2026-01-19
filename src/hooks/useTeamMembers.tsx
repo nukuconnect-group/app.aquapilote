@@ -17,6 +17,7 @@ export interface TeamMember {
   accepted_at: string | null;
   created_at: string;
   updated_at: string;
+  user_id: string | null; // Auth user ID - null if account not created
 }
 
 export interface NewTeamMember {
@@ -51,7 +52,8 @@ export const useTeamMembers = () => {
         ...item,
         permissions: item.permissions as Record<string, boolean>,
         status: item.status as 'active' | 'inactive' | 'pending',
-        custom_role: (item as any).custom_role || null
+        custom_role: (item as any).custom_role || null,
+        user_id: item.user_id || null
       })));
     } catch (error: any) {
       console.error('Error fetching team members:', error);
@@ -101,7 +103,8 @@ export const useTeamMembers = () => {
         ...data,
         permissions: data.permissions as Record<string, boolean>,
         status: data.status as 'active' | 'inactive' | 'pending',
-        custom_role: (data as any).custom_role || null
+        custom_role: (data as any).custom_role || null,
+        user_id: data.user_id || null
       }, ...prev]);
       
       return { success: true, data };
@@ -130,7 +133,8 @@ export const useTeamMembers = () => {
           ...data,
           permissions: data.permissions as Record<string, boolean>,
           status: data.status as 'active' | 'inactive' | 'pending',
-          custom_role: (data as any).custom_role || null
+          custom_role: (data as any).custom_role || null,
+          user_id: data.user_id || null
         } : m
       ));
       

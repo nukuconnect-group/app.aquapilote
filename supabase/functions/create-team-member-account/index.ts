@@ -230,21 +230,44 @@ serve(async (req) => {
       );
     }
 
+    console.log('User created successfully:', authData.user.id);
+
     // CRITICAL: Update team member with user_id and set status to active
     if (team_member_id) {
-      const { error: updateError } = await supabaseAdmin
+      console.log('Updating team_member with user_id:', { team_member_id, user_id: authData.user.id });
+      
+      const { data: updateData, error: updateError } = await supabaseAdmin
         .from('team_members')
         .update({ 
           user_id: authData.user.id,
           status: 'active', 
           accepted_at: new Date().toISOString() 
         })
-        .eq('id', team_member_id);
+        .eq('id', team_member_id)
+        .select();
 
       if (updateError) {
         console.error('Error updating team member with user_id:', updateError);
-        // Don't fail the request, but log the error
+        // CRITICAL: If we can't link the user, we should still inform the caller
+        // but continue because the auth account was created
+      } else {
+        console.log('Team member updated successfully:', updateData);
       }
+    }
+
+    // Also create or update profile for the new user
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: authData.user.id,
+        email: email.trim(),
+        full_name: full_name.trim(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+    if (profileError) {
+      console.error('Error creating profile:', profileError);
     }
 
     const appUrl = req.headers.get('origin') || 'https://aqua-pilote.lovable.app';

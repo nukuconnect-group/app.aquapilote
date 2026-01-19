@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle, Key, Eye } from 'lucide-react';
+import { Users, UserPlus, Settings, Star, Award, MessageSquare, Trash2, Edit, Loader2, Building2, Plus, X, Copy, Link, CheckCircle, Mail, AlertCircle, Key, Eye, UserCheck } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -35,7 +35,7 @@ interface CreatedCredentials {
 const TeamManagement = () => {
   const { addLog } = useLogs();
   const { toast } = useToast();
-  const { teamMembers, isLoading, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamMembers();
+  const { teamMembers, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refetch } = useTeamMembers();
   const { units } = useProductionUnits();
 
   const [showInviteForm, setShowInviteForm] = useState(false);
@@ -53,6 +53,7 @@ const TeamManagement = () => {
   const [resetPasswordMember, setResetPasswordMember] = useState<TeamMember | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; loginUrl: string; emailSent: boolean } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [showMemberCredentials, setShowMemberCredentials] = useState(false);
   const [viewMemberCredentials, setViewMemberCredentials] = useState<{ member: TeamMember; loginUrl: string } | null>(null);
 
@@ -527,6 +528,90 @@ const TeamManagement = () => {
     setShowResetPasswordDialog(true);
   };
 
+  // Create account for a team member who doesn't have one (user_id is null)
+  const handleCreateAccountForMember = async (member: TeamMember, sendEmail: boolean = true) => {
+    if (member.user_id) {
+      toast({
+        title: "Compte existant",
+        description: "Ce membre a déjà un compte utilisateur.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingAccount(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      // Generate a new password
+      const password = generatePasswordLocal();
+
+      const response = await supabase.functions.invoke('create-team-member-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: {
+          email: member.member_email,
+          full_name: member.member_name,
+          team_member_id: member.id,
+          password: password,
+          sendEmail: sendEmail
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.success) {
+        const loginUrl = `${window.location.origin}/auth`;
+        
+        setCreatedCredentials({
+          email: member.member_email,
+          password: response.data.credentials?.password || password,
+          loginUrl: response.data.credentials?.loginUrl || loginUrl,
+          memberName: member.member_name,
+          emailSent: response.data.emailSent || false,
+          emailError: response.data.emailError
+        });
+        setShowCredentialsDialog(true);
+
+        addLog('Compte créé', 'Équipe', `Compte créé pour ${member.member_name}`, 'success');
+        
+        toast({
+          title: response.data.emailSent ? "Compte créé et email envoyé" : "Compte créé",
+          description: response.data.emailSent 
+            ? `Un email avec les identifiants a été envoyé à ${member.member_email}`
+            : `Un compte a été créé pour ${member.member_name}`
+        });
+
+        // Refresh team members to update user_id
+        await refetch();
+      } else if (response.data?.existingUser) {
+        toast({
+          title: "Compte lié",
+          description: "L'utilisateur existant a été lié au membre d'équipe."
+        });
+        await refetch();
+      } else {
+        throw new Error(response.data?.error || 'Erreur inconnue');
+      }
+    } catch (error: any) {
+      console.error('Error creating account for member:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de créer le compte",
+        variant: "destructive"
+      });
+    }
+    
+    setIsCreatingAccount(false);
+  };
+
   const toggleInvitePermission = (permissionId: string) => {
     setInviteData(prev => ({
       ...prev,
@@ -753,6 +838,12 @@ const TeamManagement = () => {
                             <Badge variant="outline" className="text-xs">
                               {getPermissionCount(member.permissions)} permissions
                             </Badge>
+                            {!member.user_id && (
+                              <Badge variant="destructive" className="text-xs">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                Sans compte
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -760,12 +851,33 @@ const TeamManagement = () => {
                         <div className="text-right text-sm text-muted-foreground hidden sm:block">
                           <p>Ajouté le {new Date(member.invited_at).toLocaleDateString('fr-FR')}</p>
                         </div>
+                        {/* Create account button if user_id is null */}
+                        {!member.user_id && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleCreateAccountForMember(member, true)}
+                            disabled={isCreatingAccount}
+                            title="Créer le compte utilisateur"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {isCreatingAccount ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <UserCheck className="w-4 h-4 mr-1" />
+                                Créer le compte
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openMemberCredentialsView(member)}
                           title="Voir les identifiants"
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          disabled={!member.user_id}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -790,6 +902,7 @@ const TeamManagement = () => {
                           size="sm"
                           onClick={() => openResetPasswordDialog(member)}
                           title="Réinitialiser le mot de passe"
+                          disabled={!member.user_id}
                         >
                           <Key className="w-4 h-4" />
                         </Button>
