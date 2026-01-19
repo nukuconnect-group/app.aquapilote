@@ -25,11 +25,12 @@ interface UnitPermissions {
 
 interface CreatedCredentials {
   email: string;
-  password: string;
+  password?: string | null;
   loginUrl: string;
   memberName: string;
   emailSent: boolean;
   emailError?: string | null;
+  existingUser?: boolean;
 }
 
 const TeamManagement = () => {
@@ -300,6 +301,8 @@ const TeamManagement = () => {
           throw new Error('Session expirée. Veuillez vous reconnecter.');
         }
 
+        const passwordToUse = inviteData.password || generatedPassword;
+
         const response = await supabase.functions.invoke('create-team-member-account', {
           headers: {
             Authorization: `Bearer ${session.access_token}`
@@ -308,7 +311,7 @@ const TeamManagement = () => {
             email: inviteData.email,
             full_name: inviteData.name,
             team_member_id: result.data.id,
-            password: generatedPassword,
+            password: passwordToUse,
             sendEmail: sendEmail
           }
         });
@@ -318,46 +321,72 @@ const TeamManagement = () => {
         }
 
         const loginUrl = `${window.location.origin}/auth`;
-        
-        if (response.data?.credentials) {
+
+        // Existing auth user was linked: we cannot reveal their current password
+        if (response.data?.existingUser) {
+          setCreatedCredentials({
+            email: inviteData.email,
+            password: null,
+            loginUrl,
+            memberName: inviteData.name,
+            emailSent: false,
+            emailError: null,
+            existingUser: true,
+          });
+          setShowCredentialsDialog(true);
+
+          addLog('Compte lié (utilisateur existant)', 'Équipe', `${inviteData.name} : compte déjà existant, lié au membre`, 'info');
+
+          toast({
+            title: 'Compte déjà existant',
+            description: `Un compte existe déjà pour ${inviteData.email}. Utilisez “Réinitialiser mot de passe” si nécessaire.`,
+          });
+        } else if (response.data?.credentials) {
           setCreatedCredentials({
             email: response.data.credentials.email,
             password: response.data.credentials.password,
             loginUrl: response.data.credentials.loginUrl || loginUrl,
             memberName: inviteData.name,
             emailSent: response.data.emailSent || false,
-            emailError: response.data.emailError
+            emailError: response.data.emailError,
+            existingUser: false,
           });
           setShowCredentialsDialog(true);
+
+          const emailStatus = response.data?.emailSent
+            ? 'Email envoyé automatiquement'
+            : 'Compte créé (email non envoyé)';
+
+          addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé - ${emailStatus}`, 'success');
+
+          toast({
+            title: response.data?.emailSent ? 'Membre ajouté et email envoyé' : 'Membre ajouté',
+            description: response.data?.emailSent
+              ? `Un email avec les identifiants a été envoyé à ${inviteData.email}`
+              : `Un compte a été créé pour ${inviteData.name}`
+          });
         } else {
-          // Fallback: use local generated password if server didn't return one
+          // Rare fallback: if the function didn't return credentials, display the password we sent
           setCreatedCredentials({
             email: inviteData.email,
-            password: generatedPassword,
-            loginUrl: loginUrl,
+            password: passwordToUse,
+            loginUrl,
             memberName: inviteData.name,
-            emailSent: sendEmail && response.data?.emailSent,
-            emailError: response.data?.emailError
+            emailSent: false,
+            emailError: response.data?.emailError,
+            existingUser: false,
           });
           setShowCredentialsDialog(true);
-        }
 
-        const emailStatus = response.data?.emailSent 
-          ? 'Email envoyé automatiquement' 
-          : 'Compte créé (email non envoyé)';
-        
-        addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé - ${emailStatus}`, 'success');
-        
-        toast({
-          title: response.data?.emailSent ? "Membre ajouté et email envoyé" : "Membre ajouté",
-          description: response.data?.emailSent 
-            ? `Un email avec les identifiants a été envoyé à ${inviteData.email}`
-            : `Un compte a été créé pour ${inviteData.name}`
-        });
+          toast({
+            title: 'Membre ajouté',
+            description: `Compte créé pour ${inviteData.name}.` 
+          });
+        }
       } catch (error: any) {
         console.error('Error creating user account:', error);
         addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte utilisateur`, 'warning');
-        
+
         toast({
           title: "Membre ajouté",
           description: `${inviteData.name} a été ajouté mais le compte n'a pas pu être créé: ${error.message}`,
@@ -1569,12 +1598,24 @@ const TeamManagement = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              Compte créé avec succès
+              {createdCredentials?.existingUser ? 'Compte lié' : 'Compte créé avec succès'}
             </DialogTitle>
           </DialogHeader>
           {createdCredentials && (
             <div className="space-y-4">
-              {createdCredentials.emailSent ? (
+              {createdCredentials.existingUser ? (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    <span className="font-medium text-amber-800 dark:text-amber-200">Utilisateur déjà existant</span>
+                  </div>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Un compte existait déjà pour <strong>{createdCredentials.email}</strong> et a été lié à ce membre.
+                    Pour des raisons de sécurité, le mot de passe actuel ne peut pas être affiché.
+                    Utilisez <strong>“Réinitialiser mot de passe”</strong> si le membre ne le connaît pas.
+                  </p>
+                </div>
+              ) : createdCredentials.emailSent ? (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Mail className="w-5 h-5 text-green-600" />
@@ -1640,49 +1681,55 @@ const TeamManagement = () => {
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-muted-foreground">Mot de passe temporaire</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input 
-                      type="text"
-                      value={createdCredentials.password} 
-                      readOnly 
-                      className="font-mono text-sm"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        navigator.clipboard.writeText(createdCredentials.password);
-                        toast({ title: "Mot de passe copié" });
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
+                {!!createdCredentials.password && !createdCredentials.existingUser && (
+                  <div>
+                    <Label className="text-muted-foreground">Mot de passe temporaire</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input 
+                        type="text"
+                        value={createdCredentials.password} 
+                        readOnly 
+                        className="font-mono text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          navigator.clipboard.writeText(createdCredentials.password || '');
+                          toast({ title: "Mot de passe copié" });
+                        }}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Le mot de passe est visible. Communiquez-le de manière sécurisée au membre.
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Le mot de passe est visible. Communiquez-le de manière sécurisée au membre.
-                  </p>
+                )}
+              </div>
+
+              {!createdCredentials.existingUser && !!createdCredentials.password && (
+                <div className="border-t pt-4">
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      const message = `Bonjour ${createdCredentials.memberName},\n\nVotre compte AquaPilote a été créé.\n\nLien de connexion: ${createdCredentials.loginUrl}\nEmail: ${createdCredentials.email}\nMot de passe: ${createdCredentials.password}\n\nVeuillez changer votre mot de passe après votre première connexion.`;
+                      navigator.clipboard.writeText(message);
+                      toast({ title: "Message complet copié", description: "Vous pouvez le coller dans un email ou message" });
+                    }}
+                  >
+                    <Link className="w-4 h-4 mr-2" />
+                    Copier tout le message d'invitation
+                  </Button>
                 </div>
-              </div>
+              )}
 
-              <div className="border-t pt-4">
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const message = `Bonjour ${createdCredentials.memberName},\n\nVotre compte AquaPilote a été créé.\n\nLien de connexion: ${createdCredentials.loginUrl}\nEmail: ${createdCredentials.email}\nMot de passe: ${createdCredentials.password}\n\nVeuillez changer votre mot de passe après votre première connexion.`;
-                    navigator.clipboard.writeText(message);
-                    toast({ title: "Message complet copié", description: "Vous pouvez le coller dans un email ou message" });
-                  }}
-                >
-                  <Link className="w-4 h-4 mr-2" />
-                  Copier tout le message d'invitation
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Conseil: Demandez au membre de changer son mot de passe après la première connexion.
-              </p>
+              {!createdCredentials.existingUser && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Conseil: Demandez au membre de changer son mot de passe après la première connexion.
+                </p>
+              )}
             </div>
           )}
           <div className="flex justify-end mt-4">
