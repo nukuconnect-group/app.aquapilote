@@ -13,20 +13,50 @@ const generatePassword = () => {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const numbers = '0123456789';
   const special = '!@#$%&*';
-  
+
   let password = '';
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
   password += special[Math.floor(Math.random() * special.length)];
-  
+
   const allChars = uppercase + lowercase + numbers + special;
   for (let i = 0; i < 8; i++) {
     password += allChars[Math.floor(Math.random() * allChars.length)];
   }
-  
+
   // Shuffle password
   return password.split('').sort(() => Math.random() - 0.5).join('');
+};
+
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+const findAuthUserByEmail = async (
+  supabaseAdmin: ReturnType<typeof createClient>,
+  email: string,
+): Promise<{ id: string; email?: string | null } | null> => {
+  const target = normalizeEmail(email);
+
+  // Supabase Admin API is paginated; scan a limited number of pages
+  const perPage = 200;
+  const maxPages = 50;
+
+  for (let page = 1; page <= maxPages; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error('Error listing users:', error);
+      return null;
+    }
+
+    const users = data?.users || [];
+    const found = users.find((u) => (u.email ? normalizeEmail(u.email) : '') === target);
+    if (found) return { id: found.id, email: found.email };
+
+    // No more pages
+    if (users.length < perPage) return null;
+  }
+
+  return null;
 };
 
 serve(async (req) => {
@@ -159,22 +189,21 @@ serve(async (req) => {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === email.trim().toLowerCase());
-    
+    // Check if user already exists (paginated)
+    const existingUser = await findAuthUserByEmail(supabaseAdmin, email);
+
     if (existingUser) {
       // User exists - link them to the team member record instead of failing
       if (team_member_id) {
         const { error: updateError } = await supabaseAdmin
           .from('team_members')
-          .update({ 
+          .update({
             user_id: existingUser.id,
-            status: 'active', 
-            accepted_at: new Date().toISOString() 
+            status: 'active',
+            accepted_at: new Date().toISOString()
           })
           .eq('id', team_member_id);
-        
+
         if (updateError) {
           console.error('Error linking existing user to team member:', updateError);
           return new Response(
@@ -183,8 +212,11 @@ serve(async (req) => {
           );
         }
 
+        const appUrl = req.headers.get('origin') || 'https://aqua-pilote.lovable.app';
+        const loginUrl = `${appUrl}/auth`;
+
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: true,
             existingUser: true,
             user: {
@@ -192,12 +224,17 @@ serve(async (req) => {
               email: existingUser.email,
               full_name: full_name.trim()
             },
-            message: 'Utilisateur existant lié au membre d\'équipe. Il peut se connecter avec ses identifiants existants.'
+            credentials: {
+              email: normalizeEmail(email),
+              password: null,
+              loginUrl
+            },
+            message: 'Utilisateur existant lié au membre d\'équipe. Utilisez son mot de passe existant ou réinitialisez-le.'
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ error: 'Un utilisateur avec cet email existe déjà' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -216,6 +253,52 @@ serve(async (req) => {
     });
 
     if (authError) {
+      // Common case: email already exists but was not found due to pagination/race
+      const msg = (authError as any)?.message || '';
+      if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exists') || msg.toLowerCase().includes('registered')) {
+        const existing = await findAuthUserByEmail(supabaseAdmin, email);
+        if (existing && team_member_id) {
+          const { error: updateError } = await supabaseAdmin
+            .from('team_members')
+            .update({
+              user_id: existing.id,
+              status: 'active',
+              accepted_at: new Date().toISOString()
+            })
+            .eq('id', team_member_id);
+
+          if (updateError) {
+            console.error('Error linking existing user after createUser conflict:', updateError);
+            return new Response(
+              JSON.stringify({ error: 'Erreur lors de la liaison du compte existant' }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          const appUrl = req.headers.get('origin') || 'https://aqua-pilote.lovable.app';
+          const loginUrl = `${appUrl}/auth`;
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              existingUser: true,
+              user: {
+                id: existing.id,
+                email: existing.email,
+                full_name: full_name.trim()
+              },
+              credentials: {
+                email: normalizeEmail(email),
+                password: null,
+                loginUrl
+              },
+              message: 'Utilisateur existant lié au membre d\'équipe. Utilisez son mot de passe existant ou réinitialisez-le.'
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
       console.error('User creation error:', authError);
       return new Response(
         JSON.stringify({ error: authError.message }),
