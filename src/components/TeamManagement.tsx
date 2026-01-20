@@ -294,7 +294,7 @@ const TeamManagement = () => {
         });
       }
 
-      // Create user account
+       // Create user account
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
@@ -316,14 +316,14 @@ const TeamManagement = () => {
           }
         });
 
-        if (response.error) {
+         if (response.error) {
           throw new Error(response.error.message);
         }
 
         const loginUrl = `${window.location.origin}/auth`;
 
-        // Existing auth user was linked: we cannot reveal their current password
-        if (response.data?.existingUser) {
+         // Existing auth user was linked (or already linked): we cannot reveal their current password
+         if (response.data?.existingUser || response.data?.alreadyLinked) {
           setCreatedCredentials({
             email: inviteData.email,
             password: null,
@@ -341,6 +341,9 @@ const TeamManagement = () => {
             title: 'Compte déjà existant',
             description: `Un compte existe déjà pour ${inviteData.email}. Utilisez “Réinitialiser mot de passe” si nécessaire.`,
           });
+
+           // IMPORTANT: refresh list so the new member shows as linked (user_id not null)
+           await refetch();
         } else if (response.data?.credentials) {
           setCreatedCredentials({
             email: response.data.credentials.email,
@@ -365,6 +368,9 @@ const TeamManagement = () => {
               ? `Un email avec les identifiants a été envoyé à ${inviteData.email}`
               : `Un compte a été créé pour ${inviteData.name}`
           });
+
+           // IMPORTANT: refresh list so the member no longer shows "Sans compte"
+           await refetch();
         } else {
           // Rare fallback: if the function didn't return credentials, display the password we sent
           setCreatedCredentials({
@@ -382,6 +388,9 @@ const TeamManagement = () => {
             title: 'Membre ajouté',
             description: `Compte créé pour ${inviteData.name}.` 
           });
+
+           // Same: refresh list
+           await refetch();
         }
       } catch (error: any) {
         console.error('Error creating user account:', error);
@@ -576,7 +585,7 @@ const TeamManagement = () => {
         throw new Error('Session expirée. Veuillez vous reconnecter.');
       }
 
-      // Generate a new password
+      // Generate a new password (will only be used if we actually created a NEW auth user)
       const password = generatePasswordLocal();
 
       const response = await supabase.functions.invoke('create-team-member-account', {
@@ -596,7 +605,27 @@ const TeamManagement = () => {
         throw new Error(response.error.message);
       }
 
-      if (response.data?.success) {
+      // If the backend linked an existing user OR the member was already linked, don't show any password.
+      if (response.data?.existingUser || response.data?.alreadyLinked) {
+        const loginUrl = `${window.location.origin}/auth`;
+        setCreatedCredentials({
+          email: member.member_email,
+          password: null,
+          loginUrl: response.data.credentials?.loginUrl || loginUrl,
+          memberName: member.member_name,
+          emailSent: false,
+          emailError: null,
+          existingUser: true,
+        });
+        setShowCredentialsDialog(true);
+
+        toast({
+          title: "Compte lié",
+          description: "Le membre est maintenant lié à un compte existant. Utilisez “Réinitialiser mot de passe” si besoin.",
+        });
+
+        await refetch();
+      } else if (response.data?.success) {
         const loginUrl = `${window.location.origin}/auth`;
         
         setCreatedCredentials({
@@ -619,12 +648,6 @@ const TeamManagement = () => {
         });
 
         // Refresh team members to update user_id
-        await refetch();
-      } else if (response.data?.existingUser) {
-        toast({
-          title: "Compte lié",
-          description: "L'utilisateur existant a été lié au membre d'équipe."
-        });
         await refetch();
       } else {
         throw new Error(response.data?.error || 'Erreur inconnue');
