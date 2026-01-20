@@ -131,11 +131,30 @@ serve(async (req) => {
         );
       }
 
-      // Prevent creating account if already linked to an auth user
+      // Idempotent behavior: if already linked, return success instead of failing.
+      // This avoids "Créer un compte" failing when the first attempt succeeded but UI wasn't refreshed.
       if (teamMember.user_id) {
+        const appUrl = req.headers.get('origin') || 'https://aqua-pilote.lovable.app';
+        const loginUrl = `${appUrl}/auth`;
+
         return new Response(
-          JSON.stringify({ error: 'Ce membre a déjà un compte utilisateur' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({
+            success: true,
+            existingUser: true,
+            alreadyLinked: true,
+            user: {
+              id: teamMember.user_id,
+              email: normalizeEmail(email),
+              full_name: full_name?.trim?.() || null,
+            },
+            credentials: {
+              email: normalizeEmail(email),
+              password: null,
+              loginUrl,
+            },
+            message: 'Ce membre est déjà lié à un compte. Vous pouvez vous connecter avec ses identifiants (ou réinitialiser le mot de passe).'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -241,9 +260,9 @@ serve(async (req) => {
       );
     }
 
-    // Create the user
+     // Create the user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim(),
+       email: normalizeEmail(email),
       password: password,
       email_confirm: true,
       user_metadata: {
