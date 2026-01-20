@@ -196,12 +196,13 @@ export const useSupportTickets = () => {
     fetchTickets();
   }, [fetchTickets]);
 
-  // Realtime subscription
+  // Realtime subscription for tickets AND messages (instant messaging)
   useEffect(() => {
     if (!user?.id) return;
 
+    // Channel for tickets changes
     const ticketsChannel = supabase
-      .channel('support_tickets_changes')
+      .channel('support_tickets_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
         fetchTickets();
       })
@@ -212,9 +213,52 @@ export const useSupportTickets = () => {
     };
   }, [user?.id, fetchTickets]);
 
+  // Separate channel for messages - instant updates
+  const [currentTicketIdForRealtime, setCurrentTicketIdForRealtime] = useState<string | null>(null);
+
+  const subscribeToMessages = useCallback((ticketId: string) => {
+    setCurrentTicketIdForRealtime(ticketId);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id || !currentTicketIdForRealtime) return;
+
+    const messagesChannel = supabase
+      .channel(`support_messages_${currentTicketIdForRealtime}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'support_messages',
+          filter: `ticket_id=eq.${currentTicketIdForRealtime}`
+        },
+        (payload) => {
+          // Add the new message instantly without refetching all
+          setMessages((prev) => {
+            const newMsg = payload.new as SupportMessage;
+            // Avoid duplicates
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [user?.id, currentTicketIdForRealtime]);
+
   const unreadTicketsCount = tickets.filter(t => 
     t.status === 'open' && user?.role === 'admin'
   ).length;
+
+  // Wrap fetchMessages to also subscribe to realtime updates for that ticket
+  const fetchMessagesAndSubscribe = useCallback(async (ticketId: string) => {
+    await fetchMessages(ticketId);
+    subscribeToMessages(ticketId);
+  }, [fetchMessages, subscribeToMessages]);
 
   return {
     tickets,
@@ -224,7 +268,7 @@ export const useSupportTickets = () => {
     createTicket,
     sendMessage,
     updateTicketStatus,
-    fetchMessages,
+    fetchMessages: fetchMessagesAndSubscribe,
     markMessagesAsRead,
     refetch: fetchTickets
   };
