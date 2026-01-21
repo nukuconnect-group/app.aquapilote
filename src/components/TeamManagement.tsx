@@ -869,13 +869,18 @@ const TeamManagement = () => {
                   {teamMembers.map((member) => (
                     <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-4">
-                        <Avatar>
-                          <AvatarFallback>
+                        <Avatar className={member.user_id ? "ring-2 ring-green-500" : ""}>
+                          <AvatarFallback className={member.user_id ? "bg-green-100 text-green-700" : ""}>
                             {member.member_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h4 className="font-medium">{member.member_name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{member.member_name}</h4>
+                            {member.user_id && (
+                              <span title="Compte actif"><CheckCircle className="w-4 h-4 text-green-600" /></span>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">{member.member_email}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Badge variant="outline" className="text-xs">
@@ -890,7 +895,13 @@ const TeamManagement = () => {
                             <Badge variant="outline" className="text-xs">
                               {getPermissionCount(member.permissions)} permissions
                             </Badge>
-                            {!member.user_id && (
+                            {/* Afficher badge compte selon user_id */}
+                            {member.user_id ? (
+                              <Badge className="bg-green-100 text-green-800 text-xs">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Compte créé
+                              </Badge>
+                            ) : (
                               <Badge variant="destructive" className="text-xs">
                                 <AlertCircle className="w-3 h-3 mr-1" />
                                 Sans compte
@@ -903,7 +914,7 @@ const TeamManagement = () => {
                         <div className="text-right text-sm text-muted-foreground hidden sm:block">
                           <p>Ajouté le {new Date(member.invited_at).toLocaleDateString('fr-FR')}</p>
                         </div>
-                        {/* Create account button if user_id is null */}
+                        {/* Bouton créer compte SEULEMENT si user_id est null */}
                         {!member.user_id && (
                           <Button
                             variant="default"
