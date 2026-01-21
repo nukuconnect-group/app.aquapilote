@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Calendar, BarChart3, PieChart, TrendingUp, Filter, FileSpreadsheet, File } from 'lucide-react';
+import { FileText, Download, Calendar, BarChart3, PieChart, TrendingUp, Filter, FileSpreadsheet, File, Printer, Edit2, Eye, ChevronDown, ChevronUp, Check, Building2, Fish, DollarSign, Droplets, AlertTriangle, Activity } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import UnitReportGenerator from './reports/UnitReportGenerator';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -20,10 +27,25 @@ import {
 } from '@/lib/reportExportUtils';
 import { toast } from 'sonner';
 
+interface ReportPreviewData {
+  id: string;
+  title: string;
+  period: string;
+  generatedAt: string;
+  companyName: string;
+  companyAddress: string;
+  notes: string;
+  sections: ReportData['sections'];
+}
+
 const ReportsManagement = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedFormat, setSelectedFormat] = useState('pdf');
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<ReportPreviewData | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   
   const { units, transactions, purchases, getGlobalFinancialData } = useProductionUnits();
   const { formatCurrency } = useSettings();
@@ -33,6 +55,8 @@ const ReportsManagement = () => {
   const [productionCycles, setProductionCycles] = useState<any[]>([]);
   const [healthRecords, setHealthRecords] = useState<any[]>([]);
   const [feedingRecords, setFeedingRecords] = useState<any[]>([]);
+  const [livestockBatches, setLivestockBatches] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [generatedReports, setGeneratedReports] = useState<any[]>([]);
 
   // Charger les données
@@ -41,25 +65,19 @@ const ReportsManagement = () => {
       if (!user?.id) return;
 
       try {
-        const { data: cycles } = await supabase
-          .from('production_cycles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (cycles) setProductionCycles(cycles);
+        const [cyclesRes, healthRes, feedingRes, livestockRes, employeesRes] = await Promise.all([
+          supabase.from('production_cycles').select('*').order('created_at', { ascending: false }),
+          supabase.from('health_records').select('*').order('date', { ascending: false }).limit(200),
+          supabase.from('feeding_records').select('*').order('date', { ascending: false }).limit(200),
+          supabase.from('livestock_batches').select('*').order('created_at', { ascending: false }),
+          supabase.from('employees').select('*').order('created_at', { ascending: false })
+        ]);
 
-        const { data: health } = await supabase
-          .from('health_records')
-          .select('*')
-          .order('date', { ascending: false })
-          .limit(100);
-        if (health) setHealthRecords(health);
-
-        const { data: feeding } = await supabase
-          .from('feeding_records')
-          .select('*')
-          .order('date', { ascending: false })
-          .limit(100);
-        if (feeding) setFeedingRecords(feeding);
+        if (cyclesRes.data) setProductionCycles(cyclesRes.data);
+        if (healthRes.data) setHealthRecords(healthRes.data);
+        if (feedingRes.data) setFeedingRecords(feedingRes.data);
+        if (livestockRes.data) setLivestockBatches(livestockRes.data);
+        if (employeesRes.data) setEmployees(employeesRes.data);
       } catch (error) {
         console.error('Erreur lors du chargement:', error);
       }
@@ -70,40 +88,64 @@ const ReportsManagement = () => {
 
   const reportTypes = [
     {
+      id: 'comprehensive',
+      title: 'Rapport Complet',
+      description: 'Vue d\'ensemble complète de toute l\'exploitation',
+      icon: FileText,
+      frequency: 'Mensuel',
+      status: 'ready',
+      dataCount: productionCycles.length + healthRecords.length + feedingRecords.length,
+      color: 'from-purple-500 to-indigo-600'
+    },
+    {
       id: 'production',
       title: 'Rapport de Production',
       description: 'Analyse détaillée de la production piscicole',
       icon: BarChart3,
       frequency: 'Hebdomadaire',
       status: 'ready',
-      dataCount: productionCycles.length
+      dataCount: productionCycles.length,
+      color: 'from-blue-500 to-cyan-600'
     },
     {
       id: 'financial',
       title: 'Rapport Financier',
-      description: 'Revenus, dépenses et bénéfices',
+      description: 'Revenus, dépenses, bénéfices et rentabilité',
       icon: TrendingUp,
       frequency: 'Mensuel',
       status: 'ready',
-      dataCount: transactions.length
+      dataCount: transactions.length,
+      color: 'from-green-500 to-emerald-600'
     },
     {
       id: 'health',
       title: 'Rapport Sanitaire',
-      description: 'État de santé des poissons et traitements',
-      icon: PieChart,
+      description: 'État de santé, mortalité et traitements',
+      icon: Activity,
       frequency: 'Bi-hebdomadaire',
       status: 'ready',
-      dataCount: healthRecords.length
+      dataCount: healthRecords.length,
+      color: 'from-red-500 to-pink-600'
     },
     {
       id: 'quality',
       title: 'Qualité de l\'Eau',
-      description: 'Paramètres physicochimiques de l\'eau',
-      icon: FileText,
+      description: 'Paramètres physicochimiques et tendances',
+      icon: Droplets,
       frequency: 'Quotidien',
       status: 'ready',
-      dataCount: healthRecords.length
+      dataCount: healthRecords.length,
+      color: 'from-cyan-500 to-blue-600'
+    },
+    {
+      id: 'livestock',
+      title: 'Rapport Cheptel',
+      description: 'Inventaire et évolution des stocks de poissons',
+      icon: Fish,
+      frequency: 'Hebdomadaire',
+      status: 'ready',
+      dataCount: livestockBatches.length,
+      color: 'from-orange-500 to-amber-600'
     }
   ];
 
@@ -111,14 +153,15 @@ const ReportsManagement = () => {
     const now = new Date();
     switch (selectedPeriod) {
       case 'week':
-        return `Semaine du ${new Date(now.setDate(now.getDate() - 7)).toLocaleDateString('fr-FR')} au ${new Date().toLocaleDateString('fr-FR')}`;
+        const weekStart = new Date(now.setDate(now.getDate() - 7));
+        return `Semaine du ${weekStart.toLocaleDateString('fr-FR')} au ${new Date().toLocaleDateString('fr-FR')}`;
       case 'month':
         return now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
       case 'quarter':
-        const quarter = Math.floor(now.getMonth() / 3) + 1;
-        return `T${quarter} ${now.getFullYear()}`;
+        const quarter = Math.floor(new Date().getMonth() / 3) + 1;
+        return `T${quarter} ${new Date().getFullYear()}`;
       case 'year':
-        return now.getFullYear().toString();
+        return new Date().getFullYear().toString();
       default:
         return 'Période personnalisée';
     }
@@ -131,31 +174,154 @@ const ReportsManagement = () => {
 
     const sections: ReportData['sections'] = [];
 
+    // Helper to calculate stats
+    const calcStats = (values: number[]) => {
+      if (values.length === 0) return { avg: 0, min: 0, max: 0 };
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      return { avg, min: Math.min(...values), max: Math.max(...values) };
+    };
+
     switch (reportId) {
+      case 'comprehensive':
+        // Section 1: Résumé exécutif
+        sections.push({
+          title: '📊 Résumé Exécutif',
+          type: 'summary',
+          summary: [
+            { label: 'Unités de production', value: units.length },
+            { label: 'Cycles actifs', value: productionCycles.filter(c => c.status === 'active').length },
+            { label: 'Lots de poissons', value: livestockBatches.length },
+            { label: 'Revenus totaux', value: formatCurrency(financialData.revenue) },
+            { label: 'Bénéfice net', value: formatCurrency(financialData.profit) },
+            { label: 'Employés', value: employees.length }
+          ]
+        });
+
+        // Section 2: Production
+        if (productionCycles.length > 0) {
+          sections.push({
+            title: '🐟 Production',
+            type: 'table',
+            headers: ['Cycle', 'Unité', 'Espèce', 'Statut', 'Quantité actuelle', 'Objectif', 'Progression'],
+            rows: productionCycles.slice(0, 15).map(c => {
+              const progress = c.target_quantity ? ((c.current_quantity || 0) / c.target_quantity * 100).toFixed(0) + '%' : '-';
+              return [
+                c.name,
+                c.unit_name || '-',
+                c.species || '-',
+                c.status === 'active' ? '✅ Actif' : '⏹️ Terminé',
+                c.current_quantity?.toLocaleString('fr-FR') || '0',
+                c.target_quantity?.toLocaleString('fr-FR') || '0',
+                progress
+              ];
+            })
+          });
+        }
+
+        // Section 3: Finances
+        sections.push({
+          title: '💰 Finances',
+          type: 'summary',
+          summary: [
+            { label: 'Revenus', value: formatCurrency(financialData.revenue) },
+            { label: 'Dépenses', value: formatCurrency(financialData.expenses) },
+            { label: 'Bénéfice', value: formatCurrency(financialData.profit) },
+            { label: 'Marge bénéficiaire', value: financialData.revenue ? `${((financialData.profit / financialData.revenue) * 100).toFixed(1)}%` : '0%' }
+          ]
+        });
+
+        // Section 4: Santé
+        if (healthRecords.length > 0) {
+          const temps = healthRecords.filter(h => h.temperature).map(h => h.temperature);
+          const phs = healthRecords.filter(h => h.ph).map(h => h.ph);
+          const oxygens = healthRecords.filter(h => h.oxygen).map(h => h.oxygen);
+          const tempStats = calcStats(temps);
+          const phStats = calcStats(phs);
+          const oxygenStats = calcStats(oxygens);
+          const totalMortality = healthRecords.reduce((sum, h) => sum + (h.mortality || 0), 0);
+
+          sections.push({
+            title: '🏥 Indicateurs Sanitaires',
+            type: 'summary',
+            summary: [
+              { label: 'Température moyenne', value: `${tempStats.avg.toFixed(1)}°C (min: ${tempStats.min.toFixed(1)}, max: ${tempStats.max.toFixed(1)})` },
+              { label: 'pH moyen', value: `${phStats.avg.toFixed(2)} (min: ${phStats.min.toFixed(2)}, max: ${phStats.max.toFixed(2)})` },
+              { label: 'Oxygène moyen', value: `${oxygenStats.avg.toFixed(1)} mg/L` },
+              { label: 'Mortalité totale période', value: totalMortality.toLocaleString('fr-FR') }
+            ]
+          });
+        }
+
+        // Section 5: Alimentation
+        if (feedingRecords.length > 0) {
+          const totalFeed = feedingRecords.reduce((sum, f) => sum + (f.quantity || 0), 0);
+          const avgFCR = feedingRecords.filter(f => f.fcr).reduce((sum, f, _, arr) => sum + (f.fcr || 0) / arr.length, 0);
+
+          sections.push({
+            title: '🍽️ Alimentation',
+            type: 'summary',
+            summary: [
+              { label: 'Distributions', value: feedingRecords.length },
+              { label: 'Quantité totale distribuée', value: `${totalFeed.toLocaleString('fr-FR')} kg` },
+              { label: 'FCR moyen', value: avgFCR ? avgFCR.toFixed(2) : 'N/A' },
+              { label: 'Distribution moyenne/jour', value: `${(totalFeed / 30).toFixed(1)} kg` }
+            ]
+          });
+        }
+        break;
+
       case 'production':
         sections.push({
-          title: 'Résumé de Production',
+          title: '📊 Résumé de Production',
           type: 'summary',
           summary: [
             { label: 'Cycles actifs', value: productionCycles.filter(c => c.status === 'active').length },
             { label: 'Cycles terminés', value: productionCycles.filter(c => c.status === 'completed').length },
             { label: 'Total unités', value: units.length },
-            { label: 'Distributions d\'aliment', value: feedingRecords.length }
+            { label: 'Distributions d\'aliment', value: feedingRecords.length },
+            { label: 'Lots de poissons', value: livestockBatches.length }
           ]
         });
+
         if (productionCycles.length > 0) {
           sections.push({
-            title: 'Détail des Cycles de Production',
+            title: '🐟 Détail des Cycles de Production',
             type: 'table',
-            headers: ['Nom', 'Unité', 'Espèce', 'Statut', 'Date début', 'Quantité actuelle', 'Objectif'],
-            rows: productionCycles.map(c => [
-              c.name,
-              c.unit_name || '-',
-              c.species || '-',
-              c.status === 'active' ? 'Actif' : 'Terminé',
-              c.start_date,
-              c.current_quantity?.toLocaleString('fr-FR') || '0',
-              c.target_quantity?.toLocaleString('fr-FR') || '0'
+            headers: ['Nom', 'Unité', 'Espèce', 'Statut', 'Date début', 'Quantité actuelle', 'Objectif', 'Progression'],
+            rows: productionCycles.map(c => {
+              const progress = c.target_quantity ? ((c.current_quantity || 0) / c.target_quantity * 100).toFixed(0) + '%' : '-';
+              return [
+                c.name,
+                c.unit_name || '-',
+                c.species || '-',
+                c.status === 'active' ? '✅ Actif' : '⏹️ Terminé',
+                c.start_date,
+                c.current_quantity?.toLocaleString('fr-FR') || '0',
+                c.target_quantity?.toLocaleString('fr-FR') || '0',
+                progress
+              ];
+            })
+          });
+        }
+
+        // Stats par espèce
+        const speciesStats: Record<string, { count: number; quantity: number }> = productionCycles.reduce((acc, c) => {
+          const species = c.species || 'Autre';
+          if (!acc[species]) acc[species] = { count: 0, quantity: 0 };
+          acc[species].count++;
+          acc[species].quantity += c.current_quantity || 0;
+          return acc;
+        }, {} as Record<string, { count: number; quantity: number }>);
+
+        if (Object.keys(speciesStats).length > 0) {
+          sections.push({
+            title: '📈 Répartition par Espèce',
+            type: 'table',
+            headers: ['Espèce', 'Nombre de cycles', 'Quantité totale'],
+            rows: Object.entries(speciesStats).map(([species, stats]) => [
+              species,
+              stats.count.toString(),
+              stats.quantity.toLocaleString('fr-FR')
             ])
           });
         }
@@ -163,40 +329,74 @@ const ReportsManagement = () => {
 
       case 'financial':
         sections.push({
-          title: 'Résumé Financier',
+          title: '💰 Résumé Financier',
           type: 'summary',
           summary: [
             { label: 'Revenus totaux', value: formatCurrency(financialData.revenue) },
             { label: 'Dépenses totales', value: formatCurrency(financialData.expenses) },
             { label: 'Bénéfice net', value: formatCurrency(financialData.profit) },
-            { label: 'Marge', value: financialData.revenue ? `${((financialData.profit / financialData.revenue) * 100).toFixed(1)}%` : '0%' }
+            { label: 'Marge bénéficiaire', value: financialData.revenue ? `${((financialData.profit / financialData.revenue) * 100).toFixed(1)}%` : '0%' },
+            { label: 'Nombre de transactions', value: transactions.length }
           ]
         });
+
         if (transactions.length > 0) {
           const revenues = transactions.filter(t => t.type === 'revenue');
           const expenses = transactions.filter(t => t.type === 'expense');
           
-          sections.push({
-            title: 'Revenus',
-            type: 'table',
-            headers: ['Date', 'Catégorie', 'Description', 'Montant (F CFA)'],
-            rows: revenues.slice(0, 20).map(t => [
-              t.date,
-              t.category,
-              t.description || '-',
-              t.amount.toLocaleString('fr-FR')
-            ])
-          });
+          // Répartition par catégorie (revenus)
+          const revenueByCategory = revenues.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+          }, {} as Record<string, number>);
 
+          if (Object.keys(revenueByCategory).length > 0) {
+            sections.push({
+              title: '📈 Revenus par Catégorie',
+              type: 'table',
+              headers: ['Catégorie', 'Montant', 'Part'],
+              rows: Object.entries(revenueByCategory)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, amount]) => [
+                  cat,
+                  formatCurrency(amount),
+                  `${((amount / financialData.revenue) * 100).toFixed(1)}%`
+                ])
+            });
+          }
+
+          // Répartition par catégorie (dépenses)
+          const expenseByCategory = expenses.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+          }, {} as Record<string, number>);
+
+          if (Object.keys(expenseByCategory).length > 0) {
+            sections.push({
+              title: '📉 Dépenses par Catégorie',
+              type: 'table',
+              headers: ['Catégorie', 'Montant', 'Part'],
+              rows: Object.entries(expenseByCategory)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, amount]) => [
+                  cat,
+                  formatCurrency(amount),
+                  `${((amount / financialData.expenses) * 100).toFixed(1)}%`
+                ])
+            });
+          }
+
+          // Dernières transactions
           sections.push({
-            title: 'Dépenses',
+            title: '📋 Dernières Transactions',
             type: 'table',
-            headers: ['Date', 'Catégorie', 'Description', 'Montant (F CFA)'],
-            rows: expenses.slice(0, 20).map(t => [
+            headers: ['Date', 'Type', 'Catégorie', 'Description', 'Montant'],
+            rows: transactions.slice(0, 20).map(t => [
               t.date,
+              t.type === 'revenue' ? '💵 Revenu' : '💸 Dépense',
               t.category,
               t.description || '-',
-              t.amount.toLocaleString('fr-FR')
+              formatCurrency(t.amount)
             ])
           });
         }
@@ -204,61 +404,190 @@ const ReportsManagement = () => {
 
       case 'health':
         if (healthRecords.length > 0) {
-          const avgTemp = healthRecords.reduce((sum, h) => sum + (h.temperature || 0), 0) / healthRecords.length;
-          const avgPh = healthRecords.reduce((sum, h) => sum + (h.ph || 0), 0) / healthRecords.length;
-          const avgOxygen = healthRecords.reduce((sum, h) => sum + (h.oxygen || 0), 0) / healthRecords.length;
+          const temps = healthRecords.filter(h => h.temperature).map(h => h.temperature);
+          const phs = healthRecords.filter(h => h.ph).map(h => h.ph);
+          const oxygens = healthRecords.filter(h => h.oxygen).map(h => h.oxygen);
+          const tempStats = calcStats(temps);
+          const phStats = calcStats(phs);
+          const oxygenStats = calcStats(oxygens);
           const totalMortality = healthRecords.reduce((sum, h) => sum + (h.mortality || 0), 0);
 
           sections.push({
-            title: 'Indicateurs Sanitaires',
+            title: '🏥 Indicateurs Sanitaires Globaux',
             type: 'summary',
             summary: [
-              { label: 'Température moyenne', value: `${avgTemp.toFixed(1)}°C` },
-              { label: 'pH moyen', value: avgPh.toFixed(2) },
-              { label: 'Oxygène moyen', value: `${avgOxygen.toFixed(1)} mg/L` },
-              { label: 'Mortalité totale', value: totalMortality }
+              { label: 'Nombre d\'enregistrements', value: healthRecords.length },
+              { label: 'Température moyenne', value: `${tempStats.avg.toFixed(1)}°C` },
+              { label: 'Plage de température', value: `${tempStats.min.toFixed(1)}°C - ${tempStats.max.toFixed(1)}°C` },
+              { label: 'pH moyen', value: phStats.avg.toFixed(2) },
+              { label: 'Plage pH', value: `${phStats.min.toFixed(2)} - ${phStats.max.toFixed(2)}` },
+              { label: 'Oxygène moyen', value: `${oxygenStats.avg.toFixed(1)} mg/L` },
+              { label: 'Mortalité totale', value: totalMortality.toLocaleString('fr-FR') }
             ]
           });
 
+          // Alertes potentielles
+          const alerts: string[] = [];
+          if (tempStats.max > 32) alerts.push(`⚠️ Température maximale élevée: ${tempStats.max.toFixed(1)}°C`);
+          if (tempStats.min < 20) alerts.push(`⚠️ Température minimale basse: ${tempStats.min.toFixed(1)}°C`);
+          if (phStats.max > 9) alerts.push(`⚠️ pH maximum élevé: ${phStats.max.toFixed(2)}`);
+          if (phStats.min < 6) alerts.push(`⚠️ pH minimum bas: ${phStats.min.toFixed(2)}`);
+          if (oxygenStats.min < 4) alerts.push(`⚠️ Oxygène minimum critique: ${oxygenStats.min.toFixed(1)} mg/L`);
+
+          if (alerts.length > 0) {
+            sections.push({
+              title: '⚠️ Alertes et Points d\'Attention',
+              type: 'summary',
+              summary: alerts.map((a, i) => ({ label: `Alerte ${i + 1}`, value: a }))
+            });
+          }
+
           sections.push({
-            title: 'Historique Sanitaire',
+            title: '📋 Historique Sanitaire Détaillé',
             type: 'table',
-            headers: ['Date', 'Température', 'pH', 'Oxygène', 'Mortalité'],
-            rows: healthRecords.slice(0, 30).map(h => [
+            headers: ['Date', 'Température (°C)', 'pH', 'Oxygène (mg/L)', 'Mortalité', 'Notes'],
+            rows: healthRecords.slice(0, 50).map(h => [
               h.date,
-              h.temperature ? `${h.temperature.toFixed(1)}°C` : '-',
+              h.temperature ? h.temperature.toFixed(1) : '-',
               h.ph?.toFixed(2) || '-',
-              h.oxygen ? `${h.oxygen.toFixed(1)} mg/L` : '-',
-              h.mortality || 0
+              h.oxygen ? h.oxygen.toFixed(1) : '-',
+              h.mortality || '0',
+              h.notes || '-'
             ])
           });
         } else {
           sections.push({
-            title: 'Indicateurs Sanitaires',
+            title: '🏥 Indicateurs Sanitaires',
             type: 'summary',
-            summary: [{ label: 'Statut', value: 'Aucune donnée sanitaire disponible' }]
+            summary: [{ label: 'Statut', value: 'Aucune donnée sanitaire disponible pour cette période' }]
           });
         }
         break;
 
       case 'quality':
         if (healthRecords.length > 0) {
+          const temps = healthRecords.filter(h => h.temperature).map(h => h.temperature);
+          const phs = healthRecords.filter(h => h.ph).map(h => h.ph);
+          const oxygens = healthRecords.filter(h => h.oxygen).map(h => h.oxygen);
+          const tempStats = calcStats(temps);
+          const phStats = calcStats(phs);
+          const oxygenStats = calcStats(oxygens);
+
           sections.push({
-            title: 'Qualité de l\'Eau',
+            title: '💧 Qualité de l\'Eau - Synthèse',
+            type: 'summary',
+            summary: [
+              { label: 'Mesures analysées', value: healthRecords.length },
+              { label: 'Température', value: `Moy: ${tempStats.avg.toFixed(1)}°C | Min: ${tempStats.min.toFixed(1)}°C | Max: ${tempStats.max.toFixed(1)}°C` },
+              { label: 'pH', value: `Moy: ${phStats.avg.toFixed(2)} | Min: ${phStats.min.toFixed(2)} | Max: ${phStats.max.toFixed(2)}` },
+              { label: 'Oxygène dissous', value: `Moy: ${oxygenStats.avg.toFixed(1)} mg/L | Min: ${oxygenStats.min.toFixed(1)} mg/L | Max: ${oxygenStats.max.toFixed(1)} mg/L` }
+            ]
+          });
+
+          // Évaluation de la qualité
+          let qualityScore = 100;
+          const issues: string[] = [];
+          
+          if (tempStats.max > 32 || tempStats.min < 18) {
+            qualityScore -= 20;
+            issues.push('Température hors plage optimale');
+          }
+          if (phStats.max > 9 || phStats.min < 6.5) {
+            qualityScore -= 20;
+            issues.push('pH hors plage optimale');
+          }
+          if (oxygenStats.min < 5) {
+            qualityScore -= 30;
+            issues.push('Oxygène insuffisant détecté');
+          }
+
+          sections.push({
+            title: '📊 Évaluation Qualité',
+            type: 'summary',
+            summary: [
+              { label: 'Score qualité', value: `${qualityScore}%` },
+              { label: 'État général', value: qualityScore >= 80 ? '✅ Bon' : qualityScore >= 60 ? '⚠️ Attention' : '❌ Critique' },
+              { label: 'Points d\'attention', value: issues.length > 0 ? issues.join(', ') : 'Aucun problème détecté' }
+            ]
+          });
+
+          sections.push({
+            title: '📈 Relevés Détaillés',
             type: 'table',
-            headers: ['Date', 'Température (°C)', 'pH', 'Oxygène (mg/L)'],
-            rows: healthRecords.slice(0, 50).map(h => [
-              h.date,
-              h.temperature?.toFixed(1) || '-',
-              h.ph?.toFixed(2) || '-',
-              h.oxygen?.toFixed(1) || '-'
-            ])
+            headers: ['Date', 'Température (°C)', 'pH', 'Oxygène (mg/L)', 'Statut'],
+            rows: healthRecords.slice(0, 60).map(h => {
+              let status = '✅';
+              if ((h.temperature && (h.temperature > 32 || h.temperature < 18)) ||
+                  (h.ph && (h.ph > 9 || h.ph < 6.5)) ||
+                  (h.oxygen && h.oxygen < 5)) {
+                status = '⚠️';
+              }
+              return [
+                h.date,
+                h.temperature?.toFixed(1) || '-',
+                h.ph?.toFixed(2) || '-',
+                h.oxygen?.toFixed(1) || '-',
+                status
+              ];
+            })
           });
         } else {
           sections.push({
-            title: 'Qualité de l\'Eau',
+            title: '💧 Qualité de l\'Eau',
             type: 'summary',
             summary: [{ label: 'Statut', value: 'Aucune mesure de qualité d\'eau disponible' }]
+          });
+        }
+        break;
+
+      case 'livestock':
+        sections.push({
+          title: '🐟 Inventaire du Cheptel',
+          type: 'summary',
+          summary: [
+            { label: 'Nombre de lots', value: livestockBatches.length },
+            { label: 'Lots actifs', value: livestockBatches.filter(l => l.status === 'active').length },
+            { label: 'Quantité totale', value: livestockBatches.reduce((sum, l) => sum + (l.quantity || 0), 0).toLocaleString('fr-FR') },
+            { label: 'Poids total', value: `${livestockBatches.reduce((sum, l) => sum + (l.total_weight || 0), 0).toLocaleString('fr-FR')} kg` }
+          ]
+        });
+
+        if (livestockBatches.length > 0) {
+          sections.push({
+            title: '📋 Détail des Lots',
+            type: 'table',
+            headers: ['Espèce', 'Variété', 'Unité', 'Quantité', 'Poids moyen', 'Statut', 'Date acquisition'],
+            rows: livestockBatches.map(l => [
+              l.species || '-',
+              l.variety || '-',
+              l.unit_name || '-',
+              l.quantity?.toLocaleString('fr-FR') || '0',
+              l.average_weight ? `${l.average_weight.toFixed(1)} g` : '-',
+              l.status === 'active' ? '✅ Actif' : '⏹️ Terminé',
+              l.acquisition_date || '-'
+            ])
+          });
+
+          // Stats par espèce
+          const speciesData: Record<string, { count: number; quantity: number; weight: number }> = livestockBatches.reduce((acc, l) => {
+            const species = l.species || 'Autre';
+            if (!acc[species]) acc[species] = { count: 0, quantity: 0, weight: 0 };
+            acc[species].count++;
+            acc[species].quantity += l.quantity || 0;
+            acc[species].weight += l.total_weight || 0;
+            return acc;
+          }, {} as Record<string, { count: number; quantity: number; weight: number }>);
+
+          sections.push({
+            title: '📊 Répartition par Espèce',
+            type: 'table',
+            headers: ['Espèce', 'Nombre de lots', 'Quantité totale', 'Poids total'],
+            rows: Object.entries(speciesData).map(([species, data]) => [
+              species,
+              data.count.toString(),
+              data.quantity.toLocaleString('fr-FR'),
+              `${data.weight.toLocaleString('fr-FR')} kg`
+            ])
           });
         }
         break;
@@ -268,8 +597,74 @@ const ReportsManagement = () => {
       title: reportTypes.find(r => r.id === reportId)?.title || 'Rapport',
       period,
       generatedAt,
-      sections
+      sections,
+      companyInfo: {
+        name: user?.name || 'Mon Exploitation',
+        address: ''
+      }
     };
+  };
+
+  const openPreview = (reportId: string) => {
+    const data = buildReportData(reportId);
+    setPreviewData({
+      id: reportId,
+      title: data.title,
+      period: data.period,
+      generatedAt: data.generatedAt,
+      companyName: data.companyInfo?.name || user?.name || 'Mon Exploitation',
+      companyAddress: data.companyInfo?.address || '',
+      notes: '',
+      sections: data.sections
+    });
+    setExpandedSections(data.sections.reduce((acc, _, i) => ({ ...acc, [i]: true }), {}));
+    setPreviewOpen(true);
+    setEditMode(false);
+  };
+
+  const handleExportFromPreview = (format: string) => {
+    if (!previewData) return;
+
+    const data: ReportData = {
+      title: previewData.title,
+      period: previewData.period,
+      generatedAt: previewData.generatedAt,
+      sections: previewData.sections,
+      companyInfo: {
+        name: previewData.companyName,
+        address: previewData.companyAddress
+      }
+    };
+
+    const filename = getReportFilename(previewData.id);
+
+    switch (format) {
+      case 'pdf':
+        exportToPDF(data, filename);
+        break;
+      case 'excel':
+        exportToExcel(data, filename);
+        break;
+      case 'csv':
+        exportToCSV(data, filename);
+        break;
+      case 'word':
+        exportToWord(data, filename);
+        break;
+    }
+
+    // Ajouter à l'historique
+    const newReport = {
+      id: Date.now(),
+      name: `${previewData.title} - ${previewData.period}`,
+      type: format.toUpperCase(),
+      date: new Date().toLocaleDateString('fr-FR'),
+      size: '~50 KB',
+      downloads: 1
+    };
+    setGeneratedReports(prev => [newReport, ...prev].slice(0, 20));
+
+    toast.success(`${previewData.title} exporté en ${format.toUpperCase()}`);
   };
 
   const handleGenerateReport = (reportId: string, format: string) => {
@@ -294,7 +689,6 @@ const ReportsManagement = () => {
           break;
       }
 
-      // Ajouter à l'historique
       const newReport = {
         id: Date.now(),
         name: `${data.title} - ${data.period}`,
@@ -335,15 +729,19 @@ const ReportsManagement = () => {
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-indigo-500 to-blue-600 p-6 rounded-xl text-white">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 rounded-xl text-white shadow-lg">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Rapports & Analyses</h2>
-            <p className="text-indigo-100">Génération et export de rapports détaillés - Données réelles</p>
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <FileText className="w-7 h-7" />
+              Rapports & Analyses
+            </h2>
+            <p className="text-indigo-100">Génération et export de rapports détaillés professionnels</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="w-32 bg-white/20 border-white/30 text-white">
+              <SelectTrigger className="w-36 bg-white/20 border-white/30 text-white">
+                <Calendar className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -354,7 +752,7 @@ const ReportsManagement = () => {
               </SelectContent>
             </Select>
             <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-              <SelectTrigger className="w-24 bg-white/20 border-white/30 text-white">
+              <SelectTrigger className="w-28 bg-white/20 border-white/30 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -370,39 +768,47 @@ const ReportsManagement = () => {
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="flex items-center p-4 md:p-6">
-            <FileText className="h-6 w-6 md:h-8 md:w-8 text-blue-600 mr-2 md:mr-3" />
+            <div className="p-3 bg-blue-500 rounded-xl mr-3">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <p className="text-lg md:text-2xl font-bold">{generatedReports.length}</p>
-              <p className="text-xs text-muted-foreground">Rapports générés</p>
+              <p className="text-lg md:text-2xl font-bold text-blue-900">{generatedReports.length}</p>
+              <p className="text-xs text-blue-600">Rapports générés</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <CardContent className="flex items-center p-4 md:p-6">
-            <Download className="h-6 w-6 md:h-8 md:w-8 text-green-600 mr-2 md:mr-3" />
+            <div className="p-3 bg-green-500 rounded-xl mr-3">
+              <Download className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <p className="text-lg md:text-2xl font-bold">{generatedReports.reduce((sum, r) => sum + r.downloads, 0)}</p>
-              <p className="text-xs text-muted-foreground">Téléchargements</p>
+              <p className="text-lg md:text-2xl font-bold text-green-900">{generatedReports.reduce((sum, r) => sum + r.downloads, 0)}</p>
+              <p className="text-xs text-green-600">Téléchargements</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <CardContent className="flex items-center p-4 md:p-6">
-            <Calendar className="h-6 w-6 md:h-8 md:w-8 text-purple-600 mr-2 md:mr-3" />
+            <div className="p-3 bg-purple-500 rounded-xl mr-3">
+              <BarChart3 className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <p className="text-lg md:text-2xl font-bold">{productionCycles.length}</p>
-              <p className="text-xs text-muted-foreground">Cycles actifs</p>
+              <p className="text-lg md:text-2xl font-bold text-purple-900">{productionCycles.filter(c => c.status === 'active').length}</p>
+              <p className="text-xs text-purple-600">Cycles actifs</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
           <CardContent className="flex items-center p-4 md:p-6">
-            <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-orange-600 mr-2 md:mr-3" />
+            <div className="p-3 bg-orange-500 rounded-xl mr-3">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <p className="text-lg md:text-2xl font-bold">{reportTypes.length}</p>
-              <p className="text-xs text-muted-foreground">Types de rapports</p>
+              <p className="text-lg md:text-2xl font-bold text-orange-900">{reportTypes.length}</p>
+              <p className="text-xs text-orange-600">Types de rapports</p>
             </div>
           </CardContent>
         </Card>
@@ -410,69 +816,94 @@ const ReportsManagement = () => {
 
       {/* Contenu principal */}
       <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="generate">Générer</TabsTrigger>
-          <TabsTrigger value="units">Par Unité</TabsTrigger>
-          <TabsTrigger value="history">Historique</TabsTrigger>
-          <TabsTrigger value="scheduled">Programmés</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-12">
+          <TabsTrigger value="generate" className="text-sm">📄 Générer</TabsTrigger>
+          <TabsTrigger value="units" className="text-sm">🏢 Par Unité</TabsTrigger>
+          <TabsTrigger value="history" className="text-sm">📚 Historique</TabsTrigger>
+          <TabsTrigger value="scheduled" className="text-sm">⏰ Programmés</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {reportTypes.map((report) => {
               const IconComponent = report.icon;
               return (
-                <Card key={report.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
+                <Card key={report.id} className="hover:shadow-lg transition-all duration-300 overflow-hidden group">
+                  <div className={`h-2 bg-gradient-to-r ${report.color}`} />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <IconComponent className="h-6 w-6 text-blue-600" />
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${report.color} shadow-lg`}>
+                          <IconComponent className="h-6 w-6 text-white" />
                         </div>
                         <div>
                           <CardTitle className="text-lg">{report.title}</CardTitle>
-                          <CardDescription>{report.description}</CardDescription>
+                          <CardDescription className="text-sm mt-1">{report.description}</CardDescription>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(report.status)}>
-                        {getStatusLabel(report.status)}
-                      </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>Données disponibles:</span>
-                        <span>{report.dataCount} enregistrement(s)</span>
+                  <CardContent className="pt-0">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Données disponibles:</span>
+                        <Badge variant="secondary" className="font-semibold">{report.dataCount}</Badge>
                       </div>
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>Fréquence:</span>
-                        <span>{report.frequency}</span>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Fréquence:</span>
+                        <span className="font-medium">{report.frequency}</span>
                       </div>
-                      <div className="flex flex-wrap gap-2 pt-2">
+                      <Separator />
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPreview(report.id)}
+                          className="flex-1"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Aperçu
+                        </Button>
                         <Button 
                           size="sm" 
                           onClick={() => handleGenerateReport(report.id, selectedFormat)}
                           disabled={isGenerating === report.id}
+                          className={`flex-1 bg-gradient-to-r ${report.color} hover:opacity-90`}
                         >
-                          <Download className="w-4 h-4 mr-2" />
+                          <Download className="w-4 h-4 mr-1" />
                           {selectedFormat.toUpperCase()}
                         </Button>
+                      </div>
+                      <div className="flex justify-center gap-1 pt-2">
                         <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleGenerateReport(report.id, 'excel')}
+                          size="icon" 
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleGenerateReport(report.id, 'pdf')}
                           disabled={isGenerating === report.id}
+                          title="PDF"
                         >
-                          <FileSpreadsheet className="w-4 h-4" />
+                          <FileText className="w-4 h-4 text-red-600" />
                         </Button>
                         <Button 
-                          size="sm" 
-                          variant="outline"
+                          size="icon" 
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleGenerateReport(report.id, 'excel')}
+                          disabled={isGenerating === report.id}
+                          title="Excel"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          className="h-8 w-8"
                           onClick={() => handleGenerateReport(report.id, 'word')}
                           disabled={isGenerating === report.id}
+                          title="Word"
                         >
-                          <File className="w-4 h-4" />
+                          <File className="w-4 h-4 text-blue-600" />
                         </Button>
                       </div>
                     </div>
@@ -489,7 +920,7 @@ const ReportsManagement = () => {
 
         <TabsContent value="history" className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <h3 className="text-lg font-medium">Rapports Générés</h3>
+            <h3 className="text-lg font-medium">📚 Rapports Générés</h3>
             <Button variant="outline" size="sm">
               <Filter className="w-4 h-4 mr-2" />
               Filtrer
@@ -500,8 +931,8 @@ const ReportsManagement = () => {
             <CardContent className={generatedReports.length === 0 ? "p-8" : "p-0"}>
               {generatedReports.length === 0 ? (
                 <div className="text-center text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4" />
-                  <p>Aucun rapport généré</p>
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">Aucun rapport généré</p>
                   <p className="text-sm mt-2">Les rapports que vous générez apparaîtront ici</p>
                 </div>
               ) : (
@@ -510,8 +941,8 @@ const ReportsManagement = () => {
                     <div key={report.id} className="p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center space-x-4 flex-1">
-                          <div className="p-2 bg-muted rounded-lg">
-                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <FileText className="h-5 w-5 text-primary" />
                           </div>
                           <div className="flex-1">
                             <p className="font-medium">{report.name}</p>
@@ -537,19 +968,194 @@ const ReportsManagement = () => {
         <TabsContent value="scheduled" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Rapports Programmés</CardTitle>
+              <CardTitle>⏰ Rapports Programmés</CardTitle>
               <CardDescription>Configuration des générations automatiques</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="w-12 h-12 mx-auto mb-4" />
-                <p>Programmation automatique des rapports en cours de développement</p>
-                <p className="text-sm mt-2">Cette fonctionnalité permettra de planifier la génération automatique de rapports</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium">Fonctionnalité en développement</p>
+                <p className="text-sm mt-2">La programmation automatique des rapports sera bientôt disponible</p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Aperçu du rapport */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                {previewData?.title}
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={editMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditMode(!editMode)}
+                >
+                  <Edit2 className="w-4 h-4 mr-1" />
+                  {editMode ? 'Terminer' : 'Modifier'}
+                </Button>
+              </div>
+            </div>
+            {previewData && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline">📅 {previewData.period}</Badge>
+                <Badge variant="secondary">🕐 Généré le {previewData.generatedAt}</Badge>
+              </div>
+            )}
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 pr-4">
+            {previewData && (
+              <div className="space-y-6 py-4">
+                {/* En-tête entreprise */}
+                <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
+                  <CardContent className="p-4">
+                    {editMode ? (
+                      <div className="grid gap-4">
+                        <div>
+                          <Label>Nom de l'entreprise</Label>
+                          <Input 
+                            value={previewData.companyName}
+                            onChange={(e) => setPreviewData({ ...previewData, companyName: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Adresse</Label>
+                          <Input 
+                            value={previewData.companyAddress}
+                            onChange={(e) => setPreviewData({ ...previewData, companyAddress: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <h3 className="text-xl font-bold text-slate-800">{previewData.companyName}</h3>
+                        {previewData.companyAddress && (
+                          <p className="text-sm text-slate-600">{previewData.companyAddress}</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Sections du rapport */}
+                {previewData.sections.map((section, index) => (
+                  <Collapsible 
+                    key={index}
+                    open={expandedSections[index]}
+                    onOpenChange={(open) => setExpandedSections({ ...expandedSections, [index]: open })}
+                  >
+                    <Card>
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{section.title}</CardTitle>
+                            {expandedSections[index] ? (
+                              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          {section.type === 'summary' && section.summary && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {section.summary.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                                  <span className="font-semibold">{item.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {section.type === 'table' && section.headers && section.rows && (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b bg-muted/50">
+                                    {section.headers.map((header, i) => (
+                                      <th key={i} className="p-2 text-left font-semibold">{header}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {section.rows.slice(0, 20).map((row, i) => (
+                                    <tr key={i} className="border-b hover:bg-muted/30">
+                                      {row.map((cell, j) => (
+                                        <td key={j} className="p-2">{cell}</td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                              {section.rows.length > 20 && (
+                                <p className="text-sm text-muted-foreground text-center mt-2">
+                                  ... et {section.rows.length - 20} lignes supplémentaires
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                ))}
+
+                {/* Notes */}
+                {editMode && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">📝 Notes additionnelles</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Textarea 
+                        placeholder="Ajoutez des notes ou commentaires au rapport..."
+                        value={previewData.notes}
+                        onChange={(e) => setPreviewData({ ...previewData, notes: e.target.value })}
+                        rows={4}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <div className="flex flex-wrap gap-2 w-full justify-between">
+              <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                Fermer
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => handleExportFromPreview('pdf')}>
+                  <FileText className="w-4 h-4 mr-1 text-red-600" />
+                  PDF
+                </Button>
+                <Button variant="outline" onClick={() => handleExportFromPreview('excel')}>
+                  <FileSpreadsheet className="w-4 h-4 mr-1 text-green-600" />
+                  Excel
+                </Button>
+                <Button variant="outline" onClick={() => handleExportFromPreview('word')}>
+                  <File className="w-4 h-4 mr-1 text-blue-600" />
+                  Word
+                </Button>
+                <Button onClick={() => handleExportFromPreview('pdf')} className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                  <Printer className="w-4 h-4 mr-1" />
+                  Imprimer
+                </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
