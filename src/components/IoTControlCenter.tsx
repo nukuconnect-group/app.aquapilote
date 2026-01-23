@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,14 +10,16 @@ import {
   AlertTriangle,
   Settings,
   Thermometer,
-  Droplets
+  Droplets,
+  Waves,
+  Brain
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useIoT } from '@/contexts/IoTContext';
 import EnvironmentalDashboard from './EnvironmentalDashboard';
 import MqttConfiguration from './MqttConfiguration';
 import IoTAIAnalysis from './iot/IoTAIAnalysis';
-import IoTOverview from './iot/IoTOverview';
+import IoTBasinOverview from './iot/IoTBasinOverview';
 
 const IoTControlCenter = () => {
   const { activeUnit, units } = useProductionUnits();
@@ -53,26 +54,31 @@ const IoTControlCenter = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-auto min-w-full sm:w-full gap-1">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
-              Vue d'ensemble
+            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
+              <Waves className="w-4 h-4" />
+              Bassins & Paramètres
             </TabsTrigger>
-            <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
+              <Brain className="w-4 h-4" />
               Analyse IA
             </TabsTrigger>
-            <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
+              <Thermometer className="w-4 h-4" />
               Environnemental
             </TabsTrigger>
-            <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
+              <Settings className="w-4 h-4" />
               Automatisation
             </TabsTrigger>
-            <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
+              <Wifi className="w-4 h-4" />
               Configuration
             </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="space-y-4">
-          <IoTOverview />
+          <IoTBasinOverview />
         </TabsContent>
 
         <TabsContent value="ai-analysis">
