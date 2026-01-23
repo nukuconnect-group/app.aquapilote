@@ -330,58 +330,68 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
   return <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
-        {/* Image de fond professionnelle - Desktop */}
-        <div className="hidden sm:block fixed inset-0 w-full h-full z-0" style={{
-        backgroundImage: `url(${aquacultureCagesDesktop})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'brightness(0.85)',
-        width: '100%',
-        height: '100vh'
-      }} />
+        {/* Image de fond - Desktop */}
+        <div className="hidden md:block fixed inset-0 w-full h-full z-0" style={{
+          backgroundImage: `url(${aquacultureCagesDesktop})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.7)',
+        }} />
         
-        {/* Image de fond professionnelle - Mobile */}
-        <div className="sm:hidden fixed inset-0 w-full h-full z-0" style={{
-        backgroundImage: `url(${fishColumnsMobile})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'brightness(0.85)',
-        width: '100%',
-        height: '100vh'
-      }} />
+        {/* Image de fond - Mobile */}
+        <div className="md:hidden fixed inset-0 w-full h-full z-0" style={{
+          backgroundImage: `url(${fishColumnsMobile})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.7)',
+        }} />
         
-        {/* Overlay gradient */}
-        <div className="fixed inset-0 bg-gradient-to-br from-aqua-900/40 via-ocean-600/30 to-aqua-800/40 z-[1]" />
+        {/* Overlay gradient premium */}
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-cyan-900/70 z-[1]" />
         
-        {/* Contenu centré */}
-        <div className="relative z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-lg shadow-2xl w-[90%] max-w-2xl mx-auto my-auto overflow-y-auto max-h-[90vh]">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-br from-aqua-600 via-ocean-500 to-aqua-700 bg-clip-text text-transparent drop-shadow-lg" 
-                    style={{
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.1), 4px 4px 8px rgba(0,0,0,0.05)',
-                      WebkitTextStroke: '1px rgba(59, 130, 246, 0.1)'
-                    }}>
-                  AQUAPILOTE
-                </h1>
-              </div>
-              <DialogTitle className="text-2xl font-bold mb-2 text-foreground">
-                Créer votre compte AQUA PILOT
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Étape {currentStep} sur 3 - Rejoignez la révolution de l'aquaculture intelligente
-              </DialogDescription>
-            </div>
+        {/* Éléments décoratifs */}
+        <div className="fixed inset-0 z-[2] overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+        
+        {/* Conteneur principal */}
+        <div className="relative z-10 w-[95%] max-w-2xl mx-auto my-auto">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+            {/* Barre décorative */}
+            <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-teal-500" />
+            
+            <div className="p-6 sm:p-8 overflow-y-auto max-h-[85vh]">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 bg-clip-text text-transparent mb-2">
+                    AQUAPILOTE
+                  </h1>
+                  <DialogTitle className="text-xl font-bold text-foreground">
+                    Créer votre compte
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground mt-1">
+                    Étape {currentStep} sur 3
+                  </DialogDescription>
+                </div>
 
-          {/* Progress indicator */}
-          <div className="flex justify-center mb-6">
-            <div className="flex space-x-2">
-              {[1, 2, 3].map(step => <div key={step} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {step}
-                </div>)}
-            </div>
-          </div>
+                {/* Progress indicator */}
+                <div className="flex justify-center mb-6">
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3].map((step, i) => (
+                      <React.Fragment key={step}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                          currentStep >= step 
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {step}
+                        </div>
+                        {i < 2 && <div className={`w-8 h-1 rounded ${currentStep > step ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-muted'}`} />}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
             {/* Étape 1: Informations personnelles */}
             {currentStep === 1 && <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-center mb-4 text-foreground">
@@ -653,12 +663,14 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
               </Button>}
           </div>
 
-          <div className="text-center pt-4">
-            <button type="button" onClick={onSwitchToLogin} className="text-sm text-primary hover:text-primary/80 underline">
+          <div className="text-center pt-4 border-t border-muted-foreground/10">
+            <button type="button" onClick={onSwitchToLogin} className="text-sm text-cyan-600 hover:text-cyan-700 font-medium transition-colors">
               Déjà un compte ? Se connecter
             </button>
           </div>
-        </form>
+              </form>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>;
