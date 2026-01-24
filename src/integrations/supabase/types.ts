@@ -656,8 +656,10 @@ export type Database = {
           expected_harvest_date: string | null
           expected_survival_rate: number | null
           feeding_plan: string | null
+          female_count: number | null
           id: string
           last_health_check: string | null
+          male_count: number | null
           notes: string | null
           quantity: number
           source: string | null
@@ -679,8 +681,10 @@ export type Database = {
           expected_harvest_date?: string | null
           expected_survival_rate?: number | null
           feeding_plan?: string | null
+          female_count?: number | null
           id?: string
           last_health_check?: string | null
+          male_count?: number | null
           notes?: string | null
           quantity?: number
           source?: string | null
@@ -702,8 +706,10 @@ export type Database = {
           expected_harvest_date?: string | null
           expected_survival_rate?: number | null
           feeding_plan?: string | null
+          female_count?: number | null
           id?: string
           last_health_check?: string | null
+          male_count?: number | null
           notes?: string | null
           quantity?: number
           source?: string | null

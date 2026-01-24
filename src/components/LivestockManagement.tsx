@@ -33,6 +33,7 @@ interface LivestockBatch {
   id: string;
   species: string;
   variety: string;
+  type?: string;
   quantity: number;
   averageWeight: number;
   totalWeight: number;
@@ -47,6 +48,9 @@ interface LivestockBatch {
   feedingPlan: string;
   lastHealthCheck: string;
   controlRecords?: ControlFishing[];
+  // Pour géniteurs
+  maleCount?: number;
+  femaleCount?: number;
 }
 
 interface ControlFishing {
@@ -237,17 +241,24 @@ const EditBatchForm: React.FC<EditBatchFormProps> = ({ batch, units, allSupplier
       <div>
         <Label>Plan d'alimentation</Label>
         <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
-          <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder="Sélectionner un aliment en stock" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="Standard croissance">Standard croissance</SelectItem>
-            <SelectItem value="Intensif">Intensif</SelectItem>
-            <SelectItem value="Extensif">Extensif</SelectItem>
-            <SelectItem value="Finition">Finition</SelectItem>
-            {feedStocks.length > 0 && feedStocks.map((stock: any) => (
-              <SelectItem key={stock.id} value={stock.custom_name || stock.feed_type}>
-                {stock.custom_name || stock.feed_type} ({stock.quantity} {stock.unit})
-              </SelectItem>
-            ))}
+            {feedStocks.length > 0 ? (
+              feedStocks.map((stock: any) => (
+                <SelectItem key={stock.id} value={stock.custom_name || stock.feed_type}>
+                  <div className="flex items-center gap-2">
+                    <span>{stock.custom_name || stock.feed_type}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {stock.quantity} {stock.unit}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))
+            ) : (
+              <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                Aucun stock d'aliment créé
+              </div>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -337,6 +348,7 @@ const LivestockManagement = () => {
     id: batch.id,
     species: batch.species,
     variety: batch.variety || '',
+    type: batch.type || '',
     quantity: batch.quantity,
     averageWeight: batch.average_weight,
     totalWeight: batch.total_weight,
@@ -349,7 +361,9 @@ const LivestockManagement = () => {
     expectedHarvestDate: batch.expected_harvest_date || '',
     currentAge: batch.current_age,
     feedingPlan: batch.feeding_plan || '',
-    lastHealthCheck: batch.last_health_check || ''
+    lastHealthCheck: batch.last_health_check || '',
+    maleCount: batch.male_count || 0,
+    femaleCount: batch.female_count || 0
   }));
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -476,7 +490,9 @@ const LivestockManagement = () => {
         current_age: currentAge,
         feeding_plan: formData.feedingPlan,
         last_health_check: new Date().toISOString().split('T')[0],
-        expected_survival_rate: formData.expectedSurvivalRate
+        expected_survival_rate: formData.expectedSurvivalRate,
+        male_count: formData.type === 'geniteurs' ? formData.maleCount : 0,
+        female_count: formData.type === 'geniteurs' ? formData.femaleCount : 0
       });
 
       addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
@@ -939,19 +955,11 @@ const LivestockManagement = () => {
                       <Label>Plan d'alimentation</Label>
                       <Select value={formData.feedingPlan} onValueChange={(value) => setFormData({...formData, feedingPlan: value})}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner" />
+                          <SelectValue placeholder="Sélectionner un aliment en stock" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Standard croissance">Standard croissance</SelectItem>
-                          <SelectItem value="Intensif">Intensif</SelectItem>
-                          <SelectItem value="Extensif">Extensif</SelectItem>
-                          <SelectItem value="Finition">Finition</SelectItem>
-                          {/* Aliments disponibles depuis les stocks */}
-                          {feedStocks.length > 0 && (
+                          {feedStocks.length > 0 ? (
                             <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1">
-                                Aliments en stock
-                              </div>
                               {feedStocks.map(stock => (
                                 <SelectItem key={stock.id} value={stock.custom_name || stock.feed_type}>
                                   <div className="flex items-center gap-2">
@@ -963,12 +971,16 @@ const LivestockManagement = () => {
                                 </SelectItem>
                               ))}
                             </>
+                          ) : (
+                            <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                              Aucun stock d'aliment créé.<br />
+                              <span className="text-xs">Ajoutez des aliments dans le module Alimentation &gt; Stock</span>
+                            </div>
                           )}
                         </SelectContent>
                       </Select>
                     </div>
                   )}
-
                   <div>
                     <Label>Taux de survie prévisionnel (%)</Label>
                     <Input
@@ -1224,6 +1236,12 @@ const LivestockManagement = () => {
                           {batch.variety && (
                             <Badge variant="secondary" className="text-xs">{batch.variety}</Badge>
                           )}
+                          {/* Badge type géniteurs */}
+                          {batch.type === 'geniteurs' && (
+                            <Badge className="bg-gradient-to-r from-blue-500 to-pink-500 text-white text-xs">
+                              ♂♀ Géniteurs
+                            </Badge>
+                          )}
                           <Badge className={`${getStatusColor(batch.status)} text-xs`}>
                             {batch.status === 'healthy' ? 'Sain' : 
                              batch.status === 'sick' ? 'Malade' :
@@ -1273,6 +1291,34 @@ const LivestockManagement = () => {
                             </div>
                           </div>
                         )}
+                        
+                        {/* Affichage spécial pour géniteurs - mâles/femelles */}
+                        {batch.type === 'geniteurs' && (batch.maleCount || batch.femaleCount) ? (
+                          <div className="bg-gradient-to-r from-blue-50 to-pink-50 dark:from-blue-900/20 dark:to-pink-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">♂</span>
+                                <div>
+                                  <p className="text-blue-700 dark:text-blue-300 font-bold text-lg">{batch.maleCount}</p>
+                                  <p className="text-xs text-muted-foreground">Mâles</p>
+                                </div>
+                              </div>
+                              <div className="h-8 w-px bg-gray-300 dark:bg-gray-600" />
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">♀</span>
+                                <div>
+                                  <p className="text-pink-700 dark:text-pink-300 font-bold text-lg">{batch.femaleCount}</p>
+                                  <p className="text-xs text-muted-foreground">Femelles</p>
+                                </div>
+                              </div>
+                              <div className="h-8 w-px bg-gray-300 dark:bg-gray-600" />
+                              <div>
+                                <p className="font-bold text-lg text-foreground">{(batch.maleCount || 0) + (batch.femaleCount || 0)}</p>
+                                <p className="text-xs text-muted-foreground">Total</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
                         
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm mb-3">
                           <div>

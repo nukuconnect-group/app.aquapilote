@@ -193,7 +193,9 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
         current_age: currentAge,
         feeding_plan: batchFormData.feedingPlan,
         last_health_check: new Date().toISOString().split('T')[0],
-        expected_survival_rate: 95
+        expected_survival_rate: 95,
+        male_count: 0,
+        female_count: 0
       });
 
       if (cycleInfra && newBatch) {

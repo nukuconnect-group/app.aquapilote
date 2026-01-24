@@ -29,6 +29,9 @@ export interface LivestockBatch {
   updated_at: string;
   // Champ pour tracking infrastructure rattachée
   attached_infrastructure_id?: string | null;
+  // Champs pour géniteurs (mâles/femelles)
+  male_count: number;
+  female_count: number;
 }
 
 export const useLivestockBatches = (unitId?: string) => {
