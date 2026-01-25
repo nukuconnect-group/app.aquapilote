@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { getDemoData } from '@/lib/demoData';
 
 export interface SaleItem {
   name: string;
@@ -35,7 +36,24 @@ export const useSales = () => {
 
   const fetchSales = useCallback(async () => {
     if (isDemoMode) {
-      setSales([]);
+      const demoData = getDemoData();
+      const demoSales = (demoData.sales || []).map((s: any) => ({
+        id: s.id,
+        date: s.date,
+        clientName: s.client_name,
+        clientContact: s.client_contact || '',
+        unitId: s.unit_id,
+        products: [],
+        totalAmount: s.total_amount,
+        status: s.status as Sale['status'],
+        paymentMethod: s.payment_method || '',
+        notes: s.notes || '',
+        dueDate: s.due_date || undefined,
+        isCredit: s.is_credit || false,
+        paidAmount: s.paid_amount || 0,
+        paymentTerms: s.payment_terms || undefined
+      }));
+      setSales(demoSales);
       return;
     }
     if (!user?.id || !isAuthenticated) return;

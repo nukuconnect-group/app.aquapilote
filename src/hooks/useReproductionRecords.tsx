@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDemoData } from '@/lib/demoData';
 
 export interface ReproductionRecord {
   id: string;
@@ -40,9 +42,24 @@ export const useReproductionRecords = (unitId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { isReady, isAuthenticated } = useAuthReady();
+  const { isDemoMode } = useAuth();
 
   const fetchRecords = useCallback(async () => {
     if (!isReady) return;
+
+    // Mode démonstration : charger les données fictives
+    if (isDemoMode) {
+      const demoData = getDemoData();
+      let demoRecords = demoData.reproductionRecords || [];
+      
+      if (unitId) {
+        demoRecords = demoRecords.filter((r: any) => r.unit_id === unitId);
+      }
+      
+      setRecords(demoRecords);
+      setLoading(false);
+      return;
+    }
     
     if (!isAuthenticated) {
       setRecords([]);
@@ -81,9 +98,18 @@ export const useReproductionRecords = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, unitId, toast]);
+  }, [isReady, isAuthenticated, unitId, toast, isDemoMode]);
 
   const createRecord = async (record: Omit<ReproductionRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    // Mode démonstration : ne rien faire
+    if (isDemoMode) {
+      toast({
+        title: 'Mode Démonstration',
+        description: 'Fonctionnalité désactivée en mode démonstration'
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -170,7 +196,7 @@ export const useReproductionRecords = (unitId?: string) => {
     if (isReady) {
       fetchRecords();
     }
-  }, [isReady, isAuthenticated, unitId, fetchRecords]);
+  }, [isReady, isAuthenticated, unitId, fetchRecords, isDemoMode]);
 
   return {
     records,
