@@ -4,6 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
 import { offlineStorage } from '@/lib/offlineStorage';
 import { notificationHelpers } from '@/lib/notificationService';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDemoData } from '@/lib/demoData';
 
 export interface LivestockBatch {
   id: string;
@@ -41,6 +43,7 @@ export const useLivestockBatches = (unitId?: string) => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const { toast } = useToast();
   const { isReady, isAuthenticated, getUserId } = useAuthReady();
+  const { isDemoMode } = useAuth();
 
   const cacheKey = unitId ? `livestock_batches_${unitId}` : 'livestock_batches_all';
 
@@ -58,6 +61,15 @@ export const useLivestockBatches = (unitId?: string) => {
 
   const fetchBatches = useCallback(async () => {
     if (!isReady) return;
+
+    // Mode démonstration : charger les données fictives
+    if (isDemoMode) {
+      const demoData = getDemoData();
+      const demoBatches = demoData.livestockBatches || [];
+      setBatches(unitId ? demoBatches.filter((b: any) => b.unit_id === unitId) : demoBatches);
+      setLoading(false);
+      return;
+    }
 
     // Si hors ligne, charger depuis le cache
     if (isOffline || !isAuthenticated) {
@@ -114,9 +126,19 @@ export const useLivestockBatches = (unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, isOffline, unitId, toast, cacheKey]);
+  }, [isReady, isAuthenticated, isOffline, unitId, toast, cacheKey, isDemoMode]);
 
   const createBatch = async (batch: Omit<LivestockBatch, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    // Mode démonstration : ne rien faire (ou simuler)
+    if (isDemoMode) {
+      toast({
+        title: 'Mode Démonstration',
+        description: 'Fonctionnalité désactivée en mode démonstration',
+        variant: 'default'
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -207,7 +229,7 @@ export const useLivestockBatches = (unitId?: string) => {
     if (isReady) {
       fetchBatches();
     }
-  }, [isReady, isAuthenticated, unitId, fetchBatches]);
+  }, [isReady, isAuthenticated, unitId, fetchBatches, isDemoMode]);
 
   return {
     batches,

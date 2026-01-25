@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { notificationHelpers } from '@/lib/notificationService';
+import { getDemoData } from '@/lib/demoData';
 
 export interface Supplier {
   id: string;
@@ -31,23 +32,6 @@ export interface SupplierOrder {
   unitId: string;
 }
 
-const getDemoSuppliers = (): Supplier[] => [
-  {
-    id: '1',
-    name: 'AquaFeed Solutions',
-    contact: 'Jean Dupont',
-    email: 'contact@aquafeed.com',
-    phone: '+228 90 12 34 56',
-    address: 'Zone Industrielle, Lomé',
-    status: 'active',
-    category: 'Aliments',
-    products: ['Granulés flottants', 'Granulés coulants', 'Aliments spéciaux'],
-    rating: 4.5,
-    notes: 'Fournisseur principal, excellente qualité',
-    unitId: 'DEMO001'
-  }
-];
-
 const getDemoOrders = (): SupplierOrder[] => [
   {
     id: '1',
@@ -71,7 +55,22 @@ export const useSuppliers = () => {
 
   const fetchSuppliers = useCallback(async () => {
     if (isDemoMode) {
-      setSuppliers(getDemoSuppliers());
+      const demoData = getDemoData();
+      const demoSuppliers = (demoData.suppliers || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        contact: s.contact || '',
+        email: s.email || '',
+        phone: s.phone || '',
+        address: s.address || '',
+        status: s.status as Supplier['status'],
+        category: s.category,
+        products: s.products || [],
+        rating: s.rating,
+        notes: s.notes || '',
+        unitId: s.unit_id
+      }));
+      setSuppliers(demoSuppliers);
       setOrders(getDemoOrders());
       return;
     }

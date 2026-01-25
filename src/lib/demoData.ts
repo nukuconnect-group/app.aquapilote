@@ -202,6 +202,190 @@ export const generateDemoHealthRecords = (cycles: DemoProductionCycle[]): DemoHe
 };
 
 /**
+ * Génère des lots de poissons fictifs
+ */
+export const generateDemoLivestockBatches = (): any[] => {
+  const now = new Date();
+  const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, now.getDate());
+  
+  return [
+    {
+      id: 'demo-livestock-1',
+      user_id: 'demo-user',
+      species: 'Tilapia du Nil',
+      variety: 'Rouge',
+      type: 'Alevins',
+      quantity: 5000,
+      average_weight: 50,
+      total_weight: 250000,
+      acquisition_date: twoMonthsAgo.toISOString().split('T')[0],
+      source: 'Écloserie Koumba',
+      unit_id: 'demo-unit-1',
+      unit_name: 'Ferme Koumba Diallo',
+      status: 'healthy',
+      notes: 'Lot en excellente santé',
+      expected_harvest_date: new Date(now.getFullYear(), now.getMonth() + 4, now.getDate()).toISOString().split('T')[0],
+      current_age: 60,
+      feeding_plan: 'Plan standard tilapia',
+      last_health_check: now.toISOString().split('T')[0],
+      expected_survival_rate: 95,
+      male_count: 2500,
+      female_count: 2500,
+      created_at: twoMonthsAgo.toISOString(),
+      updated_at: now.toISOString()
+    },
+    {
+      id: 'demo-livestock-2',
+      user_id: 'demo-user',
+      species: 'Clarias (Silure africain)',
+      variety: null,
+      type: 'Juvéniles',
+      quantity: 3000,
+      average_weight: 120,
+      total_weight: 360000,
+      acquisition_date: new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString().split('T')[0],
+      source: 'Ferme Traoré',
+      unit_id: 'demo-unit-2',
+      unit_name: 'Étang Mamadou Traoré',
+      status: 'healthy',
+      notes: 'Bonne croissance',
+      expected_harvest_date: new Date(now.getFullYear(), now.getMonth() + 3, 15).toISOString().split('T')[0],
+      current_age: 45,
+      feeding_plan: 'Plan intensif',
+      last_health_check: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3).toISOString().split('T')[0],
+      expected_survival_rate: 92,
+      male_count: 1500,
+      female_count: 1500,
+      created_at: new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString(),
+      updated_at: now.toISOString()
+    }
+  ];
+};
+
+/**
+ * Génère des ventes fictives
+ */
+export const generateDemoSales = (): any[] => {
+  const now = new Date();
+  
+  return [
+    {
+      id: 'demo-sale-1',
+      user_id: 'demo-user',
+      date: now.toISOString().split('T')[0],
+      client_name: 'Restaurant Les Délices',
+      client_contact: '+221 77 123 45 67',
+      total_amount: 450000,
+      paid_amount: 450000,
+      unit_id: 'demo-unit-1',
+      status: 'confirmed',
+      payment_method: 'Espèces',
+      notes: 'Livraison effectuée',
+      is_credit: false,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString()
+    },
+    {
+      id: 'demo-sale-2',
+      user_id: 'demo-user',
+      date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5).toISOString().split('T')[0],
+      client_name: 'Supermarché Auchan',
+      client_contact: '+221 77 987 65 43',
+      total_amount: 1200000,
+      paid_amount: 600000,
+      unit_id: 'demo-unit-2',
+      status: 'pending',
+      payment_method: 'Virement',
+      notes: 'Paiement partiel - solde à 30 jours',
+      is_credit: true,
+      due_date: new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()).toISOString().split('T')[0],
+      payment_terms: '50% à la livraison, solde à 30 jours',
+      created_at: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5).toISOString(),
+      updated_at: now.toISOString()
+    }
+  ];
+};
+
+/**
+ * Génère des enregistrements de reproduction fictifs
+ */
+export const generateDemoReproductionRecords = (): any[] => {
+  const now = new Date();
+  const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+  
+  return [
+    {
+      id: 'demo-repro-1',
+      user_id: 'demo-user',
+      unit_id: 'demo-unit-3',
+      unit_name: 'Nurserie Fatou Sow',
+      species: 'Tilapia du Nil',
+      reproduction_method: 'hormonal',
+      reproduction_date: oneMonthAgo.toISOString().split('T')[0],
+      broodstock_male_count: 10,
+      broodstock_female_count: 30,
+      hormone_used: 'HCG',
+      hormone_dose: 500,
+      spawning_date: new Date(oneMonthAgo.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      spawning_rate: 85,
+      egg_count: 50000,
+      fertilization_rate: 90,
+      hatching_date: new Date(oneMonthAgo.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      hatching_rate: 88,
+      larvae_count: 39600,
+      fry_count: 38000,
+      survival_rate: 96,
+      status: 'completed',
+      notes: 'Excellente reproduction',
+      created_at: oneMonthAgo.toISOString(),
+      updated_at: now.toISOString()
+    }
+  ];
+};
+
+/**
+ * Génère des fournisseurs fictifs
+ */
+export const generateDemoSuppliers = (): any[] => {
+  return [
+    {
+      id: 'demo-supplier-1',
+      user_id: 'demo-user',
+      name: 'Biomar Sénégal',
+      category: 'Aliments',
+      contact: 'Moussa Diop',
+      phone: '+221 77 555 01 23',
+      email: 'contact@biomar-sn.com',
+      address: 'Zone Industrielle, Dakar',
+      products: ['Granulés flottants', 'Aliment croissance', 'Aliment finition'],
+      rating: 5,
+      status: 'active',
+      notes: 'Livraison rapide, bon rapport qualité-prix',
+      unit_id: 'demo-unit-1',
+      created_at: '2024-01-01',
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'demo-supplier-2',
+      user_id: 'demo-user',
+      name: 'Aqua Service SARL',
+      category: 'Équipements',
+      contact: 'Fatima Ba',
+      phone: '+221 77 444 56 78',
+      email: 'info@aquaservice.sn',
+      address: 'Pikine, Dakar',
+      products: ['Pompes', 'Aérateurs', 'Filets', 'Équipements de mesure'],
+      rating: 4,
+      status: 'active',
+      notes: 'Service après-vente excellent',
+      unit_id: 'demo-unit-2',
+      created_at: '2024-01-15',
+      updated_at: new Date().toISOString()
+    }
+  ];
+};
+
+/**
  * Initialise toutes les données de démonstration
  */
 export const initializeDemoData = () => {
@@ -209,18 +393,30 @@ export const initializeDemoData = () => {
   const cycles = generateDemoProductionCycles(units);
   const feedingRecords = generateDemoFeedingRecords(cycles);
   const healthRecords = generateDemoHealthRecords(cycles);
+  const livestockBatches = generateDemoLivestockBatches();
+  const sales = generateDemoSales();
+  const reproductionRecords = generateDemoReproductionRecords();
+  const suppliers = generateDemoSuppliers();
 
   // Stocker dans localStorage pour la session
   localStorage.setItem('demo_production_units', JSON.stringify(units));
   localStorage.setItem('demo_production_cycles', JSON.stringify(cycles));
   localStorage.setItem('demo_feeding_records', JSON.stringify(feedingRecords));
   localStorage.setItem('demo_health_records', JSON.stringify(healthRecords));
+  localStorage.setItem('demo_livestock_batches', JSON.stringify(livestockBatches));
+  localStorage.setItem('demo_sales', JSON.stringify(sales));
+  localStorage.setItem('demo_reproduction_records', JSON.stringify(reproductionRecords));
+  localStorage.setItem('demo_suppliers', JSON.stringify(suppliers));
 
   return {
     units,
     cycles,
     feedingRecords,
-    healthRecords
+    healthRecords,
+    livestockBatches,
+    sales,
+    reproductionRecords,
+    suppliers
   };
 };
 
@@ -232,6 +428,10 @@ export const getDemoData = () => {
   const cycles = JSON.parse(localStorage.getItem('demo_production_cycles') || '[]');
   const feedingRecords = JSON.parse(localStorage.getItem('demo_feeding_records') || '[]');
   const healthRecords = JSON.parse(localStorage.getItem('demo_health_records') || '[]');
+  const livestockBatches = JSON.parse(localStorage.getItem('demo_livestock_batches') || '[]');
+  const sales = JSON.parse(localStorage.getItem('demo_sales') || '[]');
+  const reproductionRecords = JSON.parse(localStorage.getItem('demo_reproduction_records') || '[]');
+  const suppliers = JSON.parse(localStorage.getItem('demo_suppliers') || '[]');
 
   // Si pas de données, initialiser
   if (units.length === 0) {
@@ -242,7 +442,11 @@ export const getDemoData = () => {
     units,
     cycles,
     feedingRecords,
-    healthRecords
+    healthRecords,
+    livestockBatches,
+    sales,
+    reproductionRecords,
+    suppliers
   };
 };
 
@@ -254,4 +458,8 @@ export const clearDemoData = () => {
   localStorage.removeItem('demo_production_cycles');
   localStorage.removeItem('demo_feeding_records');
   localStorage.removeItem('demo_health_records');
+  localStorage.removeItem('demo_livestock_batches');
+  localStorage.removeItem('demo_sales');
+  localStorage.removeItem('demo_reproduction_records');
+  localStorage.removeItem('demo_suppliers');
 };

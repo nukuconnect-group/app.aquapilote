@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReady } from '@/hooks/useAuthReady';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDemoData } from '@/lib/demoData';
 
 export interface FeedingRecord {
   id: string;
@@ -34,10 +36,28 @@ export const useFeedingRecords = (cycleId?: string, unitId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { isReady, isAuthenticated } = useAuthReady();
+  const { isDemoMode } = useAuth();
 
   const fetchRecords = useCallback(async () => {
     // Attendre que l'auth soit prête
     if (!isReady) return;
+
+    // Mode démonstration : charger les données fictives
+    if (isDemoMode) {
+      const demoData = getDemoData();
+      let demoRecords = demoData.feedingRecords || [];
+      
+      if (cycleId) {
+        demoRecords = demoRecords.filter((r: any) => r.cycle_id === cycleId);
+      }
+      if (unitId) {
+        demoRecords = demoRecords.filter((r: any) => r.unit_id === unitId);
+      }
+      
+      setRecords(demoRecords);
+      setLoading(false);
+      return;
+    }
     
     // Ne pas charger si non authentifié
     if (!isAuthenticated) {
@@ -83,16 +103,25 @@ export const useFeedingRecords = (cycleId?: string, unitId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [isReady, isAuthenticated, cycleId, unitId, toast]);
+  }, [isReady, isAuthenticated, cycleId, unitId, toast, isDemoMode]);
 
   // Charger les données quand l'auth est prête
   useEffect(() => {
     if (isReady) {
       fetchRecords();
     }
-  }, [isReady, isAuthenticated, cycleId, unitId, fetchRecords]);
+  }, [isReady, isAuthenticated, cycleId, unitId, fetchRecords, isDemoMode]);
 
   const createRecord = async (record: Omit<FeedingRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    // Mode démonstration : ne rien faire
+    if (isDemoMode) {
+      toast({
+        title: 'Mode Démonstration',
+        description: 'Fonctionnalité désactivée en mode démonstration'
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
