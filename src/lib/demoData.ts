@@ -386,6 +386,291 @@ export const generateDemoSuppliers = (): any[] => {
 };
 
 /**
+ * Génère des données IoT fictives pour les capteurs
+ */
+export interface DemoIoTReading {
+  id: string;
+  basinId: string;
+  basinName: string;
+  parameter: string;
+  value: number;
+  unit: string;
+  status: 'normal' | 'warning' | 'critical';
+  timestamp: string;
+}
+
+export interface DemoIoTBasin {
+  id: string;
+  name: string;
+  unitId: string;
+  fishCount: number;
+  fishStatus: 'healthy' | 'warning' | 'critical';
+  parameters: Record<string, {
+    value: number;
+    status: 'normal' | 'warning' | 'critical';
+    history: { time: string; value: number }[];
+  }>;
+}
+
+export const generateDemoIoTData = (): { basins: DemoIoTBasin[]; readings: DemoIoTReading[] } => {
+  const now = new Date();
+  
+  // Générer l'historique pour les 24 dernières heures (1 lecture par heure)
+  const generateHistory = (baseValue: number, variance: number) => {
+    const history: { time: string; value: number }[] = [];
+    for (let i = 23; i >= 0; i--) {
+      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+      const variation = (Math.random() - 0.5) * variance * 2;
+      history.push({
+        time: time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        value: Number((baseValue + variation).toFixed(2))
+      });
+    }
+    return history;
+  };
+
+  // Déterminer le statut en fonction des seuils
+  const getStatus = (value: number, optimal: { min: number; max: number }): 'normal' | 'warning' | 'critical' => {
+    if (value < optimal.min * 0.8 || value > optimal.max * 1.2) return 'critical';
+    if (value < optimal.min || value > optimal.max) return 'warning';
+    return 'normal';
+  };
+
+  const basins: DemoIoTBasin[] = [
+    {
+      id: 'demo-basin-1',
+      name: 'Bassin Principal A',
+      unitId: 'demo-unit-1',
+      fishCount: 2500,
+      fishStatus: 'healthy',
+      parameters: {
+        oxygen: {
+          value: 7.2,
+          status: 'normal',
+          history: generateHistory(7.2, 0.8)
+        },
+        temperature: {
+          value: 26.5,
+          status: 'normal',
+          history: generateHistory(26.5, 1.5)
+        },
+        ph: {
+          value: 7.4,
+          status: 'normal',
+          history: generateHistory(7.4, 0.3)
+        },
+        nitrite: {
+          value: 0.15,
+          status: 'normal',
+          history: generateHistory(0.15, 0.1)
+        },
+        nitrate: {
+          value: 25,
+          status: 'normal',
+          history: generateHistory(25, 10)
+        },
+        ammonia: {
+          value: 0.008,
+          status: 'normal',
+          history: generateHistory(0.008, 0.005)
+        }
+      }
+    },
+    {
+      id: 'demo-basin-2',
+      name: 'Bassin Grossissement B',
+      unitId: 'demo-unit-1',
+      fishCount: 1800,
+      fishStatus: 'healthy',
+      parameters: {
+        oxygen: {
+          value: 6.8,
+          status: 'normal',
+          history: generateHistory(6.8, 1.0)
+        },
+        temperature: {
+          value: 27.2,
+          status: 'normal',
+          history: generateHistory(27.2, 1.2)
+        },
+        ph: {
+          value: 7.1,
+          status: 'normal',
+          history: generateHistory(7.1, 0.4)
+        },
+        nitrite: {
+          value: 0.22,
+          status: 'normal',
+          history: generateHistory(0.22, 0.08)
+        },
+        nitrate: {
+          value: 32,
+          status: 'normal',
+          history: generateHistory(32, 8)
+        },
+        ammonia: {
+          value: 0.012,
+          status: 'normal',
+          history: generateHistory(0.012, 0.004)
+        }
+      }
+    },
+    {
+      id: 'demo-basin-3',
+      name: 'Étang Alevinage',
+      unitId: 'demo-unit-2',
+      fishCount: 8000,
+      fishStatus: 'warning',
+      parameters: {
+        oxygen: {
+          value: 5.5,
+          status: 'warning',
+          history: generateHistory(5.5, 1.2)
+        },
+        temperature: {
+          value: 28.8,
+          status: 'warning',
+          history: generateHistory(28.8, 1.0)
+        },
+        ph: {
+          value: 7.8,
+          status: 'normal',
+          history: generateHistory(7.8, 0.3)
+        },
+        nitrite: {
+          value: 0.35,
+          status: 'warning',
+          history: generateHistory(0.35, 0.15)
+        },
+        nitrate: {
+          value: 42,
+          status: 'normal',
+          history: generateHistory(42, 12)
+        },
+        ammonia: {
+          value: 0.018,
+          status: 'normal',
+          history: generateHistory(0.018, 0.006)
+        }
+      }
+    },
+    {
+      id: 'demo-basin-4',
+      name: 'Cage Mer C1',
+      unitId: 'demo-unit-4',
+      fishCount: 5000,
+      fishStatus: 'healthy',
+      parameters: {
+        oxygen: {
+          value: 8.1,
+          status: 'normal',
+          history: generateHistory(8.1, 0.6)
+        },
+        temperature: {
+          value: 24.5,
+          status: 'normal',
+          history: generateHistory(24.5, 1.0)
+        },
+        ph: {
+          value: 8.2,
+          status: 'normal',
+          history: generateHistory(8.2, 0.2)
+        },
+        nitrite: {
+          value: 0.05,
+          status: 'normal',
+          history: generateHistory(0.05, 0.03)
+        },
+        nitrate: {
+          value: 12,
+          status: 'normal',
+          history: generateHistory(12, 5)
+        },
+        ammonia: {
+          value: 0.003,
+          status: 'normal',
+          history: generateHistory(0.003, 0.002)
+        },
+        salinity: {
+          value: 32,
+          status: 'normal',
+          history: generateHistory(32, 2)
+        }
+      }
+    }
+  ];
+
+  // Générer les lectures actuelles
+  const readings: DemoIoTReading[] = [];
+  const paramUnits: Record<string, string> = {
+    oxygen: 'mg/L',
+    temperature: '°C',
+    ph: '',
+    nitrite: 'mg/L',
+    nitrate: 'mg/L',
+    ammonia: 'mg/L',
+    salinity: 'ppt'
+  };
+
+  basins.forEach(basin => {
+    Object.entries(basin.parameters).forEach(([param, data]) => {
+      readings.push({
+        id: `demo-reading-${basin.id}-${param}`,
+        basinId: basin.id,
+        basinName: basin.name,
+        parameter: param,
+        value: data.value,
+        unit: paramUnits[param] || '',
+        status: data.status,
+        timestamp: now.toISOString()
+      });
+    });
+  });
+
+  return { basins, readings };
+};
+
+/**
+ * Génère des infrastructures fictives pour le module IoT
+ */
+export const generateDemoInfrastructures = () => {
+  return [
+    {
+      id: 'demo-infra-1',
+      name: 'Bassin Principal A',
+      type: 'Bassin béton',
+      status: 'active',
+      capacity: 3000,
+      unit_id: 'demo-unit-1'
+    },
+    {
+      id: 'demo-infra-2',
+      name: 'Bassin Grossissement B',
+      type: 'Bassin béton',
+      status: 'active',
+      capacity: 2500,
+      unit_id: 'demo-unit-1'
+    },
+    {
+      id: 'demo-infra-3',
+      name: 'Étang Alevinage',
+      type: 'Étang',
+      status: 'active',
+      capacity: 10000,
+      unit_id: 'demo-unit-2'
+    },
+    {
+      id: 'demo-infra-4',
+      name: 'Cage Mer C1',
+      type: 'Cage flottante',
+      status: 'active',
+      capacity: 6000,
+      unit_id: 'demo-unit-4'
+    }
+  ];
+};
+
+/**
  * Initialise toutes les données de démonstration
  */
 export const initializeDemoData = () => {
@@ -397,6 +682,8 @@ export const initializeDemoData = () => {
   const sales = generateDemoSales();
   const reproductionRecords = generateDemoReproductionRecords();
   const suppliers = generateDemoSuppliers();
+  const iotData = generateDemoIoTData();
+  const infrastructures = generateDemoInfrastructures();
 
   // Stocker dans localStorage pour la session
   localStorage.setItem('demo_production_units', JSON.stringify(units));
@@ -407,6 +694,9 @@ export const initializeDemoData = () => {
   localStorage.setItem('demo_sales', JSON.stringify(sales));
   localStorage.setItem('demo_reproduction_records', JSON.stringify(reproductionRecords));
   localStorage.setItem('demo_suppliers', JSON.stringify(suppliers));
+  localStorage.setItem('demo_iot_basins', JSON.stringify(iotData.basins));
+  localStorage.setItem('demo_iot_readings', JSON.stringify(iotData.readings));
+  localStorage.setItem('demo_infrastructures', JSON.stringify(infrastructures));
 
   return {
     units,
@@ -416,7 +706,10 @@ export const initializeDemoData = () => {
     livestockBatches,
     sales,
     reproductionRecords,
-    suppliers
+    suppliers,
+    iotBasins: iotData.basins,
+    iotReadings: iotData.readings,
+    infrastructures
   };
 };
 
@@ -432,6 +725,9 @@ export const getDemoData = () => {
   const sales = JSON.parse(localStorage.getItem('demo_sales') || '[]');
   const reproductionRecords = JSON.parse(localStorage.getItem('demo_reproduction_records') || '[]');
   const suppliers = JSON.parse(localStorage.getItem('demo_suppliers') || '[]');
+  const iotBasins = JSON.parse(localStorage.getItem('demo_iot_basins') || '[]');
+  const iotReadings = JSON.parse(localStorage.getItem('demo_iot_readings') || '[]');
+  const infrastructures = JSON.parse(localStorage.getItem('demo_infrastructures') || '[]');
 
   // Si pas de données, initialiser
   if (units.length === 0) {
@@ -446,7 +742,10 @@ export const getDemoData = () => {
     livestockBatches,
     sales,
     reproductionRecords,
-    suppliers
+    suppliers,
+    iotBasins,
+    iotReadings,
+    infrastructures
   };
 };
 
@@ -462,4 +761,7 @@ export const clearDemoData = () => {
   localStorage.removeItem('demo_sales');
   localStorage.removeItem('demo_reproduction_records');
   localStorage.removeItem('demo_suppliers');
+  localStorage.removeItem('demo_iot_basins');
+  localStorage.removeItem('demo_iot_readings');
+  localStorage.removeItem('demo_infrastructures');
 };
