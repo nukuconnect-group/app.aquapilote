@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { 
   Thermometer, 
   Droplets, 
@@ -17,13 +17,15 @@ import {
   Fish,
   FlaskConical,
   Waves,
-  Beaker
+  Beaker,
+  Play
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useIoT } from '@/contexts/IoTContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDemoData, DemoIoTBasin } from '@/lib/demoData';
 
 // 6 paramètres IoT requis
 const IOT_PARAMETERS = [
@@ -57,7 +59,7 @@ const IoTBasinOverview: React.FC = () => {
   const { activeUnit } = useProductionUnits();
   const { sensorReadings, basins: contextBasins, realTimeData, getActiveAlerts } = useIoT();
   const { t } = useSettings();
-  const { user } = useAuth();
+  const { user, isDemoMode } = useAuth();
   
   const [infrastructures, setInfrastructures] = useState<Infrastructure[]>([]);
   const [selectedBasin, setSelectedBasin] = useState<string>('all');
@@ -65,8 +67,43 @@ const IoTBasinOverview: React.FC = () => {
   const [hasRealSensors, setHasRealSensors] = useState(false);
   const [basinsData, setBasinsData] = useState<BasinData[]>([]);
 
+  // Mode démonstration - charger les données IoT de démo
+  useEffect(() => {
+    if (isDemoMode) {
+      const demoData = getDemoData();
+      
+      // Convertir les infrastructures de démo
+      const demoInfrastructures: Infrastructure[] = demoData.infrastructures.map((infra: any) => ({
+        id: infra.id,
+        name: infra.name,
+        type: infra.type,
+        status: infra.status,
+        capacity: infra.capacity
+      }));
+      
+      setInfrastructures(demoInfrastructures);
+      
+      // Convertir les bassins IoT de démo
+      const demoBasinsData: BasinData[] = demoData.iotBasins.map((basin: DemoIoTBasin) => ({
+        id: basin.id,
+        name: basin.name,
+        infrastructure_id: basin.id,
+        fish_count: basin.fishCount,
+        fish_status: basin.fishStatus,
+        parameters: basin.parameters
+      }));
+      
+      setBasinsData(demoBasinsData);
+      setHasRealSensors(true); // En démo, simuler des capteurs connectés
+      setIsLoading(false);
+      return;
+    }
+  }, [isDemoMode]);
+
   // Récupérer les infrastructures (bassins) depuis Supabase
   useEffect(() => {
+    if (isDemoMode) return; // Skip si en mode démo
+    
     const fetchInfrastructures = async () => {
       if (!user?.id || !activeUnit?.id) {
         setIsLoading(false);
@@ -96,10 +133,12 @@ const IoTBasinOverview: React.FC = () => {
     };
 
     fetchInfrastructures();
-  }, [user?.id, activeUnit?.id]);
+  }, [user?.id, activeUnit?.id, isDemoMode]);
 
-  // Construire les données des bassins
+  // Construire les données des bassins (uniquement en mode non-démo)
   useEffect(() => {
+    if (isDemoMode) return; // Skip si en mode démo
+    
     if (infrastructures.length === 0) {
       setBasinsData([]);
       return;
@@ -144,7 +183,7 @@ const IoTBasinOverview: React.FC = () => {
     };
 
     buildBasinsData();
-  }, [infrastructures, hasRealSensors, sensorReadings, realTimeData, activeUnit?.id]);
+  }, [infrastructures, hasRealSensors, sensorReadings, realTimeData, activeUnit?.id, isDemoMode]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -193,6 +232,27 @@ const IoTBasinOverview: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Badge mode démonstration */}
+      {isDemoMode && (
+        <Card className="border-2 border-green-300 bg-green-50 dark:bg-green-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <Play className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-800 dark:text-green-200">
+                  Mode Démonstration IoT
+                </h3>
+                <p className="text-sm text-green-600 dark:text-green-300">
+                  Données simulées pour illustrer les fonctionnalités de monitoring en temps réel
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* En-tête avec statistiques */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-blue-500">
@@ -249,15 +309,15 @@ const IoTBasinOverview: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Alertes actives</p>
-                <p className="text-2xl font-bold">{getActiveAlerts().length}</p>
+                <p className="text-2xl font-bold">{isDemoMode ? 2 : getActiveAlerts().length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Message si aucun capteur connecté */}
-      {!hasRealSensors && (
+      {/* Message si aucun capteur connecté (seulement en mode non-démo) */}
+      {!hasRealSensors && !isDemoMode && (
         <Card className="border-2 border-dashed border-orange-300 bg-orange-50 dark:bg-orange-950/20">
           <CardContent className="p-6 text-center">
             <WifiOff className="w-12 h-12 mx-auto mb-4 text-orange-500" />
@@ -274,8 +334,8 @@ const IoTBasinOverview: React.FC = () => {
         </Card>
       )}
 
-      {/* Message si aucune infrastructure */}
-      {infrastructures.length === 0 && (
+      {/* Message si aucune infrastructure (seulement en mode non-démo) */}
+      {infrastructures.length === 0 && !isDemoMode && (
         <Card className="border-2 border-dashed border-muted-foreground/25">
           <CardContent className="p-6 text-center">
             <Waves className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -288,7 +348,7 @@ const IoTBasinOverview: React.FC = () => {
       )}
 
       {/* Sélecteur de bassin et affichage des données */}
-      {infrastructures.length > 0 && (
+      {(infrastructures.length > 0 || isDemoMode) && basinsData.length > 0 && (
         <>
           <Tabs value={selectedBasin} onValueChange={setSelectedBasin}>
             <div className="overflow-x-auto -mx-2 px-2">
@@ -296,13 +356,13 @@ const IoTBasinOverview: React.FC = () => {
                 <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
                   Tous les bassins
                 </TabsTrigger>
-                {infrastructures.map((infra) => (
+                {basinsData.map((basin) => (
                   <TabsTrigger 
-                    key={infra.id} 
-                    value={infra.id}
+                    key={basin.id} 
+                    value={basin.id}
                     className="text-xs sm:text-sm whitespace-nowrap"
                   >
-                    {infra.name}
+                    {basin.name}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -373,73 +433,140 @@ const IoTBasinOverview: React.FC = () => {
             </div>
           </Tabs>
 
-          {/* Détails des bassins avec courbes */}
+          {/* Détails des bassins avec courbes - Affiche les courbes par paramètre */}
           {hasRealSensors && filteredBasins.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Évolution des paramètres</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredBasins.map((basin) => (
-                  <Card key={basin.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Waves className="w-5 h-5 text-cyan-600" />
-                          <CardTitle className="text-base">{basin.name}</CardTitle>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Fish className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm font-medium">{basin.fish_count.toLocaleString()} poissons</span>
-                          <Badge className={getStatusColor(basin.fish_status)}>
-                            {getStatusText(basin.fish_status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {Object.keys(basin.parameters).length > 0 ? (
-                        <div className="h-48">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Évolution des paramètres (24h)
+              </h3>
+              
+              {/* Courbes par paramètre */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {IOT_PARAMETERS.slice(0, 6).map((param) => {
+                  const IconComponent = param.icon;
+                  
+                  // Collecter les données de tous les bassins filtrés pour ce paramètre
+                  const hasData = filteredBasins.some(b => b.parameters[param.id]?.history?.length > 0);
+                  if (!hasData) return null;
+                  
+                  // Pour un seul bassin, utiliser directement ses données
+                  // Pour "tous", prendre le premier bassin avec des données
+                  const basinWithData = filteredBasins.find(b => b.parameters[param.id]?.history?.length > 0);
+                  const chartData = basinWithData?.parameters[param.id]?.history || [];
+                  
+                  return (
+                    <Card key={param.id} className="border-l-4" style={{ borderLeftColor: param.color }}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" style={{ color: param.color }} />
+                          {param.name}
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {param.optimal.min} - {param.optimal.max} {param.unit}
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-40">
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart>
+                            <AreaChart data={chartData}>
+                              <defs>
+                                <linearGradient id={`gradient-${param.id}`} x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor={param.color} stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor={param.color} stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                              <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-                              <YAxis tick={{ fontSize: 10 }} />
+                              <XAxis 
+                                dataKey="time" 
+                                tick={{ fontSize: 9 }} 
+                                tickFormatter={(value) => value.split(':')[0] + 'h'}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 9 }} 
+                                domain={['dataMin - 1', 'dataMax + 1']}
+                                width={35}
+                              />
                               <Tooltip 
                                 contentStyle={{ 
                                   background: 'white', 
                                   border: '1px solid #e5e7eb',
                                   borderRadius: '8px',
-                                  fontSize: '12px'
+                                  fontSize: '11px'
                                 }}
+                                formatter={(value: number) => [`${value.toFixed(2)} ${param.unit}`, param.name]}
+                                labelFormatter={(label) => `Heure: ${label}`}
                               />
-                              <Legend />
-                              {IOT_PARAMETERS.map((param) => {
-                                const paramData = basin.parameters[param.id];
-                                if (!paramData || paramData.history.length === 0) return null;
-                                
-                                return (
-                                  <Line
-                                    key={param.id}
-                                    data={paramData.history}
-                                    dataKey="value"
-                                    name={param.name}
-                                    stroke={param.color}
-                                    strokeWidth={2}
-                                    dot={false}
-                                  />
-                                );
-                              })}
-                            </LineChart>
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke={param.color}
+                                strokeWidth={2}
+                                fill={`url(#gradient-${param.id})`}
+                              />
+                            </AreaChart>
                           </ResponsiveContainer>
                         </div>
-                      ) : (
-                        <div className="h-48 flex items-center justify-center text-muted-foreground">
-                          <p className="text-sm">Aucune donnée de capteur disponible</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
+
+              {/* Courbes comparatives par bassin */}
+              {selectedBasin === 'all' && filteredBasins.length > 1 && (
+                <div className="space-y-4 mt-6">
+                  <h4 className="text-md font-semibold flex items-center gap-2">
+                    <Waves className="w-4 h-4 text-cyan-600" />
+                    Comparaison par bassin
+                  </h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {filteredBasins.map((basin) => (
+                      <Card key={basin.id}>
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Waves className="w-5 h-5 text-cyan-600" />
+                              <CardTitle className="text-base">{basin.name}</CardTitle>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Fish className="w-4 h-4 text-emerald-600" />
+                              <span className="text-sm font-medium">{basin.fish_count.toLocaleString()}</span>
+                              <Badge className={getStatusColor(basin.fish_status)}>
+                                {getStatusText(basin.fish_status)}
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-3 gap-2">
+                            {IOT_PARAMETERS.slice(0, 6).map((param) => {
+                              const data = basin.parameters[param.id];
+                              if (!data) return null;
+                              const IconComp = param.icon;
+                              
+                              return (
+                                <div 
+                                  key={param.id} 
+                                  className="p-2 rounded-lg text-center"
+                                  style={{ backgroundColor: `${param.color}15` }}
+                                >
+                                  <IconComp className="w-3 h-3 mx-auto mb-1" style={{ color: param.color }} />
+                                  <p className="text-xs font-bold" style={{ color: param.color }}>
+                                    {data.value.toFixed(param.id === 'ammonia' ? 3 : 1)}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">{param.name}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
