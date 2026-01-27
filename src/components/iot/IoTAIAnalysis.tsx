@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp, Zap, RefreshCw } from 'lucide-react';
+import { Brain, Loader2, AlertTriangle, CheckCircle, History, Trash2, Calendar, TrendingUp, Zap, RefreshCw, Bell, Shield, ThermometerSun, Droplets, Activity, Wind } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { toast } from 'sonner';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
@@ -15,6 +15,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { diagnoseWaterQuality, WATER_QUALITY_THRESHOLDS, type ParameterAlert, type WaterQualityDiagnosis } from '@/lib/waterQualityThresholds';
 
 interface IoTData {
   temperature: number;
@@ -34,6 +35,7 @@ const IoTAIAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AquapiloteResponse | null>(null);
   const [autoAnalysisResult, setAutoAnalysisResult] = useState<AquapiloteResponse | null>(null);
+  const [localDiagnosis, setLocalDiagnosis] = useState<WaterQualityDiagnosis | null>(null);
   const [mode, setMode] = useState<'auto' | 'manual'>('auto');
   const { analyses, loading: loadingHistory, refetch, deleteAnalysis } = useAIAnalyses(20);
   const { basins, sensorReadings, getActiveAlerts } = useIoT();
@@ -99,7 +101,34 @@ const IoTAIAnalysis = () => {
   useEffect(() => {
     setResult(null);
     setAutoAnalysisResult(null);
+    setLocalDiagnosis(null);
   }, [mode]);
+
+  // Diagnostic local instantané basé sur les seuils
+  useEffect(() => {
+    if (latestSensorData) {
+      const diagnosis = diagnoseWaterQuality({
+        temperature: latestSensorData.temperature,
+        ph: latestSensorData.ph,
+        oxygen: latestSensorData.oxygene_dissous,
+        ammonia: latestSensorData.ammonium,
+        nitrite: latestSensorData.nitrite
+      });
+      setLocalDiagnosis(diagnosis);
+
+      // Afficher une notification toast si alerte critique
+      if (diagnosis.overallStatus === 'critical') {
+        diagnosis.alerts
+          .filter(a => a.level === 'critical')
+          .forEach(alert => {
+            toast.error(`${alert.icon} ${alert.message}`, {
+              duration: 10000,
+              description: alert.urgency
+            });
+          });
+      }
+    }
+  }, [latestSensorData]);
 
   // Analyse automatique quand les données des capteurs changent
   useEffect(() => {
@@ -213,13 +242,97 @@ const IoTAIAnalysis = () => {
 
   return (
     <div className="space-y-6">
-      {/* Alertes automatiques en temps réel */}
+      {/* Diagnostic local avec alertes et recommandations */}
+      {mode === 'auto' && localDiagnosis && localDiagnosis.alerts.length > 0 && (
+        <Card className={`border-2 ${
+          localDiagnosis.overallStatus === 'critical' ? 'border-red-500 bg-red-50' : 
+          localDiagnosis.overallStatus === 'warning' ? 'border-orange-500 bg-orange-50' : 
+          'border-green-500 bg-green-50'
+        }`}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className={`flex items-center gap-2 ${
+                localDiagnosis.overallStatus === 'critical' ? 'text-red-700' : 
+                localDiagnosis.overallStatus === 'warning' ? 'text-orange-700' : 
+                'text-green-700'
+              }`}>
+                {localDiagnosis.overallStatus === 'critical' ? (
+                  <AlertTriangle className="w-6 h-6 animate-pulse" />
+                ) : localDiagnosis.overallStatus === 'warning' ? (
+                  <Bell className="w-6 h-6" />
+                ) : (
+                  <Shield className="w-6 h-6" />
+                )}
+                {localDiagnosis.overallStatus === 'critical' ? '🚨 ALERTES CRITIQUES' : 
+                 localDiagnosis.overallStatus === 'warning' ? '⚠️ ALERTES' : 
+                 '✅ Diagnostic'}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge className={`${
+                  localDiagnosis.overallStatus === 'critical' ? 'bg-red-600' : 
+                  localDiagnosis.overallStatus === 'warning' ? 'bg-orange-600' : 
+                  'bg-green-600'
+                } text-white px-3 py-1`}>
+                  Score: {localDiagnosis.healthScore}/100
+                </Badge>
+              </div>
+            </div>
+            <p className="text-sm mt-2">{localDiagnosis.summary}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {localDiagnosis.alerts.map((alert, idx) => (
+              <div 
+                key={idx}
+                className={`border-l-4 rounded-lg p-4 ${
+                  alert.level === 'critical' ? 'border-l-red-600 bg-white' : 
+                  'border-l-orange-500 bg-white'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">{alert.icon}</div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className={`font-bold ${
+                        alert.level === 'critical' ? 'text-red-700' : 'text-orange-700'
+                      }`}>
+                        {alert.message}
+                      </h4>
+                      <div className="flex gap-2">
+                        <Badge className={`${
+                          alert.level === 'critical' ? 'bg-red-600' : 'bg-orange-500'
+                        } text-white`}>
+                          {alert.level === 'critical' ? 'CRITIQUE' : 'ATTENTION'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          ⏰ {alert.urgency}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        Recommandations :
+                      </h5>
+                      <div className="text-sm whitespace-pre-line text-gray-700">
+                        {alert.recommendation}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Alertes IoT système */}
       {mode === 'auto' && activeAlerts.length > 0 && (
         <Card className="border-red-500 bg-red-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-700">
               <AlertTriangle className="w-5 h-5" />
-              Alertes Actives ({activeAlerts.length})
+              Alertes Capteurs ({activeAlerts.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -434,6 +547,72 @@ const IoTAIAnalysis = () => {
                 </div>
               </div>
 
+              {/* Diagnostic local instantané */}
+              {(() => {
+                const manualDiagnosis = diagnoseWaterQuality({
+                  temperature: iotData.temperature,
+                  ph: iotData.ph,
+                  oxygen: iotData.oxygene_dissous,
+                  ammonia: iotData.ammonium,
+                  nitrite: iotData.nitrite
+                });
+                
+                if (manualDiagnosis.alerts.length > 0) {
+                  return (
+                    <div className={`border-2 rounded-lg p-4 ${
+                      manualDiagnosis.overallStatus === 'critical' ? 'border-red-500 bg-red-50' : 
+                      manualDiagnosis.overallStatus === 'warning' ? 'border-orange-500 bg-orange-50' : 
+                      'border-green-500 bg-green-50'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className={`font-bold flex items-center gap-2 ${
+                          manualDiagnosis.overallStatus === 'critical' ? 'text-red-700' : 
+                          manualDiagnosis.overallStatus === 'warning' ? 'text-orange-700' : 
+                          'text-green-700'
+                        }`}>
+                          {manualDiagnosis.overallStatus === 'critical' ? (
+                            <>
+                              <AlertTriangle className="w-5 h-5" />
+                              Diagnostic: Problèmes Critiques Détectés
+                            </>
+                          ) : (
+                            <>
+                              <Bell className="w-5 h-5" />
+                              Diagnostic: Attention Requise
+                            </>
+                          )}
+                        </h4>
+                        <Badge className={`${
+                          manualDiagnosis.overallStatus === 'critical' ? 'bg-red-600' : 'bg-orange-600'
+                        } text-white`}>
+                          Score: {manualDiagnosis.healthScore}/100
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {manualDiagnosis.alerts.map((alert, idx) => (
+                          <div key={idx} className="bg-white rounded-lg p-3 border-l-4 border-l-red-500">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xl">{alert.icon}</span>
+                              <span className="font-semibold text-sm">{alert.message}</span>
+                              <Badge className={`ml-auto ${
+                                alert.level === 'critical' ? 'bg-red-600' : 'bg-orange-500'
+                              } text-white text-xs`}>
+                                {alert.urgency}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded p-2">
+                              {alert.recommendation}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Bouton d'analyse */}
               <Button 
                 onClick={handleAnalyze} 
@@ -444,17 +623,17 @@ const IoTAIAnalysis = () => {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Analyse en cours...
+                    Analyse IA en cours...
                   </>
                 ) : (
                   <>
                     <Brain className="w-5 h-5 mr-2" />
-                    Analyser et Recommander
+                    Demander Analyse IA Approfondie
                   </>
                 )}
               </Button>
 
-              {/* Affichage des résultats */}
+              {/* Affichage des résultats IA */}
               {result && (
                 <div className="space-y-4 pt-4 border-t">
                   {/* Badge d'alerte */}
@@ -462,7 +641,7 @@ const IoTAIAnalysis = () => {
                     {result.alerte ? (
                       <Badge className="bg-red-500 text-white px-6 py-2 text-lg flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5" />
-                        ALERTE
+                        ALERTE IA
                       </Badge>
                     ) : (
                       <Badge className="bg-green-500 text-white px-6 py-2 text-lg flex items-center gap-2">
@@ -472,11 +651,14 @@ const IoTAIAnalysis = () => {
                     )}
                   </div>
 
-                  {/* Conseil */}
+                  {/* Conseil IA */}
                   <Alert className={result.alerte ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}>
                     <AlertDescription className="text-base">
-                      <div className="font-semibold mb-2 text-foreground">Recommandation :</div>
-                      <div className="text-foreground/90">{result.conseil}</div>
+                      <div className="font-semibold mb-2 text-foreground flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        Recommandation IA :
+                      </div>
+                      <div className="text-foreground/90 whitespace-pre-line">{result.conseil}</div>
                     </AlertDescription>
                   </Alert>
                 </div>
