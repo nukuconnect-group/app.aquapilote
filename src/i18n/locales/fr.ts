@@ -5,6 +5,7 @@ import { dashboard } from './fr/dashboard';
 import { modules } from './fr/modules';
 import { settings } from './fr/settings';
 import { analytics } from './fr/analytics';
+import { team } from './fr/team';
 
 export const fr = {
   ...navigation,
@@ -13,4 +14,5 @@ export const fr = {
   ...modules,
   ...settings,
   ...analytics,
+  ...team,
 };
