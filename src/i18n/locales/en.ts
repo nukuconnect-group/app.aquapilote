@@ -5,6 +5,7 @@ import { dashboard } from './en/dashboard';
 import { modules } from './en/modules';
 import { settings } from './en/settings';
 import { analytics } from './en/analytics';
+import { team } from './en/team';
 
 export const en = {
   ...navigation,
@@ -13,4 +14,5 @@ export const en = {
   ...modules,
   ...settings,
   ...analytics,
+  ...team,
 };

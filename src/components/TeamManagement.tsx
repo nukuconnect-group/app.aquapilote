@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
 import { useTeamMemberUnits, TeamMemberUnit, NewTeamMemberUnit } from '@/hooks/useTeamMemberUnits';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UnitPermissions {
@@ -34,6 +35,7 @@ interface CreatedCredentials {
 }
 
 const TeamManagement = () => {
+  const { t } = useSettings();
   const { addLog } = useLogs();
   const { toast } = useToast();
   const { teamMembers, isLoading, addTeamMember, updateTeamMember, deleteTeamMember, refetch } = useTeamMembers();
@@ -79,44 +81,44 @@ const TeamManagement = () => {
   });
 
   const roles = [
-    'Directeur',
-    'Responsable de production',
-    'Responsable Écloserie',
-    'Responsable Grossissement',
-    'Technicien Aquacole',
-    'Ouvrier Aquacole',
-    'Comptable',
-    'Stagiaire',
-    'Personnalisé'
+    { key: 'role_director', label: t('role_director') },
+    { key: 'role_production_manager', label: t('role_production_manager') },
+    { key: 'role_hatchery_manager', label: t('role_hatchery_manager') },
+    { key: 'role_fattening_manager', label: t('role_fattening_manager') },
+    { key: 'role_aquaculture_technician', label: t('role_aquaculture_technician') },
+    { key: 'role_aquaculture_worker', label: t('role_aquaculture_worker') },
+    { key: 'role_accountant', label: t('role_accountant') },
+    { key: 'role_trainee', label: t('role_trainee') },
+    { key: 'role_custom', label: t('role_custom') }
   ];
 
   const departments = [
-    'Direction',
-    'Production',
-    'Comptabilité',
-    'Commercial',
-    'Maintenance',
-    'Qualité'
+    { key: 'dept_management', label: t('dept_management') },
+    { key: 'dept_production', label: t('dept_production') },
+    { key: 'dept_accounting', label: t('dept_accounting') },
+    { key: 'dept_commercial', label: t('dept_commercial') },
+    { key: 'dept_maintenance', label: t('dept_maintenance') },
+    { key: 'dept_quality', label: t('dept_quality') }
   ];
 
   const modulePermissions = [
-    { id: 'dashboard', label: 'Tableau de bord', description: 'Accès au tableau de bord principal' },
-    { id: 'production', label: 'Production', description: 'Gestion des cycles de production' },
-    { id: 'feeding', label: 'Alimentation', description: 'Gestion de l\'alimentation' },
-    { id: 'livestock', label: 'Cheptel', description: 'Gestion du cheptel' },
-    { id: 'health', label: 'Prophylaxie', description: 'Suivi sanitaire' },
-    { id: 'reproduction', label: 'Reproduction', description: 'Gestion de la reproduction' },
-    { id: 'infrastructure', label: 'Infrastructure', description: 'Gestion des infrastructures' },
-    { id: 'environment', label: 'Environnement', description: 'Monitoring environnemental' },
-    { id: 'iot', label: 'IoT', description: 'Capteurs et contrôle IoT' },
-    { id: 'accounting', label: 'Comptabilité', description: 'Gestion financière' },
-    { id: 'economics', label: 'Économie', description: 'Analyse économique' },
-    { id: 'sales', label: 'Ventes', description: 'Gestion des ventes' },
-    { id: 'purchases', label: 'Achats', description: 'Gestion des achats' },
-    { id: 'suppliers', label: 'Fournisseurs', description: 'Gestion des fournisseurs' },
-    { id: 'planning', label: 'Planification', description: 'Planification des tâches' },
-    { id: 'reports', label: 'Rapports', description: 'Génération de rapports' },
-    { id: 'settings', label: 'Paramètres', description: 'Configuration de l\'application' }
+    { id: 'dashboard', label: t('module_dashboard'), description: t('module_dashboard_desc') },
+    { id: 'production', label: t('module_production'), description: t('module_production_desc') },
+    { id: 'feeding', label: t('module_feeding'), description: t('module_feeding_desc') },
+    { id: 'livestock', label: t('module_livestock'), description: t('module_livestock_desc') },
+    { id: 'health', label: t('module_health'), description: t('module_health_desc') },
+    { id: 'reproduction', label: t('module_reproduction'), description: t('module_reproduction_desc') },
+    { id: 'infrastructure', label: t('module_infrastructure'), description: t('module_infrastructure_desc') },
+    { id: 'environment', label: t('module_environment'), description: t('module_environment_desc') },
+    { id: 'iot', label: t('module_iot'), description: t('module_iot_desc') },
+    { id: 'accounting', label: t('module_accounting'), description: t('module_accounting_desc') },
+    { id: 'economics', label: t('module_economics'), description: t('module_economics_desc') },
+    { id: 'sales', label: t('module_sales'), description: t('module_sales_desc') },
+    { id: 'purchases', label: t('module_purchases'), description: t('module_purchases_desc') },
+    { id: 'suppliers', label: t('module_suppliers'), description: t('module_suppliers_desc') },
+    { id: 'planning', label: t('module_planning'), description: t('module_planning_desc') },
+    { id: 'reports', label: t('module_reports'), description: t('module_reports_desc') },
+    { id: 'settings', label: t('module_settings'), description: t('module_settings_desc') }
   ];
 
   const loadMemberUnits = async (memberId: string) => {
@@ -727,9 +729,9 @@ const TeamManagement = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'active': return 'Actif';
-      case 'inactive': return 'Inactif';
-      case 'pending': return 'En attente';
+      case 'active': return t('status_active');
+      case 'inactive': return t('status_inactive');
+      case 'pending': return t('status_pending');
       default: return status;
     }
   };
@@ -780,8 +782,8 @@ const TeamManagement = () => {
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl text-white">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Gestion d'Équipe</h2>
-            <p className="text-blue-100">Ajoutez des membres et gérez leurs permissions par unité et module</p>
+            <h2 className="text-2xl font-bold mb-2">{t('team_header_title')}</h2>
+            <p className="text-blue-100">{t('team_header_subtitle')}</p>
           </div>
           <Button 
             variant="outline" 
@@ -789,7 +791,7 @@ const TeamManagement = () => {
             onClick={() => setShowInviteForm(true)}
           >
             <UserPlus className="w-4 h-4 mr-2" />
-            Ajouter un membre
+            {t('add_member_btn')}
           </Button>
         </div>
       </div>
@@ -802,7 +804,7 @@ const TeamManagement = () => {
               <Users className="w-8 h-8 text-blue-600" />
               <div>
                 <p className="text-2xl font-bold">{teamMembers.length}</p>
-                <p className="text-sm text-muted-foreground">Membres total</p>
+                <p className="text-sm text-muted-foreground">{t('total_members')}</p>
               </div>
             </div>
           </CardContent>
@@ -814,7 +816,7 @@ const TeamManagement = () => {
               <Star className="w-8 h-8 text-green-600" />
               <div>
                 <p className="text-2xl font-bold">{teamMembers.filter(m => m.status === 'active').length}</p>
-                <p className="text-sm text-muted-foreground">Actifs</p>
+                <p className="text-sm text-muted-foreground">{t('active_label')}</p>
               </div>
             </div>
           </CardContent>
@@ -826,7 +828,7 @@ const TeamManagement = () => {
               <Building2 className="w-8 h-8 text-purple-600" />
               <div>
                 <p className="text-2xl font-bold">{units.length}</p>
-                <p className="text-sm text-muted-foreground">Unités</p>
+                <p className="text-sm text-muted-foreground">{t('units_label')}</p>
               </div>
             </div>
           </CardContent>
@@ -838,7 +840,7 @@ const TeamManagement = () => {
               <MessageSquare className="w-8 h-8 text-orange-600" />
               <div>
                 <p className="text-2xl font-bold">{modulePermissions.length}</p>
-                <p className="text-sm text-muted-foreground">Modules</p>
+                <p className="text-sm text-muted-foreground">{t('modules_label')}</p>
               </div>
             </div>
           </CardContent>
@@ -848,21 +850,21 @@ const TeamManagement = () => {
       {/* Tabs */}
       <Tabs defaultValue="members" className="space-y-4">
         <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="members">Membres de l'équipe</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions par module</TabsTrigger>
+          <TabsTrigger value="members">{t('team_members_tab')}</TabsTrigger>
+          <TabsTrigger value="permissions">{t('permissions_tab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="members">
           <Card>
             <CardHeader>
-              <CardTitle>Membres de l'équipe ({teamMembers.length})</CardTitle>
+              <CardTitle>{t('team_members_count')} ({teamMembers.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {teamMembers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucun membre dans votre équipe</p>
-                  <p className="text-sm">Cliquez sur "Ajouter un membre" pour commencer</p>
+                  <p>{t('no_members')}</p>
+                  <p className="text-sm">{t('no_members_hint')}</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -899,12 +901,12 @@ const TeamManagement = () => {
                             {member.user_id ? (
                               <Badge className="bg-green-100 text-green-800 text-xs">
                                 <CheckCircle className="w-3 h-3 mr-1" />
-                                Compte créé
+                                {t('account_created')}
                               </Badge>
                             ) : (
                               <Badge variant="destructive" className="text-xs">
                                 <AlertCircle className="w-3 h-3 mr-1" />
-                                Sans compte
+                                {t('no_account')}
                               </Badge>
                             )}
                           </div>
@@ -912,7 +914,7 @@ const TeamManagement = () => {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-right text-sm text-muted-foreground hidden sm:block">
-                          <p>Ajouté le {new Date(member.invited_at).toLocaleDateString('fr-FR')}</p>
+                          <p>{t('added_on')} {new Date(member.invited_at).toLocaleDateString()}</p>
                         </div>
                         {/* Bouton créer compte SEULEMENT si user_id est null */}
                         {!member.user_id && (
@@ -921,7 +923,7 @@ const TeamManagement = () => {
                             size="sm"
                             onClick={() => handleCreateAccountForMember(member, true)}
                             disabled={isCreatingAccount}
-                            title="Créer le compte utilisateur"
+                            title={t('create_account_btn')}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             {isCreatingAccount ? (
@@ -929,7 +931,7 @@ const TeamManagement = () => {
                             ) : (
                               <>
                                 <UserCheck className="w-4 h-4 mr-1" />
-                                Créer le compte
+                                {t('create_account_btn')}
                               </>
                             )}
                           </Button>
@@ -938,7 +940,7 @@ const TeamManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => openMemberCredentialsView(member)}
-                          title="Voir les identifiants"
+                          title={t('view_credentials')}
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           disabled={!member.user_id}
                         >
@@ -948,7 +950,7 @@ const TeamManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => openMemberDetails(member)}
-                          title="Modifier le membre"
+                          title={t('edit_member')}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -956,7 +958,7 @@ const TeamManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleToggleStatus(member)}
-                          title="Activer/Désactiver"
+                          title={t('toggle_status')}
                         >
                           <Settings className="w-4 h-4" />
                         </Button>
@@ -964,7 +966,7 @@ const TeamManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => openResetPasswordDialog(member)}
-                          title="Réinitialiser le mot de passe"
+                          title={t('reset_password')}
                           disabled={!member.user_id}
                         >
                           <Key className="w-4 h-4" />
@@ -973,7 +975,7 @@ const TeamManagement = () => {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDeleteMember(member)}
-                          title="Supprimer"
+                          title={t('delete_member')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -989,7 +991,7 @@ const TeamManagement = () => {
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
-              <CardTitle>Permissions disponibles par module</CardTitle>
+              <CardTitle>{t('available_permissions')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1000,7 +1002,7 @@ const TeamManagement = () => {
                       <h4 className="font-medium">{module.label}</h4>
                       <p className="text-sm text-muted-foreground mb-2">{module.description}</p>
                       <Badge variant="secondary">
-                        {membersWithAccess.length} membre{membersWithAccess.length !== 1 ? 's' : ''} avec accès
+                        {membersWithAccess.length} {membersWithAccess.length !== 1 ? t('members_with_access') : t('member_with_access')}
                       </Badge>
                     </div>
                   );
@@ -1015,75 +1017,75 @@ const TeamManagement = () => {
       <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Ajouter un nouveau membre</DialogTitle>
+            <DialogTitle>{t('add_new_member')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Nom complet *</Label>
+                <Label>{t('full_name')} *</Label>
                 <Input
                   value={inviteData.name}
                   onChange={(e) => setInviteData({...inviteData, name: e.target.value})}
-                  placeholder="Nom du membre"
+                  placeholder={t('member_name_placeholder')}
                 />
               </div>
               <div>
-                <Label>Email (identifiant de connexion) *</Label>
+                <Label>{t('email_login')} *</Label>
                 <Input
                   type="email"
                   value={inviteData.email}
                   onChange={(e) => setInviteData({...inviteData, email: e.target.value})}
-                  placeholder="email@exemple.com"
+                  placeholder={t('email_placeholder')}
                 />
               </div>
             </div>
 
             <div>
-              <Label>Mot de passe (optionnel)</Label>
+              <Label>{t('password_optional')}</Label>
               <Input
                 type="password"
                 value={inviteData.password}
                 onChange={(e) => setInviteData({...inviteData, password: e.target.value})}
-                placeholder="Laisser vide pour générer automatiquement"
+                placeholder={t('password_placeholder')}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Min. 8 caractères avec majuscule, minuscule et chiffre. Si vide, un mot de passe sécurisé sera généré.
+                {t('password_hint')}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Rôle</Label>
+                <Label>{t('role')}</Label>
                 <Select value={inviteData.role} onValueChange={(value) => setInviteData({...inviteData, role: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un rôle" />
+                    <SelectValue placeholder={t('select_role')} />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map(role => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                      <SelectItem key={role.key} value={role.key}>{role.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              {inviteData.role === 'Personnalisé' && (
+              {inviteData.role === 'role_custom' && (
                 <div>
-                  <Label>Rôle personnalisé *</Label>
+                  <Label>{t('custom_role')} *</Label>
                   <Input
                     value={inviteData.customRole}
                     onChange={(e) => setInviteData({...inviteData, customRole: e.target.value})}
-                    placeholder="Ex: Responsable logistique"
+                    placeholder={t('custom_role_placeholder')}
                   />
                 </div>
               )}
               <div>
-                <Label>Département *</Label>
+                <Label>{t('department')} *</Label>
                 <Select value={inviteData.department} onValueChange={(value) => setInviteData({...inviteData, department: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un département" />
+                    <SelectValue placeholder={t('select_department')} />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map(dept => (
-                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      <SelectItem key={dept.key} value={dept.key}>{dept.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1215,10 +1217,10 @@ const TeamManagement = () => {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setShowInviteForm(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button onClick={handleProceedToSummary} disabled={isSubmitting}>
-              Continuer vers le résumé
+              {t('next')}
             </Button>
           </div>
         </DialogContent>
@@ -1473,12 +1475,12 @@ const TeamManagement = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Rôle</Label>
+              <div>
+                <Label>{t('role')}</Label>
                   <Select 
-                    value={selectedMember.custom_role ? 'Personnalisé' : selectedMember.role} 
+                    value={selectedMember.custom_role ? 'role_custom' : selectedMember.role} 
                     onValueChange={(value) => {
-                      if (value === 'Personnalisé') {
+                      if (value === 'role_custom') {
                         setSelectedMember({...selectedMember, role: value});
                       } else {
                         setSelectedMember({...selectedMember, role: value, custom_role: null});
@@ -1490,23 +1492,23 @@ const TeamManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map(role => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                        <SelectItem key={role.key} value={role.key}>{role.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {(selectedMember.role === 'Personnalisé' || selectedMember.custom_role) && (
+                {(selectedMember.role === 'role_custom' || selectedMember.custom_role) && (
                   <div>
-                    <Label>Rôle personnalisé</Label>
+                    <Label>{t('custom_role')}</Label>
                     <Input
                       value={selectedMember.custom_role || ''}
                       onChange={(e) => setSelectedMember({...selectedMember, custom_role: e.target.value})}
-                      placeholder="Ex: Responsable logistique"
+                      placeholder={t('custom_role_placeholder')}
                     />
                   </div>
                 )}
                 <div>
-                  <Label>Département</Label>
+                  <Label>{t('department')}</Label>
                   <Select 
                     value={selectedMember.department || ''} 
                     onValueChange={(value) => setSelectedMember({...selectedMember, department: value})}
@@ -1516,7 +1518,7 @@ const TeamManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map(dept => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        <SelectItem key={dept.key} value={dept.key}>{dept.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
