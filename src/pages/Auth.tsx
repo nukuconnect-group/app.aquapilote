@@ -1,17 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginDialog from '@/components/LoginDialog';
 import EnhancedRegistration from '@/components/EnhancedRegistration';
+import { supabase } from '@/integrations/supabase/clientConfig';
 
 /**
  * Page d'authentification
  * Redirige automatiquement vers /dashboard si l'utilisateur est déjà connecté
+ * Gère les callbacks OAuth de Google
  */
 const Auth: React.FC = () => {
   const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
   const { user, isLoading, isDemoMode } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Handle OAuth callback - check for error or code in URL
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (error) {
+      console.error('OAuth error:', error, errorDescription);
+    }
+
+    // Check for hash fragment containing access_token (OAuth callback)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    
+    if (accessToken) {
+      // OAuth callback detected - session will be handled by Supabase auth listener
+      console.log('OAuth callback detected, session will be processed...');
+    }
+  }, [searchParams]);
 
   // Redirection automatique si déjà connecté ou en mode démo
   useEffect(() => {

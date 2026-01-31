@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode, Link2, Repeat } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode, Link2, Repeat, Shield, AlertTriangle, HeartPulse, Stethoscope, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
@@ -284,6 +285,7 @@ const LivestockManagement = () => {
   const { units, activeUnit, setActiveUnit } = useProductionUnits();
   const { t } = useSettings();
   const { isDemoMode } = useAuth();
+  const navigate = useNavigate();
   
   // Utiliser l'unité active du contexte
   const selectedUnit = activeUnit?.id || 'all';
@@ -530,6 +532,35 @@ const LivestockManagement = () => {
     } catch (error) {
       console.error('Error deleting batch:', error);
     }
+  };
+
+  // Handler for batch status change (quarantine/sick/healthy)
+  const handleBatchStatusChange = async (batchId: string, newStatus: 'healthy' | 'sick' | 'quarantine' | 'sold', notes?: string) => {
+    try {
+      const batch = livestockBatches.find(b => b.id === batchId);
+      if (!batch) return;
+      
+      await updateBatch(batchId, { 
+        status: newStatus,
+        notes: notes ? `${batch.notes ? batch.notes + '\n' : ''}[${new Date().toLocaleDateString('fr-FR')}] ${t(`status_${newStatus}`)}: ${notes}` : batch.notes
+      });
+      
+      addLog(
+        newStatus === 'quarantine' ? t('quarantine_applied') : 
+        newStatus === 'sick' ? t('disease_declared') : t('batch_recovered'),
+        'Cheptel',
+        `${batch.species} - ${batch.quantity} ${t('individuals')} - ${t(`status_${newStatus}`)}`,
+        newStatus === 'healthy' ? 'success' : 'warning'
+      );
+    } catch (error) {
+      console.error('Error updating batch status:', error);
+      throw error;
+    }
+  };
+
+  // Navigate to prophylaxis module
+  const goToProphylaxis = () => {
+    navigate('/dashboard?module=prophylaxis');
   };
 
   const handleAddControlFishing = () => {
@@ -1560,7 +1591,87 @@ const LivestockManagement = () => {
                         </Dialog>
                       </div>
 
-                      <div className="flex sm:flex-col gap-2">
+                      {/* Health Actions */}
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-dashed">
+                        {batch.status === 'healthy' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-orange-600 border-orange-300 hover:bg-orange-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'quarantine', t('preventive_quarantine'))}
+                            >
+                              <Shield className="w-3 h-3 mr-1" />
+                              {t('put_in_quarantine')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'sick')}
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              {t('declare_sick')}
+                            </Button>
+                          </>
+                        )}
+                        {batch.status === 'quarantine' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'sick')}
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              {t('declare_sick')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 border-green-300 hover:bg-green-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'healthy')}
+                            >
+                              <HeartPulse className="w-3 h-3 mr-1" />
+                              {t('mark_healthy')}
+                            </Button>
+                          </>
+                        )}
+                        {batch.status === 'sick' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-orange-600 border-orange-300 hover:bg-orange-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'quarantine')}
+                            >
+                              <Shield className="w-3 h-3 mr-1" />
+                              {t('put_in_quarantine')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 border-green-300 hover:bg-green-50 text-xs"
+                              onClick={() => handleBatchStatusChange(batch.id, 'healthy')}
+                            >
+                              <HeartPulse className="w-3 h-3 mr-1" />
+                              {t('mark_recovered')}
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="text-xs"
+                              onClick={goToProphylaxis}
+                            >
+                              <Stethoscope className="w-3 h-3 mr-1" />
+                              {t('go_to_prophylaxis')}
+                              <ArrowRight className="w-3 h-3 ml-1" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex sm:flex-col gap-2 mt-2">
                         <Button size="sm" variant="outline" onClick={() => setEditingBatch(batch)} className="flex-1 sm:flex-none">
                           <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
