@@ -25,6 +25,7 @@ import UserSessionHistory from './admin/UserSessionHistory';
 import UserUnitsDisplay from './admin/UserUnitsDisplay';
 import AddUserWithUnitsDialog from './admin/AddUserWithUnitsDialog';
 import SupportModule from './SupportModule';
+import VisitsStatsPanel from './admin/VisitsStatsPanel';
 
 interface UserProfile {
   id: string;
@@ -879,6 +880,9 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Visits and Support Stats */}
+          <VisitsStatsPanel />
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">

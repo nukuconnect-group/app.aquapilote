@@ -21,13 +21,7 @@ interface Message {
   unitId?: string;
 }
 
-interface Category {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-  suggestions: string[];
-}
+// Category type no longer needed - using config arrays instead
 
 interface Language {
   id: string;
@@ -45,67 +39,100 @@ const languages: Language[] = [
   { id: 'swahili', label: 'Kiswahili', code: 'sw-KE', flag: '🇰🇪' },
 ];
 
-const categories: Category[] = [
-  {
-    id: 'production',
-    label: 'Production',
-    icon: <Fish className="w-4 h-4" />,
-    color: 'bg-blue-500',
-    suggestions: [
-      "Quel est l'état de mes cycles de production ?",
-      "Combien de poissons ai-je en stock ?",
-      "Quand prévoir la prochaine récolte ?",
-      "Comment optimiser ma densité d'élevage ?",
-    ]
-  },
-  {
-    id: 'feeding',
-    label: 'Alimentation',
-    icon: <Utensils className="w-4 h-4" />,
-    color: 'bg-orange-500',
-    suggestions: [
-      "Quel est mon stock d'aliments actuel ?",
-      "Calcule la ration journalière optimale",
-      "Quand dois-je commander de l'aliment ?",
-      "Quel est mon FCR moyen ?",
-    ]
-  },
-  {
-    id: 'health',
-    label: 'Santé',
-    icon: <HeartPulse className="w-4 h-4" />,
-    color: 'bg-red-500',
-    suggestions: [
-      "Y a-t-il des alertes sanitaires ?",
-      "Quel est le taux de mortalité actuel ?",
-      "Quand faire le prochain contrôle sanitaire ?",
-      "Comment prévenir les maladies courantes ?",
-    ]
-  },
-  {
-    id: 'economics',
-    label: 'Économie',
-    icon: <TrendingUp className="w-4 h-4" />,
-    color: 'bg-green-500',
-    suggestions: [
-      "Quel est mon coût de production par kg ?",
-      "Analyse ma rentabilité actuelle",
-      "Prévision des revenus ce mois",
-      "Comment réduire mes coûts ?",
-    ]
-  },
-  {
-    id: 'general',
-    label: 'Général',
-    icon: <Settings className="w-4 h-4" />,
-    color: 'bg-purple-500',
-    suggestions: [
-      "Donne-moi un résumé de ma ferme",
-      "Quelles tâches sont prioritaires aujourd'hui ?",
-      "Comment améliorer mes performances ?",
-      "Conseils pour la saison actuelle",
-    ]
-  },
+// Categories with full labels for mobile display
+const getCategoryLabel = (lang: string, key: string): string => {
+  const labels: Record<string, Record<string, string>> = {
+    production: { fr: 'Production', en: 'Production' },
+    feeding: { fr: 'Alimentation', en: 'Feeding' },
+    health: { fr: 'Santé', en: 'Health' },
+    economics: { fr: 'Économie', en: 'Economics' },
+    general: { fr: 'Général', en: 'General' }
+  };
+  return labels[key]?.[lang] || labels[key]?.['fr'] || key;
+};
+
+const getCategorySuggestions = (lang: string, key: string): string[] => {
+  const suggestions: Record<string, Record<string, string[]>> = {
+    production: {
+      fr: [
+        "Quel est l'état de mes cycles de production ?",
+        "Combien de poissons ai-je en stock ?",
+        "Quand prévoir la prochaine récolte ?",
+        "Comment optimiser ma densité d'élevage ?",
+      ],
+      en: [
+        "What is the status of my production cycles?",
+        "How many fish do I have in stock?",
+        "When should I plan the next harvest?",
+        "How to optimize my stocking density?",
+      ]
+    },
+    feeding: {
+      fr: [
+        "Quel est mon stock d'aliments actuel ?",
+        "Calcule la ration journalière optimale",
+        "Quand dois-je commander de l'aliment ?",
+        "Quel est mon FCR moyen ?",
+      ],
+      en: [
+        "What is my current feed stock?",
+        "Calculate the optimal daily ration",
+        "When should I order feed?",
+        "What is my average FCR?",
+      ]
+    },
+    health: {
+      fr: [
+        "Y a-t-il des alertes sanitaires ?",
+        "Quel est le taux de mortalité actuel ?",
+        "Quand faire le prochain contrôle sanitaire ?",
+        "Comment prévenir les maladies courantes ?",
+      ],
+      en: [
+        "Are there any health alerts?",
+        "What is the current mortality rate?",
+        "When to do the next health check?",
+        "How to prevent common diseases?",
+      ]
+    },
+    economics: {
+      fr: [
+        "Quel est mon coût de production par kg ?",
+        "Analyse ma rentabilité actuelle",
+        "Prévision des revenus ce mois",
+        "Comment réduire mes coûts ?",
+      ],
+      en: [
+        "What is my production cost per kg?",
+        "Analyze my current profitability",
+        "Revenue forecast for this month",
+        "How to reduce my costs?",
+      ]
+    },
+    general: {
+      fr: [
+        "Donne-moi un résumé de ma ferme",
+        "Quelles tâches sont prioritaires aujourd'hui ?",
+        "Comment améliorer mes performances ?",
+        "Conseils pour la saison actuelle",
+      ],
+      en: [
+        "Give me a summary of my farm",
+        "What tasks are priority today?",
+        "How to improve my performance?",
+        "Tips for the current season",
+      ]
+    }
+  };
+  return suggestions[key]?.[lang] || suggestions[key]?.['fr'] || [];
+};
+
+const categoryConfigs = [
+  { id: 'production', icon: <Fish className="w-4 h-4" />, color: 'bg-blue-500' },
+  { id: 'feeding', icon: <Utensils className="w-4 h-4" />, color: 'bg-orange-500' },
+  { id: 'health', icon: <HeartPulse className="w-4 h-4" />, color: 'bg-red-500' },
+  { id: 'economics', icon: <TrendingUp className="w-4 h-4" />, color: 'bg-green-500' },
+  { id: 'general', icon: <Settings className="w-4 h-4" />, color: 'bg-purple-500' }
 ];
 
 const AquaAssistantModule = () => {
@@ -367,7 +394,9 @@ const AquaAssistantModule = () => {
     }
   };
 
-  const currentCategory = categories.find(c => c.id === selectedCategory);
+  const langKey = selectedLanguage === 'en' ? 'en' : 'fr';
+  const currentCategoryConfig = categoryConfigs.find(c => c.id === selectedCategory);
+  const currentCategorySuggestions = selectedCategory ? getCategorySuggestions(langKey, selectedCategory) : [];
   const currentUnit = units.find(u => u.id === selectedUnitId);
 
   return (
@@ -464,7 +493,7 @@ const AquaAssistantModule = () => {
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {categories.map(cat => (
+            {categoryConfigs.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
@@ -475,7 +504,7 @@ const AquaAssistantModule = () => {
                 }`}
               >
                 {cat.icon}
-                <span>{cat.label}</span>
+                <span className="inline">{getCategoryLabel(langKey, cat.id)}</span>
               </button>
             ))}
           </div>
@@ -483,17 +512,17 @@ const AquaAssistantModule = () => {
       </Card>
 
       {/* Suggestions */}
-      {currentCategory && (
+      {currentCategoryConfig && currentCategorySuggestions.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              {currentCategory.icon}
-              Questions suggérées - {currentCategory.label}
+              {currentCategoryConfig.icon}
+              {langKey === 'en' ? 'Suggested questions' : 'Questions suggérées'} - {getCategoryLabel(langKey, currentCategoryConfig.id)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-2 sm:grid-cols-2">
-              {currentCategory.suggestions.map((suggestion, idx) => (
+              {currentCategorySuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSuggestionClick(suggestion)}
