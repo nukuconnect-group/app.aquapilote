@@ -264,6 +264,45 @@ const VisitsStatsPanel: React.FC = () => {
       setIsLoading(false);
     };
     loadAll();
+
+    // Real-time subscription for user_sessions
+    const sessionsChannel = supabase
+      .channel('admin-sessions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_sessions'
+        },
+        () => {
+          console.log('Real-time session update detected');
+          loadVisitStats();
+        }
+      )
+      .subscribe();
+
+    // Real-time subscription for support_tickets
+    const ticketsChannel = supabase
+      .channel('admin-tickets-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets'
+        },
+        () => {
+          console.log('Real-time ticket update detected');
+          loadSupportStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sessionsChannel);
+      supabase.removeChannel(ticketsChannel);
+    };
   }, [loadVisitStats, loadSupportStats]);
 
   if (isLoading) {
