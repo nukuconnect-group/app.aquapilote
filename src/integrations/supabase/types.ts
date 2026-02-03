@@ -1987,7 +1987,11 @@ export type Database = {
       }
       user_sessions: {
         Row: {
+          country: string | null
+          country_code: string | null
           created_at: string
+          device_info: string | null
+          device_type: string | null
           id: string
           ip_address: string | null
           is_active: boolean
@@ -1998,7 +2002,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country?: string | null
+          country_code?: string | null
           created_at?: string
+          device_info?: string | null
+          device_type?: string | null
           id?: string
           ip_address?: string | null
           is_active?: boolean
@@ -2009,7 +2017,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country?: string | null
+          country_code?: string | null
           created_at?: string
+          device_info?: string | null
+          device_type?: string | null
           id?: string
           ip_address?: string | null
           is_active?: boolean

@@ -127,7 +127,7 @@ const DailyFeedingSummary = ({ records, unitName, onEdit, onDelete }: DailyFeedi
   };
 
   const getDaySummary = (dayRecords: FeedingRecord[]) => {
-    const totalQuantity = dayRecords.reduce((sum, r) => sum + (r.quantity || 0), 0);
+    const totalQuantity = dayRecords.reduce((sum, r) => sum + (r.quantity || r.actual_quantity || 0), 0);
     const totalMortality = dayRecords.reduce((sum, r) => sum + (r.mortality || 0), 0);
     const feeders = [...new Set(dayRecords.map(r => r.feeder_name).filter(Boolean))];
     
@@ -135,8 +135,9 @@ const DailyFeedingSummary = ({ records, unitName, onEdit, onDelete }: DailyFeedi
   };
 
   const getSessionInfo = (record: FeedingRecord) => {
-    const sessionType = record.session_type || 'autre';
-    return SESSION_LABELS[sessionType] || { label: sessionType, icon: '📋' };
+    // Handle both session_type (from DB) and sessionType (from old format)
+    const sessionType = record.session_type || (record as any).sessionType || 'autre';
+    return SESSION_LABELS[sessionType] || { label: sessionType || 'Session', icon: '📋' };
   };
 
   const getBehaviorInfo = (behavior: string | undefined) => {
@@ -630,7 +631,7 @@ const DailyFeedingSummary = ({ records, unitName, onEdit, onDelete }: DailyFeedi
                                 {record.time || '--:--'}
                               </Badge>
                               <Badge className="text-xs bg-primary/10 text-primary border-0">
-                                {record.quantity} kg
+                                {(record.quantity || record.actual_quantity || 0).toFixed(1)} kg
                               </Badge>
                             </div>
                             
@@ -648,13 +649,13 @@ const DailyFeedingSummary = ({ records, unitName, onEdit, onDelete }: DailyFeedi
                                   <span className="truncate">{record.feed_type}</span>
                                 </div>
                               )}
-                              {record.temperature && (
+                              {record.temperature != null && record.temperature > 0 && (
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                   <Thermometer className="w-3 h-3" />
                                   <span>{record.temperature}°C</span>
                                 </div>
                               )}
-                              {behaviorInfo && (
+                              {behaviorInfo && record.behavior && (
                                 <Badge className={`text-xs ${behaviorInfo.color} border-0`}>
                                   {behaviorInfo.label}
                                 </Badge>
