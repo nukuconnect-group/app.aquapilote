@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle } from 'lucide-react';
+import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { format, subDays, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useSettings } from '@/contexts/SettingsContext';
+import { getDeviceTypeLabel } from '@/lib/deviceDetection';
 
 interface VisitStats {
   totalVisits: number;
@@ -25,12 +26,32 @@ interface SupportStats {
   avgResponseTime: number;
   ticketsByCategory: { name: string; value: number }[];
   ticketsByPriority: { name: string; value: number; color: string }[];
+  ticketsByDevice: { name: string; value: number; color: string }[];
 }
+
+interface CountryStats {
+  country: string;
+  countryCode: string;
+  visits: number;
+}
+
+interface DeviceStats {
+  deviceType: string;
+  count: number;
+  percentage: number;
+}
+
+const DEVICE_COLORS: Record<string, string> = {
+  phone: 'hsl(var(--primary))',
+  tablet: '#8b5cf6',
+  desktop: 'hsl(var(--aqua-primary))',
+  other: 'hsl(var(--muted-foreground))'
+};
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--aqua-primary))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))', '#8b5cf6', '#f59e0b'];
 
 const VisitsStatsPanel: React.FC = () => {
-  const { t } = useSettings();
+  const { t, language } = useSettings();
   const [visitStats, setVisitStats] = useState<VisitStats>({
     totalVisits: 0,
     uniqueVisitors: 0,
@@ -45,9 +66,12 @@ const VisitsStatsPanel: React.FC = () => {
     resolvedTickets: 0,
     avgResponseTime: 0,
     ticketsByCategory: [],
-    ticketsByPriority: []
+    ticketsByPriority: [],
+    ticketsByDevice: []
   });
   const [dailyVisits, setDailyVisits] = useState<{ date: string; visits: number; uniqueUsers: number }[]>([]);
+  const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
+  const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadVisitStats = useCallback(async () => {
@@ -124,6 +148,38 @@ const VisitsStatsPanel: React.FC = () => {
       }
       setDailyVisits(dailyData);
 
+      // Country statistics
+      const countryCounts: Record<string, { country: string; countryCode: string; count: number }> = {};
+      sessions.forEach(s => {
+        const country = (s as any).country || 'Inconnu';
+        const countryCode = (s as any).country_code || 'XX';
+        if (!countryCounts[country]) {
+          countryCounts[country] = { country, countryCode, count: 0 };
+        }
+        countryCounts[country].count++;
+      });
+      const sortedCountries = Object.values(countryCounts)
+        .map(c => ({ country: c.country, countryCode: c.countryCode, visits: c.count }))
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 10);
+      setCountryStats(sortedCountries);
+
+      // Device statistics
+      const deviceCounts: Record<string, number> = { phone: 0, tablet: 0, desktop: 0, other: 0 };
+      sessions.forEach(s => {
+        const deviceType = (s as any).device_type || 'other';
+        deviceCounts[deviceType] = (deviceCounts[deviceType] || 0) + 1;
+      });
+      const totalDevices = Object.values(deviceCounts).reduce((a, b) => a + b, 0);
+      const deviceData = Object.entries(deviceCounts)
+        .filter(([_, count]) => count > 0)
+        .map(([deviceType, count]) => ({
+          deviceType,
+          count,
+          percentage: totalDevices > 0 ? Math.round((count / totalDevices) * 100) : 0
+        }));
+      setDeviceStats(deviceData);
+
     } catch (error) {
       console.error('Error loading visit stats:', error);
     }
@@ -192,7 +248,8 @@ const VisitsStatsPanel: React.FC = () => {
         resolvedTickets,
         avgResponseTime,
         ticketsByCategory,
-        ticketsByPriority
+        ticketsByPriority,
+        ticketsByDevice: [] // Will be populated from user_sessions if needed
       });
 
     } catch (error) {
@@ -282,6 +339,106 @@ const VisitsStatsPanel: React.FC = () => {
                 <Globe className="w-6 h-6 text-orange-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold">{visitStats.monthlyVisits}</p>
                 <p className="text-xs text-muted-foreground">Ce mois</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Device & Country Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Device Type Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Monitor className="w-5 h-5" />
+                  Appareils utilisés
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {deviceStats.length > 0 ? (
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={deviceStats.map(d => ({
+                            name: getDeviceTypeLabel(d.deviceType, language === 'en' ? 'en' : 'fr'),
+                            value: d.count,
+                            color: DEVICE_COLORS[d.deviceType] || DEVICE_COLORS.other
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={65}
+                          dataKey="value"
+                        >
+                          {deviceStats.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={DEVICE_COLORS[entry.deviceType] || DEVICE_COLORS.other} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {deviceStats.map((device) => (
+                        <div key={device.deviceType} className="flex items-center gap-2">
+                          {device.deviceType === 'phone' && <Smartphone className="w-4 h-4 text-primary" />}
+                          {device.deviceType === 'tablet' && <Tablet className="w-4 h-4 text-purple-500" />}
+                          {device.deviceType === 'desktop' && <Monitor className="w-4 h-4 text-aqua-primary" />}
+                          {device.deviceType === 'other' && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
+                          <span className="text-sm">
+                            {getDeviceTypeLabel(device.deviceType, language === 'en' ? 'en' : 'fr')}: {device.count} ({device.percentage}%)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Aucune donnée d'appareil</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Country Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Pays des visiteurs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {countryStats.length > 0 ? (
+                  <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                    {countryStats.map((country, index) => {
+                      const maxVisits = countryStats[0]?.visits || 1;
+                      const percentage = Math.round((country.visits / maxVisits) * 100);
+                      return (
+                        <div key={country.country} className="flex items-center gap-3">
+                          <Badge variant="outline" className="w-8 text-center text-xs">
+                            {index + 1}
+                          </Badge>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium flex items-center gap-1">
+                                <Globe className="w-3 h-3 text-muted-foreground" />
+                                {country.country}
+                              </span>
+                              <span className="text-sm text-muted-foreground">{country.visits} visites</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Aucune donnée de pays</p>
+                )}
               </CardContent>
             </Card>
           </div>

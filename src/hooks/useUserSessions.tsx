@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useAuthReady } from '@/hooks/useAuthReady';
+import { detectDevice } from '@/lib/deviceDetection';
 
 interface UserSession {
   id: string;
@@ -12,24 +13,64 @@ interface UserSession {
   user_agent: string | null;
   is_active: boolean;
   created_at: string;
+  country?: string | null;
+  country_code?: string | null;
+  device_type?: string | null;
+  device_info?: string | null;
 }
 
 export const useUserSessions = () => {
   const { isReady, isAuthenticated, user } = useAuthReady();
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
+  // Detect country from IP
+  const detectCountry = useCallback(async (): Promise<{ country: string; country_code: string } | null> => {
+    try {
+      const response = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/detect-country', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          country: data.country || 'Unknown',
+          country_code: data.countryCode || 'XX'
+        };
+      }
+    } catch (error) {
+      console.error('Error detecting country:', error);
+    }
+    return null;
+  }, []);
+
   // Créer une nouvelle session lors de la connexion
   const createSession = useCallback(async () => {
     if (!isReady || !isAuthenticated || !user?.id) return;
 
     try {
+      // Detect device and country
+      const deviceInfo = detectDevice();
+      const countryInfo = await detectCountry();
+
+      const sessionData: Record<string, unknown> = {
+        user_id: user.id,
+        user_agent: navigator.userAgent,
+        is_active: true,
+        device_type: deviceInfo.deviceType,
+        device_info: deviceInfo.deviceInfo
+      };
+
+      if (countryInfo) {
+        sessionData.country = countryInfo.country;
+        sessionData.country_code = countryInfo.country_code;
+      }
+
       const { data, error } = await supabase
         .from('user_sessions')
-        .insert({
-          user_id: user.id,
-          user_agent: navigator.userAgent,
-          is_active: true
-        } as any)
+        .insert(sessionData as any)
         .select()
         .single();
 
@@ -45,7 +86,7 @@ export const useUserSessions = () => {
     } catch (error) {
       console.error('Error creating session:', error);
     }
-  }, [isReady, isAuthenticated, user?.id]);
+  }, [isReady, isAuthenticated, user?.id, detectCountry]);
 
   // Mettre à jour l'activité de la session
   const updateActivity = useCallback(async () => {
