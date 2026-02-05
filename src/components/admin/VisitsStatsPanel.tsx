@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin } from 'lucide-react';
+import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin, RefreshCw, Wifi } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { format, subDays, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -17,6 +17,9 @@ interface VisitStats {
   todayVisits: number;
   weeklyVisits: number;
   monthlyVisits: number;
+  anonymousVisits: number;
+  authenticatedVisits: number;
+  liveVisitors: number;
 }
 
 interface SupportStats {
@@ -41,6 +44,16 @@ interface DeviceStats {
   percentage: number;
 }
 
+interface RecentVisit {
+  id: string;
+  country: string;
+  countryCode: string;
+  deviceType: string;
+  deviceInfo: string;
+  createdAt: string;
+  isAnonymous: boolean;
+}
+
 const DEVICE_COLORS: Record<string, string> = {
   phone: 'hsl(var(--primary))',
   tablet: '#8b5cf6',
@@ -58,7 +71,10 @@ const VisitsStatsPanel: React.FC = () => {
     averageSessionDuration: 0,
     todayVisits: 0,
     weeklyVisits: 0,
-    monthlyVisits: 0
+    monthlyVisits: 0,
+    anonymousVisits: 0,
+    authenticatedVisits: 0,
+    liveVisitors: 0
   });
   const [supportStats, setSupportStats] = useState<SupportStats>({
     totalTickets: 0,
@@ -69,88 +85,119 @@ const VisitsStatsPanel: React.FC = () => {
     ticketsByPriority: [],
     ticketsByDevice: []
   });
-  const [dailyVisits, setDailyVisits] = useState<{ date: string; visits: number; uniqueUsers: number }[]>([]);
+  const [dailyVisits, setDailyVisits] = useState<{ date: string; visits: number; uniqueUsers: number; anonymous: number }[]>([]);
   const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
+  const [recentVisits, setRecentVisits] = useState<RecentVisit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadVisitStats = useCallback(async () => {
     try {
-      // Get all sessions for statistics
+      // Get authenticated sessions
       const { data: sessions } = await supabase
         .from('user_sessions')
         .select('*')
         .order('login_at', { ascending: false });
 
-      if (!sessions) return;
+      // Get anonymous visits
+      const { data: anonymousVisits } = await supabase
+        .from('anonymous_visits')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const authSessions = sessions || [];
+      const anonVisits = anonymousVisits || [];
 
       const now = new Date();
       const todayStart = startOfDay(now);
       const weekStart = subDays(now, 7);
       const monthStart = subDays(now, 30);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      // Calculate session durations
-      const sessionDurations = sessions
+      // Calculate session durations for authenticated users
+      const sessionDurations = authSessions
         .filter(s => s.logout_at)
         .map(s => differenceInMinutes(new Date(s.logout_at!), new Date(s.login_at)))
-        .filter(d => d > 0 && d < 480); // Filter out unrealistic durations (>8h)
+        .filter(d => d > 0 && d < 480);
 
       const avgDuration = sessionDurations.length > 0
         ? Math.round(sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length)
         : 0;
 
-      // Unique users
-      const uniqueUserIds = new Set(sessions.map(s => s.user_id));
+      // Unique authenticated users
+      const uniqueUserIds = new Set(authSessions.map(s => s.user_id));
+      
+      // Unique anonymous sessions
+      const uniqueAnonSessions = new Set(anonVisits.map(v => v.session_id));
 
-      // Today's visits
-      const todayVisits = sessions.filter(s => 
-        new Date(s.login_at) >= todayStart
+      // Today's visits (combined)
+      const todayAuthVisits = authSessions.filter(s => new Date(s.login_at) >= todayStart).length;
+      const todayAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= todayStart).length;
+
+      // Weekly visits (combined)
+      const weeklyAuthVisits = authSessions.filter(s => new Date(s.login_at) >= weekStart).length;
+      const weeklyAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= weekStart).length;
+
+      // Monthly visits (combined)
+      const monthlyAuthVisits = authSessions.filter(s => new Date(s.login_at) >= monthStart).length;
+      const monthlyAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= monthStart).length;
+
+      // Live visitors (active in last 5 minutes)
+      const liveAuthVisitors = authSessions.filter(s => 
+        s.is_active && new Date(s.last_activity_at) >= fiveMinutesAgo
       ).length;
-
-      // Weekly visits
-      const weeklyVisits = sessions.filter(s => 
-        new Date(s.login_at) >= weekStart
-      ).length;
-
-      // Monthly visits
-      const monthlyVisits = sessions.filter(s => 
-        new Date(s.login_at) >= monthStart
+      const liveAnonVisitors = anonVisits.filter(v => 
+        new Date(v.last_activity_at) >= fiveMinutesAgo
       ).length;
 
       setVisitStats({
-        totalVisits: sessions.length,
-        uniqueVisitors: uniqueUserIds.size,
+        totalVisits: authSessions.length + anonVisits.length,
+        uniqueVisitors: uniqueUserIds.size + uniqueAnonSessions.size,
         averageSessionDuration: avgDuration,
-        todayVisits,
-        weeklyVisits,
-        monthlyVisits
+        todayVisits: todayAuthVisits + todayAnonVisits,
+        weeklyVisits: weeklyAuthVisits + weeklyAnonVisits,
+        monthlyVisits: monthlyAuthVisits + monthlyAnonVisits,
+        anonymousVisits: anonVisits.length,
+        authenticatedVisits: authSessions.length,
+        liveVisitors: liveAuthVisitors + liveAnonVisitors
       });
 
-      // Daily visits for chart (last 14 days)
-      const dailyData: { date: string; visits: number; uniqueUsers: number }[] = [];
+      // Daily visits for chart (last 14 days) - combined
+      const dailyData: { date: string; visits: number; uniqueUsers: number; anonymous: number }[] = [];
       for (let i = 13; i >= 0; i--) {
         const day = subDays(now, i);
         const dayStart = startOfDay(day);
         const dayEnd = endOfDay(day);
         
-        const daySessions = sessions.filter(s => {
+        const dayAuthSessions = authSessions.filter(s => {
           const loginDate = new Date(s.login_at);
           return loginDate >= dayStart && loginDate <= dayEnd;
         });
         
-        const uniqueUsersThisDay = new Set(daySessions.map(s => s.user_id));
+        const dayAnonVisits = anonVisits.filter(v => {
+          const visitDate = new Date(v.created_at);
+          return visitDate >= dayStart && visitDate <= dayEnd;
+        });
+        
+        const uniqueUsersThisDay = new Set(dayAuthSessions.map(s => s.user_id));
         
         dailyData.push({
           date: format(day, 'dd/MM', { locale: fr }),
-          visits: daySessions.length,
-          uniqueUsers: uniqueUsersThisDay.size
+          visits: dayAuthSessions.length + dayAnonVisits.length,
+          uniqueUsers: uniqueUsersThisDay.size,
+          anonymous: dayAnonVisits.length
         });
       }
       setDailyVisits(dailyData);
 
-      // Country statistics
+      // Country statistics - combined
       const countryCounts: Record<string, { country: string; countryCode: string; count: number }> = {};
-      sessions.forEach(s => {
+      
+      // From authenticated sessions
+      authSessions.forEach(s => {
         const country = (s as any).country || 'Inconnu';
         const countryCode = (s as any).country_code || 'XX';
         if (!countryCounts[country]) {
@@ -158,18 +205,36 @@ const VisitsStatsPanel: React.FC = () => {
         }
         countryCounts[country].count++;
       });
+      
+      // From anonymous visits
+      anonVisits.forEach(v => {
+        const country = v.country || 'Inconnu';
+        const countryCode = v.country_code || 'XX';
+        if (!countryCounts[country]) {
+          countryCounts[country] = { country, countryCode, count: 0 };
+        }
+        countryCounts[country].count++;
+      });
+      
       const sortedCountries = Object.values(countryCounts)
         .map(c => ({ country: c.country, countryCode: c.countryCode, visits: c.count }))
         .sort((a, b) => b.visits - a.visits)
         .slice(0, 10);
       setCountryStats(sortedCountries);
 
-      // Device statistics
+      // Device statistics - combined
       const deviceCounts: Record<string, number> = { phone: 0, tablet: 0, desktop: 0, other: 0 };
-      sessions.forEach(s => {
+      
+      authSessions.forEach(s => {
         const deviceType = (s as any).device_type || 'other';
         deviceCounts[deviceType] = (deviceCounts[deviceType] || 0) + 1;
       });
+      
+      anonVisits.forEach(v => {
+        const deviceType = v.device_type || 'other';
+        deviceCounts[deviceType] = (deviceCounts[deviceType] || 0) + 1;
+      });
+      
       const totalDevices = Object.values(deviceCounts).reduce((a, b) => a + b, 0);
       const deviceData = Object.entries(deviceCounts)
         .filter(([_, count]) => count > 0)
@@ -257,10 +322,67 @@ const VisitsStatsPanel: React.FC = () => {
     }
   }, []);
 
+  const loadRecentVisits = useCallback(async () => {
+    try {
+      // Get recent anonymous visits
+      const { data: anonVisits } = await supabase
+        .from('anonymous_visits')
+        .select('id, country, country_code, device_type, device_info, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Get recent authenticated sessions
+      const { data: authSessions } = await supabase
+        .from('user_sessions')
+        .select('id, country, country_code, device_type, device_info, login_at')
+        .order('login_at', { ascending: false })
+        .limit(10);
+
+      const combined: RecentVisit[] = [];
+      
+      (anonVisits || []).forEach(v => {
+        combined.push({
+          id: v.id,
+          country: v.country || 'Inconnu',
+          countryCode: v.country_code || 'XX',
+          deviceType: v.device_type || 'other',
+          deviceInfo: v.device_info || '',
+          createdAt: v.created_at,
+          isAnonymous: true
+        });
+      });
+      
+      (authSessions || []).forEach(s => {
+        combined.push({
+          id: s.id,
+          country: (s as any).country || 'Inconnu',
+          countryCode: (s as any).country_code || 'XX',
+          deviceType: (s as any).device_type || 'other',
+          deviceInfo: (s as any).device_info || '',
+          createdAt: s.login_at,
+          isAnonymous: false
+        });
+      });
+
+      // Sort by date and take top 15
+      combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setRecentVisits(combined.slice(0, 15));
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error('Error loading recent visits:', error);
+    }
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits()]);
+    setIsRefreshing(false);
+  }, [loadVisitStats, loadSupportStats, loadRecentVisits]);
+
   useEffect(() => {
     const loadAll = async () => {
       setIsLoading(true);
-      await Promise.all([loadVisitStats(), loadSupportStats()]);
+      await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits()]);
       setIsLoading(false);
     };
     loadAll();
@@ -278,6 +400,25 @@ const VisitsStatsPanel: React.FC = () => {
         () => {
           console.log('Real-time session update detected');
           loadVisitStats();
+          loadRecentVisits();
+        }
+      )
+      .subscribe();
+
+    // Real-time subscription for anonymous_visits
+    const anonChannel = supabase
+      .channel('admin-anon-visits-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'anonymous_visits'
+        },
+        () => {
+          console.log('Real-time anonymous visit detected');
+          loadVisitStats();
+          loadRecentVisits();
         }
       )
       .subscribe();
@@ -299,11 +440,21 @@ const VisitsStatsPanel: React.FC = () => {
       )
       .subscribe();
 
+    // Polling fallback every 30 seconds
+    pollingRef.current = setInterval(() => {
+      loadVisitStats();
+      loadRecentVisits();
+    }, 30000);
+
     return () => {
       supabase.removeChannel(sessionsChannel);
+      supabase.removeChannel(anonChannel);
       supabase.removeChannel(ticketsChannel);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
     };
-  }, [loadVisitStats, loadSupportStats]);
+  }, [loadVisitStats, loadSupportStats, loadRecentVisits]);
 
   if (isLoading) {
     return (
@@ -318,6 +469,29 @@ const VisitsStatsPanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Live indicator and refresh button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
+            <Wifi className="w-4 h-4 text-green-600 animate-pulse" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">
+              {visitStats.liveVisitors} en ligne
+            </span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            MAJ: {format(lastUpdate, 'HH:mm:ss')}
+          </span>
+        </div>
+        <button
+          onClick={refreshAll}
+          disabled={isRefreshing}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Actualiser
+        </button>
+      </div>
+
       <Tabs defaultValue="visits" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="visits" className="gap-2">
@@ -332,7 +506,7 @@ const VisitsStatsPanel: React.FC = () => {
 
         <TabsContent value="visits" className="space-y-4 mt-4">
           {/* Visit Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             <Card>
               <CardContent className="p-4 text-center">
                 <Eye className="w-6 h-6 text-primary mx-auto mb-2" />
@@ -345,29 +519,29 @@ const VisitsStatsPanel: React.FC = () => {
               <CardContent className="p-4 text-center">
                 <Users className="w-6 h-6 text-aqua-primary mx-auto mb-2" />
                 <p className="text-2xl font-bold">{visitStats.uniqueVisitors}</p>
-                <p className="text-xs text-muted-foreground">Utilisateurs uniques</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Clock className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{visitStats.averageSessionDuration}m</p>
-                <p className="text-xs text-muted-foreground">Session moyenne</p>
+                <p className="text-xs text-muted-foreground">Visiteurs uniques</p>
               </CardContent>
             </Card>
             
             <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
               <CardContent className="p-4 text-center">
-                <Calendar className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{visitStats.todayVisits}</p>
+                <Wifi className="w-6 h-6 text-green-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-green-600">{visitStats.liveVisitors}</p>
+                <p className="text-xs text-muted-foreground">En ligne</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Calendar className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold">{visitStats.todayVisits}</p>
                 <p className="text-xs text-muted-foreground">Aujourd'hui</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="p-4 text-center">
-                <TrendingUp className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                <TrendingUp className="w-6 h-6 text-purple-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold">{visitStats.weeklyVisits}</p>
                 <p className="text-xs text-muted-foreground">Cette semaine</p>
               </CardContent>
@@ -380,7 +554,81 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Ce mois</p>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <HelpCircle className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-2xl font-bold">{visitStats.anonymousVisits}</p>
+                <p className="text-xs text-muted-foreground">Anonymes</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Clock className="w-6 h-6 text-primary mx-auto mb-2" />
+                <p className="text-2xl font-bold">{visitStats.averageSessionDuration}m</p>
+                <p className="text-xs text-muted-foreground">Session moy.</p>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Recent Visits - Real-time */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-green-500" />
+                  Visites récentes (temps réel)
+                </div>
+                <Badge variant="secondary" className="animate-pulse">
+                  Live
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {recentVisits.length > 0 ? (
+                  recentVisits.map((visit) => (
+                    <div 
+                      key={visit.id} 
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {visit.deviceType === 'phone' && <Smartphone className="w-5 h-5 text-primary" />}
+                        {visit.deviceType === 'tablet' && <Tablet className="w-5 h-5 text-purple-500" />}
+                        {visit.deviceType === 'desktop' && <Monitor className="w-5 h-5 text-aqua-primary" />}
+                        {visit.deviceType === 'other' && <HelpCircle className="w-5 h-5 text-muted-foreground" />}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {getDeviceTypeLabel(visit.deviceType, language === 'en' ? 'en' : 'fr')}
+                            </span>
+                            {visit.isAnonymous ? (
+                              <Badge variant="outline" className="text-xs">Anonyme</Badge>
+                            ) : (
+                              <Badge variant="default" className="text-xs bg-green-600">Connecté</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{visit.deviceInfo}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-sm">
+                          <Globe className="w-3 h-3" />
+                          {visit.country}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(visit.createdAt), 'HH:mm:ss', { locale: fr })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Aucune visite récente</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Device & Country Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -508,7 +756,14 @@ const VisitsStatsPanel: React.FC = () => {
                     dataKey="visits" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
-                    name="Connexions"
+                    name="Toutes visites"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="anonymous" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    strokeWidth={2}
+                    name="Anonymes"
                   />
                   <Line 
                     type="monotone" 
