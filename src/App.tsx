@@ -18,9 +18,13 @@ import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
 import { useIOSDetection } from '@/hooks/useIOSDetection';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import { useAnonymousVisitTracking } from '@/hooks/useAnonymousVisitTracking';
 
 const AppContent: React.FC = () => {
   const { isIOSSafari } = useIOSDetection();
+  
+  // Track anonymous visits for analytics
+  useAnonymousVisitTracking();
 
   useEffect(() => {
     // Log pour le débogage iOS

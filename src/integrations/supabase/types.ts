@@ -207,6 +207,51 @@ export type Database = {
           },
         ]
       }
+      anonymous_visits: {
+        Row: {
+          country: string | null
+          country_code: string | null
+          created_at: string
+          device_info: string | null
+          device_type: string | null
+          id: string
+          ip_hash: string | null
+          last_activity_at: string
+          page_path: string | null
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_info?: string | null
+          device_type?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_activity_at?: string
+          page_path?: string | null
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_info?: string | null
+          device_type?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_activity_at?: string
+          page_path?: string | null
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       cycle_infrastructures: {
         Row: {
           created_at: string | null
