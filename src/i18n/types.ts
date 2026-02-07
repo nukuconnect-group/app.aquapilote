@@ -1,5 +1,5 @@
 // Types pour le système i18n
-export type SupportedLanguage = 'fr' | 'en' | 'es' | 'pt' | 'ar' | 'ewe' | 'kabye' | 'wolof' | 'bambara';
+export type SupportedLanguage = 'fr' | 'en' | 'es' | 'pt' | 'ar' | 'ewe' | 'kabye' | 'adja' | 'wolof' | 'bambara';
 
 export interface TranslationKeys {
   // Navigation

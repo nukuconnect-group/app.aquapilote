@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin, RefreshCw, Wifi } from 'lucide-react';
+import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin, RefreshCw, Wifi, LayoutDashboard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { format, subDays, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -44,6 +44,11 @@ interface DeviceStats {
   percentage: number;
 }
 
+interface ModuleStats {
+  module: string;
+  visits: number;
+}
+
 interface RecentVisit {
   id: string;
   country: string;
@@ -52,6 +57,7 @@ interface RecentVisit {
   deviceInfo: string;
   createdAt: string;
   isAnonymous: boolean;
+  pagePath: string;
 }
 
 const DEVICE_COLORS: Record<string, string> = {
@@ -61,7 +67,34 @@ const DEVICE_COLORS: Record<string, string> = {
   other: 'hsl(var(--muted-foreground))'
 };
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--aqua-primary))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))', '#8b5cf6', '#f59e0b'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--aqua-primary))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))', '#8b5cf6', '#f59e0b', '#10b981', '#ec4899'];
+
+// Country code to flag emoji
+const countryCodeToFlag = (code: string): string => {
+  if (!code || code === 'XX') return '🌍';
+  const codePoints = code
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
+// Map page paths to readable module names
+const getModuleName = (path: string): string => {
+  const moduleMap: Record<string, string> = {
+    '/': 'Accueil',
+    '/auth': 'Authentification',
+    '/onboarding': 'Onboarding',
+    '/dashboard': 'Tableau de bord',
+  };
+  if (moduleMap[path]) return moduleMap[path];
+  // Extract module from dashboard hash routes
+  if (path.includes('#') || path.includes('?tab=')) {
+    const parts = path.split(/[#?]/);
+    return parts[1] || 'Tableau de bord';
+  }
+  return path || 'Accueil';
+};
 
 const VisitsStatsPanel: React.FC = () => {
   const { t, language } = useSettings();
@@ -88,6 +121,7 @@ const VisitsStatsPanel: React.FC = () => {
   const [dailyVisits, setDailyVisits] = useState<{ date: string; visits: number; uniqueUsers: number; anonymous: number }[]>([]);
   const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
+  const [moduleStats, setModuleStats] = useState<ModuleStats[]>([]);
   const [recentVisits, setRecentVisits] = useState<RecentVisit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -96,13 +130,11 @@ const VisitsStatsPanel: React.FC = () => {
 
   const loadVisitStats = useCallback(async () => {
     try {
-      // Get authenticated sessions
       const { data: sessions } = await supabase
         .from('user_sessions')
         .select('*')
         .order('login_at', { ascending: false });
 
-      // Get anonymous visits
       const { data: anonymousVisits } = await supabase
         .from('anonymous_visits')
         .select('*')
@@ -117,7 +149,6 @@ const VisitsStatsPanel: React.FC = () => {
       const monthStart = subDays(now, 30);
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      // Calculate session durations for authenticated users
       const sessionDurations = authSessions
         .filter(s => s.logout_at)
         .map(s => differenceInMinutes(new Date(s.logout_at!), new Date(s.login_at)))
@@ -127,25 +158,18 @@ const VisitsStatsPanel: React.FC = () => {
         ? Math.round(sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length)
         : 0;
 
-      // Unique authenticated users
       const uniqueUserIds = new Set(authSessions.map(s => s.user_id));
-      
-      // Unique anonymous sessions
       const uniqueAnonSessions = new Set(anonVisits.map(v => v.session_id));
 
-      // Today's visits (combined)
       const todayAuthVisits = authSessions.filter(s => new Date(s.login_at) >= todayStart).length;
       const todayAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= todayStart).length;
 
-      // Weekly visits (combined)
       const weeklyAuthVisits = authSessions.filter(s => new Date(s.login_at) >= weekStart).length;
       const weeklyAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= weekStart).length;
 
-      // Monthly visits (combined)
       const monthlyAuthVisits = authSessions.filter(s => new Date(s.login_at) >= monthStart).length;
       const monthlyAnonVisits = anonVisits.filter(v => new Date(v.created_at) >= monthStart).length;
 
-      // Live visitors (active in last 5 minutes)
       const liveAuthVisitors = authSessions.filter(s => 
         s.is_active && new Date(s.last_activity_at) >= fiveMinutesAgo
       ).length;
@@ -165,7 +189,7 @@ const VisitsStatsPanel: React.FC = () => {
         liveVisitors: liveAuthVisitors + liveAnonVisitors
       });
 
-      // Daily visits for chart (last 14 days) - combined
+      // Daily visits chart (last 14 days)
       const dailyData: { date: string; visits: number; uniqueUsers: number; anonymous: number }[] = [];
       for (let i = 13; i >= 0; i--) {
         const day = subDays(now, i);
@@ -193,10 +217,9 @@ const VisitsStatsPanel: React.FC = () => {
       }
       setDailyVisits(dailyData);
 
-      // Country statistics - combined
+      // Country statistics
       const countryCounts: Record<string, { country: string; countryCode: string; count: number }> = {};
       
-      // From authenticated sessions
       authSessions.forEach(s => {
         const country = (s as any).country || 'Inconnu';
         const countryCode = (s as any).country_code || 'XX';
@@ -206,7 +229,6 @@ const VisitsStatsPanel: React.FC = () => {
         countryCounts[country].count++;
       });
       
-      // From anonymous visits
       anonVisits.forEach(v => {
         const country = v.country || 'Inconnu';
         const countryCode = v.country_code || 'XX';
@@ -222,7 +244,7 @@ const VisitsStatsPanel: React.FC = () => {
         .slice(0, 10);
       setCountryStats(sortedCountries);
 
-      // Device statistics - combined
+      // Device statistics
       const deviceCounts: Record<string, number> = { phone: 0, tablet: 0, desktop: 0, other: 0 };
       
       authSessions.forEach(s => {
@@ -245,6 +267,18 @@ const VisitsStatsPanel: React.FC = () => {
         }));
       setDeviceStats(deviceData);
 
+      // Module/page statistics
+      const moduleCounts: Record<string, number> = {};
+      anonVisits.forEach(v => {
+        const moduleName = getModuleName(v.page_path || '/');
+        moduleCounts[moduleName] = (moduleCounts[moduleName] || 0) + 1;
+      });
+      const moduleData = Object.entries(moduleCounts)
+        .map(([module, visits]) => ({ module, visits }))
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 10);
+      setModuleStats(moduleData);
+
     } catch (error) {
       console.error('Error loading visit stats:', error);
     }
@@ -262,7 +296,6 @@ const VisitsStatsPanel: React.FC = () => {
       const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
       const resolvedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
 
-      // Calculate average response time (in hours)
       const respondedTickets = tickets.filter(t => t.responded_at);
       const avgResponseTime = respondedTickets.length > 0
         ? Math.round(respondedTickets.reduce((acc, t) => {
@@ -272,7 +305,6 @@ const VisitsStatsPanel: React.FC = () => {
           }, 0) / respondedTickets.length)
         : 0;
 
-      // Tickets by category
       const categoryCount: Record<string, number> = {};
       tickets.forEach(t => {
         const cat = t.category || 'Autre';
@@ -282,7 +314,6 @@ const VisitsStatsPanel: React.FC = () => {
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
 
-      // Tickets by priority
       const priorityColors: Record<string, string> = {
         'low': 'hsl(var(--muted-foreground))',
         'normal': 'hsl(var(--primary))',
@@ -314,7 +345,7 @@ const VisitsStatsPanel: React.FC = () => {
         avgResponseTime,
         ticketsByCategory,
         ticketsByPriority,
-        ticketsByDevice: [] // Will be populated from user_sessions if needed
+        ticketsByDevice: []
       });
 
     } catch (error) {
@@ -324,14 +355,12 @@ const VisitsStatsPanel: React.FC = () => {
 
   const loadRecentVisits = useCallback(async () => {
     try {
-      // Get recent anonymous visits
       const { data: anonVisits } = await supabase
         .from('anonymous_visits')
-        .select('id, country, country_code, device_type, device_info, created_at')
+        .select('id, country, country_code, device_type, device_info, created_at, page_path')
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Get recent authenticated sessions
       const { data: authSessions } = await supabase
         .from('user_sessions')
         .select('id, country, country_code, device_type, device_info, login_at')
@@ -348,7 +377,8 @@ const VisitsStatsPanel: React.FC = () => {
           deviceType: v.device_type || 'other',
           deviceInfo: v.device_info || '',
           createdAt: v.created_at,
-          isAnonymous: true
+          isAnonymous: true,
+          pagePath: v.page_path || '/'
         });
       });
       
@@ -360,13 +390,13 @@ const VisitsStatsPanel: React.FC = () => {
           deviceType: (s as any).device_type || 'other',
           deviceInfo: (s as any).device_info || '',
           createdAt: s.login_at,
-          isAnonymous: false
+          isAnonymous: false,
+          pagePath: '/dashboard'
         });
       });
 
-      // Sort by date and take top 15
       combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setRecentVisits(combined.slice(0, 15));
+      setRecentVisits(combined.slice(0, 20));
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading recent visits:', error);
@@ -387,60 +417,29 @@ const VisitsStatsPanel: React.FC = () => {
     };
     loadAll();
 
-    // Real-time subscription for user_sessions
     const sessionsChannel = supabase
       .channel('admin-sessions-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_sessions'
-        },
-        () => {
-          console.log('Real-time session update detected');
-          loadVisitStats();
-          loadRecentVisits();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_sessions' }, () => {
+        loadVisitStats();
+        loadRecentVisits();
+      })
       .subscribe();
 
-    // Real-time subscription for anonymous_visits
     const anonChannel = supabase
       .channel('admin-anon-visits-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'anonymous_visits'
-        },
-        () => {
-          console.log('Real-time anonymous visit detected');
-          loadVisitStats();
-          loadRecentVisits();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'anonymous_visits' }, () => {
+        loadVisitStats();
+        loadRecentVisits();
+      })
       .subscribe();
 
-    // Real-time subscription for support_tickets
     const ticketsChannel = supabase
       .channel('admin-tickets-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'support_tickets'
-        },
-        () => {
-          console.log('Real-time ticket update detected');
-          loadSupportStats();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
+        loadSupportStats();
+      })
       .subscribe();
 
-    // Polling fallback every 30 seconds
     pollingRef.current = setInterval(() => {
       loadVisitStats();
       loadRecentVisits();
@@ -450,11 +449,18 @@ const VisitsStatsPanel: React.FC = () => {
       supabase.removeChannel(sessionsChannel);
       supabase.removeChannel(anonChannel);
       supabase.removeChannel(ticketsChannel);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [loadVisitStats, loadSupportStats, loadRecentVisits]);
+
+  const DeviceIcon = ({ type, className }: { type: string; className?: string }) => {
+    switch (type) {
+      case 'phone': return <Smartphone className={className || "w-5 h-5 text-primary"} />;
+      case 'tablet': return <Tablet className={className || "w-5 h-5 text-purple-500"} />;
+      case 'desktop': return <Monitor className={className || "w-5 h-5 text-aqua-primary"} />;
+      default: return <HelpCircle className={className || "w-5 h-5 text-muted-foreground"} />;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -469,7 +475,7 @@ const VisitsStatsPanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Live indicator and refresh button */}
+      {/* Live indicator and refresh */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -505,7 +511,7 @@ const VisitsStatsPanel: React.FC = () => {
         </TabsList>
 
         <TabsContent value="visits" className="space-y-4 mt-4">
-          {/* Visit Stats Cards */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             <Card>
               <CardContent className="p-4 text-center">
@@ -514,7 +520,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Visites totales</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <Users className="w-6 h-6 text-aqua-primary mx-auto mb-2" />
@@ -522,7 +527,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Visiteurs uniques</p>
               </CardContent>
             </Card>
-            
             <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
               <CardContent className="p-4 text-center">
                 <Wifi className="w-6 h-6 text-green-500 mx-auto mb-2" />
@@ -530,7 +534,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">En ligne</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <Calendar className="w-6 h-6 text-blue-500 mx-auto mb-2" />
@@ -538,7 +541,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Aujourd'hui</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <TrendingUp className="w-6 h-6 text-purple-500 mx-auto mb-2" />
@@ -546,7 +548,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Cette semaine</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <Globe className="w-6 h-6 text-orange-500 mx-auto mb-2" />
@@ -554,7 +555,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Ce mois</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <HelpCircle className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
@@ -562,7 +562,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Anonymes</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <Clock className="w-6 h-6 text-primary mx-auto mb-2" />
@@ -572,7 +571,7 @@ const VisitsStatsPanel: React.FC = () => {
             </Card>
           </div>
 
-          {/* Recent Visits - Real-time */}
+          {/* Recent Visits with dates */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center justify-between">
@@ -580,13 +579,11 @@ const VisitsStatsPanel: React.FC = () => {
                   <Wifi className="w-5 h-5 text-green-500" />
                   Visites récentes (temps réel)
                 </div>
-                <Badge variant="secondary" className="animate-pulse">
-                  Live
-                </Badge>
+                <Badge variant="secondary" className="animate-pulse">Live</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {recentVisits.length > 0 ? (
                   recentVisits.map((visit) => (
                     <div 
@@ -594,12 +591,9 @@ const VisitsStatsPanel: React.FC = () => {
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        {visit.deviceType === 'phone' && <Smartphone className="w-5 h-5 text-primary" />}
-                        {visit.deviceType === 'tablet' && <Tablet className="w-5 h-5 text-purple-500" />}
-                        {visit.deviceType === 'desktop' && <Monitor className="w-5 h-5 text-aqua-primary" />}
-                        {visit.deviceType === 'other' && <HelpCircle className="w-5 h-5 text-muted-foreground" />}
+                        <DeviceIcon type={visit.deviceType} />
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium text-sm">
                               {getDeviceTypeLabel(visit.deviceType, language === 'en' ? 'en' : 'fr')}
                             </span>
@@ -608,15 +602,21 @@ const VisitsStatsPanel: React.FC = () => {
                             ) : (
                               <Badge variant="default" className="text-xs bg-green-600">Connecté</Badge>
                             )}
+                            <Badge variant="secondary" className="text-xs">
+                              {getModuleName(visit.pagePath)}
+                            </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">{visit.deviceInfo}</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <div className="flex items-center gap-1 text-sm">
-                          <Globe className="w-3 h-3" />
+                          <span>{countryCodeToFlag(visit.countryCode)}</span>
                           {visit.country}
                         </div>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {format(new Date(visit.createdAt), 'dd/MM/yyyy', { locale: fr })}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(visit.createdAt), 'HH:mm:ss', { locale: fr })}
                         </p>
@@ -630,7 +630,46 @@ const VisitsStatsPanel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Device & Country Stats */}
+          {/* World Map - Country Visualization */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Carte des pays visiteurs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {countryStats.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {countryStats.map((country, index) => {
+                    const totalVisits = countryStats.reduce((a, b) => a + b.visits, 0);
+                    const percentage = totalVisits > 0 ? Math.round((country.visits / totalVisits) * 100) : 0;
+                    return (
+                      <div 
+                        key={country.country} 
+                        className="relative p-4 bg-muted/50 rounded-xl border hover:border-primary/50 transition-all hover:shadow-md text-center"
+                      >
+                        <div className="text-3xl mb-2">{countryCodeToFlag(country.countryCode)}</div>
+                        <p className="font-semibold text-sm truncate">{country.country}</p>
+                        <p className="text-2xl font-bold text-primary">{country.visits}</p>
+                        <p className="text-xs text-muted-foreground">{percentage}% des visites</p>
+                        <Badge 
+                          variant={index === 0 ? 'default' : 'outline'} 
+                          className="mt-1 text-xs"
+                        >
+                          #{index + 1}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Aucune donnée de pays</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Device & Module Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Device Type Distribution */}
             <Card>
@@ -665,16 +704,19 @@ const VisitsStatsPanel: React.FC = () => {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex flex-wrap justify-center gap-3">
+                    <div className="space-y-2">
                       {deviceStats.map((device) => (
-                        <div key={device.deviceType} className="flex items-center gap-2">
-                          {device.deviceType === 'phone' && <Smartphone className="w-4 h-4 text-primary" />}
-                          {device.deviceType === 'tablet' && <Tablet className="w-4 h-4 text-purple-500" />}
-                          {device.deviceType === 'desktop' && <Monitor className="w-4 h-4 text-aqua-primary" />}
-                          {device.deviceType === 'other' && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
-                          <span className="text-sm">
-                            {getDeviceTypeLabel(device.deviceType, language === 'en' ? 'en' : 'fr')}: {device.count} ({device.percentage}%)
-                          </span>
+                        <div key={device.deviceType} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <DeviceIcon type={device.deviceType} className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              {getDeviceTypeLabel(device.deviceType, language === 'en' ? 'en' : 'fr')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">{device.count}</span>
+                            <Badge variant="outline" className="text-xs">{device.percentage}%</Badge>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -685,52 +727,93 @@ const VisitsStatsPanel: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Country Distribution */}
+            {/* Module/Page visits */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Pays des visiteurs
+                  <LayoutDashboard className="w-5 h-5" />
+                  Modules visités
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {countryStats.length > 0 ? (
-                  <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                    {countryStats.map((country, index) => {
-                      const maxVisits = countryStats[0]?.visits || 1;
-                      const percentage = Math.round((country.visits / maxVisits) * 100);
-                      return (
-                        <div key={country.country} className="flex items-center gap-3">
-                          <Badge variant="outline" className="w-8 text-center text-xs">
-                            {index + 1}
-                          </Badge>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium flex items-center gap-1">
-                                <Globe className="w-3 h-3 text-muted-foreground" />
-                                {country.country}
-                              </span>
-                              <span className="text-sm text-muted-foreground">{country.visits} visites</span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
+                {moduleStats.length > 0 ? (
+                  <div className="space-y-2">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={moduleStats.slice(0, 6)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" fontSize={12} />
+                        <YAxis dataKey="module" type="category" fontSize={11} width={100} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))' 
+                          }}
+                        />
+                        <Bar dataKey="visits" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-1 mt-2">
+                      {moduleStats.map((mod, index) => (
+                        <div key={mod.module} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="w-6 text-center text-xs">{index + 1}</Badge>
+                            <span className="text-sm">{mod.module}</span>
                           </div>
+                          <span className="text-sm font-bold">{mod.visits} visites</span>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-8">Aucune donnée de pays</p>
+                  <p className="text-center text-muted-foreground py-8">Aucune donnée de module</p>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Visits Chart */}
+          {/* Country Distribution Bar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Pays des visiteurs - Classement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {countryStats.length > 0 ? (
+                <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                  {countryStats.map((country, index) => {
+                    const maxVisits = countryStats[0]?.visits || 1;
+                    const percentage = Math.round((country.visits / maxVisits) * 100);
+                    return (
+                      <div key={country.country} className="flex items-center gap-3">
+                        <Badge variant="outline" className="w-8 text-center text-xs">
+                          {index + 1}
+                        </Badge>
+                        <span className="text-lg">{countryCodeToFlag(country.countryCode)}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">{country.country}</span>
+                            <span className="text-sm text-muted-foreground">{country.visits} visites</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Aucune donnée de pays</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Visits Evolution Chart */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -751,27 +834,9 @@ const VisitsStatsPanel: React.FC = () => {
                     }}
                   />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="visits" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    name="Toutes visites"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="anonymous" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    strokeWidth={2}
-                    name="Anonymes"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="uniqueUsers" 
-                    stroke="hsl(var(--aqua-primary))" 
-                    strokeWidth={2}
-                    name="Utilisateurs uniques"
-                  />
+                  <Line type="monotone" dataKey="visits" stroke="hsl(var(--primary))" strokeWidth={2} name="Toutes visites" />
+                  <Line type="monotone" dataKey="anonymous" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name="Anonymes" />
+                  <Line type="monotone" dataKey="uniqueUsers" stroke="hsl(var(--aqua-primary))" strokeWidth={2} name="Utilisateurs uniques" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -779,7 +844,6 @@ const VisitsStatsPanel: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="support" className="space-y-4 mt-4">
-          {/* Support Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card>
               <CardContent className="p-4 text-center">
@@ -788,7 +852,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Tickets total</p>
               </CardContent>
             </Card>
-            
             <Card className="border-yellow-200 bg-yellow-50/50 dark:bg-yellow-950/20">
               <CardContent className="p-4 text-center">
                 <Headphones className="w-6 h-6 text-yellow-600 mx-auto mb-2" />
@@ -796,7 +859,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">En attente</p>
               </CardContent>
             </Card>
-            
             <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
               <CardContent className="p-4 text-center">
                 <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-2" />
@@ -804,7 +866,6 @@ const VisitsStatsPanel: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Résolus</p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardContent className="p-4 text-center">
                 <Clock className="w-6 h-6 text-purple-500 mx-auto mb-2" />
@@ -815,7 +876,6 @@ const VisitsStatsPanel: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tickets by Category */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Tickets par catégorie</CardTitle>
@@ -837,7 +897,6 @@ const VisitsStatsPanel: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Tickets by Priority */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Tickets par priorité</CardTitle>

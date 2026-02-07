@@ -105,8 +105,8 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
                 </div>
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-background border-border">
-              {supportedLanguages.filter(l => l.code === 'fr' || l.code === 'en').map(lang => (
+            <SelectContent className="bg-background border-border max-h-[300px]">
+              {supportedLanguages.map(lang => (
                 <SelectItem key={lang.code} value={lang.code}>
                   {lang.flag} {lang.label}
                 </SelectItem>
@@ -254,8 +254,8 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
                   <SelectTrigger id="language-select" className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {supportedLanguages.filter(l => l.code === 'fr' || l.code === 'en').map(lang => (
+                  <SelectContent className="max-h-[300px]">
+                    {supportedLanguages.map(lang => (
                       <SelectItem key={lang.code} value={lang.code}>
                         {lang.flag} {lang.label}
                       </SelectItem>

@@ -11,6 +11,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   ar: en,
   ewe: fr,
   kabye: fr,
+  adja: fr,
   wolof: fr,
   bambara: fr,
 };
@@ -20,6 +21,7 @@ export const supportedLanguages: { code: SupportedLanguage; label: string; flag:
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'ewe', label: 'Eʋegbe (Ewe)', flag: '🇹🇬' },
   { code: 'kabye', label: 'Kabɩyɛ (Kabyè)', flag: '🇹🇬' },
+  { code: 'adja', label: 'Adja', flag: '🇹🇬' },
   { code: 'wolof', label: 'Wolof', flag: '🇸🇳' },
   { code: 'bambara', label: 'Bamanankan (Bambara)', flag: '🇲🇱' },
 ];
