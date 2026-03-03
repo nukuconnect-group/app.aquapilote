@@ -1,0 +1,22 @@
+// Kabyè - Analytics
+export const analytics = {
+  analytics_title: 'Tazɩyɛ Takayɩsɩ', analytics_dashboard: 'Tazɩyɛ takayɩsɩ', analytics_dashboard_title: 'Tazɩyɛ takayɩsɩ', analytics_subtitle: 'Tʊmɩyɛ ɖoŋ nɛ labʊ ɖoŋ', performance_indicators: 'Tʊmɩyɛ ɖoŋ nɛ labʊ ɖoŋ',
+  date_range: 'Kɩyakʊ', date_7d: 'Kɩyakɩŋ 7', date_30d: 'Kɩyakɩŋ 30', date_90d: 'Kɩyakɩŋ 90', date_12m: 'Fenasɩ 12', days_7: 'Kɩyakɩŋ 7', days_30: 'Kɩyakɩŋ 30', days_90: 'Kɩyakɩŋ 90', months_12: 'Fenasɩ 12',
+  all_units: 'Hɔɔlʊʊ tɩŋa', compare_periods: 'Kɛdɩ alɩwaatʊ', export_report: 'Lɩzɩ takayaɣ',
+  total_production_kpi: 'Labʊ Tɩŋa', survival_rate: 'Wɛzɩm Ɖoŋ', average_fcr: 'FCR Tɛɛ', total_sales_kpi: 'Pɛdʊʊ Tɩŋa', vs_last_month: 'vs fenaɣ ŋga kɛɖɛwa', improvement: 'ñɔɔzʊʊ',
+  overview_kpi: 'Cɔnʊʊ', production_kpi: 'Labʊ', feeding_kpi: 'Tɔɔnaɣ', performance_kpi: 'Tʊmɩyɛ Ɖoŋ', general: 'Tɩŋa',
+  production_vs_objectives: 'Labʊ vs Kaɖʊ', monthly_production_evolution: 'Labʊ lɛɣzʊʊ fenaɣ taa', species_distribution: 'Tɩyɩʊ Tayʊʊ', current_distribution: 'Kpɩna tayʊʊ lɛɛlɛɛ', production_by_unit: 'Labʊ Hɔɔlʊʊ Taa', comparison_by_unit: 'Kɛdɩnʊʊ hɔɔlʊʊ taa',
+  performance_radar: 'Tʊmɩyɛ Ɖoŋ Radar', global_performance_score: 'Tʊmɩyɛ Ɖoŋ Tɩŋa', daily_evolution: 'Kɩyakʊ Lɛɣzʊʊ', daily_feeding_temperature: 'Tɔɔnaɣ nɛ soŋaɣ kɩyakʊ taa',
+  water_quality_label: 'Lɩm wɛtʊ', growth_kpi: 'Paɣlʊʊ', fcr_trend: 'FCR Ɖɔm',
+  performance_alerts_title: 'Tʊmɩyɛ Ɖoŋ Paɣtʊ', performance_alerts_subtitle: 'Paɣtʊ ɖʊtʊ nɛ cɔnʊʊ', alerts_config_title: 'Paɣtʊ Ɖʊtʊ', alerts_config_desc: 'Ɖʊ ɖoŋ kamaɣ na paɣtʊ ti-yɔɔ',
+  alert_thresholds: 'Paɣtʊ Kamaɣ', fcr_threshold: 'FCR Kamaɣ', mortality_threshold: 'Sɩm Kamaɣ', oxygen_threshold: 'Oksɩzɛɛnɩ Kamaɣ', temperature_threshold: 'Soŋaɣ Kamaɣ', ph_threshold: 'pH Kamaɣ', stock_threshold: 'Ɖɩzɩyɛ Kamaɣ', production_threshold: 'Labʊ Kamaɣ',
+  warning_level: 'Paɣtʊ Hɛkʊ', critical_level: 'Paɣtʊ Sɔsɔ', enable_alert: 'Ɖʊ paɣtʊ', acknowledge_alert: 'Tisi', dismiss_alert: 'Lɩzɩ', no_alerts: 'Paɣtʊ nakʊyʊ fɛyɩ', alert_history: 'Paɣtʊ Tɔm', critical_alerts_badge: 'paɣtʊ sɔsɔtʊ', check_now: 'Cɔnɩ lɛɛlɛɛ',
+  unacknowledged_alerts: 'paɣtʊ ndʊ patɩtisi', critical_alerts_count: 'sɔsɔtʊ', including: 'nɛ', verify_btn: 'Cɔnɩ', acknowledge_btn: 'Tisi',
+  total_alerts: 'Tɩŋa', unacknowledged_label: 'Patɩtisi', critical_label: 'Sɔsɔtʊ', acknowledged_alert: 'Patisaa', all_filter: 'Tɩŋa', unacknowledged_filter: 'Patɩtisi', critical_filter: 'Sɔsɔtʊ', all_types: 'Tɩyɩʊ tɩŋa',
+  no_alerts_recorded: 'Patɩma paɣtʊ nakʊyʊ', no_critical_alerts: 'Paɣtʊ sɔsɔtʊ nakʊyʊ fɛyɩ', all_alerts_acknowledged: 'Patisaa paɣtʊ tɩŋa',
+  fcr_type: 'FCR', temperature_type: 'Soŋaɣ', oxygen_type: 'Oksɩzɛɛnɩ', ph_type: 'pH', mortality_type: 'Sɩm', production_type: 'Labʊ', stock_type: 'Ɖɩzɩyɛ', unit_alert: 'Hɔɔlʊʊ', value_alert: 'Liidiye',
+  alert_type_temperature: 'Soŋaɣ', alert_type_oxygen: 'Oksɩzɛɛnɩ', alert_type_mortality: 'Sɩm', stock: 'Ɖɩzɩyɛ', unit_label: 'Hɔɔlʊʊ', value_label: 'Liidiye', water: 'Lɩm',
+  critical: 'Sɔsɔ', stable: 'Pɩcaɣ Ɖeu', acknowledged: 'Patisaa', unacknowledged: 'Patɩtisi',
+  high_mortality: 'Sɩm ɖoŋ', high_fcr: 'FCR ɖoŋ', low_oxygen: 'Oksɩzɛɛnɩ tɩɖɔɔ', temperature_warning: 'Soŋaɣ paɣtʊ', ph_warning: 'pH paɣtʊ', stock_low: 'Ɖɩzɩyɛ tɩɖɔɔ', production_behind: 'Labʊ wɛ wayɩ',
+  rising: 'Pɩkpaɣ', falling: 'Pɩtɩŋ',
+};
