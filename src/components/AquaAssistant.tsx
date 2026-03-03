@@ -590,14 +590,14 @@ const AquaAssistant = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap transition-all ${
                     selectedCategory === cat.id 
                       ? `${cat.color} text-white shadow-md` 
                       : 'bg-background hover:bg-muted border border-border'
                   }`}
                 >
-                  {cat.icon}
-                  <span className="hidden xs:inline sm:inline">{cat.label}</span>
+                  <span className="hidden sm:inline">{cat.icon}</span>
+                  <span>{cat.label}</span>
                 </button>
               ))}
             </div>
@@ -607,12 +607,12 @@ const AquaAssistant = () => {
           {currentCategory && messages.length <= 2 && (
             <div className="p-2 sm:p-3 bg-muted/20 border-b border-border">
               <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 sm:mb-2">Suggestions :</p>
-              <div className="flex flex-wrap gap-1 sm:gap-1.5">
+              <div className="flex flex-col sm:flex-wrap sm:flex-row gap-1.5">
                 {currentCategory.suggestions.map((suggestion, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-2 py-1 text-[10px] sm:text-xs bg-background hover:bg-primary/10 border border-border rounded-full transition-colors hover:border-primary/50 leading-tight"
+                    className="px-3 py-1.5 text-[11px] sm:text-xs bg-background hover:bg-primary/10 border border-border rounded-lg sm:rounded-full transition-colors hover:border-primary/50 leading-snug text-left"
                   >
                     {suggestion}
                   </button>

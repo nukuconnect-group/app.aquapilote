@@ -1378,6 +1378,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pwa_installs: {
+        Row: {
+          country: string | null
+          country_code: string | null
+          created_at: string
+          device_info: string | null
+          device_type: string | null
+          id: string
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_info?: string | null
+          device_type?: string | null
+          id?: string
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_info?: string | null
+          device_type?: string | null
+          id?: string
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       reproduction_records: {
         Row: {
           broodstock_batch_id: string | null
