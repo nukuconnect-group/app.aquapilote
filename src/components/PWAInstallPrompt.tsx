@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Download, Smartphone, X, Monitor } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { detectDevice } from '@/lib/deviceDetection';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -78,6 +80,30 @@ const PWAInstallPrompt: React.FC = () => {
       if (outcome === 'accepted') {
         setShowInstallPrompt(false);
         sessionStorage.setItem('pwa-install-dismissed', 'true');
+        // Track the installation
+        try {
+          const device = detectDevice(navigator.userAgent);
+          let country = 'Inconnu';
+          let countryCode = 'XX';
+          try {
+            const resp = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/detect-country');
+            if (resp.ok) {
+              const data = await resp.json();
+              country = data.country || 'Inconnu';
+              countryCode = data.countryCode || 'XX';
+            }
+          } catch {}
+          await supabase.from('pwa_installs' as any).insert({
+            session_id: `pwa-${Date.now()}`,
+            device_type: device.deviceType,
+            device_info: device.deviceInfo,
+            country,
+            country_code: countryCode,
+            user_agent: navigator.userAgent.substring(0, 500),
+          });
+        } catch (e) {
+          console.error('Error tracking PWA install:', e);
+        }
       }
       
       setDeferredPrompt(null);

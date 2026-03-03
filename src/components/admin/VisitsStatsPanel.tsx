@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin, RefreshCw, Wifi, LayoutDashboard } from 'lucide-react';
+import { Eye, Users, Clock, Globe, TrendingUp, Calendar, Headphones, MessageSquare, CheckCircle, Smartphone, Tablet, Monitor, HelpCircle, MapPin, RefreshCw, Wifi, LayoutDashboard, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { format, subDays, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getDeviceTypeLabel } from '@/lib/deviceDetection';
+
+const WorldMap = lazy(() => import('./WorldMap'));
 
 interface VisitStats {
   totalVisits: number;
@@ -126,6 +128,7 @@ const VisitsStatsPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [pwaInstallCount, setPwaInstallCount] = useState(0);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadVisitStats = useCallback(async () => {
@@ -403,16 +406,27 @@ const VisitsStatsPanel: React.FC = () => {
     }
   }, []);
 
+  const loadPwaInstalls = useCallback(async () => {
+    try {
+      const { count } = await supabase
+        .from('pwa_installs' as any)
+        .select('*', { count: 'exact', head: true });
+      setPwaInstallCount(count || 0);
+    } catch (error) {
+      console.error('Error loading PWA installs:', error);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     setIsRefreshing(true);
-    await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits()]);
+    await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits(), loadPwaInstalls()]);
     setIsRefreshing(false);
-  }, [loadVisitStats, loadSupportStats, loadRecentVisits]);
+  }, [loadVisitStats, loadSupportStats, loadRecentVisits, loadPwaInstalls]);
 
   useEffect(() => {
     const loadAll = async () => {
       setIsLoading(true);
-      await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits()]);
+      await Promise.all([loadVisitStats(), loadSupportStats(), loadRecentVisits(), loadPwaInstalls()]);
       setIsLoading(false);
     };
     loadAll();
@@ -630,42 +644,37 @@ const VisitsStatsPanel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* World Map - Country Visualization */}
+          {/* World Map - Interactive Geographic Visualization */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Globe className="w-5 h-5" />
-                Carte des pays visiteurs
+                Carte mondiale des visiteurs
               </CardTitle>
             </CardHeader>
             <CardContent>
               {countryStats.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {countryStats.map((country, index) => {
-                    const totalVisits = countryStats.reduce((a, b) => a + b.visits, 0);
-                    const percentage = totalVisits > 0 ? Math.round((country.visits / totalVisits) * 100) : 0;
-                    return (
-                      <div 
-                        key={country.country} 
-                        className="relative p-4 bg-muted/50 rounded-xl border hover:border-primary/50 transition-all hover:shadow-md text-center"
-                      >
-                        <div className="text-3xl mb-2">{countryCodeToFlag(country.countryCode)}</div>
-                        <p className="font-semibold text-sm truncate">{country.country}</p>
-                        <p className="text-2xl font-bold text-primary">{country.visits}</p>
-                        <p className="text-xs text-muted-foreground">{percentage}% des visites</p>
-                        <Badge 
-                          variant={index === 0 ? 'default' : 'outline'} 
-                          className="mt-1 text-xs"
-                        >
-                          #{index + 1}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
+                <Suspense fallback={<div className="h-[300px] flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+                  <WorldMap countryStats={countryStats} />
+                </Suspense>
               ) : (
                 <p className="text-center text-muted-foreground py-8">Aucune donnée de pays</p>
               )}
+            </CardContent>
+          </Card>
+
+          {/* PWA Installations */}
+          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                  <Download className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-blue-600">{pwaInstallCount}</p>
+                  <p className="text-sm text-muted-foreground">Installations PWA totales</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
