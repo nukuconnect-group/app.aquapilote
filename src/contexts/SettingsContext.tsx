@@ -91,7 +91,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedTheme) setTheme(savedTheme);
       
       // Détection automatique de la langue du navigateur si aucune langue sauvegardée
-      if (savedLanguage && ['fr', 'en', 'es', 'pt', 'ar'].includes(savedLanguage)) {
+      if (savedLanguage && ['fr', 'en', 'es', 'pt', 'ar', 'ewe', 'kabye', 'adja', 'wolof', 'bambara'].includes(savedLanguage)) {
         setLanguage(savedLanguage);
       } else {
         const browserLanguage = navigator.language.toLowerCase();
