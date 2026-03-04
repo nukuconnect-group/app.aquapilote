@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2, Shield, AlertTriangle, Key, Mail, Lock, User, Fish, Waves, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
@@ -45,6 +46,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   
   const { login, register, resetPassword, completeMFALogin, completeMFALoginWithRecoveryCode, cancelMFALogin, isLoading, enterDemoMode } = useAuth();
   const { toast } = useToast();
+  const { t } = useSettings();
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
@@ -62,8 +64,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
       if (error) {
         toast({
-          title: "❌ Erreur",
-          description: "Impossible de se connecter avec Google. Veuillez réessayer.",
+          title: `❌ ${t('error')}`,
+          description: t('google_login_error') || "Impossible de se connecter avec Google.",
           variant: "destructive",
         });
       }
@@ -77,7 +79,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     setMfaError(null);
     
     if (mfaCode.length !== 6) {
-      setMfaError('Veuillez entrer un code à 6 chiffres');
+      setMfaError(t('mfa_code_6_digits') || 'Veuillez entrer un code à 6 chiffres');
       return;
     }
 
@@ -85,8 +87,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     
     if (success) {
       toast({
-        title: "✅ Connexion réussie",
-        description: "Bon retour sur AQUA PILOT !",
+        title: `✅ ${t('login_success')}`,
+        description: t('welcome_back'),
       });
       setShowMFAVerification(false);
       setMfaCode('');
@@ -94,17 +96,18 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       onClose();
       navigate('/dashboard', { replace: true });
     } else {
-      setMfaError('Code invalide. Veuillez réessayer.');
+      setMfaError(t('mfa_invalid_code') || 'Code invalide. Veuillez réessayer.');
       setMfaCode('');
     }
   };
+
   const handleRecoveryCodeVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setMfaError(null);
     
     const formattedCode = recoveryCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     if (formattedCode.length !== 8) {
-      setMfaError('Le code de récupération doit contenir 8 caractères');
+      setMfaError(t('recovery_code_8_chars') || 'Le code de récupération doit contenir 8 caractères');
       return;
     }
 
@@ -112,8 +115,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     
     if (success) {
       toast({
-        title: "✅ Connexion réussie",
-        description: "Code de récupération validé. Pensez à en générer de nouveaux dans les paramètres.",
+        title: `✅ ${t('login_success')}`,
+        description: t('recovery_code_validated') || 'Code de récupération validé.',
       });
       setShowMFAVerification(false);
       setShowRecoveryCodeInput(false);
@@ -122,7 +125,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       onClose();
       navigate('/dashboard', { replace: true });
     } else {
-      setMfaError('Code de récupération invalide ou déjà utilisé');
+      setMfaError(t('recovery_code_invalid') || 'Code de récupération invalide ou déjà utilisé');
       setRecoveryCode('');
     }
   };
@@ -140,12 +143,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     e.preventDefault();
     
     if (showResetPassword) {
-      // Validation email pour reset
       const email = formData.email.trim().toLowerCase();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast({
-          title: "❌ Email invalide",
-          description: "Veuillez entrer une adresse email valide.",
+          title: `❌ ${t('invalid_email')}`,
+          description: t('invalid_email'),
           variant: "destructive",
         });
         return;
@@ -154,15 +156,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       const success = await resetPassword(email);
       if (success) {
         toast({
-          title: "✅ Email envoyé",
-          description: "Un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception.",
+          title: `✅ ${t('success')}`,
+          description: t('reset_email_sent') || 'Un email de réinitialisation a été envoyé.',
         });
         setShowResetPassword(false);
         setFormData({ name: '', email: email, password: '', confirmPassword: '' });
       } else {
         toast({
-          title: "❌ Erreur",
-          description: "Impossible d'envoyer l'email. Vérifiez votre adresse email.",
+          title: `❌ ${t('error')}`,
+          description: t('reset_email_error') || "Impossible d'envoyer l'email.",
           variant: "destructive",
         });
       }
@@ -170,15 +172,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
     
     if (isRegistering) {
-      // Validation complète pour l'inscription
       const name = formData.name.trim();
       const email = formData.email.trim().toLowerCase();
       const password = formData.password;
 
       if (!name || name.length < 2) {
         toast({
-          title: "❌ Nom invalide",
-          description: "Le nom doit contenir au moins 2 caractères",
+          title: `❌ ${t('error')}`,
+          description: t('name_too_short'),
           variant: "destructive",
         });
         return;
@@ -186,8 +187,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast({
-          title: "❌ Email invalide",
-          description: "Veuillez entrer une adresse email valide",
+          title: `❌ ${t('invalid_email')}`,
+          description: t('invalid_email'),
           variant: "destructive",
         });
         return;
@@ -195,8 +196,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
       if (password.length < 8) {
         toast({
-          title: "❌ Mot de passe trop court",
-          description: "Le mot de passe doit contenir au moins 8 caractères",
+          title: `❌ ${t('error')}`,
+          description: t('password_too_short'),
           variant: "destructive",
         });
         return;
@@ -204,8 +205,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
       if (password !== formData.confirmPassword) {
         toast({
-          title: "❌ Erreur",
-          description: "Les mots de passe ne correspondent pas",
+          title: `❌ ${t('error')}`,
+          description: t('passwords_dont_match'),
           variant: "destructive",
         });
         return;
@@ -215,34 +216,33 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         const result = await register(name, email, password, selectedPlan || 'trial');
         if (result.success) {
           toast({
-            title: "✅ Inscription réussie",
-            description: "Vérifiez votre email pour confirmer votre compte, puis connectez-vous.",
+            title: `✅ ${t('registration_success')}`,
+            description: t('check_email_confirm'),
           });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onToggleMode();
         } else {
           toast({
-            title: "❌ Erreur lors de l'inscription",
-            description: result.error || "Une erreur est survenue lors de l'inscription",
+            title: `❌ ${t('registration_error')}`,
+            description: result.error || t('registration_error'),
             variant: "destructive",
           });
         }
       } catch (error) {
         toast({
-          title: "❌ Erreur technique",
-          description: "Une erreur est survenue. Réessayez dans quelques instants.",
+          title: `❌ ${t('error')}`,
+          description: t('technical_error') || "Une erreur est survenue.",
           variant: "destructive",
         });
       }
     } else {
-      // Validation pour la connexion
       const email = formData.email.trim().toLowerCase();
       const password = formData.password;
 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast({
-          title: "❌ Email invalide",
-          description: "Veuillez entrer une adresse email valide",
+          title: `❌ ${t('invalid_email')}`,
+          description: t('invalid_email'),
           variant: "destructive",
         });
         return;
@@ -250,8 +250,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
       if (!password || password.length < 8) {
         toast({
-          title: "❌ Mot de passe invalide",
-          description: "Le mot de passe doit contenir au moins 8 caractères",
+          title: `❌ ${t('error')}`,
+          description: t('password_too_short'),
           variant: "destructive",
         });
         return;
@@ -261,31 +261,29 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         const result = await login(email, password);
         
         if (result.requiresMFA) {
-          // MFA is required - show verification screen
           setShowMFAVerification(true);
           return;
         }
         
         if (result.success) {
           toast({
-            title: "✅ Connexion réussie",
-            description: "Bon retour sur AQUA PILOT !",
+            title: `✅ ${t('login_success')}`,
+            description: t('welcome_back'),
           });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onClose();
-          // Redirection vers le dashboard
           navigate('/dashboard', { replace: true });
         } else {
           toast({
-            title: "❌ Erreur de connexion",
-            description: "Email ou mot de passe incorrect. Vérifiez vos identifiants.",
+            title: `❌ ${t('login_error')}`,
+            description: t('invalid_credentials'),
             variant: "destructive",
           });
         }
       } catch (error) {
         toast({
-          title: "❌ Erreur technique",
-          description: "Problème de connexion. Vérifiez votre connexion internet.",
+          title: `❌ ${t('error')}`,
+          description: t('technical_error') || "Problème de connexion.",
           variant: "destructive",
         });
       }
@@ -294,17 +292,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   const getPlanName = (planId: string) => {
     switch (planId) {
-      case 'trial': return 'Essai Gratuit (30 jours)';
-      case 'monthly': return 'Plan Mensuel (29€/mois)';
-      case 'annual': return 'Plan Annuel (290€/an)';
-      default: return 'Plan non sélectionné';
+      case 'trial': return t('trial_plan') || 'Essai Gratuit (30 jours)';
+      case 'monthly': return t('monthly_plan') || 'Plan Mensuel (29€/mois)';
+      case 'annual': return t('annual_plan') || 'Plan Annuel (290€/an)';
+      default: return t('no_plan_selected') || 'Plan non sélectionné';
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
-        {/* Image de fond professionnelle - Desktop */}
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
+        {/* Background images */}
         <div 
           className="hidden md:block fixed inset-0 w-full h-full z-0"
           style={{ 
@@ -314,8 +312,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
             filter: 'brightness(0.7)',
           }}
         />
-        
-        {/* Image de fond professionnelle - Mobile */}
         <div 
           className="md:hidden fixed inset-0 w-full h-full z-0"
           style={{ 
@@ -326,28 +322,22 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           }}
         />
         
-        {/* Overlay gradient premium */}
         <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-cyan-900/70 z-[1]" />
         
-        {/* Éléments décoratifs animés */}
         <div className="fixed inset-0 z-[2] overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        {/* Icônes flottantes décoratives */}
         <div className="fixed inset-0 z-[2] overflow-hidden pointer-events-none hidden md:block">
           <Fish className="absolute top-20 left-[10%] w-8 h-8 text-white/10 animate-bounce" style={{ animationDuration: '3s' }} />
           <Waves className="absolute top-40 right-[15%] w-10 h-10 text-white/10 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }} />
           <Fish className="absolute bottom-32 left-[20%] w-6 h-6 text-white/10 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
         </div>
         
-        {/* Conteneur principal avec effet glassmorphism */}
         <div className="relative z-10 w-[95%] max-w-[440px] mx-auto my-auto">
-          {/* Carte principale */}
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-            {/* Barre supérieure décorative */}
             <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-teal-500" />
             
             <div className="p-6 sm:p-8 overflow-y-auto max-h-[85vh]">
@@ -362,10 +352,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                     </div>
                   </div>
                   <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
-                    Code de récupération
+                    {t('recovery_code_title') || 'Code de récupération'}
                   </DialogTitle>
                   <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
-                    Entrez l'un de vos codes de récupération à 8 caractères
+                    {t('recovery_code_desc') || 'Entrez l\'un de vos codes de récupération à 8 caractères'}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -378,7 +368,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="recoveryCode" className="sr-only">Code de récupération</Label>
+                    <Label htmlFor="recoveryCode" className="sr-only">{t('recovery_code_title') || 'Code de récupération'}</Label>
                     <Input
                       id="recoveryCode"
                       type="text"
@@ -391,7 +381,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       autoFocus
                     />
                     <p className="text-xs text-muted-foreground text-center">
-                      Les codes sont composés de 8 caractères alphanumériques
+                      {t('recovery_code_8_chars') || 'Les codes sont composés de 8 caractères alphanumériques'}
                     </p>
                   </div>
 
@@ -402,7 +392,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       onClick={() => { setShowRecoveryCodeInput(false); setRecoveryCode(''); setMfaError(null); }}
                       className="flex-1"
                     >
-                      Retour
+                      {t('back')}
                     </Button>
                     <Button
                       type="submit"
@@ -412,17 +402,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Vérification...
+                          {t('loading')}
                         </>
                       ) : (
-                        'Vérifier'
+                        t('confirm')
                       )}
                     </Button>
                   </div>
                 </form>
 
                 <p className="text-xs text-muted-foreground text-center mt-4">
-                  Chaque code ne peut être utilisé qu'une seule fois
+                  {t('recovery_code_once') || 'Chaque code ne peut être utilisé qu\'une seule fois'}
                 </p>
               </>
             ) : (
@@ -434,10 +424,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                     </div>
                   </div>
                   <DialogTitle className="text-center text-xl sm:text-2xl font-bold text-foreground">
-                    Vérification 2FA requise
+                    {t('mfa_verification_title') || 'Vérification 2FA requise'}
                   </DialogTitle>
                   <DialogDescription className="text-center text-sm sm:text-base text-muted-foreground mt-2">
-                    Entrez le code à 6 chiffres de votre application d'authentification
+                    {t('mfa_verification_desc') || 'Entrez le code à 6 chiffres de votre application d\'authentification'}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -465,7 +455,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       autoFocus
                     />
                     <p className="text-xs text-muted-foreground text-center">
-                      Ouvrez Google Authenticator, Authy ou votre app 2FA
+                      {t('mfa_open_app') || 'Ouvrez Google Authenticator, Authy ou votre app 2FA'}
                     </p>
                   </div>
 
@@ -476,7 +466,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       onClick={handleCancelMFA}
                       className="flex-1"
                     >
-                      Annuler
+                      {t('cancel')}
                     </Button>
                     <Button
                       type="submit"
@@ -486,10 +476,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Vérification...
+                          {t('loading')}
                         </>
                       ) : (
-                        'Vérifier'
+                        t('confirm')
                       )}
                     </Button>
                   </div>
@@ -503,7 +493,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                     className="w-full text-muted-foreground"
                   >
                     <Key className="h-4 w-4 mr-2" />
-                    Utiliser un code de récupération
+                    {t('use_recovery_code') || 'Utiliser un code de récupération'}
                   </Button>
                 </div>
               </>
@@ -511,7 +501,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           ) : (
             <>
               <DialogHeader className="space-y-4">
-                {/* Logo et titre */}
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-4">
                     <img 
@@ -522,40 +511,40 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   </div>
                   
                   <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 bg-clip-text text-transparent">
-                    {showResetPassword ? 'Réinitialisation' : isRegistering ? 'Créer un compte' : 'Bienvenue'}
+                    {showResetPassword ? t('reset_password') : isRegistering ? t('create_account') : t('welcome_back')}
                   </DialogTitle>
                   
                   <DialogDescription className="text-sm text-muted-foreground mt-2">
                     {showResetPassword 
-                      ? 'Entrez votre email pour réinitialiser' 
+                      ? (t('reset_password_desc') || 'Entrez votre email pour réinitialiser')
                       : isRegistering 
-                        ? 'Rejoignez la révolution de l\'aquaculture intelligente' 
-                        : 'Connectez-vous à votre espace de gestion'}
+                        ? (t('join_aquaculture') || 'Rejoignez la révolution de l\'aquaculture intelligente')
+                        : (t('login_desc') || 'Connectez-vous à votre espace de gestion')}
                   </DialogDescription>
                 </div>
               
                 {selectedPlan && isRegistering && (
                   <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 p-3 rounded-xl border border-cyan-200 dark:border-cyan-800">
                     <p className="text-sm text-cyan-800 dark:text-cyan-200 font-medium text-center">
-                      Plan sélectionné : <span className="font-bold">{getPlanName(selectedPlan)}</span>
+                      {t('selected_plan') || 'Plan sélectionné'} : <span className="font-bold">{getPlanName(selectedPlan)}</span>
                     </p>
                   </div>
                 )}
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-                {/* Nom complet (inscription) */}
+                {/* Full name (registration) */}
                 {isRegistering && !showResetPassword && (
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
-                      Nom complet
+                      {t('full_name')}
                     </Label>
                     <div className={`relative transition-all duration-200 ${focusedField === 'name' ? 'scale-[1.01]' : ''}`}>
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Votre nom complet"
+                        placeholder={t('full_name')}
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         onFocus={() => setFocusedField('name')}
@@ -571,7 +560,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
-                    Adresse email
+                    {t('email')}
                   </Label>
                   <div className={`relative transition-all duration-200 ${focusedField === 'email' ? 'scale-[1.01]' : ''}`}>
                     <Input
@@ -588,12 +577,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Mot de passe */}
+                {/* Password */}
                 {!showResetPassword && (
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
                       <Lock className="w-4 h-4 text-muted-foreground" />
-                      Mot de passe
+                      {t('password')}
                     </Label>
                     <div className={`relative transition-all duration-200 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>
                       <Input
@@ -617,17 +606,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       </button>
                     </div>
                     {isRegistering && (
-                      <p className="text-xs text-muted-foreground">Minimum 8 caractères</p>
+                      <p className="text-xs text-muted-foreground">{t('password_too_short')}</p>
                     )}
                   </div>
                 )}
 
-                {/* Confirmation mot de passe (inscription) */}
+                {/* Confirm password */}
                 {isRegistering && !showResetPassword && (
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="text-sm font-medium flex items-center gap-2">
                       <Lock className="w-4 h-4 text-muted-foreground" />
-                      Confirmer le mot de passe
+                      {t('confirm_password')}
                     </Label>
                     <div className={`relative transition-all duration-200 ${focusedField === 'confirmPassword' ? 'scale-[1.01]' : ''}`}>
                       <Input
@@ -644,12 +633,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       />
                     </div>
                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                      <p className="text-xs text-destructive">{t('passwords_dont_match')}</p>
                     )}
                   </div>
                 )}
 
-                {/* Bouton principal */}
+                {/* Submit button */}
                 <Button 
                   type="submit" 
                   className="w-full h-12 bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 hover:from-cyan-700 hover:via-blue-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
@@ -658,29 +647,29 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {showResetPassword ? 'Envoi...' : isRegistering ? 'Création...' : 'Connexion...'}
+                      {t('loading')}
                     </>
                   ) : (
                     <>
-                      {showResetPassword ? 'Envoyer le lien' : isRegistering ? 'Créer mon compte' : 'Se connecter'}
+                      {showResetPassword ? (t('send_reset_link') || 'Envoyer le lien') : isRegistering ? t('create_account') : t('login')}
                       <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </Button>
 
-                {/* Séparateur */}
+                {/* Separator */}
                 {!showResetPassword && (
                   <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-muted-foreground/20"></div>
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="px-3 bg-white dark:bg-slate-900 text-muted-foreground">Ou</span>
+                      <span className="px-3 bg-white dark:bg-slate-900 text-muted-foreground">{t('or_continue_with')}</span>
                     </div>
                   </div>
                 )}
 
-                {/* Bouton Google */}
+                {/* Google */}
                 {!showResetPassword && (
                   <Button
                     type="button"
@@ -694,11 +683,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    Continuer avec Google
+                    {isRegistering ? t('signup_with_google') : t('login_with_google')}
                   </Button>
                 )}
 
-                {/* Bouton démo */}
+                {/* Demo */}
                 {!showResetPassword && (
                   <Button
                     type="button"
@@ -710,11 +699,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                     }}
                   >
                     <Fish className="w-4 h-4 mr-2" />
-                    Voir la démonstration
+                    {t('try_demo')}
                   </Button>
                 )}
 
-                {/* Liens */}
+                {/* Links */}
                 <div className="text-center pt-4 space-y-3 border-t border-muted-foreground/10">
                   {!showResetPassword && !isRegistering && (
                     <button
@@ -722,7 +711,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       onClick={() => setShowResetPassword(true)}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      Mot de passe oublié ?
+                      {t('forgot_password')}
                     </button>
                   )}
                   
@@ -735,7 +724,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       }}
                       className="text-sm text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
                     >
-                      ← Retour à la connexion
+                      ← {t('back')}
                     </button>
                   ) : (
                     <button
@@ -743,7 +732,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       onClick={onToggleMode}
                       className="text-sm text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
                     >
-                      {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
+                      {isRegistering ? t('already_have_account') : t('dont_have_account')}
                     </button>
                   )}
                 </div>
