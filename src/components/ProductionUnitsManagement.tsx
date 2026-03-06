@@ -69,7 +69,7 @@ const ProductionUnitsManagement = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image');
+      toast.error(t('select_image'));
       return;
     }
 
@@ -80,7 +80,7 @@ const ProductionUnitsManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error('Vous devez être connecté');
+        toast.error(t('must_be_connected'));
         return;
       }
 
@@ -105,10 +105,10 @@ const ProductionUnitsManagement = () => {
       if (urlData?.publicUrl) {
         setSelectedPhoto(urlData.publicUrl);
         setNewUnit(prev => ({ ...prev, photoUrl: urlData.publicUrl }));
-        toast.success('Photo uploadée avec succès');
+        toast.success(t('photo_uploaded'));
       }
     } catch (error) {
-      toast.error('Erreur lors de l\'upload de la photo');
+      toast.error(t('upload_error'));
       console.error(error);
     } finally {
       setUploadingPhoto(false);
@@ -131,11 +131,11 @@ const ProductionUnitsManagement = () => {
         await updateUnit(editingUnit.id, unitToSave);
         addLog('Unité modifiée', 'Infrastructures', `Unité ${unitToSave.name} mise à jour`, 'info');
         setEditingUnit(null);
-        toast.success('Unité modifiée avec succès');
+        toast.success(t('unit_modified'));
       } else {
         await addUnit(unitToSave);
         addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${unitToSave.name} ajoutée`, 'success');
-        toast.success('Unité créée avec succès');
+        toast.success(t('unit_created'));
       }
       
       setNewUnit({
@@ -152,7 +152,7 @@ const ProductionUnitsManagement = () => {
       setShowAddDialog(false);
     } catch (error) {
       console.error('Error saving unit:', error);
-      toast.error('Erreur lors de la sauvegarde de l\'unité');
+      toast.error(t('unit_save_error'));
     }
   };
 
@@ -176,10 +176,10 @@ const ProductionUnitsManagement = () => {
     try {
       await deleteUnit(unitId);
       addLog('Unité supprimée', 'Infrastructures', `Unité ${unitName} supprimée définitivement`, 'warning');
-      toast.success('Unité supprimée avec succès');
+      toast.success(t('unit_deleted'));
     } catch (error) {
       console.error('Error deleting unit:', error);
-      toast.error('Erreur lors de la suppression de l\'unité');
+      toast.error(t('unit_delete_error'));
     }
   };
 
@@ -194,7 +194,7 @@ const ProductionUnitsManagement = () => {
       );
     } catch (error) {
       console.error('Error toggling unit:', error);
-      toast.error('Erreur lors de la modification de l\'unité');
+      toast.error(t('unit_toggle_error'));
     }
   };
 
