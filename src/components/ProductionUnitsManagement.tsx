@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 const ProductionUnitsManagement = () => {
   const { units, addUnit, updateUnit, deleteUnit } = useProductionUnits();
   const { addLog } = useLogs();
-  const { t } = useSettings();
+  const { t, language } = useSettings();
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
