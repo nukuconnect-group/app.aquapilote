@@ -224,19 +224,19 @@ const ProductionUnitsManagement = () => {
               </DialogHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm">Nom de l'unité</Label>
+                  <Label className="text-sm">{t('unit_name_label')}</Label>
                   <Input 
                     value={newUnit.name}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Ex: Écloserie principale"
+                    placeholder={t('unit_name_label')}
                     className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Type d'unité</Label>
+                  <Label className="text-sm">{t('unit_type_label')}</Label>
                   <Select value={newUnit.type} onValueChange={(value: ProductionUnitType) => setNewUnit(prev => ({ ...prev, type: value }))}>
                     <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Sélectionner le type" />
+                      <SelectValue placeholder={t('select_type')} />
                     </SelectTrigger>
                     <SelectContent>
                       {unitTypes.map(type => (
@@ -246,7 +246,7 @@ const ProductionUnitsManagement = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-sm">Capacité</Label>
+                  <Label className="text-sm">{t('capacity')}</Label>
                   <Input 
                     type="number"
                     value={newUnit.capacity}
@@ -255,7 +255,7 @@ const ProductionUnitsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Stock actuel</Label>
+                  <Label className="text-sm">{t('current_stock_label')}</Label>
                   <Input 
                     type="number"
                     value={newUnit.currentStock}
@@ -264,11 +264,11 @@ const ProductionUnitsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Responsable</Label>
+                  <Label className="text-sm">{t('manager_label')}</Label>
                   <Input 
                     value={newUnit.manager}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, manager: e.target.value }))}
-                    placeholder="Nom du responsable"
+                    placeholder={t('manager_placeholder')}
                     className="text-sm"
                   />
                 </div>
@@ -277,19 +277,19 @@ const ProductionUnitsManagement = () => {
                     checked={newUnit.isActive}
                     onCheckedChange={(checked) => setNewUnit(prev => ({ ...prev, isActive: checked }))}
                   />
-                  <Label className="text-sm">Unité active</Label>
+                  <Label className="text-sm">{t('unit_active')}</Label>
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-sm">Description</Label>
+                  <Label className="text-sm">{t('unit_description')}</Label>
                   <Textarea 
                     value={newUnit.description}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Description de l'unité..."
+                    placeholder={t('description_placeholder')}
                     className="text-sm"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-sm">Photo de l'unité (optionnel)</Label>
+                  <Label className="text-sm">{t('unit_photo')}</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -303,7 +303,7 @@ const ProductionUnitsManagement = () => {
                         <div className="relative w-full max-w-md">
                           <img
                             src={selectedPhoto}
-                            alt="Photo de l'unité"
+                            alt={t('unit_photo')}
                             className="w-full h-32 sm:h-48 object-cover rounded-lg border-2 border-border"
                           />
                           <Button
