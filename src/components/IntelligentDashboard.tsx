@@ -582,31 +582,31 @@ const IntelligentDashboard = () => {
       {/* Données spécifiques à l'écloserie - uniquement si données réelles */}
       {viewMode === 'unit' && activeUnit?.type === 'ecloserie' && livestock && (livestock.geniteurs_males > 0 || livestock.geniteurs_femelles > 0 || livestock.alevins_total > 0) && <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">Cheptel - Écloserie</CardTitle>
+            <CardTitle className="text-sm sm:text-base">{t('hatchery_livestock_title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* livestock display */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Géniteurs</h4>
+                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">{t('breeders_title')}</h4>
                 <p className="text-xs text-blue-600 dark:text-blue-400">♂ {livestock.geniteurs_males} | ♀ {livestock.geniteurs_femelles}</p>
               </div>
               <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-green-800 dark:text-green-300 mb-1">Production</h4>
-                <p className="text-xs text-green-600 dark:text-green-400">{livestock.alevins_total.toLocaleString()} alevins</p>
+                <h4 className="font-medium text-green-800 dark:text-green-300 mb-1">{t('production_title')}</h4>
+                <p className="text-xs text-green-600 dark:text-green-400">{livestock.alevins_total.toLocaleString()} {t('fry_label')}</p>
               </div>
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-yellow-800 dark:text-yellow-300 mb-1">Performances</h4>
-                <p className="text-xs text-yellow-600 dark:text-yellow-400">Fécondité: {livestock.taux_fecondite}%</p>
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-300 mb-1">{t('performances_title')}</h4>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">{t('fertility_label_short')}: {livestock.taux_fecondite}%</p>
               </div>
             </div>
             
             {livestock.larves_stade1 > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">Stades Larvaires</h4>
+                <h4 className="font-medium text-sm">{t('larval_stages_title')}</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs">Larves</span>
+                    <span className="text-xs">{t('larvae')}</span>
                     <div className="flex items-center gap-2">
                       <Progress value={100} className="w-16 h-2" />
                       <span className="text-xs">{livestock.larves_stade1.toLocaleString()}</span>
@@ -624,7 +624,7 @@ const IntelligentDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
-              Évolution Financière - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
+              {t('financial_evolution_title')} - {viewMode === 'global' ? t('all_units_financial') : activeUnit?.name}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -634,9 +634,9 @@ const IntelligentDashboard = () => {
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenus" />
-                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Dépenses" />
-                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Résultat" />
+                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name={t('revenue_chart_label')} />
+                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name={t('expenses_chart_label')} />
+                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name={t('result_chart_label')} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -652,7 +652,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <UtensilsCrossed className="h-4 w-4 text-orange-600" />
-                  Alimentation - Semaine
+                  {t('feeding_week')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -662,7 +662,7 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="jour" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Bar dataKey="quantite" fill="#f97316" name="Quantité (kg)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="quantite" fill="#f97316" name={t('quantity_kg')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
