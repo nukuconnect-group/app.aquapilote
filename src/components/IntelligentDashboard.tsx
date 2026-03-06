@@ -955,7 +955,7 @@ const IntelligentDashboard = () => {
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-xs text-gray-500">Valeur actuelle</p>
+                              <p className="text-xs text-gray-500">{t('current_net_value')}</p>
                               <p className="font-semibold text-green-600">
                                 {convertCurrency(currentValue, asset.currency, currency).toLocaleString()} {getCurrencySymbol(currency)}
                               </p>
@@ -968,8 +968,8 @@ const IntelligentDashboard = () => {
                       </Card>;
                     }) : <div className="text-center py-6 sm:py-8 text-gray-500">
                       <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                      <p className="text-sm">Aucun équipement amortissable configuré</p>
-                      <p className="text-xs text-muted-foreground mt-1">Ajoutez des équipements dans Comptabilité &gt; Amortissements</p>
+                      <p className="text-sm">{t('no_depreciable_assets')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('add_assets_via_accounting')}</p>
                     </div>}
                   </div>
                 </div>
