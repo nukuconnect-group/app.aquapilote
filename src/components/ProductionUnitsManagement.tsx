@@ -56,12 +56,12 @@ const ProductionUnitsManagement = () => {
   });
 
   const unitTypes = [
-    { value: 'ecloserie', label: 'Écloserie' },
-    { value: 'grossissement', label: 'Grossissement' },
-    { value: 'transformation', label: 'Transformation' },
-    { value: 'conservation', label: 'Conservation' },
-    { value: 'fabrication_aliment', label: 'Fabrication d\'aliment' },
-    { value: 'commercialisation', label: 'Commercialisation' }
+    { value: 'ecloserie', label: t('ecloserie') },
+    { value: 'grossissement', label: t('grossissement') },
+    { value: 'transformation', label: t('transformation') },
+    { value: 'conservation', label: t('conservation') },
+    { value: 'fabrication_aliment', label: t('fabrication_aliment') },
+    { value: 'commercialisation', label: t('commercialisation') }
   ];
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

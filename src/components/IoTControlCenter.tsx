@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useIoT } from '@/contexts/IoTContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import EnvironmentalDashboard from './EnvironmentalDashboard';
 import MqttConfiguration from './MqttConfiguration';
 import IoTAIAnalysis from './iot/IoTAIAnalysis';
@@ -24,11 +25,12 @@ import IoTBasinOverview from './iot/IoTBasinOverview';
 const IoTControlCenter = () => {
   const { activeUnit, units } = useProductionUnits();
   const { getActiveAlerts } = useIoT();
+  const { t } = useSettings();
 
   const [automationRules, setAutomationRules] = useState([
-    { id: 1, name: 'Alerte Oxygène Critique', active: true, conditions: 'O2 < 5mg/L' },
-    { id: 2, name: 'Ajustement pH Auto', active: true, conditions: 'pH < 6.5 ou pH > 8.0' },
-    { id: 3, name: 'Notification Température', active: false, conditions: 'Temp > 28°C' }
+    { id: 1, name: t('low_oxygen') || 'Alerte Oxygène Critique', active: true, conditions: 'O2 < 5mg/L' },
+    { id: 2, name: 'pH Auto', active: true, conditions: 'pH < 6.5 / pH > 8.0' },
+    { id: 3, name: t('temperature_warning') || 'Notification Température', active: false, conditions: 'Temp > 28°C' }
   ]);
 
   const alerts = getActiveAlerts();
@@ -39,13 +41,13 @@ const IoTControlCenter = () => {
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-responsive rounded-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-responsive">
           <div className="flex-1">
-            <h2 className="text-responsive-title font-bold mb-2">Centre de Contrôle & IoT</h2>
-            <p className="text-blue-100 text-responsive">Surveillance intelligente et automatisation avancée</p>
+            <h2 className="text-responsive-title font-bold mb-2">{t('iot_title')}</h2>
+            <p className="text-blue-100 text-responsive">{t('iot_subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 justify-end sm:justify-center">
             <div className="text-center">
               <div className="text-lg sm:text-2xl font-bold">{alerts.length}</div>
-              <div className="text-xs text-blue-200">Alertes Actives</div>
+              <div className="text-xs text-blue-200">{t('active_alerts')}</div>
             </div>
           </div>
         </div>
@@ -56,23 +58,23 @@ const IoTControlCenter = () => {
           <TabsList className="inline-flex w-auto min-w-full sm:w-full gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
               <Waves className="w-4 h-4" />
-              Bassins & Paramètres
+              {t('basins_parameters')}
             </TabsTrigger>
             <TabsTrigger value="ai-analysis" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
               <Brain className="w-4 h-4" />
-              Analyse IA
+              {t('ai_analysis')}
             </TabsTrigger>
             <TabsTrigger value="environmental" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
               <Thermometer className="w-4 h-4" />
-              Environnemental
+              {t('environmental')}
             </TabsTrigger>
             <TabsTrigger value="automation" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
               <Settings className="w-4 h-4" />
-              Automatisation
+              {t('automation')}
             </TabsTrigger>
             <TabsTrigger value="config" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0 gap-1">
               <Wifi className="w-4 h-4" />
-              Configuration
+              {t('configuration')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -95,7 +97,7 @@ const IoTControlCenter = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-orange-600" />
-                Règles d'Automatisation
+                {t('automation_rules')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -108,7 +110,7 @@ const IoTControlCenter = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={rule.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                        {rule.active ? 'Actif' : 'Inactif'}
+                        {rule.active ? t('active_status') : t('inactive_status')}
                       </Badge>
                       <Button size="sm" variant="outline">
                         <Settings className="w-4 h-4" />
