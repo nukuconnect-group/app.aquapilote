@@ -226,25 +226,25 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('male_breeders'),
           value: maleCount > 0 ? maleCount.toLocaleString() : "0",
-          subtitle: maleCount > 0 ? t('mature_breeding') : "Aucun enregistré",
+          subtitle: maleCount > 0 ? t('mature_breeding') : t('none_registered'),
           icon: Fish,
           color: "blue"
         }, {
           title: t('female_breeders'),
           value: femaleCount > 0 ? femaleCount.toLocaleString() : "0",
-          subtitle: femaleCount > 0 ? t('spawning_period') : "Aucun enregistré",
+          subtitle: femaleCount > 0 ? t('spawning_period') : t('none_registered'),
           icon: Heart,
           color: "pink"
         }, {
           title: t('fertility_rate'),
           value: fertilityRate > 0 ? `${fertilityRate}%` : "0%",
-          subtitle: fertilityRate > 0 ? `${t('vs_previous_cycle')}` : "Aucune donnée",
+          subtitle: fertilityRate > 0 ? `${t('vs_previous_cycle')}` : t('no_data'),
           icon: Egg,
           color: "yellow"
         }, {
           title: t('fry_produced'),
           value: fryCount > 0 ? fryCount.toLocaleString() : "0",
-          subtitle: fryCount > 0 ? t('this_cycle') : "Aucune production",
+          subtitle: fryCount > 0 ? t('this_cycle') : t('no_production'),
           icon: Activity,
           color: "green"
         }],
@@ -269,7 +269,7 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('fish_transformed'),
           value: "0 kg",
-          subtitle: "Cette semaine",
+          subtitle: t('this_week'),
           icon: Scale,
           color: "orange"
         }, {
@@ -281,7 +281,7 @@ const IntelligentDashboard = () => {
         }, {
           title: t('yield_label'),
           value: "0%",
-          subtitle: "Aucune donnée",
+          subtitle: t('no_data'),
           icon: TrendingUp,
           color: "green"
         }],
@@ -296,13 +296,13 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('cold_rooms'),
           value: coldRooms.toString(),
-          subtitle: coldRooms > 0 ? t('all_operational') : "Aucune configurée",
+          subtitle: coldRooms > 0 ? t('all_operational') : t('no_data_configured'),
           icon: Thermometer,
           color: "blue"
         }, {
           title: t('avg_temperature'),
           value: "--°C",
-          subtitle: "Aucune donnée",
+          subtitle: t('no_data'),
           icon: Thermometer,
           color: "cyan"
         }, {
@@ -329,13 +329,13 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('avg_growth'),
           value: avgWeight > 0 ? `${avgWeight}g` : "0g",
-          subtitle: avgWeight > 0 ? t('current_avg_weight') : "Aucune donnée",
+          subtitle: avgWeight > 0 ? t('current_avg_weight') : t('no_data'),
           icon: TrendingUp,
           color: "green"
         }, {
           title: t('mortality_label'),
           value: `${mortalityRate}%`,
-          subtitle: parseFloat(mortalityRate) <= 5 ? t('acceptable_rate') : "À surveiller",
+          subtitle: parseFloat(mortalityRate) <= 5 ? t('acceptable_rate') : t('to_monitor'),
           icon: Activity,
           color: "red"
         }],
