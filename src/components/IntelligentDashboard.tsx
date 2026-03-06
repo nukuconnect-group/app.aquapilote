@@ -675,7 +675,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Droplets className="h-4 w-4 text-blue-600" />
-                  Qualité de l'Eau - Aujourd'hui
+                  {t('water_quality_today')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -685,8 +685,8 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="heure" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name="Temp (°C)" />
-                    <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name="O₂ (mg/L)" />
+                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name={t('temp_label')} />
+                    <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name={t('o2_label')} />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -699,7 +699,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Activity className="h-4 w-4 text-red-600" />
-                  Mortalité - 4 Dernières Semaines
+                  {t('mortality_4weeks')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -709,8 +709,8 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="semaine" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="objectif" fill="#d1d5db" name="Objectif max" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="mortalite" fill="#ef4444" name={t('mortality_chart_label')} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="objectif" fill="#d1d5db" name={t('objective_max')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -723,7 +723,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Fish className="h-4 w-4 text-aqua-600" />
-                  Production par Espèce
+                  {t('production_by_species')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -758,9 +758,9 @@ const IntelligentDashboard = () => {
         <Card className="border-dashed">
           <CardContent className="py-8 text-center">
             <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <h4 className="font-medium text-sm mb-1">Aucune donnée enregistrée</h4>
+            <h4 className="font-medium text-sm mb-1">{t('no_data_recorded')}</h4>
             <p className="text-xs text-muted-foreground">
-              Commencez à enregistrer des données d'alimentation, santé et lots pour voir les graphiques
+              {t('start_recording_data')}
             </p>
           </CardContent>
         </Card>
@@ -769,10 +769,10 @@ const IntelligentDashboard = () => {
       {/* Onglets pour données spécifiques à l'unité */}
       {viewMode === 'unit' && activeUnit && <Tabs defaultValue="cycles" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 text-xs sm:text-sm">
-            <TabsTrigger value="cycles">Cycles</TabsTrigger>
-            <TabsTrigger value="equipment">Équipements</TabsTrigger>
-            <TabsTrigger value="infrastructure">Infrastructures</TabsTrigger>
-            <TabsTrigger value="depreciation">Amortissements</TabsTrigger>
+            <TabsTrigger value="cycles">{t('cycles_tab_label')}</TabsTrigger>
+            <TabsTrigger value="equipment">{t('equipment_tab_label')}</TabsTrigger>
+            <TabsTrigger value="infrastructure">{t('infrastructure_tab_label')}</TabsTrigger>
+            <TabsTrigger value="depreciation">{t('depreciation_tab')}</TabsTrigger>
           </TabsList>
 
           {/* tabs content */}
@@ -795,19 +795,19 @@ const IntelligentDashboard = () => {
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm sm:text-base truncate">{cycle.name}</h4>
                             <p className="text-xs sm:text-sm text-gray-600">
-                              Démarré le {new Date(cycle.start_date).toLocaleDateString('fr-FR')} • {daysPassed} jours
+                              {t('started_on_date')} {new Date(cycle.start_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')} • {daysPassed} {t('days_label')}
                             </p>
                             <div className="mt-2 space-y-2">
                               <div>
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Progression temporelle</span>
+                                  <span>{t('temporal_progress')}</span>
                                   <span>{temporalProgress.toFixed(0)}%</span>
                                 </div>
                                 <Progress value={temporalProgress} className="h-2" />
                               </div>
                               <div>
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Production</span>
+                                  <span>{t('production_progress')}</span>
                                   <span>{(cycle.current_quantity || 0).toLocaleString()}/{(cycle.target_quantity || 0).toLocaleString()}</span>
                                 </div>
                                 <Progress value={quantityProgress} className="h-2 bg-blue-100 [&>div]:bg-blue-500" />
