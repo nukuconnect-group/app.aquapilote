@@ -316,7 +316,7 @@ const ProductionUnitsManagement = () => {
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Photo sélectionnée</p>
+                        <p className="text-xs text-muted-foreground">{t('photo_selected')}</p>
                       </div>
                     ) : (
                       <Button
@@ -327,7 +327,7 @@ const ProductionUnitsManagement = () => {
                         disabled={uploadingPhoto}
                       >
                         <Camera className="w-4 h-4 mr-2" />
-                        {uploadingPhoto ? 'Upload en cours...' : 'Ajouter une photo'}
+                        {uploadingPhoto ? t('uploading') : t('add_photo')}
                       </Button>
                     )}
                   </div>
@@ -444,7 +444,7 @@ const ProductionUnitsManagement = () => {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">{t('capacity')}:</span>
+                   <span className="text-gray-600">{t('capacity')}:</span>
                   <span className="ml-1 font-medium">{unit.capacity.toLocaleString()}</span>
                 </div>
                 <div>
@@ -456,7 +456,7 @@ const ProductionUnitsManagement = () => {
                   <span className="ml-1 font-medium">{((unit.currentStock / unit.capacity) * 100).toFixed(1)}%</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">{t('name')}:</span>
+                  <span className="text-gray-600">{t('manager_label')}:</span>
                   <span className="ml-1 font-medium">{unit.manager}</span>
                 </div>
               </div>
@@ -475,11 +475,11 @@ const ProductionUnitsManagement = () => {
         <Sheet open={showConfigDialog} onOpenChange={setShowConfigDialog}>
           <SheetContent side="bottom" className="h-[70vh]">
             <SheetHeader>
-              <SheetTitle>Configuration - {configUnit?.name}</SheetTitle>
+              <SheetTitle>{t('unit_config')} - {configUnit?.name}</SheetTitle>
             </SheetHeader>
             <div className="space-y-4 mt-4">
               <div className="flex items-center justify-between">
-                <Label>État de l'unité</Label>
+                <Label>{t('unit_state')}</Label>
                 <Switch 
                   checked={configUnit?.isActive}
                   onCheckedChange={(checked) => {
@@ -489,9 +489,9 @@ const ProductionUnitsManagement = () => {
                 />
               </div>
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
-                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+                <p><strong>{t('type')}:</strong> {unitTypes.find(tp => tp.value === configUnit?.type)?.label}</p>
+                <p><strong>{t('created_on')}:</strong> {new Date(configUnit?.createdAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')}</p>
+                <p><strong>{t('total_capacity')}:</strong> {configUnit?.capacity?.toLocaleString()}</p>
               </div>
             </div>
           </SheetContent>
@@ -500,11 +500,11 @@ const ProductionUnitsManagement = () => {
         <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
           <DialogContent className="max-w-full sm:max-w-lg mx-2">
             <DialogHeader>
-              <DialogTitle>Configuration - {configUnit?.name}</DialogTitle>
+              <DialogTitle>{t('unit_config')} - {configUnit?.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>État de l'unité</Label>
+                <Label>{t('unit_state')}</Label>
                 <Switch 
                   checked={configUnit?.isActive}
                   onCheckedChange={(checked) => {
@@ -514,9 +514,9 @@ const ProductionUnitsManagement = () => {
                 />
               </div>
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
-                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+                <p><strong>{t('type')}:</strong> {unitTypes.find(tp => tp.value === configUnit?.type)?.label}</p>
+                <p><strong>{t('created_on')}:</strong> {new Date(configUnit?.createdAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')}</p>
+                <p><strong>{t('total_capacity')}:</strong> {configUnit?.capacity?.toLocaleString()}</p>
               </div>
             </div>
           </DialogContent>
