@@ -492,22 +492,22 @@ const IntelligentDashboard = () => {
       [{
         title: t('revenue'),
         value: formatCurrency(financialSummary.totalRevenue),
-        subtitle: `${financialSummary.confirmedSales} ${t('confirmed_sales') || 'ventes'}`,
+        subtitle: `${financialSummary.confirmedSales} ${t('confirmed_sales')}`,
         icon: TrendingUp
       }, {
         title: t('expenses'),
         value: formatCurrency(financialSummary.totalExpenses),
-        subtitle: `${financialSummary.purchasesCount} ${t('purchases') || 'achats'}`,
+        subtitle: `${financialSummary.purchasesCount} ${t('purchases_count')}`,
         icon: Activity
       }, {
         title: t('profit'),
         value: formatCurrency(financialSummary.netBalance),
-        subtitle: financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit',
+        subtitle: financialSummary.netBalance >= 0 ? t('benefit') : t('deficit'),
         icon: Fish
       }, {
         title: t('profit_margin'),
         value: financialSummary.totalRevenue > 0 ? `${(financialSummary.netBalance / financialSummary.totalRevenue * 100).toFixed(1)}%` : "0%",
-        subtitle: `${financialSummary.employeesCount} employés`,
+        subtitle: `${financialSummary.employeesCount} ${t('employees_count')}`,
         icon: Factory
       }].map((metric, index) => {
         const IconComponent = metric.icon;
@@ -530,7 +530,7 @@ const IntelligentDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-emerald-600" />
-              Résumé Financier - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
+              {t('financial_summary')} - {viewMode === 'global' ? t('all_units_financial') : activeUnit?.name}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -538,40 +538,40 @@ const IntelligentDashboard = () => {
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Revenus</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('revenues')}</span>
                 </div>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(financialSummary.totalRevenue)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.confirmedSales} ventes</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.confirmedSales} {t('confirmed_sales')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <ShoppingCart className="h-4 w-4 text-red-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Dépenses</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('expenses_label')}</span>
                 </div>
                 <p className="text-lg font-bold text-red-600">{formatCurrency(financialSummary.totalExpenses)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.purchasesCount} achats</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.purchasesCount} {t('purchases_count')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-purple-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Salaires</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('salaries')}</span>
                 </div>
                 <p className="text-lg font-bold text-purple-600">{formatCurrency(financialSummary.totalSalaries)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.employeesCount} employés</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.employeesCount} {t('employees_count')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-emerald-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Solde</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('balance')}</span>
                 </div>
                 <p className={`text-lg font-bold ${financialSummary.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {formatCurrency(financialSummary.netBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit'}
+                  {financialSummary.netBalance >= 0 ? t('benefit') : t('deficit')}
                 </p>
               </div>
             </div>
