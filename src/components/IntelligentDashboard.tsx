@@ -815,14 +815,14 @@ const IntelligentDashboard = () => {
                             </div>
                           </div>
                           <Badge variant={cycle.status === 'active' ? 'default' : 'secondary'} className="text-xs shrink-0">
-                            {cycle.status === 'active' ? 'En cours' : cycle.status === 'completed' ? 'Terminé' : cycle.status}
+                            {cycle.status === 'active' ? t('in_progress_status') : cycle.status === 'completed' ? t('completed_status') : cycle.status}
                           </Badge>
                         </div>
                       </CardContent>
                     </Card>;
                   }) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucun cycle actif</p>
+                  <p className="text-sm">{t('no_active_cycles_msg')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -850,7 +850,7 @@ const IntelligentDashboard = () => {
                     </CardContent>
                   </Card>) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <Settings className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucun équipement configuré</p>
+                  <p className="text-sm">{t('no_equipment_configured')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -863,7 +863,7 @@ const IntelligentDashboard = () => {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm sm:text-base truncate">{infra.name}</h4>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            Capacité: {infra.capacity.toLocaleString()}
+                            {t('capacity')}: {infra.capacity.toLocaleString()}
                           </p>
                           {infra.specifications && <div className="mt-2 flex flex-wrap gap-1">
                               {Object.entries(infra.specifications).slice(0, 3).map(([key, value]) => <span key={key} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs">
@@ -878,7 +878,7 @@ const IntelligentDashboard = () => {
                     </CardContent>
                   </Card>) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucune infrastructure configurée</p>
+                  <p className="text-sm">{t('no_infrastructure_configured')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -910,19 +910,19 @@ const IntelligentDashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Card className="bg-blue-50/50 dark:bg-blue-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Valeur d'acquisition</p>
+                          <p className="text-xs text-muted-foreground">{t('acquisition_value')}</p>
                           <p className="text-lg font-bold text-blue-600">{totalValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
                       <Card className="bg-orange-50/50 dark:bg-orange-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Amortissements cumulés</p>
+                          <p className="text-xs text-muted-foreground">{t('cumulated_depreciation')}</p>
                           <p className="text-lg font-bold text-orange-600">{totalDepreciation.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
                       <Card className="bg-green-50/50 dark:bg-green-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Valeur nette actuelle</p>
+                          <p className="text-xs text-muted-foreground">{t('current_net_value')}</p>
                           <p className="text-lg font-bold text-green-600">{totalCurrentValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
@@ -944,11 +944,11 @@ const IntelligentDashboard = () => {
                                 <Badge variant="outline" className="text-xs">{asset.category}</Badge>
                               </div>
                               <p className="text-xs sm:text-sm text-gray-600">
-                                Acquis le {new Date(asset.purchaseDate).toLocaleDateString('fr-FR')} • {asset.usefulLife} ans
+                                Acquis le {new Date(asset.purchaseDate).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')} • {asset.usefulLife} {t('years')}
                               </p>
                               <div className="mt-2">
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Amortissement</span>
+                                  <span>{t('depreciation_tab')}</span>
                                   <span>{depreciationPercent.toFixed(0)}%</span>
                                 </div>
                                 <Progress value={depreciationPercent} className="h-2 bg-orange-100 [&>div]:bg-orange-500" />
