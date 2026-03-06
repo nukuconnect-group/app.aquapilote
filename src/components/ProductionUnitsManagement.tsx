@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 const ProductionUnitsManagement = () => {
   const { units, addUnit, updateUnit, deleteUnit } = useProductionUnits();
   const { addLog } = useLogs();
-  const { t } = useSettings();
+  const { t, language } = useSettings();
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -56,12 +56,12 @@ const ProductionUnitsManagement = () => {
   });
 
   const unitTypes = [
-    { value: 'ecloserie', label: 'Écloserie' },
-    { value: 'grossissement', label: 'Grossissement' },
-    { value: 'transformation', label: 'Transformation' },
-    { value: 'conservation', label: 'Conservation' },
-    { value: 'fabrication_aliment', label: 'Fabrication d\'aliment' },
-    { value: 'commercialisation', label: 'Commercialisation' }
+    { value: 'ecloserie', label: t('ecloserie') },
+    { value: 'grossissement', label: t('grossissement') },
+    { value: 'transformation', label: t('transformation') },
+    { value: 'conservation', label: t('conservation') },
+    { value: 'fabrication_aliment', label: t('fabrication_aliment') },
+    { value: 'commercialisation', label: t('commercialisation') }
   ];
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +69,7 @@ const ProductionUnitsManagement = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image');
+      toast.error(t('select_image'));
       return;
     }
 
@@ -80,7 +80,7 @@ const ProductionUnitsManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error('Vous devez être connecté');
+        toast.error(t('must_be_connected'));
         return;
       }
 
@@ -105,10 +105,10 @@ const ProductionUnitsManagement = () => {
       if (urlData?.publicUrl) {
         setSelectedPhoto(urlData.publicUrl);
         setNewUnit(prev => ({ ...prev, photoUrl: urlData.publicUrl }));
-        toast.success('Photo uploadée avec succès');
+        toast.success(t('photo_uploaded'));
       }
     } catch (error) {
-      toast.error('Erreur lors de l\'upload de la photo');
+      toast.error(t('upload_error'));
       console.error(error);
     } finally {
       setUploadingPhoto(false);
@@ -131,11 +131,11 @@ const ProductionUnitsManagement = () => {
         await updateUnit(editingUnit.id, unitToSave);
         addLog('Unité modifiée', 'Infrastructures', `Unité ${unitToSave.name} mise à jour`, 'info');
         setEditingUnit(null);
-        toast.success('Unité modifiée avec succès');
+        toast.success(t('unit_modified'));
       } else {
         await addUnit(unitToSave);
         addLog('Unité créée', 'Infrastructures', `Nouvelle unité ${unitToSave.name} ajoutée`, 'success');
-        toast.success('Unité créée avec succès');
+        toast.success(t('unit_created'));
       }
       
       setNewUnit({
@@ -152,7 +152,7 @@ const ProductionUnitsManagement = () => {
       setShowAddDialog(false);
     } catch (error) {
       console.error('Error saving unit:', error);
-      toast.error('Erreur lors de la sauvegarde de l\'unité');
+      toast.error(t('unit_save_error'));
     }
   };
 
@@ -176,10 +176,10 @@ const ProductionUnitsManagement = () => {
     try {
       await deleteUnit(unitId);
       addLog('Unité supprimée', 'Infrastructures', `Unité ${unitName} supprimée définitivement`, 'warning');
-      toast.success('Unité supprimée avec succès');
+      toast.success(t('unit_deleted'));
     } catch (error) {
       console.error('Error deleting unit:', error);
-      toast.error('Erreur lors de la suppression de l\'unité');
+      toast.error(t('unit_delete_error'));
     }
   };
 
@@ -194,7 +194,7 @@ const ProductionUnitsManagement = () => {
       );
     } catch (error) {
       console.error('Error toggling unit:', error);
-      toast.error('Erreur lors de la modification de l\'unité');
+      toast.error(t('unit_toggle_error'));
     }
   };
 
@@ -224,19 +224,19 @@ const ProductionUnitsManagement = () => {
               </DialogHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm">Nom de l'unité</Label>
+                  <Label className="text-sm">{t('unit_name_label')}</Label>
                   <Input 
                     value={newUnit.name}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Ex: Écloserie principale"
+                    placeholder={t('unit_name_label')}
                     className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Type d'unité</Label>
+                  <Label className="text-sm">{t('unit_type_label')}</Label>
                   <Select value={newUnit.type} onValueChange={(value: ProductionUnitType) => setNewUnit(prev => ({ ...prev, type: value }))}>
                     <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Sélectionner le type" />
+                      <SelectValue placeholder={t('select_type')} />
                     </SelectTrigger>
                     <SelectContent>
                       {unitTypes.map(type => (
@@ -246,7 +246,7 @@ const ProductionUnitsManagement = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-sm">Capacité</Label>
+                  <Label className="text-sm">{t('capacity')}</Label>
                   <Input 
                     type="number"
                     value={newUnit.capacity}
@@ -255,7 +255,7 @@ const ProductionUnitsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Stock actuel</Label>
+                  <Label className="text-sm">{t('current_stock_label')}</Label>
                   <Input 
                     type="number"
                     value={newUnit.currentStock}
@@ -264,11 +264,11 @@ const ProductionUnitsManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Responsable</Label>
+                  <Label className="text-sm">{t('manager_label')}</Label>
                   <Input 
                     value={newUnit.manager}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, manager: e.target.value }))}
-                    placeholder="Nom du responsable"
+                    placeholder={t('manager_placeholder')}
                     className="text-sm"
                   />
                 </div>
@@ -277,19 +277,19 @@ const ProductionUnitsManagement = () => {
                     checked={newUnit.isActive}
                     onCheckedChange={(checked) => setNewUnit(prev => ({ ...prev, isActive: checked }))}
                   />
-                  <Label className="text-sm">Unité active</Label>
+                  <Label className="text-sm">{t('unit_active')}</Label>
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-sm">Description</Label>
+                  <Label className="text-sm">{t('unit_description')}</Label>
                   <Textarea 
                     value={newUnit.description}
                     onChange={(e) => setNewUnit(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Description de l'unité..."
+                    placeholder={t('description_placeholder')}
                     className="text-sm"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-sm">Photo de l'unité (optionnel)</Label>
+                  <Label className="text-sm">{t('unit_photo')}</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -303,7 +303,7 @@ const ProductionUnitsManagement = () => {
                         <div className="relative w-full max-w-md">
                           <img
                             src={selectedPhoto}
-                            alt="Photo de l'unité"
+                            alt={t('unit_photo')}
                             className="w-full h-32 sm:h-48 object-cover rounded-lg border-2 border-border"
                           />
                           <Button
@@ -316,7 +316,7 @@ const ProductionUnitsManagement = () => {
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Photo sélectionnée</p>
+                        <p className="text-xs text-muted-foreground">{t('photo_selected')}</p>
                       </div>
                     ) : (
                       <Button
@@ -327,7 +327,7 @@ const ProductionUnitsManagement = () => {
                         disabled={uploadingPhoto}
                       >
                         <Camera className="w-4 h-4 mr-2" />
-                        {uploadingPhoto ? 'Upload en cours...' : 'Ajouter une photo'}
+                        {uploadingPhoto ? t('uploading') : t('add_photo')}
                       </Button>
                     )}
                   </div>
@@ -444,7 +444,7 @@ const ProductionUnitsManagement = () => {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">{t('capacity')}:</span>
+                   <span className="text-gray-600">{t('capacity')}:</span>
                   <span className="ml-1 font-medium">{unit.capacity.toLocaleString()}</span>
                 </div>
                 <div>
@@ -456,7 +456,7 @@ const ProductionUnitsManagement = () => {
                   <span className="ml-1 font-medium">{((unit.currentStock / unit.capacity) * 100).toFixed(1)}%</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">{t('name')}:</span>
+                  <span className="text-gray-600">{t('manager_label')}:</span>
                   <span className="ml-1 font-medium">{unit.manager}</span>
                 </div>
               </div>
@@ -475,11 +475,11 @@ const ProductionUnitsManagement = () => {
         <Sheet open={showConfigDialog} onOpenChange={setShowConfigDialog}>
           <SheetContent side="bottom" className="h-[70vh]">
             <SheetHeader>
-              <SheetTitle>Configuration - {configUnit?.name}</SheetTitle>
+              <SheetTitle>{t('unit_config')} - {configUnit?.name}</SheetTitle>
             </SheetHeader>
             <div className="space-y-4 mt-4">
               <div className="flex items-center justify-between">
-                <Label>État de l'unité</Label>
+                <Label>{t('unit_state')}</Label>
                 <Switch 
                   checked={configUnit?.isActive}
                   onCheckedChange={(checked) => {
@@ -489,9 +489,9 @@ const ProductionUnitsManagement = () => {
                 />
               </div>
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
-                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+                <p><strong>{t('type')}:</strong> {unitTypes.find(tp => tp.value === configUnit?.type)?.label}</p>
+                <p><strong>{t('created_on')}:</strong> {new Date(configUnit?.createdAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')}</p>
+                <p><strong>{t('total_capacity')}:</strong> {configUnit?.capacity?.toLocaleString()}</p>
               </div>
             </div>
           </SheetContent>
@@ -500,11 +500,11 @@ const ProductionUnitsManagement = () => {
         <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
           <DialogContent className="max-w-full sm:max-w-lg mx-2">
             <DialogHeader>
-              <DialogTitle>Configuration - {configUnit?.name}</DialogTitle>
+              <DialogTitle>{t('unit_config')} - {configUnit?.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>État de l'unité</Label>
+                <Label>{t('unit_state')}</Label>
                 <Switch 
                   checked={configUnit?.isActive}
                   onCheckedChange={(checked) => {
@@ -514,9 +514,9 @@ const ProductionUnitsManagement = () => {
                 />
               </div>
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Type:</strong> {unitTypes.find(t => t.value === configUnit?.type)?.label}</p>
-                <p><strong>Créée le:</strong> {new Date(configUnit?.createdAt).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Capacité totale:</strong> {configUnit?.capacity?.toLocaleString()}</p>
+                <p><strong>{t('type')}:</strong> {unitTypes.find(tp => tp.value === configUnit?.type)?.label}</p>
+                <p><strong>{t('created_on')}:</strong> {new Date(configUnit?.createdAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')}</p>
+                <p><strong>{t('total_capacity')}:</strong> {configUnit?.capacity?.toLocaleString()}</p>
               </div>
             </div>
           </DialogContent>

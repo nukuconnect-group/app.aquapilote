@@ -226,25 +226,25 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('male_breeders'),
           value: maleCount > 0 ? maleCount.toLocaleString() : "0",
-          subtitle: maleCount > 0 ? t('mature_breeding') : "Aucun enregistré",
+          subtitle: maleCount > 0 ? t('mature_breeding') : t('none_registered'),
           icon: Fish,
           color: "blue"
         }, {
           title: t('female_breeders'),
           value: femaleCount > 0 ? femaleCount.toLocaleString() : "0",
-          subtitle: femaleCount > 0 ? t('spawning_period') : "Aucun enregistré",
+          subtitle: femaleCount > 0 ? t('spawning_period') : t('none_registered'),
           icon: Heart,
           color: "pink"
         }, {
           title: t('fertility_rate'),
           value: fertilityRate > 0 ? `${fertilityRate}%` : "0%",
-          subtitle: fertilityRate > 0 ? `${t('vs_previous_cycle')}` : "Aucune donnée",
+          subtitle: fertilityRate > 0 ? `${t('vs_previous_cycle')}` : t('no_data'),
           icon: Egg,
           color: "yellow"
         }, {
           title: t('fry_produced'),
           value: fryCount > 0 ? fryCount.toLocaleString() : "0",
-          subtitle: fryCount > 0 ? t('this_cycle') : "Aucune production",
+          subtitle: fryCount > 0 ? t('this_cycle') : t('no_production'),
           icon: Activity,
           color: "green"
         }],
@@ -269,7 +269,7 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('fish_transformed'),
           value: "0 kg",
-          subtitle: "Cette semaine",
+          subtitle: t('this_week'),
           icon: Scale,
           color: "orange"
         }, {
@@ -281,7 +281,7 @@ const IntelligentDashboard = () => {
         }, {
           title: t('yield_label'),
           value: "0%",
-          subtitle: "Aucune donnée",
+          subtitle: t('no_data'),
           icon: TrendingUp,
           color: "green"
         }],
@@ -296,13 +296,13 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('cold_rooms'),
           value: coldRooms.toString(),
-          subtitle: coldRooms > 0 ? t('all_operational') : "Aucune configurée",
+          subtitle: coldRooms > 0 ? t('all_operational') : t('no_data_configured'),
           icon: Thermometer,
           color: "blue"
         }, {
           title: t('avg_temperature'),
           value: "--°C",
-          subtitle: "Aucune donnée",
+          subtitle: t('no_data'),
           icon: Thermometer,
           color: "cyan"
         }, {
@@ -329,13 +329,13 @@ const IntelligentDashboard = () => {
         metrics: [...baseMetrics, {
           title: t('avg_growth'),
           value: avgWeight > 0 ? `${avgWeight}g` : "0g",
-          subtitle: avgWeight > 0 ? t('current_avg_weight') : "Aucune donnée",
+          subtitle: avgWeight > 0 ? t('current_avg_weight') : t('no_data'),
           icon: TrendingUp,
           color: "green"
         }, {
           title: t('mortality_label'),
           value: `${mortalityRate}%`,
-          subtitle: parseFloat(mortalityRate) <= 5 ? t('acceptable_rate') : "À surveiller",
+          subtitle: parseFloat(mortalityRate) <= 5 ? t('acceptable_rate') : t('to_monitor'),
           icon: Activity,
           color: "red"
         }],
@@ -492,22 +492,22 @@ const IntelligentDashboard = () => {
       [{
         title: t('revenue'),
         value: formatCurrency(financialSummary.totalRevenue),
-        subtitle: `${financialSummary.confirmedSales} ${t('confirmed_sales') || 'ventes'}`,
+        subtitle: `${financialSummary.confirmedSales} ${t('confirmed_sales')}`,
         icon: TrendingUp
       }, {
         title: t('expenses'),
         value: formatCurrency(financialSummary.totalExpenses),
-        subtitle: `${financialSummary.purchasesCount} ${t('purchases') || 'achats'}`,
+        subtitle: `${financialSummary.purchasesCount} ${t('purchases_count')}`,
         icon: Activity
       }, {
         title: t('profit'),
         value: formatCurrency(financialSummary.netBalance),
-        subtitle: financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit',
+        subtitle: financialSummary.netBalance >= 0 ? t('benefit') : t('deficit'),
         icon: Fish
       }, {
         title: t('profit_margin'),
         value: financialSummary.totalRevenue > 0 ? `${(financialSummary.netBalance / financialSummary.totalRevenue * 100).toFixed(1)}%` : "0%",
-        subtitle: `${financialSummary.employeesCount} employés`,
+        subtitle: `${financialSummary.employeesCount} ${t('employees_count')}`,
         icon: Factory
       }].map((metric, index) => {
         const IconComponent = metric.icon;
@@ -530,7 +530,7 @@ const IntelligentDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-emerald-600" />
-              Résumé Financier - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
+              {t('financial_summary')} - {viewMode === 'global' ? t('all_units_financial') : activeUnit?.name}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -538,40 +538,40 @@ const IntelligentDashboard = () => {
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Revenus</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('revenues')}</span>
                 </div>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(financialSummary.totalRevenue)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.confirmedSales} ventes</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.confirmedSales} {t('confirmed_sales')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <ShoppingCart className="h-4 w-4 text-red-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Dépenses</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('expenses_label')}</span>
                 </div>
                 <p className="text-lg font-bold text-red-600">{formatCurrency(financialSummary.totalExpenses)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.purchasesCount} achats</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.purchasesCount} {t('purchases_count')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="h-4 w-4 text-purple-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Salaires</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('salaries')}</span>
                 </div>
                 <p className="text-lg font-bold text-purple-600">{formatCurrency(financialSummary.totalSalaries)}</p>
-                <p className="text-xs text-muted-foreground">{financialSummary.employeesCount} employés</p>
+                <p className="text-xs text-muted-foreground">{financialSummary.employeesCount} {t('employees_count')}</p>
               </div>
               
               <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-emerald-600" />
-                  <span className="text-xs font-medium text-muted-foreground">Solde</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('balance')}</span>
                 </div>
                 <p className={`text-lg font-bold ${financialSummary.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {formatCurrency(financialSummary.netBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {financialSummary.netBalance >= 0 ? 'Bénéfice' : 'Déficit'}
+                  {financialSummary.netBalance >= 0 ? t('benefit') : t('deficit')}
                 </p>
               </div>
             </div>
@@ -582,31 +582,31 @@ const IntelligentDashboard = () => {
       {/* Données spécifiques à l'écloserie - uniquement si données réelles */}
       {viewMode === 'unit' && activeUnit?.type === 'ecloserie' && livestock && (livestock.geniteurs_males > 0 || livestock.geniteurs_femelles > 0 || livestock.alevins_total > 0) && <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">Cheptel - Écloserie</CardTitle>
+            <CardTitle className="text-sm sm:text-base">{t('hatchery_livestock_title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* livestock display */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Géniteurs</h4>
+                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-1">{t('breeders_title')}</h4>
                 <p className="text-xs text-blue-600 dark:text-blue-400">♂ {livestock.geniteurs_males} | ♀ {livestock.geniteurs_femelles}</p>
               </div>
               <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-green-800 dark:text-green-300 mb-1">Production</h4>
-                <p className="text-xs text-green-600 dark:text-green-400">{livestock.alevins_total.toLocaleString()} alevins</p>
+                <h4 className="font-medium text-green-800 dark:text-green-300 mb-1">{t('production_title')}</h4>
+                <p className="text-xs text-green-600 dark:text-green-400">{livestock.alevins_total.toLocaleString()} {t('fry_label')}</p>
               </div>
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-                <h4 className="font-medium text-yellow-800 dark:text-yellow-300 mb-1">Performances</h4>
-                <p className="text-xs text-yellow-600 dark:text-yellow-400">Fécondité: {livestock.taux_fecondite}%</p>
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-300 mb-1">{t('performances_title')}</h4>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">{t('fertility_label_short')}: {livestock.taux_fecondite}%</p>
               </div>
             </div>
             
             {livestock.larves_stade1 > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">Stades Larvaires</h4>
+                <h4 className="font-medium text-sm">{t('larval_stages_title')}</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs">Larves</span>
+                    <span className="text-xs">{t('larvae')}</span>
                     <div className="flex items-center gap-2">
                       <Progress value={100} className="w-16 h-2" />
                       <span className="text-xs">{livestock.larves_stade1.toLocaleString()}</span>
@@ -624,7 +624,7 @@ const IntelligentDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600" />
-              Évolution Financière - {viewMode === 'global' ? 'Toutes Unités' : activeUnit?.name}
+              {t('financial_evolution_title')} - {viewMode === 'global' ? t('all_units_financial') : activeUnit?.name}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -634,9 +634,9 @@ const IntelligentDashboard = () => {
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenus" />
-                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Dépenses" />
-                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Résultat" />
+                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name={t('revenue_chart_label')} />
+                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name={t('expenses_chart_label')} />
+                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name={t('result_chart_label')} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -652,7 +652,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <UtensilsCrossed className="h-4 w-4 text-orange-600" />
-                  Alimentation - Semaine
+                  {t('feeding_week')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -662,7 +662,7 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="jour" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Bar dataKey="quantite" fill="#f97316" name="Quantité (kg)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="quantite" fill="#f97316" name={t('quantity_kg')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -675,7 +675,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Droplets className="h-4 w-4 text-blue-600" />
-                  Qualité de l'Eau - Aujourd'hui
+                  {t('water_quality_today')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -685,8 +685,8 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="heure" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name="Temp (°C)" />
-                    <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name="O₂ (mg/L)" />
+                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fill="#fecaca" name={t('temp_label')} />
+                    <Area type="monotone" dataKey="oxygene" stroke="#3b82f6" fill="#bfdbfe" name={t('o2_label')} />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -699,7 +699,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Activity className="h-4 w-4 text-red-600" />
-                  Mortalité - 4 Dernières Semaines
+                  {t('mortality_4weeks')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -709,8 +709,8 @@ const IntelligentDashboard = () => {
                     <XAxis dataKey="semaine" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip />
-                    <Bar dataKey="mortalite" fill="#ef4444" name="Mortalité" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="objectif" fill="#d1d5db" name="Objectif max" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="mortalite" fill="#ef4444" name={t('mortality_chart_label')} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="objectif" fill="#d1d5db" name={t('objective_max')} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -723,7 +723,7 @@ const IntelligentDashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Fish className="h-4 w-4 text-aqua-600" />
-                  Production par Espèce
+                  {t('production_by_species')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -758,9 +758,9 @@ const IntelligentDashboard = () => {
         <Card className="border-dashed">
           <CardContent className="py-8 text-center">
             <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <h4 className="font-medium text-sm mb-1">Aucune donnée enregistrée</h4>
+            <h4 className="font-medium text-sm mb-1">{t('no_data_recorded')}</h4>
             <p className="text-xs text-muted-foreground">
-              Commencez à enregistrer des données d'alimentation, santé et lots pour voir les graphiques
+              {t('start_recording_data')}
             </p>
           </CardContent>
         </Card>
@@ -769,10 +769,10 @@ const IntelligentDashboard = () => {
       {/* Onglets pour données spécifiques à l'unité */}
       {viewMode === 'unit' && activeUnit && <Tabs defaultValue="cycles" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 text-xs sm:text-sm">
-            <TabsTrigger value="cycles">Cycles</TabsTrigger>
-            <TabsTrigger value="equipment">Équipements</TabsTrigger>
-            <TabsTrigger value="infrastructure">Infrastructures</TabsTrigger>
-            <TabsTrigger value="depreciation">Amortissements</TabsTrigger>
+            <TabsTrigger value="cycles">{t('cycles_tab_label')}</TabsTrigger>
+            <TabsTrigger value="equipment">{t('equipment_tab_label')}</TabsTrigger>
+            <TabsTrigger value="infrastructure">{t('infrastructure_tab_label')}</TabsTrigger>
+            <TabsTrigger value="depreciation">{t('depreciation_tab')}</TabsTrigger>
           </TabsList>
 
           {/* tabs content */}
@@ -795,19 +795,19 @@ const IntelligentDashboard = () => {
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm sm:text-base truncate">{cycle.name}</h4>
                             <p className="text-xs sm:text-sm text-gray-600">
-                              Démarré le {new Date(cycle.start_date).toLocaleDateString('fr-FR')} • {daysPassed} jours
+                              {t('started_on_date')} {new Date(cycle.start_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')} • {daysPassed} {t('days_label')}
                             </p>
                             <div className="mt-2 space-y-2">
                               <div>
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Progression temporelle</span>
+                                  <span>{t('temporal_progress')}</span>
                                   <span>{temporalProgress.toFixed(0)}%</span>
                                 </div>
                                 <Progress value={temporalProgress} className="h-2" />
                               </div>
                               <div>
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Production</span>
+                                  <span>{t('production_progress')}</span>
                                   <span>{(cycle.current_quantity || 0).toLocaleString()}/{(cycle.target_quantity || 0).toLocaleString()}</span>
                                 </div>
                                 <Progress value={quantityProgress} className="h-2 bg-blue-100 [&>div]:bg-blue-500" />
@@ -815,14 +815,14 @@ const IntelligentDashboard = () => {
                             </div>
                           </div>
                           <Badge variant={cycle.status === 'active' ? 'default' : 'secondary'} className="text-xs shrink-0">
-                            {cycle.status === 'active' ? 'En cours' : cycle.status === 'completed' ? 'Terminé' : cycle.status}
+                            {cycle.status === 'active' ? t('in_progress_status') : cycle.status === 'completed' ? t('completed_status') : cycle.status}
                           </Badge>
                         </div>
                       </CardContent>
                     </Card>;
                   }) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucun cycle actif</p>
+                  <p className="text-sm">{t('no_active_cycles_msg')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -850,7 +850,7 @@ const IntelligentDashboard = () => {
                     </CardContent>
                   </Card>) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <Settings className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucun équipement configuré</p>
+                  <p className="text-sm">{t('no_equipment_configured')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -863,7 +863,7 @@ const IntelligentDashboard = () => {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm sm:text-base truncate">{infra.name}</h4>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            Capacité: {infra.capacity.toLocaleString()}
+                            {t('capacity')}: {infra.capacity.toLocaleString()}
                           </p>
                           {infra.specifications && <div className="mt-2 flex flex-wrap gap-1">
                               {Object.entries(infra.specifications).slice(0, 3).map(([key, value]) => <span key={key} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs">
@@ -878,7 +878,7 @@ const IntelligentDashboard = () => {
                     </CardContent>
                   </Card>) : <div className="text-center py-6 sm:py-8 text-gray-500">
                   <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                  <p className="text-sm">Aucune infrastructure configurée</p>
+                  <p className="text-sm">{t('no_infrastructure_configured')}</p>
                 </div>}
             </div>
           </TabsContent>
@@ -910,19 +910,19 @@ const IntelligentDashboard = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Card className="bg-blue-50/50 dark:bg-blue-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Valeur d'acquisition</p>
+                          <p className="text-xs text-muted-foreground">{t('acquisition_value')}</p>
                           <p className="text-lg font-bold text-blue-600">{totalValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
                       <Card className="bg-orange-50/50 dark:bg-orange-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Amortissements cumulés</p>
+                          <p className="text-xs text-muted-foreground">{t('cumulated_depreciation')}</p>
                           <p className="text-lg font-bold text-orange-600">{totalDepreciation.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
                       <Card className="bg-green-50/50 dark:bg-green-900/20">
                         <CardContent className="p-3 text-center">
-                          <p className="text-xs text-muted-foreground">Valeur nette actuelle</p>
+                          <p className="text-xs text-muted-foreground">{t('current_net_value')}</p>
                           <p className="text-lg font-bold text-green-600">{totalCurrentValue.toLocaleString()} {getCurrencySymbol(currency)}</p>
                         </CardContent>
                       </Card>
@@ -944,18 +944,18 @@ const IntelligentDashboard = () => {
                                 <Badge variant="outline" className="text-xs">{asset.category}</Badge>
                               </div>
                               <p className="text-xs sm:text-sm text-gray-600">
-                                Acquis le {new Date(asset.purchaseDate).toLocaleDateString('fr-FR')} • {asset.usefulLife} ans
+                                Acquis le {new Date(asset.purchaseDate).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR')} • {asset.usefulLife} {t('years')}
                               </p>
                               <div className="mt-2">
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span>Amortissement</span>
+                                  <span>{t('depreciation_tab')}</span>
                                   <span>{depreciationPercent.toFixed(0)}%</span>
                                 </div>
                                 <Progress value={depreciationPercent} className="h-2 bg-orange-100 [&>div]:bg-orange-500" />
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-xs text-gray-500">Valeur actuelle</p>
+                              <p className="text-xs text-gray-500">{t('current_net_value')}</p>
                               <p className="font-semibold text-green-600">
                                 {convertCurrency(currentValue, asset.currency, currency).toLocaleString()} {getCurrencySymbol(currency)}
                               </p>
@@ -968,8 +968,8 @@ const IntelligentDashboard = () => {
                       </Card>;
                     }) : <div className="text-center py-6 sm:py-8 text-gray-500">
                       <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2" />
-                      <p className="text-sm">Aucun équipement amortissable configuré</p>
-                      <p className="text-xs text-muted-foreground mt-1">Ajoutez des équipements dans Comptabilité &gt; Amortissements</p>
+                      <p className="text-sm">{t('no_depreciable_assets')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('add_assets_via_accounting')}</p>
                     </div>}
                   </div>
                 </div>
