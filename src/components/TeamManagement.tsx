@@ -344,7 +344,7 @@ const TeamManagement = () => {
       toast({ title: "Membre mis à jour", description: `Les informations de ${selectedMember.member_name} ont été mises à jour` });
       setShowMemberDetails(false);
     } else {
-      toast({ title: "Erreur", description: result.error || "Impossible de mettre à jour", variant: "destructive" });
+      toast({ title: t('error'), description: result.error || t('unable_to_update'), variant: "destructive" });
     }
     setIsSubmitting(false);
   };

@@ -100,8 +100,8 @@ const MFASettings: React.FC = () => {
     } catch (err: any) {
       console.error('Error disabling MFA:', err);
       toast({
-        title: "Erreur",
-        description: err.message || "Impossible de désactiver le 2FA",
+        title: t('error'),
+        description: err.message || t('mfa_disable_error'),
         variant: "destructive",
       });
     } finally {

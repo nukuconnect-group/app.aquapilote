@@ -30,9 +30,9 @@ const CredentialsDialog: React.FC<CredentialsDialogProps> = ({ open, onOpenChang
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({ title: "Copié !", description: `${label} copié dans le presse-papiers` });
+      toast({ title: t('copied'), description: `${label} ${t('copied_to_clipboard')}` });
     } catch {
-      toast({ title: "Erreur", description: "Impossible de copier", variant: "destructive" });
+      toast({ title: t('error'), description: t('copy_error'), variant: "destructive" });
     }
   };
 
