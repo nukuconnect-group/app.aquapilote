@@ -291,7 +291,7 @@ const TeamManagement = () => {
           setCreatedCredentials({ email: inviteData.email, password: null, loginUrl, memberName: inviteData.name, emailSent: false, existingUser: true });
           setShowCredentialsDialog(true);
           addLog('Compte lié (utilisateur existant)', 'Équipe', `${inviteData.name} : compte existant lié`, 'info');
-          toast({ title: 'Compte déjà existant', description: `Utilisez "Réinitialiser mot de passe" si nécessaire.` });
+          toast({ title: t('existing_account'), description: t('reset_password_if_needed') });
           await refetch();
         } else if (response.data?.credentials) {
           setCreatedCredentials({
@@ -301,12 +301,12 @@ const TeamManagement = () => {
           });
           setShowCredentialsDialog(true);
           addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé`, 'success');
-          toast({ title: response.data?.emailSent ? 'Membre ajouté et email envoyé' : 'Membre ajouté', description: `Compte créé pour ${inviteData.name}` });
+          toast({ title: response.data?.emailSent ? t('member_added_email_sent') : t('member_added'), description: `${t('account_created_for')} ${inviteData.name}` });
           await refetch();
         } else {
           setCreatedCredentials({ email: inviteData.email, password: passwordToUse, loginUrl, memberName: inviteData.name, emailSent: false, emailError: response.data?.emailError, existingUser: false });
           setShowCredentialsDialog(true);
-          toast({ title: 'Membre ajouté', description: `Compte créé pour ${inviteData.name}.` });
+          toast({ title: t('member_added'), description: `${t('account_created_for')} ${inviteData.name}.` });
           await refetch();
         }
       } catch (error: any) {

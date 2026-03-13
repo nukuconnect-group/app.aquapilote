@@ -29,6 +29,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
+  const { t } = useSettings();
   // Fetch all cycle infrastructures for this user to find attached batches
   const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures(undefined, true);
   // Fetch ALL batches (not filtered by unit) to find attached batch by ID

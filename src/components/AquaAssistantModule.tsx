@@ -138,6 +138,7 @@ const categoryConfigs = [
 
 const AquaAssistantModule = () => {
   const { units, activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }

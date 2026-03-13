@@ -116,6 +116,7 @@ const categories: Category[] = [
 
 const AquaAssistant = () => {
   const { units, activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPremium, setIsPremium] = useState(false); // Option premium

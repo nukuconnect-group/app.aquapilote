@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 const NotificationsPanel = () => {
   const { isAuthenticated, isDemoMode } = useAuth();
+  const { t } = useSettings();
   const {
     notifications: realNotifications,
     loading,
