@@ -1,9 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+const ALLOWED_ORIGINS = [
+  'https://aqua-pilote.lovable.app',
+  'http://localhost:8080',
+  'http://localhost:5173',
+];
+
+const isAllowedOrigin = (origin: string | null): boolean => {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow Lovable preview domains for this project
+  if (/^https:\/\/.*--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c\.lovable\.app$/.test(origin)) return true;
+  return false;
+};
+
+const getCorsHeaders = (origin: string | null) => {
+  const allowedOrigin = isAllowedOrigin(origin) ? origin! : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
 };
 
 const systemPrompt = `Tu es AquaAssistant, un chatbot intelligent conçu pour aider des pisciculteurs
@@ -48,6 +65,9 @@ Aider le pisciculteur à gérer son élevage sans lire ni écrire, juste en parl
 en donnant des réponses vocales simples, adaptées, et utiles.`;
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
