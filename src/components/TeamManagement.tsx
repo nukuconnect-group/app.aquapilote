@@ -312,7 +312,7 @@ const TeamManagement = () => {
       } catch (error: any) {
         console.error('Error creating user account:', error);
         addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte`, 'warning');
-        toast({ title: "Membre ajouté", description: `${inviteData.name} ajouté mais le compte n'a pas pu être créé: ${error.message}`, variant: "destructive" });
+        toast({ title: t('member_added'), description: `${inviteData.name} - ${t('account_not_created')}: ${error.message}`, variant: "destructive" });
       }
 
       setInviteData({ name: '', email: '', password: '', role: '', customRole: '', department: '', permissions: {}, unitPermissions: [] });
