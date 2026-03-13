@@ -65,6 +65,9 @@ Aider le pisciculteur à gérer son élevage sans lire ni écrire, juste en parl
 en donnant des réponses vocales simples, adaptées, et utiles.`;
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
