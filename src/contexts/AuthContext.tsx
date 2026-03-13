@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Set up auth state listener with improved session persistence (OPTIMIZED - no "verification de session" delay)
   useEffect(() => {
     let mounted = true;
-    let refreshInterval: NodeJS.Timeout | null = null;
+    let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

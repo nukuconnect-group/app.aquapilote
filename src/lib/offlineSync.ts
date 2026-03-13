@@ -2,7 +2,7 @@
 import { offlineStorage } from './offlineStorage';
 
 class OfflineSync {
-  private syncInterval: NodeJS.Timeout | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
   private isSyncing = false;
 
   // Démarrer la synchronisation automatique

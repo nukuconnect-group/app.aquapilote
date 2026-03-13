@@ -129,7 +129,7 @@ const VisitsStatsPanel: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [pwaInstallCount, setPwaInstallCount] = useState(0);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadVisitStats = useCallback(async () => {
     try {

@@ -20,7 +20,7 @@ const getOrCreateSessionId = (): string => {
 
 export const useAnonymousVisitTracking = () => {
   const hasTrackedRef = useRef(false);
-  const activityIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const activityIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const trackVisit = useCallback(async () => {
     if (hasTrackedRef.current) return;
