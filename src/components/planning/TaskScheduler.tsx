@@ -524,7 +524,7 @@ const TaskScheduler = () => {
                           variant="ghost"
                           onClick={() => handleEditTask(task)}
                           className="text-blue-600 hover:text-blue-700"
-                          title="Modifier"
+                          title={t('edit')}
                         >
                           <Edit className="w-3 h-3" />
                         </Button>
