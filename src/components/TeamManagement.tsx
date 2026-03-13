@@ -241,16 +241,16 @@ const TeamManagement = () => {
   // --- Handlers ---
   const handleProceedToSummary = () => {
     if (!inviteData.name || !inviteData.email || !inviteData.department) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
+      toast({ title: t('error'), description: t('fill_required_fields'), variant: "destructive" });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteData.email)) {
-      toast({ title: "Erreur", description: "Format d'email invalide", variant: "destructive" });
+      toast({ title: t('error'), description: t('invalid_email_format'), variant: "destructive" });
       return;
     }
     if (inviteData.unitPermissions.length === 0) {
-      toast({ title: "Erreur", description: "Veuillez assigner au moins une unité de production", variant: "destructive" });
+      toast({ title: t('error'), description: t('assign_at_least_one_unit'), variant: "destructive" });
       return;
     }
     const finalPassword = inviteData.password || generatePasswordLocal();
@@ -291,7 +291,7 @@ const TeamManagement = () => {
           setCreatedCredentials({ email: inviteData.email, password: null, loginUrl, memberName: inviteData.name, emailSent: false, existingUser: true });
           setShowCredentialsDialog(true);
           addLog('Compte lié (utilisateur existant)', 'Équipe', `${inviteData.name} : compte existant lié`, 'info');
-          toast({ title: 'Compte déjà existant', description: `Utilisez "Réinitialiser mot de passe" si nécessaire.` });
+          toast({ title: t('existing_account'), description: t('reset_password_if_needed') });
           await refetch();
         } else if (response.data?.credentials) {
           setCreatedCredentials({
@@ -301,18 +301,18 @@ const TeamManagement = () => {
           });
           setShowCredentialsDialog(true);
           addLog('Membre invité', 'Équipe', `${inviteData.name} invité avec compte créé`, 'success');
-          toast({ title: response.data?.emailSent ? 'Membre ajouté et email envoyé' : 'Membre ajouté', description: `Compte créé pour ${inviteData.name}` });
+          toast({ title: response.data?.emailSent ? t('member_added_email_sent') : t('member_added'), description: `${t('account_created_for')} ${inviteData.name}` });
           await refetch();
         } else {
           setCreatedCredentials({ email: inviteData.email, password: passwordToUse, loginUrl, memberName: inviteData.name, emailSent: false, emailError: response.data?.emailError, existingUser: false });
           setShowCredentialsDialog(true);
-          toast({ title: 'Membre ajouté', description: `Compte créé pour ${inviteData.name}.` });
+          toast({ title: t('member_added'), description: `${t('account_created_for')} ${inviteData.name}.` });
           await refetch();
         }
       } catch (error: any) {
         console.error('Error creating user account:', error);
         addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte`, 'warning');
-        toast({ title: "Membre ajouté", description: `${inviteData.name} ajouté mais le compte n'a pas pu être créé: ${error.message}`, variant: "destructive" });
+        toast({ title: t('member_added'), description: `${inviteData.name} - ${t('account_not_created')}: ${error.message}`, variant: "destructive" });
       }
 
       setInviteData({ name: '', email: '', password: '', role: '', customRole: '', department: '', permissions: {}, unitPermissions: [] });
@@ -321,7 +321,7 @@ const TeamManagement = () => {
       setShowSummaryStep(false);
       setShowInviteForm(false);
     } else {
-      toast({ title: "Erreur", description: result.error || "Impossible d'ajouter le membre", variant: "destructive" });
+      toast({ title: t('error'), description: result.error || t('unable_to_add_member'), variant: "destructive" });
     }
     setIsSubmitting(false);
   };
@@ -344,7 +344,7 @@ const TeamManagement = () => {
       toast({ title: "Membre mis à jour", description: `Les informations de ${selectedMember.member_name} ont été mises à jour` });
       setShowMemberDetails(false);
     } else {
-      toast({ title: "Erreur", description: result.error || "Impossible de mettre à jour", variant: "destructive" });
+      toast({ title: t('error'), description: result.error || t('unable_to_update'), variant: "destructive" });
     }
     setIsSubmitting(false);
   };

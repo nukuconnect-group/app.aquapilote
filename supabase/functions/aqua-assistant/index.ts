@@ -12,6 +12,8 @@ const isAllowedOrigin = (origin: string | null): boolean => {
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   // Allow Lovable preview domains for this project
   if (/^https:\/\/.*--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c\.lovable\.app$/.test(origin)) return true;
+  // Allow all *.lovable.app published domains
+  if (/^https:\/\/.*\.lovable\.app$/.test(origin)) return true;
   return false;
 };
 

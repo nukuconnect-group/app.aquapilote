@@ -8,9 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const NotificationsPanel = () => {
   const { isAuthenticated, isDemoMode } = useAuth();
+  const { t } = useSettings();
   const {
     notifications: realNotifications,
     loading,
@@ -164,7 +166,7 @@ const NotificationsPanel = () => {
             size="sm"
             onClick={() => handleDelete(notification.id)}
             className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900"
-            title="Supprimer"
+            title={t('delete')}
           >
             <X className="w-4 h-4 text-red-600" />
           </Button>

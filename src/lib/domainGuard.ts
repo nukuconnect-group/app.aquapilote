@@ -10,12 +10,22 @@ const AUTHORIZED_DOMAINS = [
   'id-preview--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c.lovable.app',
 ];
 
-// Allow any *.lovable.app preview domain for this specific project
+// Allow any *.lovable.app preview domain for this specific project + Capacitor
 const AUTHORIZED_PATTERNS = [
   /^.*--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c\.lovable\.app$/,
+  /^.*\.lovable\.app$/, // All lovable.app subdomains (published apps)
 ];
 
+// Capacitor / native app protocols
+const NATIVE_PROTOCOLS = ['capacitor:', 'ionic:', 'file:'];
+
 export const isAuthorizedDomain = (): boolean => {
+  // Allow native mobile apps (Capacitor, Ionic, file://)
+  if (NATIVE_PROTOCOLS.some(p => window.location.protocol.startsWith(p))) return true;
+  
+  // Allow empty hostname (native webview)
+  if (!window.location.hostname || window.location.hostname === '') return true;
+
   const hostname = window.location.hostname;
   
   // Check exact matches

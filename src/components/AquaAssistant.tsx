@@ -12,6 +12,7 @@ import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -115,6 +116,7 @@ const categories: Category[] = [
 
 const AquaAssistant = () => {
   const { units, activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPremium, setIsPremium] = useState(false); // Option premium
@@ -425,8 +427,8 @@ const AquaAssistant = () => {
     } catch (error) {
       console.error('Assistant error:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Je n'ai pas pu répondre. Réessayez.",
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('assistant_error'),
         variant: "destructive"
       });
       if (!assistantContent) {

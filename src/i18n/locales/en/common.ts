@@ -144,4 +144,29 @@ export const common = {
   
   // General UI
   preventive_quarantine: 'Preventive quarantine',
+  
+  // Toast messages
+  fill_required_fields: 'Please fill in all required fields',
+  fill_species_quantity: 'Please fill in required fields (species and quantity)',
+  no_unit_selected: 'No unit selected',
+  batch_created_success: 'Batch created and attached to infrastructure',
+  copied: 'Copied!',
+  copied_to_clipboard: 'copied to clipboard',
+  copy_error: 'Unable to copy',
+  assistant_error: 'I could not respond. Please try again.',
+  invalid_email_format: 'Invalid email format',
+  assign_at_least_one_unit: 'Please assign at least one production unit',
+  member_added: 'Member added',
+  account_created_for: 'Account created for',
+  unable_to_add_member: 'Unable to add member',
+  unable_to_update: 'Unable to update',
+  fill_all_required: 'Please fill in all required fields',
+  mfa_disabled: '2FA disabled',
+  mfa_disabled_desc: 'Two-factor authentication has been disabled.',
+  mfa_disable_error: 'Unable to disable 2FA',
+  existing_account: 'Account already exists',
+  reset_password_if_needed: 'Use "Reset password" if needed.',
+  member_added_email_sent: 'Member added and email sent',
+  account_not_created: 'the account could not be created',
+  enter_name: 'Please enter a name',
 };

@@ -524,7 +524,7 @@ const TaskScheduler = () => {
                           variant="ghost"
                           onClick={() => handleEditTask(task)}
                           className="text-blue-600 hover:text-blue-700"
-                          title="Modifier"
+                          title={t('edit')}
                         >
                           <Edit className="w-3 h-3" />
                         </Button>
@@ -533,7 +533,7 @@ const TaskScheduler = () => {
                           variant="ghost"
                           onClick={() => handleDeleteTask(task.id)}
                           className="text-red-600 hover:text-red-700"
-                          title="Supprimer"
+                          title={t('delete')}
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>

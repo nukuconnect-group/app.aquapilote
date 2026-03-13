@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface InfrastructureCardProps {
   infrastructure: Infrastructure;
@@ -28,6 +29,7 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
+  const { t } = useSettings();
   // Fetch all cycle infrastructures for this user to find attached batches
   const { infrastructures: cycleInfras, updateInfrastructure } = useCycleInfrastructures(undefined, true);
   // Fetch ALL batches (not filtered by unit) to find attached batch by ID
@@ -154,8 +156,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const handleCreateAndAttachBatch = async () => {
     if (!batchFormData.species || !batchFormData.quantity) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir les champs obligatoires (espèce et quantité)",
+        title: t('error'),
+        description: t('fill_species_quantity'),
         variant: "destructive"
       });
       return;
@@ -163,8 +165,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
     if (!activeUnit) {
       toast({
-        title: "Erreur",
-        description: "Aucune unité sélectionnée",
+        title: t('error'),
+        description: t('no_unit_selected'),
         variant: "destructive"
       });
       return;
@@ -205,8 +207,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
       }
 
       toast({
-        title: "Succès",
-        description: "Lot créé et rattaché à l'infrastructure"
+        title: t('success'),
+        description: t('batch_created_success')
       });
 
       setBatchFormData({

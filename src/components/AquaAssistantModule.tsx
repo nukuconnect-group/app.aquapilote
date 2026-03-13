@@ -13,6 +13,7 @@ import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -137,6 +138,7 @@ const categoryConfigs = [
 
 const AquaAssistantModule = () => {
   const { units, activeUnit } = useProductionUnits();
+  const { t } = useSettings();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
@@ -375,8 +377,8 @@ const AquaAssistantModule = () => {
     } catch (error) {
       console.error('Assistant error:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Je n'ai pas pu répondre. Réessayez.",
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('assistant_error'),
         variant: "destructive"
       });
       if (!assistantContent) {

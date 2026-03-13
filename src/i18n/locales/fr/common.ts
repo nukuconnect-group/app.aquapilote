@@ -144,4 +144,29 @@ export const common = {
   
   // General UI
   preventive_quarantine: 'Quarantaine préventive',
+  
+  // Toast messages
+  fill_required_fields: 'Veuillez remplir tous les champs obligatoires',
+  fill_species_quantity: 'Veuillez remplir les champs obligatoires (espèce et quantité)',
+  no_unit_selected: 'Aucune unité sélectionnée',
+  batch_created_success: 'Lot créé et rattaché à l\'infrastructure',
+  copied: 'Copié !',
+  copied_to_clipboard: 'copié dans le presse-papiers',
+  copy_error: 'Impossible de copier',
+  assistant_error: 'Je n\'ai pas pu répondre. Réessayez.',
+  invalid_email_format: 'Format d\'email invalide',
+  assign_at_least_one_unit: 'Veuillez assigner au moins une unité de production',
+  member_added: 'Membre ajouté',
+  account_created_for: 'Compte créé pour',
+  unable_to_add_member: 'Impossible d\'ajouter le membre',
+  unable_to_update: 'Impossible de mettre à jour',
+  fill_all_required: 'Veuillez remplir tous les champs obligatoires',
+  mfa_disabled: '2FA désactivé',
+  mfa_disabled_desc: 'L\'authentification à deux facteurs a été désactivée.',
+  mfa_disable_error: 'Impossible de désactiver le 2FA',
+  existing_account: 'Compte déjà existant',
+  reset_password_if_needed: 'Utilisez "Réinitialiser mot de passe" si nécessaire.',
+  member_added_email_sent: 'Membre ajouté et email envoyé',
+  account_not_created: 'le compte n\'a pas pu être créé',
+  enter_name: 'Veuillez saisir un nom',
 };

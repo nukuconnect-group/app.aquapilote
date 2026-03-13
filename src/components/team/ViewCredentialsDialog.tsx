@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Eye, Key, Edit, AlertCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 import { TeamMember } from '@/hooks/useTeamMembers';
 
 interface ViewCredentialsDialogProps {
@@ -31,15 +32,16 @@ const ViewCredentialsDialog: React.FC<ViewCredentialsDialogProps> = ({
   getStatusLabel,
 }) => {
   const { toast } = useToast();
+  const { t } = useSettings();
 
   if (!member) return null;
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({ title: "Copié !", description: `${label} copié dans le presse-papiers` });
+      toast({ title: t('copied'), description: `${label} ${t('copied_to_clipboard')}` });
     } catch {
-      toast({ title: "Erreur", description: "Impossible de copier", variant: "destructive" });
+      toast({ title: t('error'), description: t('copy_error'), variant: "destructive" });
     }
   };
 

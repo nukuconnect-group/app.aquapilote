@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, AlertCircle, Mail, Copy, Link } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface CreatedCredentials {
   email: string;
@@ -24,15 +25,16 @@ interface CredentialsDialogProps {
 
 const CredentialsDialog: React.FC<CredentialsDialogProps> = ({ open, onOpenChange, credentials }) => {
   const { toast } = useToast();
+  const { t } = useSettings();
 
   if (!credentials) return null;
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({ title: "Copié !", description: `${label} copié dans le presse-papiers` });
+      toast({ title: t('copied'), description: `${label} ${t('copied_to_clipboard')}` });
     } catch {
-      toast({ title: "Erreur", description: "Impossible de copier", variant: "destructive" });
+      toast({ title: t('error'), description: t('copy_error'), variant: "destructive" });
     }
   };
 
