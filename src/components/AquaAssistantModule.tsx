@@ -13,6 +13,7 @@ import { useFeedStocks } from '@/hooks/useFeedStocks';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Message {
   role: 'user' | 'assistant';
