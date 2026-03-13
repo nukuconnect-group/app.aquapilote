@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { OfflineProvider } from './contexts/OfflineContext';
+import { enforceDomainGuard } from './lib/domainGuard';
+
+// Vérification de domaine autorisé
+enforceDomainGuard();
 
 console.log('🚀 AQUA PILOT - Application complète restaurée');
 
