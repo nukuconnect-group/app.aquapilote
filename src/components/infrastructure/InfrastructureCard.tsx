@@ -154,8 +154,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
   const handleCreateAndAttachBatch = async () => {
     if (!batchFormData.species || !batchFormData.quantity) {
       toast({
-        title: "Erreur",
-        description: "Veuillez remplir les champs obligatoires (espèce et quantité)",
+        title: t('error'),
+        description: t('fill_species_quantity'),
         variant: "destructive"
       });
       return;
@@ -163,8 +163,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
 
     if (!activeUnit) {
       toast({
-        title: "Erreur",
-        description: "Aucune unité sélectionnée",
+        title: t('error'),
+        description: t('no_unit_selected'),
         variant: "destructive"
       });
       return;
