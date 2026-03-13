@@ -273,7 +273,7 @@ const AquaAssistantModule = () => {
       ? `[Contexte: Unité "${selectedUnitName}"] ` 
       : '';
 
-    const dataContext = selectedCategory ? generateDataContext() : '';
+    const dataContext = generateDataContext();
 
     const userMessage: Message = { 
       role: 'user', 

@@ -321,8 +321,8 @@ const AquaAssistant = () => {
       ? `[Contexte: Unité "${selectedUnitName}"] ` 
       : '';
 
-    // Ajouter le contexte des données réelles si une catégorie est sélectionnée
-    const dataContext = selectedCategory ? generateDataContext() : '';
+    // Toujours envoyer le contexte des données réelles
+    const dataContext = generateDataContext();
 
     const userMessage: Message = { 
       role: 'user', 
