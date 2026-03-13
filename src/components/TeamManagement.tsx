@@ -321,7 +321,7 @@ const TeamManagement = () => {
       setShowSummaryStep(false);
       setShowInviteForm(false);
     } else {
-      toast({ title: "Erreur", description: result.error || "Impossible d'ajouter le membre", variant: "destructive" });
+      toast({ title: t('error'), description: result.error || t('unable_to_add_member'), variant: "destructive" });
     }
     setIsSubmitting(false);
   };

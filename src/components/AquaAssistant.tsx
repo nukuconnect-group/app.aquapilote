@@ -425,8 +425,8 @@ const AquaAssistant = () => {
     } catch (error) {
       console.error('Assistant error:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Je n'ai pas pu répondre. Réessayez.",
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('assistant_error'),
         variant: "destructive"
       });
       if (!assistantContent) {

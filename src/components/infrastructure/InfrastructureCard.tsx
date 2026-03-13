@@ -205,8 +205,8 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
       }
 
       toast({
-        title: "Succès",
-        description: "Lot créé et rattaché à l'infrastructure"
+        title: t('success'),
+        description: t('batch_created_success')
       });
 
       setBatchFormData({

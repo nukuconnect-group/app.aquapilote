@@ -164,7 +164,7 @@ const NotificationsPanel = () => {
             size="sm"
             onClick={() => handleDelete(notification.id)}
             className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900"
-            title="Supprimer"
+            title={t('delete')}
           >
             <X className="w-4 h-4 text-red-600" />
           </Button>
