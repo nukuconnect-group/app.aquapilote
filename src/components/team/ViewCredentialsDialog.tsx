@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Eye, Key, Edit, AlertCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 import { TeamMember } from '@/hooks/useTeamMembers';
 
 interface ViewCredentialsDialogProps {

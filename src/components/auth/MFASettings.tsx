@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Shield, ShieldCheck, ShieldOff, Trash2, AlertTriangle, Key, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 import MFAEnrollment from './MFAEnrollment';
 import RecoveryCodesDisplay from './RecoveryCodesDisplay';
 import { useRecoveryCodes } from '@/hooks/useRecoveryCodes';
