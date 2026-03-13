@@ -241,16 +241,16 @@ const TeamManagement = () => {
   // --- Handlers ---
   const handleProceedToSummary = () => {
     if (!inviteData.name || !inviteData.email || !inviteData.department) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
+      toast({ title: t('error'), description: t('fill_required_fields'), variant: "destructive" });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteData.email)) {
-      toast({ title: "Erreur", description: "Format d'email invalide", variant: "destructive" });
+      toast({ title: t('error'), description: t('invalid_email_format'), variant: "destructive" });
       return;
     }
     if (inviteData.unitPermissions.length === 0) {
-      toast({ title: "Erreur", description: "Veuillez assigner au moins une unité de production", variant: "destructive" });
+      toast({ title: t('error'), description: t('assign_at_least_one_unit'), variant: "destructive" });
       return;
     }
     const finalPassword = inviteData.password || generatePasswordLocal();
