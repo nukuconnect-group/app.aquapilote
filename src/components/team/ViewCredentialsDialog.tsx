@@ -32,6 +32,7 @@ const ViewCredentialsDialog: React.FC<ViewCredentialsDialogProps> = ({
   getStatusLabel,
 }) => {
   const { toast } = useToast();
+  const { t } = useSettings();
 
   if (!member) return null;
 

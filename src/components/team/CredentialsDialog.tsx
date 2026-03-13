@@ -25,6 +25,7 @@ interface CredentialsDialogProps {
 
 const CredentialsDialog: React.FC<CredentialsDialogProps> = ({ open, onOpenChange, credentials }) => {
   const { toast } = useToast();
+  const { t } = useSettings();
 
   if (!credentials) return null;
 

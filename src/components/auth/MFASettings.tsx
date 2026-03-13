@@ -39,6 +39,7 @@ const MFASettings: React.FC = () => {
   const [isDisabling, setIsDisabling] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t } = useSettings();
   const { 
     generateRecoveryCodes, 
     checkRecoveryCodes, 
