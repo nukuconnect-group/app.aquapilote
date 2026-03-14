@@ -11,14 +11,14 @@ import type { SupportedLanguage } from './types';
 export const translations: Record<SupportedLanguage, Record<string, string>> = {
   fr,
   en,
-  es: en,
-  pt: en,
-  ar: en,
-  ewe,
-  kabye,
-  adja,
-  wolof,
-  bambara,
+  es: { ...fr, ...en },
+  pt: { ...fr, ...en },
+  ar: { ...fr, ...en },
+  ewe: { ...fr, ...ewe },
+  kabye: { ...fr, ...kabye },
+  adja: { ...fr, ...adja },
+  wolof: { ...fr, ...wolof },
+  bambara: { ...fr, ...bambara },
 };
 
 export const supportedLanguages: { code: SupportedLanguage; label: string; flag: string }[] = [
