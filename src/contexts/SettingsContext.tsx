@@ -249,7 +249,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string): string => {
-    return translations[language]?.[key] || translations['en']?.[key] || key;
+    return translations[language]?.[key] || translations['fr']?.[key] || translations['en']?.[key] || key;
   };
 
   const formatCurrency = (amount: number): string => {
