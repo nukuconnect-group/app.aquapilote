@@ -1810,7 +1810,7 @@ const LivestockManagement = () => {
                       .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
                       .slice(0, 10)
                       .map(([date, records]) => (
-                        <div key={date} className="border rounded-lg overflow-hidden">
+                        <div key={date} className="border rounded-lg overflow-hidden" id={`control-date-${date}`}>
                           <div className="flex justify-between items-center p-3 bg-muted/50">
                             <span className="font-semibold text-sm">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                             <div className="flex items-center gap-2">

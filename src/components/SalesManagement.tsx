@@ -268,9 +268,9 @@ const SalesManagement = () => {
       total: sale.totalAmount,
       paymentMethod: sale.paymentMethod || undefined,
       notes: sale.notes || undefined,
-      companyName: 'AquaPilot',
-      companyAddress: '',
-      companyContact: ''
+      companyName: undefined,
+      companyAddress: undefined,
+      companyContact: undefined
     };
   };
 
