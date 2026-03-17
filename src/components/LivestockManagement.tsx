@@ -1810,7 +1810,7 @@ const LivestockManagement = () => {
                       .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
                       .slice(0, 10)
                       .map(([date, records]) => (
-                        <div key={date} className="border rounded-lg overflow-hidden">
+                        <div key={date} className="border rounded-lg overflow-hidden" id={`control-date-${date}`}>
                           <div className="flex justify-between items-center p-3 bg-muted/50">
                             <span className="font-semibold text-sm">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                             <div className="flex items-center gap-2">
@@ -1876,50 +1876,62 @@ const LivestockManagement = () => {
                             {records.map((record) => {
                               const infra = allCycleInfras.find(i => i.id === record.basin_id);
                               return (
-                                <div key={record.id} className="p-3 text-sm hover:bg-accent/30">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div className="flex gap-2 flex-wrap">
-                                      {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
-                                      {record.density && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          {record.density.toFixed(1)}% prélevé
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                                    <div className="bg-muted/50 p-2 rounded">
-                                      <span className="text-muted-foreground block">PMI</span>
-                                      <span className="font-bold text-primary">{record.average_weight?.toFixed(1) ?? '-'}g</span>
-                                    </div>
-                                    <div className="bg-muted/50 p-2 rounded">
-                                      <span className="text-muted-foreground block">Échantillon</span>
-                                      <span className="font-medium">{record.sample_count ?? '-'} sujets</span>
-                                    </div>
-                                    <div className="bg-muted/50 p-2 rounded">
-                                      <span className="text-muted-foreground block">Poids total</span>
-                                      <span className="font-medium">{record.feeding?.toFixed(2) ?? '-'} kg</span>
-                                    </div>
-                                    <div className="bg-muted/50 p-2 rounded">
-                                      <span className="text-muted-foreground block">Temp</span>
-                                      <span className="font-medium">{record.temperature ?? '-'}°C</span>
-                                    </div>
-                                    <div className="bg-muted/50 p-2 rounded">
-                                      <span className="text-muted-foreground block">pH / O₂</span>
-                                      <span className="font-medium">{record.ph ?? '-'} / {record.oxygen ?? '-'}</span>
-                                    </div>
-                                  </div>
-                                  {record.notes && record.notes.includes('PRÉLÈVEMENT PAR LOTS') && (
-                                    <details className="mt-2">
-                                      <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                                        Voir détails des lots
-                                      </summary>
-                                      <pre className="text-xs mt-2 p-2 bg-muted rounded whitespace-pre-wrap">
+                                <details key={record.id} className="group">
+                                  <summary className="p-3 text-sm hover:bg-accent/30 cursor-pointer list-none [&::-webkit-details-marker]:hidden"
+                                    onClick={(e) => {
+                                      // Empêcher le scroll vers le haut
+                                      e.stopPropagation();
+                                    }}
+                                  >
+                                   <div className="flex justify-between items-start mb-2">
+                                     <div className="flex gap-2 flex-wrap">
+                                       {infra && <Badge variant="outline">{infra.infrastructure_name}</Badge>}
+                                       {record.density && (
+                                         <Badge variant="secondary" className="text-xs">
+                                           {record.density.toFixed(1)}% prélevé
+                                         </Badge>
+                                       )}
+                                       <span className="text-xs text-muted-foreground">▶ Cliquer pour détails</span>
+                                     </div>
+                                   </div>
+                                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                                     <div className="bg-muted/50 p-2 rounded">
+                                       <span className="text-muted-foreground block">PMI</span>
+                                       <span className="font-bold text-primary">{record.average_weight?.toFixed(1) ?? '-'}g</span>
+                                     </div>
+                                     <div className="bg-muted/50 p-2 rounded">
+                                       <span className="text-muted-foreground block">Échantillon</span>
+                                       <span className="font-medium">{record.sample_count ?? '-'} sujets</span>
+                                     </div>
+                                     <div className="bg-muted/50 p-2 rounded">
+                                       <span className="text-muted-foreground block">Poids total</span>
+                                       <span className="font-medium">{record.feeding?.toFixed(2) ?? '-'} kg</span>
+                                     </div>
+                                     <div className="bg-muted/50 p-2 rounded">
+                                       <span className="text-muted-foreground block">Temp</span>
+                                       <span className="font-medium">{record.temperature ?? '-'}°C</span>
+                                     </div>
+                                     <div className="bg-muted/50 p-2 rounded">
+                                       <span className="text-muted-foreground block">pH / O₂</span>
+                                       <span className="font-medium">{record.ph ?? '-'} / {record.oxygen ?? '-'}</span>
+                                     </div>
+                                   </div>
+                                  </summary>
+                                  {record.notes && (
+                                    <div className="px-3 pb-3">
+                                      <pre className="text-xs p-2 bg-muted rounded whitespace-pre-wrap">
                                         {record.notes}
                                       </pre>
-                                    </details>
+                                    </div>
                                   )}
-                                </div>
+                                  {record.mortality != null && record.mortality > 0 && (
+                                    <div className="px-3 pb-3">
+                                      <Badge variant="destructive" className="text-xs">
+                                        Mortalité: {record.mortality}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </details>
                               );
                             })}
                           </div>
