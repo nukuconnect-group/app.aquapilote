@@ -448,6 +448,7 @@ const SalesManagement = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Espèces" className="text-sm sm:text-base">Espèces</SelectItem>
+                          <SelectItem value="Mobile Money" className="text-sm sm:text-base">Mobile Money</SelectItem>
                           <SelectItem value="Virement" className="text-sm sm:text-base">Virement</SelectItem>
                           <SelectItem value="Carte" className="text-sm sm:text-base">Carte bancaire</SelectItem>
                           <SelectItem value="Chèque" className="text-sm sm:text-base">Chèque</SelectItem>
