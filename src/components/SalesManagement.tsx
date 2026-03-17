@@ -133,9 +133,9 @@ const SalesManagement = () => {
       total: total,
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
-      companyName: 'Aqua Pilote',
-      companyAddress: 'Votre adresse',
-      companyContact: 'contact@aquapilote.com'
+      companyName: undefined,
+      companyAddress: undefined,
+      companyContact: undefined
     };
 
     setPreviewReceiptData(receiptData);
