@@ -55,6 +55,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   const displayCompanyName = data.companyName || companyInfo.name;
   const displayCompanyAddress = data.companyAddress || companyInfo.address;
   const displayCompanyContact = data.companyContact || (companyInfo.phone ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}` : companyInfo.email);
+  const displayCompanyLogo = companyInfo.logoUrl;
 
   const getDocumentTitle = () => {
     switch (data.type) {
@@ -71,7 +72,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     address: displayCompanyAddress,
     phone: companyInfo.phone,
     email: companyInfo.email,
-    logoUrl: companyInfo.logoUrl,
+    logoUrl: displayCompanyLogo,
     registrationNumber: companyInfo.registrationNumber,
     taxId: companyInfo.taxId
   });
@@ -373,11 +374,25 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             {/* Company Info */}
             {displayCompanyName && (
               <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 truncate">{displayCompanyName}</h3>
-                {displayCompanyAddress && <p className="text-xs sm:text-sm text-muted-foreground truncate">{displayCompanyAddress}</p>}
-                {displayCompanyContact && <p className="text-xs sm:text-sm text-muted-foreground truncate">{displayCompanyContact}</p>}
-                {companyInfo.registrationNumber && <p className="text-xs text-muted-foreground">N° Reg: {companyInfo.registrationNumber}</p>}
-                {companyInfo.taxId && <p className="text-xs text-muted-foreground">ID Fiscal: {companyInfo.taxId}</p>}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                  {displayCompanyLogo && (
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border bg-background p-2 sm:h-20 sm:w-20">
+                      <img
+                        src={displayCompanyLogo}
+                        alt={`Logo ${displayCompanyName}`}
+                        className="h-full w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 break-words">{displayCompanyName}</h3>
+                    {displayCompanyAddress && <p className="text-xs sm:text-sm text-muted-foreground break-words">{displayCompanyAddress}</p>}
+                    {displayCompanyContact && <p className="text-xs sm:text-sm text-muted-foreground break-words">{displayCompanyContact}</p>}
+                    {companyInfo.registrationNumber && <p className="text-xs text-muted-foreground">N° Reg: {companyInfo.registrationNumber}</p>}
+                    {companyInfo.taxId && <p className="text-xs text-muted-foreground">ID Fiscal: {companyInfo.taxId}</p>}
+                  </div>
+                </div>
               </div>
             )}
 

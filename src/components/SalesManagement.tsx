@@ -26,7 +26,7 @@ import ExportDropdown from './ExportDropdown';
 const SalesManagement = () => {
   const { addLog } = useLogs();
   const { units, activeUnit } = useProductionUnits();
-  const { formatCurrency, t, currency } = useSettings();
+  const { formatCurrency, t, currency, companyInfo } = useSettings();
   const { toast } = useToast();
   const { sales, loading, addSale, updateSale } = useSales();
   
@@ -109,36 +109,57 @@ const SalesManagement = () => {
     };
   }, [filteredSales, units, sales]);
 
-  const handlePreviewReceipt = () => {
-    const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = 20;
-    const tax = totalAmount * (taxRate / 100);
-    const total = totalAmount + tax;
+  const getCompanyContactText = () => {
+    if (companyInfo.phone && companyInfo.email) {
+      return `Tél: ${companyInfo.phone} | Email: ${companyInfo.email}`;
+    }
 
-    const receiptData: ReceiptData = {
+    if (companyInfo.phone) {
+      return `Tél: ${companyInfo.phone}`;
+    }
+
+    if (companyInfo.email) {
+      return `Email: ${companyInfo.email}`;
+    }
+
+    return undefined;
+  };
+
+  const buildReceiptData = (baseData: Omit<ReceiptData, 'companyName' | 'companyAddress' | 'companyContact'>): ReceiptData => ({
+    ...baseData,
+    companyName: companyInfo.name || undefined,
+    companyAddress: companyInfo.address || undefined,
+    companyContact: getCompanyContactText()
+  });
+
+  const handlePreviewReceipt = () => {
+    const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
+    const taxRate = 20;
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax;
+
+    const receiptData = buildReceiptData({
       type: 'receipt',
       number: `REC-${new Date().getFullYear()}-${String(filteredSales.length + 1).padStart(3, '0')}`,
       date: new Date().toISOString(),
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
-      items: newSale.products.map(p => ({
-        name: p.name,
-        quantity: p.quantity,
-        unitPrice: p.unitPrice,
-        total: p.quantity * p.unitPrice
+      items: newSale.products.map((product) => ({
+        name: product.name,
+        quantity: product.quantity,
+        unitPrice: product.unitPrice,
+        total: product.quantity * product.unitPrice
       })),
-      subtotal: totalAmount,
-      tax: tax,
-      taxRate: taxRate,
-      total: total,
+      subtotal,
+      tax,
+      taxRate,
+      total,
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes,
-      companyName: undefined,
-      companyAddress: undefined,
-      companyContact: undefined
-    };
+      notes: newSale.notes
+    });
 
     setPreviewReceiptData(receiptData);
+    setViewingSaleReceipt(null);
     setShowReceiptPreview(true);
   };
 
@@ -249,29 +270,26 @@ const SalesManagement = () => {
 
   // Generate receipt data for a sale
   const generateSaleReceipt = (sale: Sale): ReceiptData => {
-    return {
+    return buildReceiptData({
       id: sale.id,
       type: 'receipt',
       number: `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
       date: sale.date,
       clientName: sale.clientName,
       clientContact: sale.clientContact || undefined,
-      items: sale.products.map(p => ({
-        name: p.name,
-        quantity: p.quantity,
-        unitPrice: p.unitPrice,
-        total: p.total
+      items: sale.products.map((product) => ({
+        name: product.name,
+        quantity: product.quantity,
+        unitPrice: product.unitPrice,
+        total: product.total
       })),
       subtotal: sale.totalAmount,
       tax: 0,
       taxRate: 0,
       total: sale.totalAmount,
       paymentMethod: sale.paymentMethod || undefined,
-      notes: sale.notes || undefined,
-      companyName: undefined,
-      companyAddress: undefined,
-      companyContact: undefined
-    };
+      notes: sale.notes || undefined
+    });
   };
 
   const handleViewSaleReceipt = (sale: Sale) => {
