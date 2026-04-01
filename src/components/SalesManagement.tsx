@@ -981,8 +981,8 @@ const SalesManagement = () => {
           open={showReceiptPreview}
           onOpenChange={setShowReceiptPreview}
           data={previewReceiptData}
-          onConfirm={handleConfirmSale}
-          showConfirmButton={true}
+          onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
+          showConfirmButton={!viewingSaleReceipt}
         />
       )}
     </div>
