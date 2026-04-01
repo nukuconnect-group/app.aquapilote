@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { FileText, Download, Eye, Printer, X } from 'lucide-react';
+import { FileText, Download, Eye, Printer } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSales } from '@/hooks/useSales';
+import ReceiptPreview, { ReceiptData } from './ReceiptPreview';
+import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
 
 type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 
@@ -14,6 +15,7 @@ interface Invoice {
   id: string;
   invoiceNumber: string;
   clientName: string;
+  clientContact?: string;
   date: string;
   dueDate: string;
   items: InvoiceItem[];
@@ -21,6 +23,9 @@ interface Invoice {
   tax: number;
   total: number;
   status: InvoiceStatus;
+  paymentMethod?: string;
+  notes?: string;
+  isPaid: boolean;
 }
 
 interface InvoiceItem {
@@ -32,9 +37,11 @@ interface InvoiceItem {
 }
 
 const InvoiceManager = () => {
-  const { formatCurrency, t } = useSettings();
+  const { formatCurrency, t, companyInfo } = useSettings();
   const { sales } = useSales(); // déjà filtré par unité active dans le hook
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [previewData, setPreviewData] = useState<ReceiptData | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [initialAction, setInitialAction] = useState<'download' | 'print' | null>(null);
 
   const invoices = useMemo<Invoice[]>(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -76,6 +83,7 @@ const InvoiceManager = () => {
           id: sale.id,
           invoiceNumber: `INV-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
           clientName: sale.clientName,
+          clientContact: sale.clientContact || undefined,
           date: sale.date,
           dueDate,
           items,
@@ -83,6 +91,9 @@ const InvoiceManager = () => {
           tax,
           total,
           status,
+          paymentMethod: sale.paymentMethod || undefined,
+          notes: sale.notes || undefined,
+          isPaid: isSaleSettled(sale),
         };
       });
   }, [sales]);
@@ -117,94 +128,42 @@ const InvoiceManager = () => {
     }
   };
 
-  const generateInvoiceContent = (invoice: Invoice) => {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Facture ${invoice.invoiceNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .items-table th { background-color: #f2f2f2; }
-            .totals { text-align: right; }
-            .total-row { font-weight: bold; font-size: 1.2em; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>FACTURE</h1>
-            <h2>${invoice.invoiceNumber}</h2>
-          </div>
+  const buildInvoicePreviewData = (invoice: Invoice): ReceiptData => ({
+    id: invoice.id,
+    type: 'invoice',
+    number: invoice.invoiceNumber,
+    date: invoice.date,
+    dueDate: invoice.dueDate,
+    clientName: invoice.clientName,
+    clientContact: invoice.clientContact,
+    items: invoice.items.map((item) => ({
+      name: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.total,
+    })),
+    subtotal: invoice.subtotal,
+    tax: invoice.tax,
+    taxRate: invoice.subtotal > 0 && invoice.tax > 0 ? (invoice.tax / invoice.subtotal) * 100 : 0,
+    total: invoice.total,
+    paymentMethod: invoice.paymentMethod,
+    notes: invoice.notes,
+    isPaid: invoice.isPaid,
+    ...getCompanyDocumentFields(companyInfo),
+  });
 
-          <div class="invoice-details">
-            <div>
-              <strong>Client:</strong><br>
-              ${invoice.clientName}
-            </div>
-            <div>
-              <strong>Date:</strong> ${invoice.date}<br>
-              <strong>Échéance:</strong> ${invoice.dueDate}
-            </div>
-          </div>
-
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Quantité</th>
-                <th>Prix unitaire</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${invoice.items
-                .map(
-                  (item) => `
-                <tr>
-                  <td>${item.description}</td>
-                  <td>${item.quantity}</td>
-                  <td>${formatCurrency(item.unitPrice)}</td>
-                  <td>${formatCurrency(item.total)}</td>
-                </tr>
-              `
-                )
-                .join('')}
-            </tbody>
-          </table>
-
-          <div class="totals">
-            <p>Sous-total: ${formatCurrency(invoice.subtotal)}</p>
-            <p>TVA: ${formatCurrency(invoice.tax)}</p>
-            <p class="total-row">Total: ${formatCurrency(invoice.total)}</p>
-          </div>
-        </body>
-      </html>
-    `;
+  const openInvoicePreview = (invoice: Invoice, action?: 'download' | 'print') => {
+    setPreviewData(buildInvoicePreviewData(invoice));
+    setInitialAction(action || null);
+    setShowPreview(true);
   };
 
   const handleDownloadInvoice = (invoice: Invoice) => {
-    const invoiceContent = generateInvoiceContent(invoice);
-    const blob = new Blob([invoiceContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${invoice.invoiceNumber}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    openInvoicePreview(invoice, 'download');
   };
 
   const handlePrintInvoice = (invoice: Invoice) => {
-    const invoiceContent = generateInvoiceContent(invoice);
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(invoiceContent);
-      printWindow.document.close();
-      printWindow.print();
-    }
+    openInvoicePreview(invoice, 'print');
   };
 
   return (
@@ -298,7 +257,7 @@ const InvoiceManager = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedInvoice(invoice)}>
+                        <Button variant="outline" size="sm" onClick={() => openInvoicePreview(invoice)}>
                           <Eye className="w-3 h-3" />
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
@@ -317,117 +276,21 @@ const InvoiceManager = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog de prévisualisation de facture */}
-      <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Facture {selectedInvoice?.invoiceNumber}
-            </DialogTitle>
-            <DialogDescription>
-              Prévisualisation de la facture
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedInvoice && (
-            <div className="space-y-6">
-              {/* En-tête de facture */}
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t('client') || 'Client'}</p>
-                    <p className="font-semibold text-lg">{selectedInvoice.clientName}</p>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <Badge className={`${getStatusColor(selectedInvoice.status)} text-sm`}>
-                      {getStatusLabel(selectedInvoice.status)}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Détails de la facture */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-muted-foreground text-xs">{t('invoiceNumber') || 'N° Facture'}</p>
-                  <p className="font-medium font-mono">{selectedInvoice.invoiceNumber}</p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-muted-foreground text-xs">{t('date') || 'Date'}</p>
-                  <p className="font-medium">{new Date(selectedInvoice.date).toLocaleDateString('fr-FR')}</p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-muted-foreground text-xs">{t('dueDate') || 'Échéance'}</p>
-                  <p className="font-medium">{new Date(selectedInvoice.dueDate).toLocaleDateString('fr-FR')}</p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-muted-foreground text-xs">{t('total') || 'Total'}</p>
-                  <p className="font-bold text-primary">{formatCurrency(selectedInvoice.total)}</p>
-                </div>
-              </div>
-
-              {/* Tableau des articles */}
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>{t('description') || 'Description'}</TableHead>
-                      <TableHead className="text-right">{t('quantity') || 'Qté'}</TableHead>
-                      <TableHead className="text-right">{t('unitPrice') || 'Prix U.'}</TableHead>
-                      <TableHead className="text-right">{t('total') || 'Total'}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedInvoice.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.description}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(item.total)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Totaux */}
-              <div className="flex justify-end">
-                <div className="w-64 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t('subtotal') || 'Sous-total'}</span>
-                    <span>{formatCurrency(selectedInvoice.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{t('vat') || 'TVA'}</span>
-                    <span>{formatCurrency(selectedInvoice.tax)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t font-bold text-lg">
-                    <span>{t('total') || 'Total'}</span>
-                    <span className="text-primary">{formatCurrency(selectedInvoice.total)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button onClick={() => handleDownloadInvoice(selectedInvoice)} className="flex-1 sm:flex-none">
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger HTML
-                </Button>
-                <Button variant="outline" onClick={() => handlePrintInvoice(selectedInvoice)} className="flex-1 sm:flex-none">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Imprimer
-                </Button>
-                <Button variant="outline" onClick={() => setSelectedInvoice(null)} className="ml-auto">
-                  <X className="w-4 h-4 mr-2" />
-                  Fermer
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {previewData && (
+        <ReceiptPreview
+          open={showPreview}
+          onOpenChange={(open) => {
+            setShowPreview(open);
+            if (!open) {
+              setInitialAction(null);
+            }
+          }}
+          data={previewData}
+          showConfirmButton={false}
+          initialAction={initialAction}
+          onInitialActionComplete={() => setInitialAction(null)}
+        />
+      )}
     </div>
   );
 };
