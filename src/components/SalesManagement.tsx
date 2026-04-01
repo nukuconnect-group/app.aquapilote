@@ -288,7 +288,8 @@ const SalesManagement = () => {
       taxRate: 0,
       total: sale.totalAmount,
       paymentMethod: sale.paymentMethod || undefined,
-      notes: sale.notes || undefined
+      notes: sale.notes || undefined,
+      isPaid: sale.status === 'paid'
     });
   };
 
