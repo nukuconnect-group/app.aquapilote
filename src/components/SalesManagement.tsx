@@ -288,7 +288,8 @@ const SalesManagement = () => {
       taxRate: 0,
       total: sale.totalAmount,
       paymentMethod: sale.paymentMethod || undefined,
-      notes: sale.notes || undefined
+      notes: sale.notes || undefined,
+      isPaid: sale.status === 'paid'
     });
   };
 
@@ -980,8 +981,8 @@ const SalesManagement = () => {
           open={showReceiptPreview}
           onOpenChange={setShowReceiptPreview}
           data={previewReceiptData}
-          onConfirm={handleConfirmSale}
-          showConfirmButton={true}
+          onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
+          showConfirmButton={!viewingSaleReceipt}
         />
       )}
     </div>
