@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
 import ExportDropdown from './ExportDropdown';
+import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -109,27 +110,9 @@ const SalesManagement = () => {
     };
   }, [filteredSales, units, sales]);
 
-  const getCompanyContactText = () => {
-    if (companyInfo.phone && companyInfo.email) {
-      return `Tél: ${companyInfo.phone} | Email: ${companyInfo.email}`;
-    }
-
-    if (companyInfo.phone) {
-      return `Tél: ${companyInfo.phone}`;
-    }
-
-    if (companyInfo.email) {
-      return `Email: ${companyInfo.email}`;
-    }
-
-    return undefined;
-  };
-
   const buildReceiptData = (baseData: Omit<ReceiptData, 'companyName' | 'companyAddress' | 'companyContact'>): ReceiptData => ({
     ...baseData,
-    companyName: companyInfo.name || undefined,
-    companyAddress: companyInfo.address || undefined,
-    companyContact: getCompanyContactText()
+    ...getCompanyDocumentFields(companyInfo),
   });
 
   const handlePreviewReceipt = () => {
@@ -155,7 +138,8 @@ const SalesManagement = () => {
       taxRate,
       total,
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes
+      notes: newSale.notes,
+      isPaid: !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
@@ -176,7 +160,7 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount,
-      status: newSale.isCredit ? 'confirmed' : 'confirmed',
+      status: newSale.isCredit ? 'confirmed' : 'paid',
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       isCredit: newSale.isCredit,
@@ -260,8 +244,11 @@ const SalesManagement = () => {
   };
 
   const handleStatusChange = async (saleId: string, newStatus: string) => {
-    await updateSale(saleId, { status: newStatus as 'pending' | 'confirmed' | 'delivered' | 'paid' });
     const sale = sales.find(s => s.id === saleId);
+    await updateSale(saleId, {
+      status: newStatus as 'pending' | 'confirmed' | 'delivered' | 'paid',
+      paidAmount: sale && newStatus === 'paid' ? sale.totalAmount : sale?.paidAmount,
+    });
     if (sale) {
       addLog('Statut vente modifié', 'Vente', `${sale.clientName} - Statut: ${getStatusText(newStatus)}`, 'info');
       toast({ title: "Statut modifié", description: `Vente passée à "${getStatusText(newStatus)}"` });
@@ -289,7 +276,7 @@ const SalesManagement = () => {
       total: sale.totalAmount,
       paymentMethod: sale.paymentMethod || undefined,
       notes: sale.notes || undefined,
-      isPaid: sale.status === 'paid'
+      isPaid: isSaleSettled(sale),
     });
   };
 

@@ -1,8 +1,6 @@
-import React, { useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { Download, Printer, FileText, CheckCircle } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +18,7 @@ export interface ReceiptData {
   type: 'receipt' | 'quote' | 'invoice';
   number: string;
   date: string;
+  dueDate?: string;
   clientName: string;
   clientContact?: string;
   items: ReceiptItem[];
@@ -41,6 +40,8 @@ interface ReceiptPreviewProps {
   data: ReceiptData;
   onConfirm?: () => void;
   showConfirmButton?: boolean;
+  initialAction?: 'download' | 'print' | null;
+  onInitialActionComplete?: () => void;
 }
 
 const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
@@ -48,7 +49,9 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   onOpenChange,
   data,
   onConfirm,
-  showConfirmButton = false
+  showConfirmButton = false,
+  initialAction = null,
+  onInitialActionComplete,
 }) => {
   const { formatCurrency, companyInfo } = useSettings();
   const { toast } = useToast();
@@ -79,25 +82,43 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
       const { jsPDF } = await import('jspdf');
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: Math.max(window.devicePixelRatio || 1, 2),
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (documentClone) => {
+          const clonedElement = documentClone.querySelector('[data-receipt-root="true"]') as HTMLElement | null;
+          if (clonedElement) {
+            clonedElement.style.background = '#ffffff';
+            clonedElement.style.color = '#111827';
+            clonedElement.style.opacity = '1';
+          }
+        },
       });
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pageMargin = 8;
+      const printableWidth = pdfWidth - pageMargin * 2;
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 5;
+      const scaledHeight = (imgHeight * printableWidth) / imgWidth;
+      let remainingHeight = scaledHeight;
+      let offsetY = pageMargin;
 
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.addImage(imgData, 'PNG', pageMargin, offsetY, printableWidth, scaledHeight);
+      remainingHeight -= pdfHeight - pageMargin * 2;
 
-      const filename = `${getDocumentTitle()}_${data.number}.pdf`;
+      while (remainingHeight > 0) {
+        pdf.addPage();
+        offsetY = pageMargin - (scaledHeight - remainingHeight);
+        pdf.addImage(imgData, 'PNG', pageMargin, offsetY, printableWidth, scaledHeight);
+        remainingHeight -= pdfHeight - pageMargin * 2;
+      }
+
+      const filename = `${getDocumentTitle().replace(/\s+/g, '_')}_${data.number}.pdf`;
 
       if (action === 'download') {
         pdf.save(filename);
@@ -105,7 +126,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
       } else {
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
-        const printWindow = window.open(pdfUrl);
+        const printWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
         if (printWindow) {
           printWindow.onload = () => printWindow.print();
         }
@@ -117,29 +138,41 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     }
   }, [data, toast]);
 
+  useEffect(() => {
+    if (!open || !initialAction) return;
+
+    void generatePDF(initialAction).finally(() => {
+      onInitialActionComplete?.();
+    });
+  }, [generatePDF, initialAction, onInitialActionComplete, open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Prévisualisation du {getDocumentTitle()}
           </DialogTitle>
         </DialogHeader>
 
         {/* Printable receipt content */}
-        <div ref={receiptRef} className="bg-white text-black p-4 sm:p-8 rounded-lg border relative">
+        <div
+          ref={receiptRef}
+          data-receipt-root="true"
+          className="relative overflow-hidden rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm sm:p-8"
+        >
           {/* PAID stamp */}
           {data.isPaid && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-[30deg] pointer-events-none z-10">
-              <div className="border-[6px] border-green-600 rounded-xl px-8 py-4 opacity-30">
-                <span className="text-green-600 font-extrabold text-6xl sm:text-8xl tracking-widest">PAYÉ</span>
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 -rotate-[24deg] opacity-25">
+              <div className="rounded-xl border-[6px] border-destructive px-8 py-4">
+                <span className="text-[4.5rem] font-extrabold tracking-[0.4em] text-destructive sm:text-[6.5rem]">PAYÉ</span>
               </div>
             </div>
           )}
 
           {/* Header */}
-          <div className="text-center mb-6 pb-4 border-b-[3px] border-blue-600">
+          <div className="relative z-10 mb-6 border-b-[3px] border-primary pb-4 text-center">
             {displayCompanyLogo && (
               <div className="flex justify-center mb-3">
                 <img
@@ -151,74 +184,75 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
               </div>
             )}
             {displayCompanyName && (
-              <h2 className="text-xl font-bold text-gray-900 mb-1">{displayCompanyName}</h2>
+              <h2 className="mb-1 text-xl font-bold text-foreground">{displayCompanyName}</h2>
             )}
             {displayCompanyAddress && (
-              <p className="text-sm text-gray-500">{displayCompanyAddress}</p>
+              <p className="text-sm text-muted-foreground">{displayCompanyAddress}</p>
             )}
             {displayCompanyContact && (
-              <p className="text-sm text-gray-500">{displayCompanyContact}</p>
+              <p className="text-sm text-muted-foreground">{displayCompanyContact}</p>
             )}
             {companyInfo.registrationNumber && (
-              <p className="text-xs text-gray-400 mt-1">N° Reg: {companyInfo.registrationNumber}</p>
+              <p className="mt-1 text-xs text-muted-foreground">N° Reg: {companyInfo.registrationNumber}</p>
             )}
             {companyInfo.taxId && (
-              <p className="text-xs text-gray-400">ID Fiscal: {companyInfo.taxId}</p>
+              <p className="text-xs text-muted-foreground">ID Fiscal: {companyInfo.taxId}</p>
             )}
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mt-4">{getDocumentTitle()}</h1>
-            <p className="text-lg text-gray-500 font-semibold">{data.number}</p>
+            <h1 className="mt-4 text-2xl font-bold text-primary sm:text-3xl">{getDocumentTitle()}</h1>
+            <p className="text-lg font-semibold text-muted-foreground">{data.number}</p>
           </div>
 
           {/* Client and Document Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2 text-sm">Informations Client</h3>
-              <p className="text-sm text-gray-700"><strong>Nom:</strong> {data.clientName}</p>
-              {data.clientContact && <p className="text-sm text-gray-700"><strong>Contact:</strong> {data.clientContact}</p>}
+          <div className="relative z-10 mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-lg bg-muted/35 p-4">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Informations Client</h3>
+              <p className="text-sm text-muted-foreground"><strong className="text-foreground">Nom:</strong> {data.clientName}</p>
+              {data.clientContact && <p className="text-sm text-muted-foreground"><strong className="text-foreground">Contact:</strong> {data.clientContact}</p>}
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2 text-sm">Informations Document</h3>
-              <p className="text-sm text-gray-700"><strong>Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
-              {data.paymentMethod && <p className="text-sm text-gray-700"><strong>Paiement:</strong> {data.paymentMethod}</p>}
+            <div className="rounded-lg bg-muted/35 p-4">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Informations Document</h3>
+              <p className="text-sm text-muted-foreground"><strong className="text-foreground">Date:</strong> {new Date(data.date).toLocaleDateString('fr-FR')}</p>
+              {data.dueDate && <p className="text-sm text-muted-foreground"><strong className="text-foreground">Échéance:</strong> {new Date(data.dueDate).toLocaleDateString('fr-FR')}</p>}
+              {data.paymentMethod && <p className="text-sm text-muted-foreground"><strong className="text-foreground">Paiement:</strong> {data.paymentMethod}</p>}
             </div>
           </div>
 
           {/* Items Table */}
-          <table className="w-full mb-6 text-sm" style={{ borderCollapse: 'collapse' }}>
+          <table className="relative z-10 mb-6 w-full text-sm" style={{ borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-blue-600">
-                <th className="text-left p-3 text-white font-semibold">Description</th>
-                <th className="text-right p-3 text-white font-semibold">Qté</th>
-                <th className="text-right p-3 text-white font-semibold">Prix unit.</th>
-                <th className="text-right p-3 text-white font-semibold">Total</th>
+              <tr className="bg-primary text-primary-foreground">
+                <th className="p-3 text-left font-semibold">Description</th>
+                <th className="p-3 text-right font-semibold">Qté</th>
+                <th className="p-3 text-right font-semibold">Prix unit.</th>
+                <th className="p-3 text-right font-semibold">Total</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((item, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td className="p-3 text-gray-900 font-medium">{item.name}</td>
-                  <td className="p-3 text-right text-gray-700">{item.quantity}</td>
-                  <td className="p-3 text-right text-gray-700">{formatCurrency(item.unitPrice)}</td>
-                  <td className="p-3 text-right text-gray-900 font-semibold">{formatCurrency(item.total)}</td>
+                <tr key={idx} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'} style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+                  <td className="p-3 font-medium text-foreground">{item.name}</td>
+                  <td className="p-3 text-right text-muted-foreground">{item.quantity}</td>
+                  <td className="p-3 text-right text-muted-foreground">{formatCurrency(item.unitPrice)}</td>
+                  <td className="p-3 text-right font-semibold text-foreground">{formatCurrency(item.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
           {/* Totals */}
-          <div className="flex justify-end mb-6">
-            <div className="w-full sm:w-80 bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between py-2 text-sm text-gray-600 border-b border-gray-200">
+          <div className="relative z-10 mb-6 flex justify-end">
+            <div className="w-full rounded-lg bg-muted/35 p-4 sm:w-80">
+              <div className="flex justify-between border-b border-border py-2 text-sm text-muted-foreground">
                 <span>Sous-total:</span>
-                <span className="font-medium">{formatCurrency(data.subtotal)}</span>
+                <span className="font-medium text-foreground">{formatCurrency(data.subtotal)}</span>
               </div>
               {data.tax ? (
-                <div className="flex justify-between py-2 text-sm text-gray-600 border-b border-gray-200">
+                <div className="flex justify-between border-b border-border py-2 text-sm text-muted-foreground">
                   <span>TVA ({data.taxRate || 20}%):</span>
-                  <span className="font-medium">{formatCurrency(data.tax)}</span>
+                  <span className="font-medium text-foreground">{formatCurrency(data.tax)}</span>
                 </div>
               ) : null}
-              <div className="flex justify-between py-3 text-xl font-bold text-blue-600 border-t-2 border-blue-600 mt-2">
+              <div className="mt-2 flex justify-between border-t-2 border-primary py-3 text-xl font-bold text-primary">
                 <span>TOTAL:</span>
                 <span>{formatCurrency(data.total)}</span>
               </div>
@@ -227,14 +261,14 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
           {/* Notes */}
           {data.notes && (
-            <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded mb-6">
-              <h4 className="font-semibold text-sm text-yellow-900 mb-1">Notes / Conditions</h4>
-              <p className="text-sm text-yellow-800">{data.notes}</p>
+            <div className="relative z-10 mb-6 rounded border-l-4 border-accent bg-accent/20 p-4">
+              <h4 className="mb-1 text-sm font-semibold text-foreground">Notes / Conditions</h4>
+              <p className="text-sm text-muted-foreground">{data.notes}</p>
             </div>
           )}
 
           {/* Footer */}
-          <div className="text-center pt-4 border-t-2 border-gray-200 text-gray-400 text-xs">
+          <div className="relative z-10 border-t-2 border-border pt-4 text-center text-xs text-muted-foreground">
             <p>Document généré le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR')}</p>
             <p>Merci pour votre confiance</p>
           </div>
@@ -251,7 +285,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             Imprimer
           </Button>
           {showConfirmButton && onConfirm && (
-            <Button onClick={onConfirm} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto text-sm">
+            <Button onClick={onConfirm} className="w-full text-sm sm:w-auto">
               <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               Confirmer et enregistrer
             </Button>
