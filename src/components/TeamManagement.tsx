@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Loader2, LayoutDashboard } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -20,6 +20,7 @@ import MemberDetailsDialog from './team/MemberDetailsDialog';
 import CredentialsDialog from './team/CredentialsDialog';
 import ResetPasswordDialog from './team/ResetPasswordDialog';
 import ViewCredentialsDialog from './team/ViewCredentialsDialog';
+import TeamRoleDashboard from './team/TeamRoleDashboard';
 
 interface UnitPermissions {
   unitId: string;
