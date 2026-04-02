@@ -289,6 +289,42 @@ const SalesManagement = () => {
     setShowReceiptPreview(true);
   };
 
+  const handleEditSale = (sale: Sale) => {
+    setEditingSale({ ...sale });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEditSale = async () => {
+    if (!editingSale) return;
+    const totalAmount = editingSale.products.reduce((sum, p) => sum + p.total, 0);
+    const result = await updateSale(editingSale.id, {
+      clientName: editingSale.clientName,
+      clientContact: editingSale.clientContact,
+      paymentMethod: editingSale.paymentMethod,
+      notes: editingSale.notes,
+      totalAmount,
+      products: editingSale.products,
+      isCredit: editingSale.isCredit,
+      dueDate: editingSale.dueDate,
+      paymentTerms: editingSale.paymentTerms,
+    });
+    if (result) {
+      toast({ title: "Vente modifiée", description: "Les modifications ont été enregistrées" });
+      setShowEditDialog(false);
+      setEditingSale(null);
+    } else {
+      toast({ title: "Erreur", description: "Impossible de modifier la vente", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteSale = async (sale: Sale) => {
+    if (!confirm(`Supprimer la vente de ${sale.clientName} ?`)) return;
+    const result = await deleteSale(sale.id);
+    if (result) {
+      toast({ title: "Vente supprimée", description: `Vente de ${sale.clientName} supprimée` });
+    }
+  };
+
   const getCurrencySymbol = () => {
     switch (currency) {
       case 'XOF': return 'F CFA';
