@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Loader2, LayoutDashboard } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamMembers, TeamMember, NewTeamMember } from '@/hooks/useTeamMembers';
@@ -20,6 +20,7 @@ import MemberDetailsDialog from './team/MemberDetailsDialog';
 import CredentialsDialog from './team/CredentialsDialog';
 import ResetPasswordDialog from './team/ResetPasswordDialog';
 import ViewCredentialsDialog from './team/ViewCredentialsDialog';
+import TeamRoleDashboard from './team/TeamRoleDashboard';
 
 interface UnitPermissions {
   unitId: string;
@@ -490,11 +491,23 @@ const TeamManagement = () => {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="members" className="space-y-4">
-        <TabsList className="grid grid-cols-2 w-full">
+      <Tabs defaultValue="dashboard" className="space-y-4">
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="dashboard">
+            <LayoutDashboard className="w-4 h-4 mr-1.5" />
+            Tableau de bord
+          </TabsTrigger>
           <TabsTrigger value="members">{t('team_members_tab')}</TabsTrigger>
           <TabsTrigger value="permissions">{t('permissions_tab')}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard">
+          <TeamRoleDashboard
+            members={teamMembers}
+            modulePermissions={modulePermissions}
+            onEditMember={openMemberDetails}
+          />
+        </TabsContent>
 
         <TabsContent value="members">
           <TeamMemberList

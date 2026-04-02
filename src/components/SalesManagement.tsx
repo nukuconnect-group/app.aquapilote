@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -29,12 +29,14 @@ const SalesManagement = () => {
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency, t, currency, companyInfo } = useSettings();
   const { toast } = useToast();
-  const { sales, loading, addSale, updateSale } = useSales();
+  const { sales, loading, addSale, updateSale, deleteSale } = useSales();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
   const [viewingSaleReceipt, setViewingSaleReceipt] = useState<Sale | null>(null);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -285,6 +287,42 @@ const SalesManagement = () => {
     setPreviewReceiptData(receiptData);
     setViewingSaleReceipt(sale);
     setShowReceiptPreview(true);
+  };
+
+  const handleEditSale = (sale: Sale) => {
+    setEditingSale({ ...sale });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEditSale = async () => {
+    if (!editingSale) return;
+    const totalAmount = editingSale.products.reduce((sum, p) => sum + p.total, 0);
+    const result = await updateSale(editingSale.id, {
+      clientName: editingSale.clientName,
+      clientContact: editingSale.clientContact,
+      paymentMethod: editingSale.paymentMethod,
+      notes: editingSale.notes,
+      totalAmount,
+      products: editingSale.products,
+      isCredit: editingSale.isCredit,
+      dueDate: editingSale.dueDate,
+      paymentTerms: editingSale.paymentTerms,
+    });
+    if (result) {
+      toast({ title: "Vente modifiée", description: "Les modifications ont été enregistrées" });
+      setShowEditDialog(false);
+      setEditingSale(null);
+    } else {
+      toast({ title: "Erreur", description: "Impossible de modifier la vente", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteSale = async (sale: Sale) => {
+    if (!confirm(`Supprimer la vente de ${sale.clientName} ?`)) return;
+    const result = await deleteSale(sale.id);
+    if (result) {
+      toast({ title: "Vente supprimée", description: `Vente de ${sale.clientName} supprimée` });
+    }
   };
 
   const getCurrencySymbol = () => {
@@ -664,20 +702,22 @@ const SalesManagement = () => {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap sm:flex-col sm:items-end">
-                          <Select
-                            value={sale.status}
-                            onValueChange={(value) => handleStatusChange(sale.id, value)}
-                          >
-                            <SelectTrigger className="w-28 h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">En attente</SelectItem>
-                              <SelectItem value="confirmed">Confirmée</SelectItem>
-                              <SelectItem value="delivered">Livrée</SelectItem>
-                              <SelectItem value="paid">Payée</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="relative z-50">
+                            <Select
+                              value={sale.status}
+                              onValueChange={(value) => handleStatusChange(sale.id, value)}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent position="popper" className="z-[9999]" sideOffset={4}>
+                                <SelectItem value="pending">En attente</SelectItem>
+                                <SelectItem value="confirmed">Confirmée</SelectItem>
+                                <SelectItem value="delivered">Livrée</SelectItem>
+                                <SelectItem value="paid">Payée</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <p className="text-base sm:text-lg font-bold text-green-600">
                             {formatCurrency(sale.totalAmount)}
                           </p>
@@ -720,7 +760,16 @@ const SalesManagement = () => {
                       )}
                       
                       {/* Receipt actions */}
-                      <div className="mt-3 pt-3 border-t flex gap-2 justify-end">
+                      <div className="mt-3 pt-3 border-t flex gap-2 justify-end flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSale(sale)}
+                          className="text-xs"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Modifier
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -729,6 +778,15 @@ const SalesManagement = () => {
                         >
                           <Eye className="w-3 h-3 mr-1" />
                           Voir Reçu
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteSale(sale)}
+                          className="text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Supprimer
                         </Button>
                       </div>
                     </div>
@@ -961,6 +1019,123 @@ const SalesManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Sale Dialog */}
+      {editingSale && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base sm:text-lg">Modifier la vente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <Label>Nom du client</Label>
+                  <Input
+                    value={editingSale.clientName}
+                    onChange={(e) => setEditingSale({ ...editingSale, clientName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Contact</Label>
+                  <Input
+                    value={editingSale.clientContact}
+                    onChange={(e) => setEditingSale({ ...editingSale, clientContact: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Produits</Label>
+                  <Button size="sm" variant="outline" onClick={() => setEditingSale({
+                    ...editingSale,
+                    products: [...editingSale.products, { name: '', quantity: 0, unitPrice: 0, total: 0 }]
+                  })}>
+                    <Plus className="w-3 h-3 mr-1" /> Ajouter
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {editingSale.products.map((product, index) => (
+                    <div key={index} className="flex flex-col gap-2 p-2 border rounded">
+                      <Input
+                        placeholder="Produit"
+                        value={product.name}
+                        onChange={(e) => {
+                          const prods = [...editingSale.products];
+                          prods[index] = { ...prods[index], name: e.target.value };
+                          setEditingSale({ ...editingSale, products: prods });
+                        }}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Quantité"
+                          value={product.quantity || ''}
+                          onChange={(e) => {
+                            const prods = [...editingSale.products];
+                            const qty = parseInt(e.target.value) || 0;
+                            prods[index] = { ...prods[index], quantity: qty, total: qty * prods[index].unitPrice };
+                            setEditingSale({ ...editingSale, products: prods });
+                          }}
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Prix unitaire"
+                          value={product.unitPrice || ''}
+                          onChange={(e) => {
+                            const prods = [...editingSale.products];
+                            const price = parseFloat(e.target.value) || 0;
+                            prods[index] = { ...prods[index], unitPrice: price, total: prods[index].quantity * price };
+                            setEditingSale({ ...editingSale, products: prods });
+                          }}
+                        />
+                      </div>
+                      <div className="text-right text-sm font-medium">
+                        Total: {formatCurrency(product.quantity * product.unitPrice)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-right mt-2 p-2 bg-muted rounded">
+                  <span className="text-lg font-bold">
+                    Total: {formatCurrency(editingSale.products.reduce((s, p) => s + (p.quantity * p.unitPrice), 0))}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Mode de paiement</Label>
+                  <Select value={editingSale.paymentMethod} onValueChange={(v) => setEditingSale({ ...editingSale, paymentMethod: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Espèces">Espèces</SelectItem>
+                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                      <SelectItem value="Virement">Virement</SelectItem>
+                      <SelectItem value="Carte">Carte bancaire</SelectItem>
+                      <SelectItem value="Chèque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Input
+                    value={editingSale.notes}
+                    onChange={(e) => setEditingSale({ ...editingSale, notes: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
+                <Button onClick={handleSaveEditSale}>Enregistrer</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Receipt Preview Dialog */}
       {previewReceiptData && (
