@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -29,12 +29,14 @@ const SalesManagement = () => {
   const { units, activeUnit } = useProductionUnits();
   const { formatCurrency, t, currency, companyInfo } = useSettings();
   const { toast } = useToast();
-  const { sales, loading, addSale, updateSale } = useSales();
+  const { sales, loading, addSale, updateSale, deleteSale } = useSales();
   
   const [showSaleDialog, setShowSaleDialog] = useState(false);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [previewReceiptData, setPreviewReceiptData] = useState<ReceiptData | null>(null);
   const [viewingSaleReceipt, setViewingSaleReceipt] = useState<Sale | null>(null);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
