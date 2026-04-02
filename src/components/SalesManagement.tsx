@@ -702,20 +702,22 @@ const SalesManagement = () => {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap sm:flex-col sm:items-end">
-                          <Select
-                            value={sale.status}
-                            onValueChange={(value) => handleStatusChange(sale.id, value)}
-                          >
-                            <SelectTrigger className="w-28 h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">En attente</SelectItem>
-                              <SelectItem value="confirmed">Confirmée</SelectItem>
-                              <SelectItem value="delivered">Livrée</SelectItem>
-                              <SelectItem value="paid">Payée</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="relative z-50">
+                            <Select
+                              value={sale.status}
+                              onValueChange={(value) => handleStatusChange(sale.id, value)}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent position="popper" className="z-[9999]" sideOffset={4}>
+                                <SelectItem value="pending">En attente</SelectItem>
+                                <SelectItem value="confirmed">Confirmée</SelectItem>
+                                <SelectItem value="delivered">Livrée</SelectItem>
+                                <SelectItem value="paid">Payée</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <p className="text-base sm:text-lg font-bold text-green-600">
                             {formatCurrency(sale.totalAmount)}
                           </p>
@@ -758,7 +760,16 @@ const SalesManagement = () => {
                       )}
                       
                       {/* Receipt actions */}
-                      <div className="mt-3 pt-3 border-t flex gap-2 justify-end">
+                      <div className="mt-3 pt-3 border-t flex gap-2 justify-end flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSale(sale)}
+                          className="text-xs"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Modifier
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -767,6 +778,15 @@ const SalesManagement = () => {
                         >
                           <Eye className="w-3 h-3 mr-1" />
                           Voir Reçu
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteSale(sale)}
+                          className="text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Supprimer
                         </Button>
                       </div>
                     </div>
