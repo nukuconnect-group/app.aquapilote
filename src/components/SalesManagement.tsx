@@ -1020,6 +1020,123 @@ const SalesManagement = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Sale Dialog */}
+      {editingSale && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base sm:text-lg">Modifier la vente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <Label>Nom du client</Label>
+                  <Input
+                    value={editingSale.clientName}
+                    onChange={(e) => setEditingSale({ ...editingSale, clientName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Contact</Label>
+                  <Input
+                    value={editingSale.clientContact}
+                    onChange={(e) => setEditingSale({ ...editingSale, clientContact: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Produits</Label>
+                  <Button size="sm" variant="outline" onClick={() => setEditingSale({
+                    ...editingSale,
+                    products: [...editingSale.products, { name: '', quantity: 0, unitPrice: 0, total: 0 }]
+                  })}>
+                    <Plus className="w-3 h-3 mr-1" /> Ajouter
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {editingSale.products.map((product, index) => (
+                    <div key={index} className="flex flex-col gap-2 p-2 border rounded">
+                      <Input
+                        placeholder="Produit"
+                        value={product.name}
+                        onChange={(e) => {
+                          const prods = [...editingSale.products];
+                          prods[index] = { ...prods[index], name: e.target.value };
+                          setEditingSale({ ...editingSale, products: prods });
+                        }}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Quantité"
+                          value={product.quantity || ''}
+                          onChange={(e) => {
+                            const prods = [...editingSale.products];
+                            const qty = parseInt(e.target.value) || 0;
+                            prods[index] = { ...prods[index], quantity: qty, total: qty * prods[index].unitPrice };
+                            setEditingSale({ ...editingSale, products: prods });
+                          }}
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Prix unitaire"
+                          value={product.unitPrice || ''}
+                          onChange={(e) => {
+                            const prods = [...editingSale.products];
+                            const price = parseFloat(e.target.value) || 0;
+                            prods[index] = { ...prods[index], unitPrice: price, total: prods[index].quantity * price };
+                            setEditingSale({ ...editingSale, products: prods });
+                          }}
+                        />
+                      </div>
+                      <div className="text-right text-sm font-medium">
+                        Total: {formatCurrency(product.quantity * product.unitPrice)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-right mt-2 p-2 bg-muted rounded">
+                  <span className="text-lg font-bold">
+                    Total: {formatCurrency(editingSale.products.reduce((s, p) => s + (p.quantity * p.unitPrice), 0))}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Mode de paiement</Label>
+                  <Select value={editingSale.paymentMethod} onValueChange={(v) => setEditingSale({ ...editingSale, paymentMethod: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Espèces">Espèces</SelectItem>
+                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                      <SelectItem value="Virement">Virement</SelectItem>
+                      <SelectItem value="Carte">Carte bancaire</SelectItem>
+                      <SelectItem value="Chèque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Input
+                    value={editingSale.notes}
+                    onChange={(e) => setEditingSale({ ...editingSale, notes: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
+                <Button onClick={handleSaveEditSale}>Enregistrer</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Receipt Preview Dialog */}
       {previewReceiptData && (
         <ReceiptPreview
