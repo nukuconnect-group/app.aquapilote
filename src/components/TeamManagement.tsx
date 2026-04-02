@@ -491,11 +491,23 @@ const TeamManagement = () => {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="members" className="space-y-4">
-        <TabsList className="grid grid-cols-2 w-full">
+      <Tabs defaultValue="dashboard" className="space-y-4">
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="dashboard">
+            <LayoutDashboard className="w-4 h-4 mr-1.5" />
+            Tableau de bord
+          </TabsTrigger>
           <TabsTrigger value="members">{t('team_members_tab')}</TabsTrigger>
           <TabsTrigger value="permissions">{t('permissions_tab')}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard">
+          <TeamRoleDashboard
+            members={teamMembers}
+            modulePermissions={modulePermissions}
+            onEditMember={openMemberDetails}
+          />
+        </TabsContent>
 
         <TabsContent value="members">
           <TeamMemberList
