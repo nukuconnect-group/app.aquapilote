@@ -234,24 +234,23 @@ serve(async (req) => {
 
     console.log('Password reset successfully for:', email, 'by owner:', user.id);
     
-    // SECURITY: Do not return password in response - it's sent via email only
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
+        newPassword,
         loginUrl,
         emailSent,
         emailError,
-        message: emailSent 
-          ? 'Mot de passe réinitialisé avec succès. Les nouveaux identifiants ont été envoyés par email.' 
-          : 'Mot de passe réinitialisé avec succès. Veuillez noter que l\'email n\'a pas pu être envoyé.'
-        // newPassword intentionally NOT included - sent via email only
+        message: emailSent
+          ? 'Mot de passe réinitialisé. Identifiants envoyés par email.'
+          : 'Mot de passe réinitialisé.'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Unexpected error:', error);
+  } catch (error: any) {
+    console.error('Unexpected error:', error?.message, error?.stack);
     return new Response(
-      JSON.stringify({ error: 'Erreur serveur interne' }),
+      JSON.stringify({ error: error?.message || 'Erreur serveur interne' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
