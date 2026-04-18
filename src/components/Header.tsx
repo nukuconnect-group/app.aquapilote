@@ -68,8 +68,8 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const currentLang = supportedLanguages.find(l => l.code === language);
 
   return <>
-    <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0">
-      <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
+    <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0 border-0">
+      <div className="flex justify-between items-center h-full w-full px-3 sm:px-4 lg:px-6 m-0">
         {/* Logo et titre à gauche */}
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <div className="min-w-0">
