@@ -510,6 +510,16 @@ const AquaAssistant = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* Clear chat history */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearChatHistory}
+                  className="text-white hover:bg-white/20 h-8 px-2 text-xs"
+                  title="Effacer l'historique de conversation"
+                >
+                  Effacer
+                </Button>
                 {/* Fullscreen toggle - visible on mobile/tablet */}
                 <Button
                   variant="ghost"
