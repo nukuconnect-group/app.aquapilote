@@ -262,30 +262,36 @@ const TeamManagement = () => {
 
   const handleConfirmAndCreate = async (sendEmail: boolean) => {
     setIsSubmitting(true);
-    const finalRole = inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role;
+    const isCustomRole = inviteData.role === 'role_custom';
+    const finalRole = isCustomRole ? (inviteData.customRole || 'Personnalisé') : (inviteData.role || 'Membre');
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
-      role: finalRole || 'Membre', custom_role: inviteData.role === 'Personnalisé' ? inviteData.customRole : undefined,
+      role: finalRole, custom_role: isCustomRole ? inviteData.customRole : undefined,
       department: inviteData.department, permissions: inviteData.permissions
     };
 
     const result = await addTeamMember(newMember);
     if (result.success && result.data) {
       for (const unitPerm of inviteData.unitPermissions) {
-        await supabase.from('team_member_units').insert({
+        const { error: unitErr } = await supabase.from('team_member_units').insert({
           team_member_id: result.data.id, unit_id: unitPerm.unitId, unit_name: unitPerm.unitName, permissions: unitPerm.permissions
         });
+        if (unitErr) console.error('Error inserting unit permission:', unitErr);
       }
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) throw new Error('Session expirée.');
-        const passwordToUse = inviteData.password || generatedPassword;
+        if (!session?.access_token) throw new Error('Session expirée. Veuillez vous reconnecter.');
+        const passwordToUse = inviteData.password || generatedPassword || generatePasswordLocal();
         const response = await supabase.functions.invoke('create-team-member-account', {
           headers: { Authorization: `Bearer ${session.access_token}` },
           body: { email: inviteData.email, full_name: inviteData.name, team_member_id: result.data.id, password: passwordToUse, sendEmail }
         });
-        if (response.error) throw new Error(response.error.message);
+        // Edge function may return a non-2xx status with an error payload in data
+        if (response.error) {
+          const serverMsg = (response.data as any)?.error || response.error.message || 'Erreur lors de la création du compte';
+          throw new Error(serverMsg);
+        }
 
         const loginUrl = `${window.location.origin}/auth`;
         if (response.data?.existingUser || response.data?.alreadyLinked) {

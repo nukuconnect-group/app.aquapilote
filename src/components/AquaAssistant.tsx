@@ -120,9 +120,38 @@ const AquaAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPremium, setIsPremium] = useState(false); // Option premium
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
-  ]);
+  const STORAGE_KEY = 'aqua_assistant_messages_v1';
+  const DEFAULT_GREETING: Message = { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." };
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load chat history', e);
+    }
+    return [DEFAULT_GREETING];
+  });
+
+  // Persist messages to localStorage so user can review previous chats
+  useEffect(() => {
+    try {
+      // Cap at last 200 messages to keep storage reasonable
+      const toStore = messages.slice(-200);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+    } catch (e) {
+      console.warn('Failed to save chat history', e);
+    }
+  }, [messages]);
+
+  const clearChatHistory = () => {
+    if (confirm('Effacer tout l\'historique de conversation ?')) {
+      setMessages([DEFAULT_GREETING]);
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    }
+  };
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
