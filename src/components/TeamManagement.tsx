@@ -318,8 +318,10 @@ const TeamManagement = () => {
         }
       } catch (error: any) {
         console.error('Error creating user account:', error);
-        addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte`, 'warning');
+        addLog('Membre invité (sans compte)', 'Équipe', `${inviteData.name} ajouté sans compte: ${error?.message}`, 'warning');
         toast({ title: t('member_added'), description: `${inviteData.name} - ${t('account_not_created')}: ${error.message}`, variant: "destructive" });
+        // Always refetch so the new (possibly orphan) member shows up and the user can retry "Créer un compte"
+        await refetch();
       }
 
       setInviteData({ name: '', email: '', password: '', role: '', customRole: '', department: '', permissions: {}, unitPermissions: [] });
