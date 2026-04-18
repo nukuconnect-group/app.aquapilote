@@ -216,33 +216,55 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
               </p>
             ) : (
               <div className="space-y-4">
-                {inviteData.unitPermissions.map((unitPerm) => (
-                  <div key={unitPerm.unitId} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{unitPerm.unitName}</span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(unitPerm.unitId)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {modulePermissions.map((module) => (
-                        <div key={module.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`unit-${unitPerm.unitId}-${module.id}`}
-                            checked={unitPerm.permissions[module.id] || false}
-                            onCheckedChange={() => onToggleUnitPermission(unitPerm.unitId, module.id)}
-                          />
-                          <label htmlFor={`unit-${unitPerm.unitId}-${module.id}`} className="text-xs cursor-pointer">
-                            {module.label}
-                          </label>
+                {inviteData.unitPermissions.map((unitPerm) => {
+                  const allChecked = modulePermissions.every(m => unitPerm.permissions[m.id]);
+                  return (
+                    <div key={unitPerm.unitId} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-primary" />
+                          <span className="font-medium">{unitPerm.unitName}</span>
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newPerms: Record<string, boolean> = {};
+                              if (!allChecked) modulePermissions.forEach(m => { newPerms[m.id] = true; });
+                              setInviteData(prev => ({
+                                ...prev,
+                                unitPermissions: prev.unitPermissions.map(up =>
+                                  up.unitId === unitPerm.unitId ? { ...up, permissions: newPerms } : up
+                                )
+                              }));
+                            }}
+                          >
+                            {allChecked ? 'Tout décocher' : 'Tous les rôles'}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(unitPerm.unitId)}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {modulePermissions.map((module) => (
+                          <div key={module.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`unit-${unitPerm.unitId}-${module.id}`}
+                              checked={unitPerm.permissions[module.id] || false}
+                              onCheckedChange={() => onToggleUnitPermission(unitPerm.unitId, module.id)}
+                            />
+                            <label htmlFor={`unit-${unitPerm.unitId}-${module.id}`} className="text-xs cursor-pointer">
+                              {module.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

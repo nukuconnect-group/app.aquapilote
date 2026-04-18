@@ -112,24 +112,32 @@ serve(async (req) => {
       }
     }
 
-    // Find the user by email
-    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) {
-      console.error('Error listing users:', listError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la recherche de l\'utilisateur' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Find the user by email — fast lookup via profiles table
+    const cleanEmail = email.trim().toLowerCase();
+    let targetUserId: string | null = null;
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles').select('id').ilike('email', cleanEmail).maybeSingle();
+    if (profile?.id) {
+      targetUserId = profile.id as string;
+    } else {
+      // Fallback: paginated scan
+      for (let page = 1; page <= 5; page++) {
+        const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+        if (error) break;
+        const found = data?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+        if (found) { targetUserId = found.id; break; }
+        if ((data?.users?.length || 0) < 200) break;
+      }
     }
 
-    const targetUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
-    
-    if (!targetUser) {
+    if (!targetUserId) {
       return new Response(
-        JSON.stringify({ error: 'Utilisateur non trouvé avec cet email' }),
+        JSON.stringify({ error: 'Utilisateur non trouvé. Créez d\'abord son compte.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    const targetUser = { id: targetUserId };
 
     // Generate new password
     const newPassword = generatePassword();
@@ -226,24 +234,23 @@ serve(async (req) => {
 
     console.log('Password reset successfully for:', email, 'by owner:', user.id);
     
-    // SECURITY: Do not return password in response - it's sent via email only
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
+        newPassword,
         loginUrl,
         emailSent,
         emailError,
-        message: emailSent 
-          ? 'Mot de passe réinitialisé avec succès. Les nouveaux identifiants ont été envoyés par email.' 
-          : 'Mot de passe réinitialisé avec succès. Veuillez noter que l\'email n\'a pas pu être envoyé.'
-        // newPassword intentionally NOT included - sent via email only
+        message: emailSent
+          ? 'Mot de passe réinitialisé. Identifiants envoyés par email.'
+          : 'Mot de passe réinitialisé.'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Unexpected error:', error);
+  } catch (error: any) {
+    console.error('Unexpected error:', error?.message, error?.stack);
     return new Response(
-      JSON.stringify({ error: 'Erreur serveur interne' }),
+      JSON.stringify({ error: error?.message || 'Erreur serveur interne' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
