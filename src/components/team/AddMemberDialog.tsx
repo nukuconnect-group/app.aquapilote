@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, X } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ProductionUnit } from '@/contexts/ProductionUnitsContext';
+import { DASHBOARD_ROLE_DEFINITIONS, DashboardRole } from '@/lib/dashboardRoles';
 
 interface UnitPermissions {
   unitId: string;
@@ -24,6 +25,7 @@ interface InviteData {
   department: string;
   permissions: Record<string, boolean>;
   unitPermissions: UnitPermissions[];
+  dashboardRoles?: DashboardRole[];
 }
 
 interface ModulePermission {
@@ -88,6 +90,46 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
           <DialogTitle>{t('add_new_member')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Sélection des tableaux de bord spécialisés */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <Label className="block mb-2 font-semibold">Tableaux de bord assignés *</Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Choisissez un ou les deux tableaux. Les modules accessibles s'ajusteront automatiquement.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(Object.keys(DASHBOARD_ROLE_DEFINITIONS) as DashboardRole[]).map((roleKey) => {
+                const def = DASHBOARD_ROLE_DEFINITIONS[roleKey];
+                const checked = inviteData.dashboardRoles?.includes(roleKey) ?? false;
+                return (
+                  <label
+                    key={roleKey}
+                    htmlFor={`dashboard-role-${roleKey}`}
+                    className={`flex gap-2 p-3 rounded-md border cursor-pointer transition-colors ${
+                      checked ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-muted/40'
+                    }`}
+                  >
+                    <Checkbox
+                      id={`dashboard-role-${roleKey}`}
+                      checked={checked}
+                      onCheckedChange={() => {
+                        setInviteData((prev) => {
+                          const current = new Set(prev.dashboardRoles ?? []);
+                          if (current.has(roleKey)) current.delete(roleKey);
+                          else current.add(roleKey);
+                          return { ...prev, dashboardRoles: Array.from(current) as DashboardRole[] };
+                        });
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{def.label}</div>
+                      <p className="text-xs text-muted-foreground mt-1">{def.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>{t('full_name')} *</Label>

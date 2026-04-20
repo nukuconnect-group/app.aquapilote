@@ -73,6 +73,7 @@ const TeamManagement = () => {
     department: string;
     permissions: Record<string, boolean>;
     unitPermissions: UnitPermissions[];
+    dashboardRoles: ('production' | 'administration')[];
   }>({
     name: '',
     email: '',
@@ -81,7 +82,8 @@ const TeamManagement = () => {
     customRole: '',
     department: '',
     permissions: {},
-    unitPermissions: []
+    unitPermissions: [],
+    dashboardRoles: []
   });
 
   const roles = [
@@ -272,6 +274,16 @@ const TeamManagement = () => {
 
     const result = await addTeamMember(newMember);
     if (result.success && result.data) {
+      // Mettre à jour les rôles dashboard assignés (production / administration)
+      try {
+        await supabase
+          .from('team_members')
+          .update({ dashboard_roles: inviteData.dashboardRoles ?? [] } as any)
+          .eq('id', result.data.id);
+      } catch (e) {
+        console.error('Error updating dashboard_roles:', e);
+      }
+
       for (const unitPerm of inviteData.unitPermissions) {
         const { error: unitErr } = await supabase.from('team_member_units').insert({
           team_member_id: result.data.id, unit_id: unitPerm.unitId, unit_name: unitPerm.unitName, permissions: unitPerm.permissions
@@ -324,7 +336,7 @@ const TeamManagement = () => {
         await refetch();
       }
 
-      setInviteData({ name: '', email: '', password: '', role: '', customRole: '', department: '', permissions: {}, unitPermissions: [] });
+      setInviteData({ name: '', email: '', password: '', role: '', customRole: '', department: '', permissions: {}, unitPermissions: [], dashboardRoles: [] });
       setSelectedUnitsForInvite(new Set());
       setGeneratedPassword('');
       setShowSummaryStep(false);

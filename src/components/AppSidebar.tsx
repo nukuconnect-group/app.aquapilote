@@ -149,9 +149,17 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
               <Shield className="w-3 h-3" />
               <span>{t('team_member')}</span>
             </div>
-            <Badge variant="outline" className="mt-1 text-xs">
-              {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
-            </Badge>
+            <div className="mt-1 flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-xs">
+                {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
+              </Badge>
+              {teamMemberInfo.dashboardRoles?.includes('production') && (
+                <Badge variant="secondary" className="text-[10px]">Production</Badge>
+              )}
+              {teamMemberInfo.dashboardRoles?.includes('administration') && (
+                <Badge variant="secondary" className="text-[10px]">Administration</Badge>
+              )}
+            </div>
           </div>
         )}
         
