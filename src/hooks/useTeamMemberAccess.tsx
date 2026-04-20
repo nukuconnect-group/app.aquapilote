@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DashboardRole,
+  computeAllowedModulesFromDashboards,
+  isValidDashboardRole,
+} from '@/lib/dashboardRoles';
 
 // Permissions basées sur les modules réels de l'application
 export interface TeamMemberModulePermissions {
@@ -41,6 +46,7 @@ export interface TeamMemberInfo {
   status: string;
   globalPermissions: TeamMemberModulePermissions;
   assignedUnits: TeamMemberUnitAccess[];
+  dashboardRoles: DashboardRole[];
 }
 
 export const useTeamMemberAccess = () => {
