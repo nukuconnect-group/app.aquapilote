@@ -35,6 +35,11 @@ const sortConversations = (conversations: AquaAssistantConversation[]) =>
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, MAX_CONVERSATIONS);
 
+const getLastCategorizedMessage = (messages: AquaAssistantMessage[]) => {
+  const categorizedMessages = messages.filter((message) => message.category);
+  return categorizedMessages[categorizedMessages.length - 1] ?? null;
+};
+
 const buildConversationTitle = (messages: AquaAssistantMessage[]) => {
   const firstUserMessage = messages.find((message) => message.role === 'user' && message.content.trim().length > 0);
   if (!firstUserMessage) return 'Nouvelle conversation';
@@ -126,7 +131,7 @@ const loadStoredConversations = (
               updatedAt,
               unitId: conversation.unitId ?? null,
               unitName: conversation.unitName ?? currentUnit?.name ?? null,
-              lastCategory: conversation.lastCategory ?? messages.filter((message) => message.category).at(-1)?.category ?? null,
+              lastCategory: conversation.lastCategory ?? getLastCategorizedMessage(messages)?.category ?? null,
               messages: messages.length > 0 ? messages : createConversation(greeting, currentUnit).messages,
             } satisfies AquaAssistantConversation;
           });
@@ -147,7 +152,7 @@ const loadStoredConversations = (
           updatedAt: messages[messages.length - 1]?.createdAt ?? new Date().toISOString(),
           unitId: messages.find((message) => message.unitId)?.unitId ?? currentUnit?.id ?? null,
           unitName: messages.find((message) => message.unitName)?.unitName ?? currentUnit?.name ?? null,
-          lastCategory: messages.filter((message) => message.category).at(-1)?.category ?? null,
+          lastCategory: getLastCategorizedMessage(messages)?.category ?? null,
           messages,
         };
 
