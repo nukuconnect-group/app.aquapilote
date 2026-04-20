@@ -100,11 +100,14 @@ export const useTeamMemberAccess = () => {
             permissions: (unit.permissions as unknown) as TeamMemberModulePermissions
           }));
 
-          // Calculer les modules autorisés (union de toutes les permissions des unités + permissions globales)
-          const modules = new Set<string>();
-          modules.add('dashboard'); // Toujours accès au dashboard
-          modules.add('settings'); // Toujours accès aux paramètres basiques
-          modules.add('support'); // Toujours accès au support
+          // Récupérer les rôles dashboard assignés (production / administration)
+          const rawDashboardRoles = (teamMember as { dashboard_roles?: unknown }).dashboard_roles;
+          const dashboardRoles: DashboardRole[] = Array.isArray(rawDashboardRoles)
+            ? (rawDashboardRoles.filter(isValidDashboardRole) as DashboardRole[])
+            : [];
+
+          // Modules autorisés : union de (permissions globales + permissions par unité + dashboards assignés)
+          const modules = computeAllowedModulesFromDashboards(dashboardRoles);
 
           // Permissions globales du membre
           const globalPerms = (teamMember.permissions as unknown) as TeamMemberModulePermissions || {};
@@ -133,7 +136,8 @@ export const useTeamMemberAccess = () => {
             department: teamMember.department || undefined,
             status: teamMember.status,
             globalPermissions: globalPerms,
-            assignedUnits
+            assignedUnits,
+            dashboardRoles,
           };
 
           setIsTeamMember(true);
