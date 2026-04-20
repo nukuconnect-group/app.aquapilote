@@ -252,6 +252,42 @@ export type Database = {
         }
         Relationships: []
       }
+      aqua_assistant_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_category: string | null
+          messages: Json
+          title: string
+          unit_id: string | null
+          unit_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_category?: string | null
+          messages?: Json
+          title?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_category?: string | null
+          messages?: Json
+          title?: string
+          unit_id?: string | null
+          unit_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_infrastructures: {
         Row: {
           created_at: string | null
@@ -1852,6 +1888,7 @@ export type Database = {
           accepted_at: string | null
           created_at: string
           custom_role: string | null
+          dashboard_roles: string[] | null
           department: string | null
           id: string
           invited_at: string
@@ -1868,6 +1905,7 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           custom_role?: string | null
+          dashboard_roles?: string[] | null
           department?: string | null
           id?: string
           invited_at?: string
@@ -1884,6 +1922,7 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           custom_role?: string | null
+          dashboard_roles?: string[] | null
           department?: string | null
           id?: string
           invited_at?: string
