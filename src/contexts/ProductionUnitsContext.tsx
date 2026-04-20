@@ -322,14 +322,14 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       let ownerId = user.id;
       let allowedUnitIds: string[] = [];
       
-      if (user.isTeamMember && user.teamMemberOwnerId) {
+        if (user.isTeamMember && user.teamMemberOwnerId) {
         ownerId = user.teamMemberOwnerId;
         
-        // Charger les unités assignées au membre
+          // Charger les unités assignées au membre via user_id pour garantir l'accès après création de compte
         const { data: teamMember } = await supabase
           .from('team_members')
           .select('id')
-          .eq('member_email', user.email.toLowerCase())
+            .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle();
         
