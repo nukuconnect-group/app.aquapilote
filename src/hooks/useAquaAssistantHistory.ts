@@ -228,7 +228,7 @@ export const useAquaAssistantHistory = (
           targetConversation.unitName ??
           currentUnit?.name ??
           null,
-        lastCategory: finalMessages.filter((message) => message.category).at(-1)?.category ?? targetConversation.lastCategory ?? null,
+        lastCategory: getLastCategorizedMessage(finalMessages)?.category ?? targetConversation.lastCategory ?? null,
         messages: finalMessages,
       };
 
