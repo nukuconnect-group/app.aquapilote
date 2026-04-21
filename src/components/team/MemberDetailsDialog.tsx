@@ -197,32 +197,16 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                 {selectedMemberUnits.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">Aucune unité assignée</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {selectedMemberUnits.map((memberUnit) => (
-                      <div key={memberUnit.unit_id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-primary" />
-                            <span className="font-medium">{memberUnit.unit_name}</span>
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(memberUnit.unit_id)}>
-                            <X className="w-4 h-4" />
-                          </Button>
+                      <div key={memberUnit.unit_id} className="border rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-sm">{memberUnit.unit_name}</span>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {modulePermissions.map((module) => (
-                            <div key={module.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`member-unit-${memberUnit.unit_id}-${module.id}`}
-                                checked={memberUnit.permissions[module.id] || false}
-                                onCheckedChange={() => onToggleUnitPermission(memberUnit.unit_id, module.id)}
-                              />
-                              <label htmlFor={`member-unit-${memberUnit.unit_id}-${module.id}`} className="text-xs cursor-pointer">
-                                {module.label}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(memberUnit.unit_id)}>
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -231,22 +215,42 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
             )}
           </div>
 
-          {/* Global permissions */}
+          {/* Dashboards assignés (rôle principal) */}
           <div>
-            <Label className="mb-3 block">Permissions globales</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-3">
-              {modulePermissions.map((module) => (
-                <div key={module.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`member-${module.id}`}
-                    checked={selectedMember.permissions[module.id] || false}
-                    onCheckedChange={() => onToggleMemberPermission(module.id)}
-                  />
-                  <label htmlFor={`member-${module.id}`} className="text-sm cursor-pointer flex-1">
-                    {module.label}
+            <Label className="mb-2 block font-semibold">Tableaux de bord assignés *</Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Les modules visibles dépendent uniquement des tableaux de bord choisis.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(Object.keys(DASHBOARD_ROLE_DEFINITIONS) as DashboardRole[]).map((roleKey) => {
+                const def = DASHBOARD_ROLE_DEFINITIONS[roleKey];
+                const current = selectedMember.dashboard_roles ?? [];
+                const checked = current.includes(roleKey);
+                return (
+                  <label
+                    key={roleKey}
+                    htmlFor={`edit-dashboard-${roleKey}`}
+                    className={`flex gap-2 p-3 rounded-md border cursor-pointer transition-colors ${
+                      checked ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-muted/40'
+                    }`}
+                  >
+                    <Checkbox
+                      id={`edit-dashboard-${roleKey}`}
+                      checked={checked}
+                      onCheckedChange={() => {
+                        const next = new Set(current);
+                        if (next.has(roleKey)) next.delete(roleKey);
+                        else next.add(roleKey);
+                        setSelectedMember({ ...selectedMember, dashboard_roles: Array.from(next) as DashboardRole[] });
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{def.label}</div>
+                      <p className="text-xs text-muted-foreground mt-1">{def.description}</p>
+                    </div>
                   </label>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
