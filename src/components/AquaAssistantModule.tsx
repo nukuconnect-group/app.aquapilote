@@ -692,6 +692,120 @@ const AquaAssistantModule = () => {
         </CardContent>
       </Card>
 
+      {/* History Drawer */}
+      {showHistory && (
+        <div className="fixed inset-0 z-[70] flex" onClick={() => setShowHistory(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative ml-auto h-full w-full sm:w-[380px] bg-background shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-border p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <History className="h-4 w-4 text-primary" />
+                <span>Historique des conversations</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={async () => {
+                    await startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+                    setShowHistory(false);
+                  }}
+                  title="Nouvelle conversation"
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={async () => {
+                    if (window.confirm('Effacer tout l’historique ?')) {
+                      await clearAll();
+                    }
+                  }}
+                  title="Effacer l’historique"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => setShowHistory(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 p-3">
+                {conversations.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Aucune conversation enregistrée.
+                  </p>
+                )}
+                {conversations.map((conv) => {
+                  const isActive = conv.id === activeId;
+                  const date = new Intl.DateTimeFormat('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }).format(new Date(conv.updated_at));
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`group rounded-lg border p-3 transition-colors ${
+                        isActive ? 'border-primary bg-primary/10' : 'border-border bg-background hover:bg-muted/60'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveId(conv.id);
+                          setShowHistory(false);
+                        }}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="flex-1 truncate text-sm font-medium">{conv.title}</p>
+                          <Badge variant="secondary" className="shrink-0 text-[10px]">
+                            {conv.messages.length}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{date}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {conv.unit_name && (
+                            <Badge variant="outline" className="max-w-full truncate text-[10px]">
+                              {conv.unit_name}
+                            </Badge>
+                          )}
+                          {conv.last_category && (
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {conv.last_category}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteConversation(conv.id)}
+                          className="h-7 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      )}
+
       {/* Premium Modal */}
       {showPremiumModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
