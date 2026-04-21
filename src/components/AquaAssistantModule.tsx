@@ -140,10 +140,21 @@ const categoryConfigs = [
 const AquaAssistantModule = () => {
   const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
+  const greeting = "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons.";
+  const {
+    conversations,
+    activeConversation,
+    activeId,
+    setActiveId,
+    startNew,
+    persistMessages,
+    deleteConversation,
+    clearAll,
+    loading: convsLoading,
+  } = useAquaAssistantConversations(greeting);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: greeting }]);
+  const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -154,6 +165,31 @@ const AquaAssistantModule = () => {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Charge les messages de la conversation active depuis Supabase
+  useEffect(() => {
+    if (activeConversation?.messages?.length) {
+      setMessages(
+        activeConversation.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          category: m.category,
+          unitId: m.unitId,
+        })),
+      );
+    } else if (!convsLoading && !activeConversation) {
+      setMessages([{ role: 'assistant', content: greeting }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, activeConversation?.id]);
+
+  // Crée automatiquement une conversation si l'utilisateur n'en a aucune
+  useEffect(() => {
+    if (!convsLoading && conversations.length === 0 && !activeId) {
+      startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convsLoading, conversations.length]);
 
   // Synchroniser avec l'unité active
   useEffect(() => {
