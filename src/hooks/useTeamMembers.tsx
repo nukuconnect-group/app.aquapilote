@@ -106,7 +106,8 @@ export const useTeamMembers = () => {
         permissions: data.permissions as Record<string, boolean>,
         status: data.status as 'active' | 'inactive' | 'pending',
         custom_role: (data as any).custom_role || null,
-        user_id: data.user_id || null
+        user_id: data.user_id || null,
+        dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
       }, ...prev]);
       
       return { success: true, data };
@@ -136,7 +137,8 @@ export const useTeamMembers = () => {
           permissions: data.permissions as Record<string, boolean>,
           status: data.status as 'active' | 'inactive' | 'pending',
           custom_role: (data as any).custom_role || null,
-          user_id: data.user_id || null
+          user_id: data.user_id || null,
+          dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
         } : m
       ));
       
