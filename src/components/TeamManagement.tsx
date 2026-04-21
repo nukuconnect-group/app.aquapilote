@@ -360,6 +360,15 @@ const TeamManagement = () => {
       department: selectedMember.department, status: selectedMember.status
     });
     if (result.success) {
+      // Persist dashboard_roles separately (not in TeamMember update typing)
+      try {
+        await supabase
+          .from('team_members')
+          .update({ dashboard_roles: selectedMember.dashboard_roles ?? [] } as any)
+          .eq('id', selectedMember.id);
+      } catch (e) {
+        console.error('Error updating dashboard_roles:', e);
+      }
       await supabase.from('team_member_units').delete().eq('team_member_id', selectedMember.id);
       for (const unitPerm of selectedMemberUnits) {
         await supabase.from('team_member_units').insert({
