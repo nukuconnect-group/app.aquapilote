@@ -10,6 +10,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { TeamMember } from '@/hooks/useTeamMembers';
 import { TeamMemberUnit } from '@/hooks/useTeamMemberUnits';
 import { ProductionUnit } from '@/contexts/ProductionUnitsContext';
+import { DASHBOARD_ROLE_DEFINITIONS, DashboardRole } from '@/lib/dashboardRoles';
 
 interface ModulePermission {
   id: string;
