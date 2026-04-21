@@ -252,6 +252,10 @@ const TeamManagement = () => {
       toast({ title: t('error'), description: t('invalid_email_format'), variant: "destructive" });
       return;
     }
+    if (!inviteData.dashboardRoles || inviteData.dashboardRoles.length === 0) {
+      toast({ title: t('error'), description: "Sélectionnez au moins un tableau de bord (Production ou Administration).", variant: "destructive" });
+      return;
+    }
     if (inviteData.unitPermissions.length === 0) {
       toast({ title: t('error'), description: t('assign_at_least_one_unit'), variant: "destructive" });
       return;

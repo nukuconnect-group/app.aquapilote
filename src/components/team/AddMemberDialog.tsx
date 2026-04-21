@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Building2, X } from 'lucide-react';
+import { Building2, KeyRound, RefreshCw } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ProductionUnit } from '@/contexts/ProductionUnitsContext';
 import { DASHBOARD_ROLE_DEFINITIONS, DashboardRole } from '@/lib/dashboardRoles';
@@ -63,6 +63,21 @@ interface AddMemberDialogProps {
   onToggleInvitePermission: (permissionId: string) => void;
 }
 
+const generateStrongPassword = () => {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const nums = '23456789';
+  const sp = '!@#$%&*';
+  const all = upper + lower + nums + sp;
+  let pw =
+    upper[Math.floor(Math.random() * upper.length)] +
+    lower[Math.floor(Math.random() * lower.length)] +
+    nums[Math.floor(Math.random() * nums.length)] +
+    sp[Math.floor(Math.random() * sp.length)];
+  for (let i = 0; i < 8; i++) pw += all[Math.floor(Math.random() * all.length)];
+  return pw.split('').sort(() => Math.random() - 0.5).join('');
+};
+
 const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   open,
   onOpenChange,
@@ -70,27 +85,31 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   setInviteData,
   units,
   selectedUnitsForInvite,
-  setSelectedUnitsForInvite,
   roles,
   departments,
-  modulePermissions,
   isSubmitting,
   onProceedToSummary,
   onToggleUnitSelection,
-  onRemoveUnit,
-  onToggleUnitPermission,
-  onToggleInvitePermission,
 }) => {
   const { t } = useSettings();
 
+  const toggleDashboardRole = (roleKey: DashboardRole) => {
+    setInviteData((prev) => {
+      const current = new Set(prev.dashboardRoles ?? []);
+      if (current.has(roleKey)) current.delete(roleKey);
+      else current.add(roleKey);
+      return { ...prev, dashboardRoles: Array.from(current) as DashboardRole[] };
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('add_new_member')}</DialogTitle>
+          <DialogTitle>{t('add_new_member') || 'Ajouter un membre'}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          {/* Sélection des tableaux de bord spécialisés */}
+        <div className="space-y-5">
+          {/* 1. Tableaux de bord (rôle principal) */}
           <div className="border rounded-lg p-4 bg-muted/30">
             <Label className="block mb-2 font-semibold">Tableaux de bord assignés *</Label>
             <p className="text-xs text-muted-foreground mb-3">
@@ -111,14 +130,7 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                     <Checkbox
                       id={`dashboard-role-${roleKey}`}
                       checked={checked}
-                      onCheckedChange={() => {
-                        setInviteData((prev) => {
-                          const current = new Set(prev.dashboardRoles ?? []);
-                          if (current.has(roleKey)) current.delete(roleKey);
-                          else current.add(roleKey);
-                          return { ...prev, dashboardRoles: Array.from(current) as DashboardRole[] };
-                        });
-                      }}
+                      onCheckedChange={() => toggleDashboardRole(roleKey)}
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{def.label}</div>
@@ -130,212 +142,171 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
             </div>
           </div>
 
+          {/* 2. Identité */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{t('full_name')} *</Label>
+              <Label>{t('full_name') || 'Nom complet'} *</Label>
               <Input
                 value={inviteData.name}
-                onChange={(e) => setInviteData(prev => ({...prev, name: e.target.value}))}
-                placeholder={t('member_name_placeholder')}
+                onChange={(e) => setInviteData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Jean Dupont"
               />
             </div>
             <div>
-              <Label>{t('email_login')} *</Label>
+              <Label>{t('email_login') || 'Email (identifiant)'} *</Label>
               <Input
                 type="email"
                 value={inviteData.email}
-                onChange={(e) => setInviteData(prev => ({...prev, email: e.target.value}))}
-                placeholder={t('email_placeholder')}
+                onChange={(e) => setInviteData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemple.com"
               />
             </div>
           </div>
 
+          {/* 3. Mot de passe */}
           <div>
-            <Label>{t('password_optional')}</Label>
-            <Input
-              type="password"
-              value={inviteData.password}
-              onChange={(e) => setInviteData(prev => ({...prev, password: e.target.value}))}
-              placeholder={t('password_placeholder')}
-            />
-            <p className="text-xs text-muted-foreground mt-1">{t('password_hint')}</p>
+            <Label className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4" /> Mot de passe initial
+            </Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                type="text"
+                value={inviteData.password}
+                onChange={(e) => setInviteData((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder="Laissez vide pour générer automatiquement"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setInviteData((prev) => ({ ...prev, password: generateStrongPassword() }))
+                }
+              >
+                <RefreshCw className="w-4 h-4 mr-1" /> Générer
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Le membre pourra changer son mot de passe après sa première connexion.
+            </p>
           </div>
 
+          {/* 4. Rôle / département (informatif) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{t('role')}</Label>
-              <Select value={inviteData.role} onValueChange={(value) => setInviteData(prev => ({...prev, role: value}))}>
+              <Label>{t('role') || 'Poste'}</Label>
+              <Select
+                value={inviteData.role}
+                onValueChange={(value) => setInviteData((prev) => ({ ...prev, role: value }))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('select_role')} />
+                  <SelectValue placeholder={t('select_role') || 'Sélectionner un poste'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map(role => (
-                    <SelectItem key={role.key} value={role.key}>{role.label}</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.key} value={role.key}>
+                      {role.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             {inviteData.role === 'role_custom' && (
               <div>
-                <Label>{t('custom_role')} *</Label>
+                <Label>{t('custom_role') || 'Poste personnalisé'} *</Label>
                 <Input
                   value={inviteData.customRole}
-                  onChange={(e) => setInviteData(prev => ({...prev, customRole: e.target.value}))}
-                  placeholder={t('custom_role_placeholder')}
+                  onChange={(e) =>
+                    setInviteData((prev) => ({ ...prev, customRole: e.target.value }))
+                  }
+                  placeholder="Ex : Responsable qualité"
                 />
               </div>
             )}
             <div>
-              <Label>{t('department')} *</Label>
-              <Select value={inviteData.department} onValueChange={(value) => setInviteData(prev => ({...prev, department: value}))}>
+              <Label>{t('department') || 'Département'} *</Label>
+              <Select
+                value={inviteData.department}
+                onValueChange={(value) =>
+                  setInviteData((prev) => ({ ...prev, department: value }))
+                }
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('select_department')} />
+                  <SelectValue placeholder={t('select_department') || 'Sélectionner'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.map(dept => (
-                    <SelectItem key={dept.key} value={dept.key}>{dept.label}</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.key} value={dept.key}>
+                      {dept.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Unit selection */}
+          {/* 5. Unités (portée des données) */}
           <div>
-            <div className="flex justify-between items-center mb-3">
-              <Label>Unités de production assignées * (sélectionnez plusieurs)</Label>
+            <div className="flex justify-between items-center mb-2">
+              <Label>Unités de production accessibles *</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (selectedUnitsForInvite.size === units.length) {
-                    setSelectedUnitsForInvite(new Set());
-                    setInviteData(prev => ({ ...prev, unitPermissions: [] }));
+                  const allSelected = selectedUnitsForInvite.size === units.length;
+                  if (allSelected) {
+                    units.forEach((u) => {
+                      if (selectedUnitsForInvite.has(u.id)) onToggleUnitSelection(u.id);
+                    });
                   } else {
-                    const allUnitIds = new Set(units.map(u => u.id));
-                    setSelectedUnitsForInvite(allUnitIds);
-                    setInviteData(prev => ({
-                      ...prev,
-                      unitPermissions: units.map(unit => ({
-                        unitId: unit.id,
-                        unitName: unit.name,
-                        permissions: {}
-                      }))
-                    }));
+                    units.forEach((u) => {
+                      if (!selectedUnitsForInvite.has(u.id)) onToggleUnitSelection(u.id);
+                    });
                   }
                 }}
               >
-                {selectedUnitsForInvite.size === units.length ? 'Désélectionner tout' : 'Sélectionner tout'}
+                {selectedUnitsForInvite.size === units.length
+                  ? 'Désélectionner tout'
+                  : 'Sélectionner tout'}
               </Button>
             </div>
-            <div className="border rounded-lg p-3 mb-3">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {units.map(unit => (
-                  <div key={unit.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`select-unit-${unit.id}`}
-                      checked={selectedUnitsForInvite.has(unit.id)}
-                      onCheckedChange={() => onToggleUnitSelection(unit.id)}
-                    />
-                    <label htmlFor={`select-unit-${unit.id}`} className="text-sm cursor-pointer flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-primary" />
-                      {unit.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              {units.length === 0 && (
+            <p className="text-xs text-muted-foreground mb-2">
+              Le membre n'accédera qu'aux données des unités cochées.
+            </p>
+            <div className="border rounded-lg p-3">
+              {units.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-2">
                   Aucune unité disponible. Créez d'abord une unité de production.
                 </p>
-              )}
-            </div>
-
-            {inviteData.unitPermissions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg bg-muted/50">
-                Cochez les unités ci-dessus pour définir les permissions par unité.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {inviteData.unitPermissions.map((unitPerm) => {
-                  const allChecked = modulePermissions.every(m => unitPerm.permissions[m.id]);
-                  return (
-                    <div key={unitPerm.unitId} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{unitPerm.unitName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newPerms: Record<string, boolean> = {};
-                              if (!allChecked) modulePermissions.forEach(m => { newPerms[m.id] = true; });
-                              setInviteData(prev => ({
-                                ...prev,
-                                unitPermissions: prev.unitPermissions.map(up =>
-                                  up.unitId === unitPerm.unitId ? { ...up, permissions: newPerms } : up
-                                )
-                              }));
-                            }}
-                          >
-                            {allChecked ? 'Tout décocher' : 'Tous les rôles'}
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(unitPerm.unitId)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {modulePermissions.map((module) => (
-                          <div key={module.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`unit-${unitPerm.unitId}-${module.id}`}
-                              checked={unitPerm.permissions[module.id] || false}
-                              onCheckedChange={() => onToggleUnitPermission(unitPerm.unitId, module.id)}
-                            />
-                            <label htmlFor={`unit-${unitPerm.unitId}-${module.id}`} className="text-xs cursor-pointer">
-                              {module.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {units.map((unit) => (
+                    <div key={unit.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`select-unit-${unit.id}`}
+                        checked={selectedUnitsForInvite.has(unit.id)}
+                        onCheckedChange={() => onToggleUnitSelection(unit.id)}
+                      />
+                      <label
+                        htmlFor={`select-unit-${unit.id}`}
+                        className="text-sm cursor-pointer flex items-center gap-2"
+                      >
+                        <Building2 className="w-4 h-4 text-primary" />
+                        {unit.name}
+                      </label>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Global permissions */}
-          <div>
-            <Label className="mb-3 block">Permissions globales (toutes unités)</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-3">
-              {modulePermissions.map((module) => (
-                <div key={module.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`invite-${module.id}`}
-                    checked={inviteData.permissions[module.id] || false}
-                    onCheckedChange={() => onToggleInvitePermission(module.id)}
-                  />
-                  <label htmlFor={`invite-${module.id}`} className="text-sm cursor-pointer flex-1">
-                    {module.label}
-                  </label>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end gap-2 mt-5">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('cancel')}
+            {t('cancel') || 'Annuler'}
           </Button>
           <Button onClick={onProceedToSummary} disabled={isSubmitting}>
-            {t('next')}
+            {t('next') || 'Suivant'}
           </Button>
         </div>
       </DialogContent>
