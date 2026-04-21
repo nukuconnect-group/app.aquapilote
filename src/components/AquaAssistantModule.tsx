@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3 } from 'lucide-react';
+import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,6 +14,7 @@ import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAquaAssistantConversations, AquaMessage } from '@/hooks/useAquaAssistantConversations';
 
 interface Message {
   role: 'user' | 'assistant';
