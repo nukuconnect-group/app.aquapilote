@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3 } from 'lucide-react';
+import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,6 +14,7 @@ import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAquaAssistantConversations, AquaMessage } from '@/hooks/useAquaAssistantConversations';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -139,10 +140,21 @@ const categoryConfigs = [
 const AquaAssistantModule = () => {
   const { units, activeUnit } = useProductionUnits();
   const { t } = useSettings();
+  const greeting = "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons.";
+  const {
+    conversations,
+    activeConversation,
+    activeId,
+    setActiveId,
+    startNew,
+    persistMessages,
+    deleteConversation,
+    clearAll,
+    loading: convsLoading,
+  } = useAquaAssistantConversations(greeting);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Bonjour ! Je suis AquaAssistant, votre expert aquacole IA. Sélectionnez une catégorie ou posez-moi directement votre question. Je peux vous donner des informations précises sur vos cycles, stocks, et lots de poissons." }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: greeting }]);
+  const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -153,6 +165,31 @@ const AquaAssistantModule = () => {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Charge les messages de la conversation active depuis Supabase
+  useEffect(() => {
+    if (activeConversation?.messages?.length) {
+      setMessages(
+        activeConversation.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+          category: m.category,
+          unitId: m.unitId,
+        })),
+      );
+    } else if (!convsLoading && !activeConversation) {
+      setMessages([{ role: 'assistant', content: greeting }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, activeConversation?.id]);
+
+  // Crée automatiquement une conversation si l'utilisateur n'en a aucune
+  useEffect(() => {
+    if (!convsLoading && conversations.length === 0 && !activeId) {
+      startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convsLoading, conversations.length]);
 
   // Synchroniser avec l'unité active
   useEffect(() => {
@@ -386,6 +423,29 @@ const AquaAssistantModule = () => {
       }
     } finally {
       setIsLoading(false);
+      // Persiste la conversation après chaque échange
+      try {
+        let convId = activeId;
+        if (!convId) {
+          const created = await startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+          convId = created?.id ?? null;
+        }
+        if (convId) {
+          const finalMessages: AquaMessage[] = [
+            ...newMessages.map((m) => ({
+              role: m.role,
+              content: m.content,
+              category: m.category,
+              unitId: m.unitId,
+              unitName: units.find((u) => u.id === m.unitId)?.name ?? null,
+            })),
+            { role: 'assistant' as const, content: assistantContent, createdAt: new Date().toISOString() },
+          ];
+          await persistMessages(convId, finalMessages, selectedCategory ?? null);
+        }
+      } catch (e) {
+        console.warn('Persistance historique chat échouée', e);
+      }
     }
   };
 
@@ -424,6 +484,21 @@ const AquaAssistantModule = () => {
             >
               <Crown className="w-4 h-4" />
               Premium
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowHistory(true)}
+              className="ml-2 flex items-center gap-2"
+              title="Historique des conversations"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Historique</span>
+              {conversations.length > 0 && (
+                <Badge variant="outline" className="ml-1 bg-white/20 text-white border-white/30">
+                  {conversations.length}
+                </Badge>
+              )}
             </Button>
           </div>
 
@@ -616,6 +691,120 @@ const AquaAssistantModule = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* History Drawer */}
+      {showHistory && (
+        <div className="fixed inset-0 z-[70] flex" onClick={() => setShowHistory(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative ml-auto h-full w-full sm:w-[380px] bg-background shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-border p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <History className="h-4 w-4 text-primary" />
+                <span>Historique des conversations</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={async () => {
+                    await startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+                    setShowHistory(false);
+                  }}
+                  title="Nouvelle conversation"
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={async () => {
+                    if (window.confirm('Effacer tout l’historique ?')) {
+                      await clearAll();
+                    }
+                  }}
+                  title="Effacer l’historique"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => setShowHistory(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 p-3">
+                {conversations.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Aucune conversation enregistrée.
+                  </p>
+                )}
+                {conversations.map((conv) => {
+                  const isActive = conv.id === activeId;
+                  const date = new Intl.DateTimeFormat('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }).format(new Date(conv.updated_at));
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`group rounded-lg border p-3 transition-colors ${
+                        isActive ? 'border-primary bg-primary/10' : 'border-border bg-background hover:bg-muted/60'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveId(conv.id);
+                          setShowHistory(false);
+                        }}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="flex-1 truncate text-sm font-medium">{conv.title}</p>
+                          <Badge variant="secondary" className="shrink-0 text-[10px]">
+                            {conv.messages.length}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{date}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {conv.unit_name && (
+                            <Badge variant="outline" className="max-w-full truncate text-[10px]">
+                              {conv.unit_name}
+                            </Badge>
+                          )}
+                          {conv.last_category && (
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {conv.last_category}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteConversation(conv.id)}
+                          className="h-7 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      )}
 
       {/* Premium Modal */}
       {showPremiumModal && (
