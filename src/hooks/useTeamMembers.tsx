@@ -18,6 +18,7 @@ export interface TeamMember {
   created_at: string;
   updated_at: string;
   user_id: string | null; // Auth user ID - null if account not created
+  dashboard_roles?: ('production' | 'administration')[];
 }
 
 export interface NewTeamMember {
@@ -53,7 +54,8 @@ export const useTeamMembers = () => {
         permissions: item.permissions as Record<string, boolean>,
         status: item.status as 'active' | 'inactive' | 'pending',
         custom_role: (item as any).custom_role || null,
-        user_id: item.user_id || null
+        user_id: item.user_id || null,
+        dashboard_roles: ((item as any).dashboard_roles || []) as ('production' | 'administration')[]
       })));
     } catch (error: any) {
       console.error('Error fetching team members:', error);
