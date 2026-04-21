@@ -485,6 +485,21 @@ const AquaAssistantModule = () => {
               <Crown className="w-4 h-4" />
               Premium
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowHistory(true)}
+              className="ml-2 flex items-center gap-2"
+              title="Historique des conversations"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Historique</span>
+              {conversations.length > 0 && (
+                <Badge variant="outline" className="ml-1 bg-white/20 text-white border-white/30">
+                  {conversations.length}
+                </Badge>
+              )}
+            </Button>
           </div>
 
           {/* Selectors */}
