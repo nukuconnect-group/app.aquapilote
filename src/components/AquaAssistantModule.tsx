@@ -423,6 +423,29 @@ const AquaAssistantModule = () => {
       }
     } finally {
       setIsLoading(false);
+      // Persiste la conversation après chaque échange
+      try {
+        let convId = activeId;
+        if (!convId) {
+          const created = await startNew(activeUnit ? { id: activeUnit.id, name: activeUnit.name } : undefined);
+          convId = created?.id ?? null;
+        }
+        if (convId) {
+          const finalMessages: AquaMessage[] = [
+            ...newMessages.map((m) => ({
+              role: m.role,
+              content: m.content,
+              category: m.category,
+              unitId: m.unitId,
+              unitName: units.find((u) => u.id === m.unitId)?.name ?? null,
+            })),
+            { role: 'assistant' as const, content: assistantContent, createdAt: new Date().toISOString() },
+          ];
+          await persistMessages(convId, finalMessages, selectedCategory ?? null);
+        }
+      } catch (e) {
+        console.warn('Persistance historique chat échouée', e);
+      }
     }
   };
 
