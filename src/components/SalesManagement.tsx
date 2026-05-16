@@ -818,6 +818,15 @@ const SalesManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleViewSaleInvoice(sale)}
+                          className="text-xs border-primary text-primary hover:bg-primary/10"
+                        >
+                          <FileText className="w-3 h-3 mr-1" />
+                          Facture
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeleteSale(sale)}
                           className="text-xs text-destructive hover:text-destructive"
                         >
