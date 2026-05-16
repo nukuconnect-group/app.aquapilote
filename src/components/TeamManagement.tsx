@@ -251,11 +251,10 @@ const TeamManagement = () => {
 
   const handleConfirmAndCreate = async (sendEmail: boolean) => {
     setIsSubmitting(true);
-    const isCustomRole = inviteData.role === 'role_custom';
-    const finalRole = isCustomRole ? (inviteData.customRole || 'Personnalisé') : (inviteData.role || 'Membre');
+    const finalRole = inviteData.role?.trim() || 'Membre';
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
-      role: finalRole, custom_role: isCustomRole ? inviteData.customRole : undefined,
+      role: finalRole, custom_role: undefined,
       department: inviteData.department, permissions: inviteData.permissions
     };
 
