@@ -289,6 +289,42 @@ const SalesManagement = () => {
     setShowReceiptPreview(true);
   };
 
+  // Génère une vraie facture (différente du reçu) : numérotation FAC-, TVA détaillée, échéance, mentions légales
+  const generateSaleInvoice = (sale: Sale): ReceiptData => {
+    const taxRate = 20;
+    const subtotal = +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2);
+    const tax = +(sale.totalAmount - subtotal).toFixed(2);
+    return buildReceiptData({
+      id: sale.id,
+      type: 'invoice',
+      number: `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      date: sale.date,
+      dueDate: sale.dueDate || undefined,
+      clientName: sale.clientName,
+      clientContact: sale.clientContact || undefined,
+      items: sale.products.map((product) => ({
+        name: product.name,
+        quantity: product.quantity,
+        unitPrice: product.unitPrice,
+        total: product.total,
+      })),
+      subtotal,
+      tax,
+      taxRate,
+      total: sale.totalAmount,
+      paymentMethod: sale.paymentMethod || undefined,
+      notes: sale.notes || 'Paiement à réception sauf accord écrit. Tout retard de paiement entraînera l\'application de pénalités au taux légal en vigueur.',
+      isPaid: isSaleSettled(sale),
+    });
+  };
+
+  const handleViewSaleInvoice = (sale: Sale) => {
+    const invoiceData = generateSaleInvoice(sale);
+    setPreviewReceiptData(invoiceData);
+    setViewingSaleReceipt(sale);
+    setShowReceiptPreview(true);
+  };
+
   const handleEditSale = (sale: Sale) => {
     setEditingSale({ ...sale });
     setShowEditDialog(true);
