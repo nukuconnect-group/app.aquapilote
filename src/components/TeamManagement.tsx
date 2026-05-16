@@ -86,26 +86,9 @@ const TeamManagement = () => {
     dashboardRoles: []
   });
 
-  const roles = [
-    { key: 'role_director', label: t('role_director') },
-    { key: 'role_production_manager', label: t('role_production_manager') },
-    { key: 'role_hatchery_manager', label: t('role_hatchery_manager') },
-    { key: 'role_fattening_manager', label: t('role_fattening_manager') },
-    { key: 'role_aquaculture_technician', label: t('role_aquaculture_technician') },
-    { key: 'role_aquaculture_worker', label: t('role_aquaculture_worker') },
-    { key: 'role_accountant', label: t('role_accountant') },
-    { key: 'role_trainee', label: t('role_trainee') },
-    { key: 'role_custom', label: t('role_custom') }
-  ];
-
-  const departments = [
-    { key: 'dept_management', label: t('dept_management') },
-    { key: 'dept_production', label: t('dept_production') },
-    { key: 'dept_accounting', label: t('dept_accounting') },
-    { key: 'dept_commercial', label: t('dept_commercial') },
-    { key: 'dept_maintenance', label: t('dept_maintenance') },
-    { key: 'dept_quality', label: t('dept_quality') }
-  ];
+  // Listes pré-remplies retirées : l'utilisateur saisit librement le poste et le département.
+  const roles: { key: string; label: string }[] = [];
+  const departments: { key: string; label: string }[] = [];
 
   const modulePermissions = [
     { id: 'dashboard', label: t('module_dashboard'), description: t('module_dashboard_desc') },
