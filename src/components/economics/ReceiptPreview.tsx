@@ -61,6 +61,8 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   const displayCompanyAddress = data.companyAddress || companyInfo.address;
   const displayCompanyContact = data.companyContact || (companyInfo.phone ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}` : companyInfo.email);
   const displayCompanyLogo = companyInfo.logoUrl;
+  const displayStamp = companyInfo.stampUrl;
+  const displaySignature = companyInfo.signatureUrl;
 
   const getDocumentTitle = () => {
     switch (data.type) {
@@ -264,6 +266,39 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             <div className="relative z-10 mb-6 rounded border-l-4 border-accent bg-accent/20 p-4">
               <h4 className="mb-1 text-sm font-semibold text-foreground">Notes / Conditions</h4>
               <p className="text-sm text-muted-foreground">{data.notes}</p>
+            </div>
+          )}
+
+          {/* Mentions légales selon le type de document */}
+          {data.type === 'invoice' && (
+            <div className="relative z-10 mb-4 rounded border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground mb-1">Mentions légales</p>
+              <p>Facture émise conformément à la législation en vigueur. En cas de retard de paiement, des pénalités de retard pourront être appliquées au taux légal. Aucun escompte pour paiement anticipé sauf mention contraire.</p>
+              {companyInfo.taxId && <p className="mt-1">N° d'identification fiscale: {companyInfo.taxId}</p>}
+            </div>
+          )}
+          {data.type === 'receipt' && (
+            <div className="relative z-10 mb-4 rounded border border-amber-500/40 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              <p className="font-semibold mb-0.5">Document non contractuel</p>
+              <p>Ce reçu de vente atteste le paiement reçu. Il ne vaut pas facture au sens fiscal et ne peut être utilisé pour la déduction de TVA. Demandez une facture pour vos obligations comptables.</p>
+            </div>
+          )}
+
+          {/* Cachet et signature */}
+          {(displayStamp || displaySignature) && (
+            <div className="relative z-10 mb-4 flex items-end justify-end gap-6">
+              {displaySignature && (
+                <div className="flex flex-col items-center">
+                  <img src={displaySignature} alt="Signature" className="h-16 w-auto object-contain" crossOrigin="anonymous" />
+                  <span className="mt-1 border-t border-border pt-1 text-xs text-muted-foreground">Signature</span>
+                </div>
+              )}
+              {displayStamp && (
+                <div className="flex flex-col items-center">
+                  <img src={displayStamp} alt="Cachet" className="h-20 w-auto object-contain opacity-90" crossOrigin="anonymous" />
+                  <span className="mt-1 border-t border-border pt-1 text-xs text-muted-foreground">Cachet</span>
+                </div>
+              )}
             </div>
           )}
 

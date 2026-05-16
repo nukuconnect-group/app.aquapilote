@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, KeyRound, RefreshCw } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -194,53 +193,19 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>{t('role') || 'Poste'}</Label>
-              <Select
+              <Input
                 value={inviteData.role}
-                onValueChange={(value) => setInviteData((prev) => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_role') || 'Sélectionner un poste'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.key} value={role.key}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setInviteData((prev) => ({ ...prev, role: e.target.value }))}
+                placeholder="Ex : Responsable production"
+              />
             </div>
-            {inviteData.role === 'role_custom' && (
-              <div>
-                <Label>{t('custom_role') || 'Poste personnalisé'} *</Label>
-                <Input
-                  value={inviteData.customRole}
-                  onChange={(e) =>
-                    setInviteData((prev) => ({ ...prev, customRole: e.target.value }))
-                  }
-                  placeholder="Ex : Responsable qualité"
-                />
-              </div>
-            )}
             <div>
               <Label>{t('department') || 'Département'} *</Label>
-              <Select
+              <Input
                 value={inviteData.department}
-                onValueChange={(value) =>
-                  setInviteData((prev) => ({ ...prev, department: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_department') || 'Sélectionner'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.key} value={dept.key}>
-                      {dept.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setInviteData((prev) => ({ ...prev, department: e.target.value }))}
+                placeholder="Ex : Production, Comptabilité..."
+              />
             </div>
           </div>
 

@@ -80,6 +80,10 @@ const SettingsManagement = () => {
   const [storageInfo, setStorageInfo] = useState({ used: 0, quota: 0 });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingStamp, setIsUploadingStamp] = useState(false);
+  const stampInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const signatureInputRef = React.useRef<HTMLInputElement>(null);
   
   // Charger les paramètres depuis localStorage
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
@@ -363,6 +367,56 @@ const SettingsManagement = () => {
     } finally {
       setIsUploadingLogo(false);
     }
+  };
+
+  // Upload générique d'une image entreprise (cachet / signature)
+  const handleCompanyAssetUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    kind: 'stamp' | 'signature',
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: language === 'fr' ? 'Erreur' : 'Error', description: language === 'fr' ? 'Veuillez sélectionner une image' : 'Please select an image', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: language === 'fr' ? 'Fichier trop volumineux' : 'File too large', description: language === 'fr' ? 'Max 2 Mo' : 'Max 2 MB', variant: 'destructive' });
+      return;
+    }
+    const setLoading = kind === 'stamp' ? setIsUploadingStamp : setIsUploadingSignature;
+    const inputRef = kind === 'stamp' ? stampInputRef : signatureInputRef;
+    setLoading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${kind}-${Date.now()}.${ext}`;
+      const filePath = `${user.id}/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from('company-logos').upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(filePath);
+      setCompanyInfo(kind === 'stamp' ? { stampUrl: publicUrl } : { signatureUrl: publicUrl });
+      toast({ title: language === 'fr' ? 'Image téléchargée' : 'Image uploaded' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: language === 'fr' ? 'Erreur' : 'Error', description: language === 'fr' ? 'Échec du téléchargement' : 'Upload failed', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveCompanyAsset = async (kind: 'stamp' | 'signature') => {
+    const url = kind === 'stamp' ? companyInfo.stampUrl : companyInfo.signatureUrl;
+    if (!url) return;
+    try {
+      const parts = url.split('/company-logos/');
+      if (parts.length > 1) {
+        await supabase.storage.from('company-logos').remove([parts[1]]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setCompanyInfo(kind === 'stamp' ? { stampUrl: '' } : { signatureUrl: '' });
   };
 
   const handleChangePassword = async () => {
@@ -783,6 +837,70 @@ const SettingsManagement = () => {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {language === 'fr' ? 'Format: JPG, PNG, WebP. Max 2 Mo' : 'Format: JPG, PNG, WebP. Max 2 MB'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section Cachet (tampon) */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{language === 'fr' ? "Cachet de l'entreprise" : 'Company stamp'}</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden shrink-0">
+                    {companyInfo.stampUrl ? (
+                      <img src={companyInfo.stampUrl} alt="Cachet" className="w-full h-full object-contain p-2" loading="lazy" />
+                    ) : (
+                      <Image className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-2 w-full">
+                    <input ref={stampInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'stamp')} className="hidden" />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" onClick={() => stampInputRef.current?.click()} disabled={isUploadingStamp} className="w-full sm:w-auto">
+                        {isUploadingStamp ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser le cachet' : 'Upload stamp'}</>)}
+                      </Button>
+                      {companyInfo.stampUrl && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('stamp')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'fr' ? 'PNG transparent recommandé. Apparaît sur factures et reçus. Max 2 Mo.' : 'Transparent PNG recommended. Shown on invoices and receipts. Max 2 MB.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section Signature */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{language === 'fr' ? 'Signature manuscrite' : 'Handwritten signature'}</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden shrink-0">
+                    {companyInfo.signatureUrl ? (
+                      <img src={companyInfo.signatureUrl} alt="Signature" className="w-full h-full object-contain p-2" loading="lazy" />
+                    ) : (
+                      <Image className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-2 w-full">
+                    <input ref={signatureInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'signature')} className="hidden" />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={isUploadingSignature} className="w-full sm:w-auto">
+                        {isUploadingSignature ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser la signature' : 'Upload signature'}</>)}
+                      </Button>
+                      {companyInfo.signatureUrl && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('signature')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'fr' ? 'Image PNG/JPG. Sera ajoutée sur factures et reçus. Max 2 Mo.' : 'PNG/JPG image. Added to invoices and receipts. Max 2 MB.'}
                     </p>
                   </div>
                 </div>
