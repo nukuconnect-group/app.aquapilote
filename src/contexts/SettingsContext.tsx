@@ -11,6 +11,8 @@ export interface CompanyInfo {
   logoUrl: string;
   registrationNumber: string;
   taxId: string;
+  stampUrl: string;
+  signatureUrl: string;
 }
 
 interface SettingsContextType {
@@ -43,7 +45,9 @@ const defaultCompanyInfo: CompanyInfo = {
   email: '',
   logoUrl: '',
   registrationNumber: '',
-  taxId: ''
+  taxId: '',
+  stampUrl: '',
+  signatureUrl: ''
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
