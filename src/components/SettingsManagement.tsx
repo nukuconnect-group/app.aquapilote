@@ -844,6 +844,70 @@ const SettingsManagement = () => {
 
               <Separator />
 
+              {/* Section Cachet (tampon) */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{language === 'fr' ? "Cachet de l'entreprise" : 'Company stamp'}</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden shrink-0">
+                    {companyInfo.stampUrl ? (
+                      <img src={companyInfo.stampUrl} alt="Cachet" className="w-full h-full object-contain p-2" loading="lazy" />
+                    ) : (
+                      <Image className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-2 w-full">
+                    <input ref={stampInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'stamp')} className="hidden" />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" onClick={() => stampInputRef.current?.click()} disabled={isUploadingStamp} className="w-full sm:w-auto">
+                        {isUploadingStamp ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser le cachet' : 'Upload stamp'}</>)}
+                      </Button>
+                      {companyInfo.stampUrl && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('stamp')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'fr' ? 'PNG transparent recommandé. Apparaît sur factures et reçus. Max 2 Mo.' : 'Transparent PNG recommended. Shown on invoices and receipts. Max 2 MB.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section Signature */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">{language === 'fr' ? 'Signature manuscrite' : 'Handwritten signature'}</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden shrink-0">
+                    {companyInfo.signatureUrl ? (
+                      <img src={companyInfo.signatureUrl} alt="Signature" className="w-full h-full object-contain p-2" loading="lazy" />
+                    ) : (
+                      <Image className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-2 w-full">
+                    <input ref={signatureInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'signature')} className="hidden" />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={isUploadingSignature} className="w-full sm:w-auto">
+                        {isUploadingSignature ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser la signature' : 'Upload signature'}</>)}
+                      </Button>
+                      {companyInfo.signatureUrl && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('signature')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'fr' ? 'Image PNG/JPG. Sera ajoutée sur factures et reçus. Max 2 Mo.' : 'PNG/JPG image. Added to invoices and receipts. Max 2 MB.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm">{t('company_info_name')}</Label>
