@@ -2169,6 +2169,10 @@ export type Database = {
       }
       is_active_team_member: { Args: { user_uuid: string }; Returns: boolean }
       is_team_member_of: { Args: { owner_user_id: string }; Returns: boolean }
+      team_member_has_unit_access: {
+        Args: { _owner_id: string; _unit_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
