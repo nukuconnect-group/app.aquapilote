@@ -369,6 +369,56 @@ const SettingsManagement = () => {
     }
   };
 
+  // Upload générique d'une image entreprise (cachet / signature)
+  const handleCompanyAssetUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    kind: 'stamp' | 'signature',
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: language === 'fr' ? 'Erreur' : 'Error', description: language === 'fr' ? 'Veuillez sélectionner une image' : 'Please select an image', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: language === 'fr' ? 'Fichier trop volumineux' : 'File too large', description: language === 'fr' ? 'Max 2 Mo' : 'Max 2 MB', variant: 'destructive' });
+      return;
+    }
+    const setLoading = kind === 'stamp' ? setIsUploadingStamp : setIsUploadingSignature;
+    const inputRef = kind === 'stamp' ? stampInputRef : signatureInputRef;
+    setLoading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${kind}-${Date.now()}.${ext}`;
+      const filePath = `${user.id}/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from('company-logos').upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(filePath);
+      setCompanyInfo(kind === 'stamp' ? { stampUrl: publicUrl } : { signatureUrl: publicUrl });
+      toast({ title: language === 'fr' ? 'Image téléchargée' : 'Image uploaded' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: language === 'fr' ? 'Erreur' : 'Error', description: language === 'fr' ? 'Échec du téléchargement' : 'Upload failed', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveCompanyAsset = async (kind: 'stamp' | 'signature') => {
+    const url = kind === 'stamp' ? companyInfo.stampUrl : companyInfo.signatureUrl;
+    if (!url) return;
+    try {
+      const parts = url.split('/company-logos/');
+      if (parts.length > 1) {
+        await supabase.storage.from('company-logos').remove([parts[1]]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setCompanyInfo(kind === 'stamp' ? { stampUrl: '' } : { signatureUrl: '' });
+  };
+
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
