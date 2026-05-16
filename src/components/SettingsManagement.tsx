@@ -80,6 +80,10 @@ const SettingsManagement = () => {
   const [storageInfo, setStorageInfo] = useState({ used: 0, quota: 0 });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingStamp, setIsUploadingStamp] = useState(false);
+  const stampInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const signatureInputRef = React.useRef<HTMLInputElement>(null);
   
   // Charger les paramètres depuis localStorage
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
