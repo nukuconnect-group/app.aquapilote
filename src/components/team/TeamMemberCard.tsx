@@ -2,14 +2,12 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Edit, Trash2, Settings, Key, Eye, UserCheck, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Settings, Key, Eye, CheckCircle, AlertCircle } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { TeamMember } from '@/hooks/useTeamMembers';
 
 interface TeamMemberCardProps {
   member: TeamMember;
-  isCreatingAccount: boolean;
-  onCreateAccount: (member: TeamMember) => void;
   onViewCredentials: (member: TeamMember) => void;
   onEdit: (member: TeamMember) => void;
   onToggleStatus: (member: TeamMember) => void;
@@ -28,8 +26,6 @@ const getStatusColor = (status: string) => {
 
 const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
   member,
-  isCreatingAccount,
-  onCreateAccount,
   onViewCredentials,
   onEdit,
   onToggleStatus,
@@ -98,25 +94,6 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
         <div className="text-right text-sm text-muted-foreground hidden sm:block">
           <p>{t('added_on')} {new Date(member.invited_at).toLocaleDateString()}</p>
         </div>
-        {!member.user_id && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => onCreateAccount(member)}
-            disabled={isCreatingAccount}
-            title={t('create_account_btn')}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isCreatingAccount ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <UserCheck className="w-4 h-4 mr-1" />
-                {t('create_account_btn')}
-              </>
-            )}
-          </Button>
-        )}
         <Button variant="outline" size="sm" onClick={() => onViewCredentials(member)} title={t('view_credentials')} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" disabled={!member.user_id}>
           <Eye className="w-4 h-4" />
         </Button>
