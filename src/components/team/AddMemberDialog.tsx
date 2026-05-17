@@ -271,7 +271,7 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
             {t('cancel') || 'Annuler'}
           </Button>
           <Button onClick={onProceedToSummary} disabled={isSubmitting}>
-            {t('next') || 'Suivant'}
+            {isSubmitting ? 'Création…' : 'Créer le membre'}
           </Button>
         </div>
       </DialogContent>
