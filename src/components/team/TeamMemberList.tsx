@@ -7,8 +7,6 @@ import TeamMemberCard from './TeamMemberCard';
 
 interface TeamMemberListProps {
   members: TeamMember[];
-  isCreatingAccount: boolean;
-  onCreateAccount: (member: TeamMember) => void;
   onViewCredentials: (member: TeamMember) => void;
   onEdit: (member: TeamMember) => void;
   onToggleStatus: (member: TeamMember) => void;
@@ -18,8 +16,6 @@ interface TeamMemberListProps {
 
 const TeamMemberList: React.FC<TeamMemberListProps> = ({
   members,
-  isCreatingAccount,
-  onCreateAccount,
   onViewCredentials,
   onEdit,
   onToggleStatus,
@@ -46,8 +42,6 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
               <TeamMemberCard
                 key={member.id}
                 member={member}
-                isCreatingAccount={isCreatingAccount}
-                onCreateAccount={onCreateAccount}
                 onViewCredentials={onViewCredentials}
                 onEdit={onEdit}
                 onToggleStatus={onToggleStatus}
