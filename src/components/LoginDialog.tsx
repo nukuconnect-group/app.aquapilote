@@ -49,31 +49,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   const { t } = useSettings();
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          title: `❌ ${t('error')}`,
-          description: t('google_login_error') || "Impossible de se connecter avec Google.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Google login error:', error);
-    }
-  };
-
   const handleMFAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setMfaError(null);
