@@ -527,8 +527,6 @@ const TeamManagement = () => {
         <TabsContent value="members">
           <TeamMemberList
             members={teamMembers}
-            isCreatingAccount={isCreatingAccount}
-            onCreateAccount={handleCreateAccountForMember}
             onViewCredentials={openMemberCredentialsView}
             onEdit={openMemberDetails}
             onToggleStatus={handleToggleStatus}
