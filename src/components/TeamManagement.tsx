@@ -250,7 +250,7 @@ const TeamManagement = () => {
     void handleConfirmAndCreate(true);
   };
 
-  const handleConfirmAndCreate = async (sendEmail: boolean) => {
+  const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
     setIsSubmitting(true);
     const finalRole = inviteData.role?.trim() || 'Membre';
     const newMember: NewTeamMember = {
@@ -281,7 +281,7 @@ const TeamManagement = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) throw new Error('Session expirée. Veuillez vous reconnecter.');
-        const passwordToUse = inviteData.password || generatedPassword || generatePasswordLocal();
+        const passwordToUse = explicitPassword || inviteData.password || generatedPassword || generatePasswordLocal();
         const response = await supabase.functions.invoke('create-team-member-account', {
           headers: { Authorization: `Bearer ${session.access_token}` },
           body: { email: inviteData.email, full_name: inviteData.name, team_member_id: result.data.id, password: passwordToUse, sendEmail }
