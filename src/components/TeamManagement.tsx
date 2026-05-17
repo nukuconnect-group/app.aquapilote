@@ -246,10 +246,11 @@ const TeamManagement = () => {
     const finalPassword = inviteData.password || generatePasswordLocal();
     setGeneratedPassword(finalPassword);
     setInviteData(prev => ({ ...prev, password: finalPassword }));
-    setShowSummaryStep(true);
+    // Création directe (les identifiants seront affichés dans CredentialsDialog).
+    void handleConfirmAndCreate(true, finalPassword);
   };
 
-  const handleConfirmAndCreate = async (sendEmail: boolean) => {
+  const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
     setIsSubmitting(true);
     const finalRole = inviteData.role?.trim() || 'Membre';
     const newMember: NewTeamMember = {
@@ -280,7 +281,7 @@ const TeamManagement = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) throw new Error('Session expirée. Veuillez vous reconnecter.');
-        const passwordToUse = inviteData.password || generatedPassword || generatePasswordLocal();
+        const passwordToUse = explicitPassword || inviteData.password || generatedPassword || generatePasswordLocal();
         const response = await supabase.functions.invoke('create-team-member-account', {
           headers: { Authorization: `Bearer ${session.access_token}` },
           body: { email: inviteData.email, full_name: inviteData.name, team_member_id: result.data.id, password: passwordToUse, sendEmail }
@@ -527,8 +528,6 @@ const TeamManagement = () => {
         <TabsContent value="members">
           <TeamMemberList
             members={teamMembers}
-            isCreatingAccount={isCreatingAccount}
-            onCreateAccount={handleCreateAccountForMember}
             onViewCredentials={openMemberCredentialsView}
             onEdit={openMemberDetails}
             onToggleStatus={handleToggleStatus}
