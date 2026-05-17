@@ -247,7 +247,7 @@ const TeamManagement = () => {
     setGeneratedPassword(finalPassword);
     setInviteData(prev => ({ ...prev, password: finalPassword }));
     // Création directe (les identifiants seront affichés dans CredentialsDialog).
-    void handleConfirmAndCreate(true);
+    void handleConfirmAndCreate(true, finalPassword);
   };
 
   const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
