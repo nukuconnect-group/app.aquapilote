@@ -479,6 +479,72 @@ const SalesManagement = () => {
                   <DialogTitle className="text-base sm:text-lg">Créer une Nouvelle Vente</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
+                  {/* Type de document : Reçu ou Facture */}
+                  <div className="p-3 border rounded-lg bg-primary/5 space-y-3">
+                    <Label className="text-sm font-semibold">Type de document à générer</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }))}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === 'receipt'
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Reçu (REC-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Justificatif de paiement simple, non-contractuel.</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }))}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === 'invoice'
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Facture (FAC-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Document légal avec TVA et mentions obligatoires.</p>
+                      </button>
+                    </div>
+
+                    {newSale.documentType === 'invoice' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
+                        <div>
+                          <Label className="text-sm">Taux de TVA</Label>
+                          <Select
+                            value={String(newSale.taxRate)}
+                            onValueChange={(v) => setNewSale(prev => ({ ...prev, taxRate: parseFloat(v) || 0 }))}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0 % (exonéré)</SelectItem>
+                              <SelectItem value="10">10 %</SelectItem>
+                              <SelectItem value="18">18 %</SelectItem>
+                              <SelectItem value="20">20 %</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm">Date d'échéance</Label>
+                          <Input
+                            type="date"
+                            value={newSale.dueDate}
+                            onChange={(e) => setNewSale(prev => ({ ...prev, dueDate: e.target.value }))}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label>Nom du client</Label>
