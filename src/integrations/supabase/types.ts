@@ -1595,6 +1595,8 @@ export type Database = {
           client_name: string
           created_at: string
           date: string
+          document_number: string | null
+          document_type: string
           due_date: string | null
           id: string
           is_credit: boolean | null
@@ -1603,6 +1605,7 @@ export type Database = {
           payment_method: string | null
           payment_terms: string | null
           status: string
+          tax_rate: number
           total_amount: number
           unit_id: string
           updated_at: string
@@ -1613,6 +1616,8 @@ export type Database = {
           client_name: string
           created_at?: string
           date?: string
+          document_number?: string | null
+          document_type?: string
           due_date?: string | null
           id?: string
           is_credit?: boolean | null
@@ -1621,6 +1626,7 @@ export type Database = {
           payment_method?: string | null
           payment_terms?: string | null
           status?: string
+          tax_rate?: number
           total_amount?: number
           unit_id: string
           updated_at?: string
@@ -1631,6 +1637,8 @@ export type Database = {
           client_name?: string
           created_at?: string
           date?: string
+          document_number?: string | null
+          document_type?: string
           due_date?: string | null
           id?: string
           is_credit?: boolean | null
@@ -1639,6 +1647,7 @@ export type Database = {
           payment_method?: string | null
           payment_terms?: string | null
           status?: string
+          tax_rate?: number
           total_amount?: number
           unit_id?: string
           updated_at?: string

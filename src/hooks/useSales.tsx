@@ -26,6 +26,9 @@ export interface Sale {
   isCredit?: boolean;
   paidAmount?: number;
   paymentTerms?: string;
+  documentType?: 'receipt' | 'invoice';
+  documentNumber?: string;
+  taxRate?: number;
 }
 
 export const useSales = () => {
@@ -86,7 +89,10 @@ export const useSales = () => {
         dueDate: s.due_date || undefined,
         isCredit: s.is_credit || false,
         paidAmount: s.paid_amount || 0,
-        paymentTerms: s.payment_terms || undefined
+        paymentTerms: s.payment_terms || undefined,
+        documentType: (s.document_type as 'receipt' | 'invoice') || 'receipt',
+        documentNumber: s.document_number || undefined,
+        taxRate: typeof s.tax_rate === 'number' ? s.tax_rate : Number(s.tax_rate) || 0
       })));
     } catch (err) {
       console.error('Error fetching sales:', err);
@@ -129,7 +135,10 @@ export const useSales = () => {
           due_date: sale.dueDate || null,
           is_credit: sale.isCredit || false,
           paid_amount: sale.paidAmount || 0,
-          payment_terms: sale.paymentTerms || null
+          payment_terms: sale.paymentTerms || null,
+          document_type: sale.documentType || 'receipt',
+          document_number: sale.documentNumber || null,
+          tax_rate: sale.taxRate ?? 0
         })
         .select()
         .single();
@@ -168,7 +177,10 @@ export const useSales = () => {
         dueDate: saleData.due_date || undefined,
         isCredit: saleData.is_credit || false,
         paidAmount: saleData.paid_amount || 0,
-        paymentTerms: saleData.payment_terms || undefined
+        paymentTerms: saleData.payment_terms || undefined,
+        documentType: (saleData.document_type as 'receipt' | 'invoice') || 'receipt',
+        documentNumber: saleData.document_number || undefined,
+        taxRate: typeof saleData.tax_rate === 'number' ? saleData.tax_rate : Number(saleData.tax_rate) || 0
       };
 
       setSales(prev => [newSale, ...prev]);
