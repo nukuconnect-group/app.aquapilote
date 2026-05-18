@@ -293,10 +293,13 @@ const SalesManagement = () => {
 
   // Generate receipt data for a sale
   const generateSaleReceipt = (sale: Sale): ReceiptData => {
+    const stored = (sale.documentType ?? 'receipt') === 'receipt' && sale.documentNumber
+      ? sale.documentNumber
+      : `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
       type: 'receipt',
-      number: `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      number: stored,
       date: sale.date,
       clientName: sale.clientName,
       clientContact: sale.clientContact || undefined,
@@ -316,22 +319,28 @@ const SalesManagement = () => {
     });
   };
 
-  const handleViewSaleReceipt = (sale: Sale) => {
+  const handleViewSaleReceipt = (sale: Sale, action: 'download' | 'print' | null = null) => {
     const receiptData = generateSaleReceipt(sale);
     setPreviewReceiptData(receiptData);
     setViewingSaleReceipt(sale);
+    setPdfInitialAction(action);
     setShowReceiptPreview(true);
   };
 
   // Génère une vraie facture (différente du reçu) : numérotation FAC-, TVA détaillée, échéance, mentions légales
   const generateSaleInvoice = (sale: Sale): ReceiptData => {
-    const taxRate = 20;
-    const subtotal = +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2);
+    const taxRate = sale.taxRate ?? 20;
+    const subtotal = taxRate > 0
+      ? +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2)
+      : sale.totalAmount;
     const tax = +(sale.totalAmount - subtotal).toFixed(2);
+    const stored = (sale.documentType ?? 'receipt') === 'invoice' && sale.documentNumber
+      ? sale.documentNumber
+      : `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
       type: 'invoice',
-      number: `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      number: stored,
       date: sale.date,
       dueDate: sale.dueDate || undefined,
       clientName: sale.clientName,
@@ -352,10 +361,11 @@ const SalesManagement = () => {
     });
   };
 
-  const handleViewSaleInvoice = (sale: Sale) => {
+  const handleViewSaleInvoice = (sale: Sale, action: 'download' | 'print' | null = null) => {
     const invoiceData = generateSaleInvoice(sale);
     setPreviewReceiptData(invoiceData);
     setViewingSaleReceipt(sale);
+    setPdfInitialAction(action);
     setShowReceiptPreview(true);
   };
 
