@@ -937,6 +937,22 @@ const SalesManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => {
+                            if ((sale.documentType ?? 'receipt') === 'invoice') {
+                              handleViewSaleInvoice(sale, 'download');
+                            } else {
+                              handleViewSaleReceipt(sale, 'download');
+                            }
+                          }}
+                          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                          title="Télécharger le PDF"
+                        >
+                          <Download className="w-3 h-3 mr-1" />
+                          PDF
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeleteSale(sale)}
                           className="text-xs text-destructive hover:text-destructive"
                         >
