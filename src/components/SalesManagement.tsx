@@ -37,6 +37,7 @@ const SalesManagement = () => {
   const [viewingSaleReceipt, setViewingSaleReceipt] = useState<Sale | null>(null);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -47,7 +48,9 @@ const SalesManagement = () => {
     notes: '',
     isCredit: false,
     dueDate: '',
-    paymentTerms: ''
+    paymentTerms: '',
+    documentType: 'receipt' as 'receipt' | 'invoice',
+    taxRate: 0,
   });
 
   // Synchroniser la vente avec l'unité active
@@ -117,16 +120,37 @@ const SalesManagement = () => {
     ...getCompanyDocumentFields(companyInfo),
   });
 
+  // Génère le prochain numéro de document unique (FAC-YYYY-NNNN ou REC-YYYY-NNNN)
+  // en évitant les doublons parmi toutes les ventes existantes du même type.
+  const generateNextDocumentNumber = (type: 'receipt' | 'invoice'): string => {
+    const prefix = type === 'invoice' ? 'FAC' : 'REC';
+    const year = new Date().getFullYear();
+    const used = new Set(
+      sales
+        .filter((s) => (s.documentType ?? 'receipt') === type && s.documentNumber)
+        .map((s) => s.documentNumber as string)
+    );
+    let seq = sales.filter((s) => (s.documentType ?? 'receipt') === type).length + 1;
+    let candidate = '';
+    do {
+      candidate = `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
+      seq += 1;
+    } while (used.has(candidate));
+    return candidate;
+  };
+
   const handlePreviewReceipt = () => {
     const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = 20;
+    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
+    const documentNumber = generateNextDocumentNumber(newSale.documentType);
 
     const receiptData = buildReceiptData({
-      type: 'receipt',
-      number: `REC-${new Date().getFullYear()}-${String(filteredSales.length + 1).padStart(3, '0')}`,
+      type: newSale.documentType,
+      number: documentNumber,
       date: new Date().toISOString(),
+      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
       items: newSale.products.map((product) => ({
@@ -146,11 +170,16 @@ const SalesManagement = () => {
 
     setPreviewReceiptData(receiptData);
     setViewingSaleReceipt(null);
+    setPdfInitialAction(null);
     setShowReceiptPreview(true);
   };
 
   const handleConfirmSale = async () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
+    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
+    // Réutilise le numéro déjà affiché en preview si disponible, sinon en génère un nouveau.
+    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType);
+    const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
     const result = await addSale({
       date: new Date().toISOString().split('T')[0],
@@ -161,14 +190,17 @@ const SalesManagement = () => {
         ...p,
         total: p.quantity * p.unitPrice
       })),
-      totalAmount,
+      totalAmount: finalAmount,
       status: newSale.isCredit ? 'confirmed' : 'paid',
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: newSale.dueDate || undefined,
+      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: newSale.isCredit ? 0 : totalAmount
+      paidAmount: newSale.isCredit ? 0 : finalAmount,
+      documentType: newSale.documentType,
+      documentNumber,
+      taxRate,
     });
 
     if (result) {
@@ -203,7 +235,9 @@ const SalesManagement = () => {
       notes: '',
       isCredit: false,
       dueDate: '',
-      paymentTerms: ''
+      paymentTerms: '',
+      documentType: 'receipt',
+      taxRate: 0,
     });
     setShowSaleDialog(false);
     setShowReceiptPreview(false);
@@ -259,10 +293,13 @@ const SalesManagement = () => {
 
   // Generate receipt data for a sale
   const generateSaleReceipt = (sale: Sale): ReceiptData => {
+    const stored = (sale.documentType ?? 'receipt') === 'receipt' && sale.documentNumber
+      ? sale.documentNumber
+      : `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
       type: 'receipt',
-      number: `REC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      number: stored,
       date: sale.date,
       clientName: sale.clientName,
       clientContact: sale.clientContact || undefined,
@@ -282,22 +319,28 @@ const SalesManagement = () => {
     });
   };
 
-  const handleViewSaleReceipt = (sale: Sale) => {
+  const handleViewSaleReceipt = (sale: Sale, action: 'download' | 'print' | null = null) => {
     const receiptData = generateSaleReceipt(sale);
     setPreviewReceiptData(receiptData);
     setViewingSaleReceipt(sale);
+    setPdfInitialAction(action);
     setShowReceiptPreview(true);
   };
 
   // Génère une vraie facture (différente du reçu) : numérotation FAC-, TVA détaillée, échéance, mentions légales
   const generateSaleInvoice = (sale: Sale): ReceiptData => {
-    const taxRate = 20;
-    const subtotal = +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2);
+    const taxRate = sale.taxRate ?? 20;
+    const subtotal = taxRate > 0
+      ? +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2)
+      : sale.totalAmount;
     const tax = +(sale.totalAmount - subtotal).toFixed(2);
+    const stored = (sale.documentType ?? 'receipt') === 'invoice' && sale.documentNumber
+      ? sale.documentNumber
+      : `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
       type: 'invoice',
-      number: `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+      number: stored,
       date: sale.date,
       dueDate: sale.dueDate || undefined,
       clientName: sale.clientName,
@@ -318,10 +361,11 @@ const SalesManagement = () => {
     });
   };
 
-  const handleViewSaleInvoice = (sale: Sale) => {
+  const handleViewSaleInvoice = (sale: Sale, action: 'download' | 'print' | null = null) => {
     const invoiceData = generateSaleInvoice(sale);
     setPreviewReceiptData(invoiceData);
     setViewingSaleReceipt(sale);
+    setPdfInitialAction(action);
     setShowReceiptPreview(true);
   };
 
@@ -435,6 +479,72 @@ const SalesManagement = () => {
                   <DialogTitle className="text-base sm:text-lg">Créer une Nouvelle Vente</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
+                  {/* Type de document : Reçu ou Facture */}
+                  <div className="p-3 border rounded-lg bg-primary/5 space-y-3">
+                    <Label className="text-sm font-semibold">Type de document à générer</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }))}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === 'receipt'
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Reçu (REC-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Justificatif de paiement simple, non-contractuel.</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }))}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === 'invoice'
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Facture (FAC-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Document légal avec TVA et mentions obligatoires.</p>
+                      </button>
+                    </div>
+
+                    {newSale.documentType === 'invoice' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
+                        <div>
+                          <Label className="text-sm">Taux de TVA</Label>
+                          <Select
+                            value={String(newSale.taxRate)}
+                            onValueChange={(v) => setNewSale(prev => ({ ...prev, taxRate: parseFloat(v) || 0 }))}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0 % (exonéré)</SelectItem>
+                              <SelectItem value="10">10 %</SelectItem>
+                              <SelectItem value="18">18 %</SelectItem>
+                              <SelectItem value="20">20 %</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm">Date d'échéance</Label>
+                          <Input
+                            type="date"
+                            value={newSale.dueDate}
+                            onChange={(e) => setNewSale(prev => ({ ...prev, dueDate: e.target.value }))}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label>Nom du client</Label>
@@ -601,7 +711,7 @@ const SalesManagement = () => {
                       disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      Prévisualiser le reçu
+                      {newSale.documentType === 'invoice' ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
                     </Button>
                   </div>
                 </div>
@@ -823,6 +933,22 @@ const SalesManagement = () => {
                         >
                           <FileText className="w-3 h-3 mr-1" />
                           Facture
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if ((sale.documentType ?? 'receipt') === 'invoice') {
+                              handleViewSaleInvoice(sale, 'download');
+                            } else {
+                              handleViewSaleReceipt(sale, 'download');
+                            }
+                          }}
+                          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                          title="Télécharger le PDF"
+                        >
+                          <Download className="w-3 h-3 mr-1" />
+                          PDF
                         </Button>
                         <Button
                           variant="outline"
@@ -1190,6 +1316,8 @@ const SalesManagement = () => {
           data={previewReceiptData}
           onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
           showConfirmButton={!viewingSaleReceipt}
+          initialAction={pdfInitialAction}
+          onInitialActionComplete={() => setPdfInitialAction(null)}
         />
       )}
     </div>

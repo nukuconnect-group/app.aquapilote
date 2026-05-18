@@ -390,11 +390,18 @@ const SettingsManagement = () => {
     try {
       const ext = file.name.split('.').pop();
       const fileName = `${kind}-${Date.now()}.${ext}`;
-      const filePath = `${user.id}/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from('company-logos').upload(filePath, file, { upsert: true });
+      // Bucket privé : seul le propriétaire (path = userId) peut lire/écrire ses cachets et signatures.
+      const filePath = `${user.id}/${kind}s/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('company-documents')
+        .upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('company-logos').getPublicUrl(filePath);
-      setCompanyInfo(kind === 'stamp' ? { stampUrl: publicUrl } : { signatureUrl: publicUrl });
+      // URL signée longue durée (1 an) pour affichage dans les documents.
+      const { data: signed, error: signErr } = await supabase.storage
+        .from('company-documents')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+      if (signErr || !signed) throw signErr || new Error('Signed URL error');
+      setCompanyInfo(kind === 'stamp' ? { stampUrl: signed.signedUrl } : { signatureUrl: signed.signedUrl });
       toast({ title: language === 'fr' ? 'Image téléchargée' : 'Image uploaded' });
     } catch (e) {
       console.error(e);
@@ -409,9 +416,18 @@ const SettingsManagement = () => {
     const url = kind === 'stamp' ? companyInfo.stampUrl : companyInfo.signatureUrl;
     if (!url) return;
     try {
-      const parts = url.split('/company-logos/');
+      // Support legacy public URL + nouveau bucket privé.
+      const parts = url.split('/company-documents/');
       if (parts.length > 1) {
-        await supabase.storage.from('company-logos').remove([parts[1]]);
+        // path peut contenir des query params (signed URL) — on coupe au premier ?
+        const path = parts[1].split('?')[0];
+        await supabase.storage.from('company-documents').remove([path]);
+      } else {
+        const legacy = url.split('/company-logos/');
+        if (legacy.length > 1) {
+          const path = legacy[1].split('?')[0];
+          await supabase.storage.from('company-logos').remove([path]);
+        }
       }
     } catch (e) {
       console.error(e);

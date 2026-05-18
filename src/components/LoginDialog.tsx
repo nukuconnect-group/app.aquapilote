@@ -9,7 +9,6 @@ import { Eye, EyeOff, Loader2, Shield, AlertTriangle, Key, Mail, Lock, User, Fis
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
-import { supabase } from '@/integrations/supabase/clientConfig';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
