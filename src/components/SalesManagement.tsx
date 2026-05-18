@@ -711,7 +711,7 @@ const SalesManagement = () => {
                       disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      Prévisualiser le reçu
+                      {newSale.documentType === 'invoice' ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
                     </Button>
                   </div>
                 </div>
