@@ -37,6 +37,7 @@ const SalesManagement = () => {
   const [viewingSaleReceipt, setViewingSaleReceipt] = useState<Sale | null>(null);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
 
   const [newSale, setNewSale] = useState({
     clientName: '',
@@ -47,7 +48,9 @@ const SalesManagement = () => {
     notes: '',
     isCredit: false,
     dueDate: '',
-    paymentTerms: ''
+    paymentTerms: '',
+    documentType: 'receipt' as 'receipt' | 'invoice',
+    taxRate: 0,
   });
 
   // Synchroniser la vente avec l'unité active
