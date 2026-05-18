@@ -1234,6 +1234,8 @@ const SalesManagement = () => {
           data={previewReceiptData}
           onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
           showConfirmButton={!viewingSaleReceipt}
+          initialAction={pdfInitialAction}
+          onInitialActionComplete={() => setPdfInitialAction(null)}
         />
       )}
     </div>
