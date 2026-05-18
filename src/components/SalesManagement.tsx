@@ -120,16 +120,37 @@ const SalesManagement = () => {
     ...getCompanyDocumentFields(companyInfo),
   });
 
+  // Génère le prochain numéro de document unique (FAC-YYYY-NNNN ou REC-YYYY-NNNN)
+  // en évitant les doublons parmi toutes les ventes existantes du même type.
+  const generateNextDocumentNumber = (type: 'receipt' | 'invoice'): string => {
+    const prefix = type === 'invoice' ? 'FAC' : 'REC';
+    const year = new Date().getFullYear();
+    const used = new Set(
+      sales
+        .filter((s) => (s.documentType ?? 'receipt') === type && s.documentNumber)
+        .map((s) => s.documentNumber as string)
+    );
+    let seq = sales.filter((s) => (s.documentType ?? 'receipt') === type).length + 1;
+    let candidate = '';
+    do {
+      candidate = `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
+      seq += 1;
+    } while (used.has(candidate));
+    return candidate;
+  };
+
   const handlePreviewReceipt = () => {
     const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = 20;
+    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
+    const documentNumber = generateNextDocumentNumber(newSale.documentType);
 
     const receiptData = buildReceiptData({
-      type: 'receipt',
-      number: `REC-${new Date().getFullYear()}-${String(filteredSales.length + 1).padStart(3, '0')}`,
+      type: newSale.documentType,
+      number: documentNumber,
       date: new Date().toISOString(),
+      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
       items: newSale.products.map((product) => ({
@@ -149,11 +170,16 @@ const SalesManagement = () => {
 
     setPreviewReceiptData(receiptData);
     setViewingSaleReceipt(null);
+    setPdfInitialAction(null);
     setShowReceiptPreview(true);
   };
 
   const handleConfirmSale = async () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
+    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
+    // Réutilise le numéro déjà affiché en preview si disponible, sinon en génère un nouveau.
+    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType);
+    const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
     const result = await addSale({
       date: new Date().toISOString().split('T')[0],
@@ -164,14 +190,17 @@ const SalesManagement = () => {
         ...p,
         total: p.quantity * p.unitPrice
       })),
-      totalAmount,
+      totalAmount: finalAmount,
       status: newSale.isCredit ? 'confirmed' : 'paid',
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: newSale.dueDate || undefined,
+      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: newSale.isCredit ? 0 : totalAmount
+      paidAmount: newSale.isCredit ? 0 : finalAmount,
+      documentType: newSale.documentType,
+      documentNumber,
+      taxRate,
     });
 
     if (result) {
