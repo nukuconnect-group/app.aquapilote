@@ -206,7 +206,9 @@ const SalesManagement = () => {
       notes: '',
       isCredit: false,
       dueDate: '',
-      paymentTerms: ''
+      paymentTerms: '',
+      documentType: 'receipt',
+      taxRate: 0,
     });
     setShowSaleDialog(false);
     setShowReceiptPreview(false);
