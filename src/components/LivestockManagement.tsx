@@ -494,7 +494,9 @@ const LivestockManagement = () => {
         last_health_check: new Date().toISOString().split('T')[0],
         expected_survival_rate: formData.expectedSurvivalRate,
         male_count: formData.type === 'geniteurs' ? formData.maleCount : 0,
-        female_count: formData.type === 'geniteurs' ? formData.femaleCount : 0
+        female_count: formData.type === 'geniteurs' ? formData.femaleCount : 0,
+        male_weight: formData.type === 'geniteurs' ? ((formData as any).maleWeight ?? 0) : 0,
+        female_weight: formData.type === 'geniteurs' ? ((formData as any).femaleWeight ?? 0) : 0
       });
 
       addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
@@ -1061,7 +1063,11 @@ const LivestockManagement = () => {
                     </div>
                   )}
                   <div>
-                    <Label>Taux de survie prévisionnel (%)</Label>
+                    <Label>
+                      {formData.type === 'geniteurs'
+                        ? 'Taux de participation prévisionnel (%)'
+                        : 'Taux de survie prévisionnel (%)'}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1072,7 +1078,9 @@ const LivestockManagement = () => {
                       placeholder="Ex: 95"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Taux de survie attendu pour ce lot (par défaut 95%)
+                      {formData.type === 'geniteurs'
+                        ? 'Pourcentage de géniteurs participant effectivement à la reproduction (par défaut 95%)'
+                        : 'Taux de survie attendu pour ce lot (par défaut 95%)'}
                     </p>
                   </div>
 
