@@ -1,57 +1,71 @@
-# Plan d'implémentation
+## 1. Nouveau logo Aquapilote partout
 
-## 1. Authentification — Retrait Google
-- Supprimer le bouton "Continuer avec Google" et la logique OAuth dans `LoginDialog.tsx` et `EnhancedRegistration.tsx`.
-- Nettoyer la gestion du callback OAuth dans `pages/Auth.tsx`.
-- Conserver email/password + MFA.
+- Copier `user-uploads://LOGO_AQUAPILOTE_REVU.png` vers :
+  - `public/favicon.png` (remplace l'actuel)
+  - `public/aquapilote-logo.png`
+  - `src/assets/aqua-pilot-logo-main.png` et `src/assets/aqua-pilot-logo.png` (remplace les anciens, mêmes noms = aucun import à modifier)
+- Supprimer `public/favicon.ico` pour qu'il ne prenne pas la priorité
+- Mettre à jour `index.html` (favicon + meta og:image)
+- Mettre à jour `public/manifest.json` (icons)
+- Retirer toute référence textuelle "Lovable" :
+  - `index.html` (titre, meta), `vite.config.ts` (componentTagger), `README.md`, `capacitor.config.ts`
+  - Edge functions : `aqua-assistant`, `create-team-member-account`, `reset-team-member-password` (commentaires/labels uniquement, ne pas toucher `LOVABLE_API_KEY` qui est le nom de variable obligatoire)
+  - `src/lib/domainGuard.ts` (whitelist domaines lovable conservée techniquement mais commentaire générique)
 
-## 2. Module Ventes — Factures vs Reçus
-- Dans `SalesManagement.tsx`, ajouter au moment de la création une **sélection claire** : 
-  - Type de document : **Reçu** (REC-) ou **Facture** (FAC-)
-- Champs supplémentaires affichés uniquement si "Facture" :
-  - **Date d'échéance** (date picker)
-  - **Taux de TVA** : sélecteur 0% / 10% / 20% (+ personnalisé)
-- **Anti-doublon numéro** : avant insertion, requête Supabase `sales` pour vérifier que le `invoice_number` n'existe pas; si oui, incrémenter automatiquement (`FAC-2026-0001` → `FAC-2026-0002`).
-- **Génération auto** du prochain numéro basée sur le max existant par préfixe + année.
+## 2. Module Vente — Facture ET Reçu indépendants
 
-## 3. Export PDF Factures/Reçus
-- Ajouter bouton "Télécharger PDF" dans :
-  - La liste `SalesManagement.tsx` (à côté de "Voir Reçu"/"Facture")
-  - La prévisualisation `ReceiptPreview.tsx`
-- Réutiliser `salesDocumentUtils.ts` (déjà présent) avec `html2canvas` + `jsPDF` pour rendre le DOM de la preview en PDF.
+Dans `SalesManagement.tsx` :
+- Remplacer le sélecteur actuel par **deux boutons d'action distincts** en haut de la page :
+  - "Créer un reçu" (REC-) → marqué PAYÉ, avec signature
+  - "Créer une facture" (FAC-) → sans mention PAYÉ, sans signature, avec champ TVA + échéance, cachet optionnel
+- Le choix verrouille `document_type` dans le formulaire (au lieu d'un toggle modifiable)
+- Adapter `ReceiptPreview.tsx` : si `document_type === 'invoice'` → ne pas afficher PAYÉ ni signature, afficher cachet si présent ; si `receipt` → comportement actuel
 
-## 4. AquaAssistant — Brancher Lovable AI
-- L'edge function `aqua-assistant/index.ts` utilise déjà `LOVABLE_API_KEY` et `google/gemini-2.5-flash` ✅
-- Renforcer le **system prompt** pour spécialisation aquaculture + mention que le modèle pourra être affiné/entrainé plus tard via contexte additionnel.
-- S'assurer que `AquaAssistant.tsx` appelle bien cette edge function et stream les réponses.
-- Pas de changement de modèle pour l'instant (Gemini Flash via Lovable AI).
+## 3. Module Cheptel — Géniteurs
 
-## 5. Module Équipe — Création compte simplifiée
-- Dans `AddMemberDialog.tsx` + `SummaryDialog.tsx` : supprimer l'étape "Créer le compte" qui réapparait alors que le compte est déjà créé via l'edge function `create-team-member-account`.
-- Flux corrigé : remplir infos → assigner unités/permissions → **un seul clic "Créer membre"** qui :
-  1. Crée le compte auth (edge function)
-  2. Insère dans `team_members` + `team_member_units`
-  3. Affiche les identifiants une seule fois
-- Plus de double validation ni de dialogue résumé séparé exigeant re-confirmation.
+Dans `src/components/LivestockManagement.tsx` (formulaire de création de lot) :
+- Si `type === 'geniteurs'` :
+  - Afficher champs : `male_count`, `male_weight_kg`, `female_count`, `female_weight_kg`
+  - Calcul auto : `total_weight = male_weight_kg + female_weight_kg`, `quantity = male_count + female_count`, `average_weight = total_weight / quantity`
+  - Remplacer le libellé "Taux de survie" par "Taux de participation" (réutilise la colonne existante `expected_survival_rate`, libellé UI uniquement)
+- Migration : ajouter colonnes `male_weight` et `female_weight` (numeric) à `livestock_batches`
 
-## 6. Sécurité Supabase Storage (cachet/signature)
-- **Problème actuel** : bucket `company-logos` est **public** → cachet/signature accessibles à n'importe qui avec l'URL.
-- **Solution** : Migration pour ajouter des policies storage strictes :
-  - Les fichiers `stamps/{user_id}/*` et `signatures/{user_id}/*` ne sont lisibles QUE par leur propriétaire ou ses membres d'équipe.
-  - Convertir le bucket en **privé** OU créer un nouveau bucket privé `company-documents`.
-  - Utiliser `createSignedUrl()` pour l'affichage dans `ReceiptPreview.tsx`.
-- Garder `company-logos` public uniquement pour le logo affiché publiquement (factures envoyées).
+## 4. Module Alimentation — Stock kg + sacs
 
-## Fichiers touchés (estimation)
-- `src/components/LoginDialog.tsx`, `EnhancedRegistration.tsx`, `pages/Auth.tsx`
-- `src/components/SalesManagement.tsx`, `economics/ReceiptPreview.tsx`
-- `src/lib/salesDocumentUtils.ts` (export PDF)
-- `src/components/team/AddMemberDialog.tsx`, `SummaryDialog.tsx`, `TeamManagement.tsx`
-- `src/components/SettingsManagement.tsx` (upload cachet vers bucket privé)
-- `supabase/functions/aqua-assistant/index.ts` (prompt aquaculture renforcé)
-- Nouvelle migration : bucket privé + policies storage
+Dans `FeedStockManager.tsx` :
+- Ajouter champs au formulaire : `bag_count` (nombre de sacs), `kg_per_bag` (kg par sac)
+- Calcul auto : `quantity (kg) = bag_count × kg_per_bag`
+- Garder `cost` comme prix total ; afficher prix/kg calculé
+- Corriger l'erreur actuelle de création (vérifier validation, champs requis, payload envoyé à `feed_stocks`)
+- Permettre la création répétée (reset propre du formulaire après succès, ne pas fermer le dialog tant que l'utilisateur ne le ferme pas explicitement, ou bouton "Enregistrer et nouveau")
+- Migration : ajouter `bag_count` et `kg_per_bag` (numeric, nullable) à `feed_stocks`
 
-## Questions avant de démarrer
-1. Pour le bucket cachet/signature : préfères-tu un **nouveau bucket privé** `company-documents` (recommandé, plus propre) ou **convertir `company-logos`** en privé (risque casser les logos existants déjà publiés sur factures) ?
-2. Pour le taux de TVA : les choix **0% / 10% / 20%** suffisent, ou veux-tu un champ libre numérique en plus ?
-3. Pour AquaAssistant : OK pour garder **Gemini 2.5 Flash** (rapide, multilingue) comme modèle par défaut, sachant que tu pourras ajuster le system prompt plus tard pour "l'entraîner" sur ton contexte ?
+## 5. Module Équipe — Création directe
+
+Dans `TeamMemberCard.tsx`, `TeamMemberList.tsx`, `MemberDetailsDialog.tsx` :
+- Supprimer tout bouton/section "Créer le compte" qui apparaît après ajout d'un membre
+- Le compte est déjà créé via l'edge function `create-team-member-account` lors de l'ajout → forcer `status = 'active'` et `account_created = true` dès l'insertion
+- Nettoyer les flags conditionnels qui ré-affichent l'étape
+
+## Migrations DB (un seul fichier)
+
+```sql
+ALTER TABLE livestock_batches 
+  ADD COLUMN IF NOT EXISTS male_weight numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS female_weight numeric DEFAULT 0;
+
+ALTER TABLE feed_stocks
+  ADD COLUMN IF NOT EXISTS bag_count numeric,
+  ADD COLUMN IF NOT EXISTS kg_per_bag numeric;
+```
+
+## Fichiers touchés
+
+- `index.html`, `public/manifest.json`, `public/favicon.png` (remplacé), `src/assets/aqua-pilot-logo-main.png` (remplacé), `vite.config.ts`, `README.md`, `capacitor.config.ts`
+- `src/components/SalesManagement.tsx`, `src/components/economics/ReceiptPreview.tsx`
+- `src/components/LivestockManagement.tsx`
+- `src/components/feeding/FeedStockManager.tsx`, `src/hooks/useFeedStocks.tsx`
+- `src/components/team/TeamMemberCard.tsx`, `src/components/team/TeamMemberList.tsx`, `src/components/team/MemberDetailsDialog.tsx`
+- Edge functions : nettoyage commentaires "Lovable" uniquement
+
+Confirmer pour lancer l'implémentation + la migration.
