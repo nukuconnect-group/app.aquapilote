@@ -55,7 +55,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
     protein_content: 0,
     fat_content: 0,
     notes: '',
-    min_threshold: 50
+    min_threshold: 50,
+    bag_count: 0,
+    kg_per_bag: 0
   });
 
   const predefinedFeedTypes = [
@@ -110,7 +112,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         protein_content: newStock.protein_content || undefined,
         fat_content: newStock.fat_content || undefined,
         notes: newStock.notes || undefined,
-        min_threshold: newStock.min_threshold || 50
+        min_threshold: newStock.min_threshold || 50,
+        bag_count: newStock.bag_count || undefined,
+        kg_per_bag: newStock.kg_per_bag || undefined
       };
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -154,7 +158,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         protein_content: 0,
         fat_content: 0,
         notes: '',
-        min_threshold: 50
+        min_threshold: 50,
+        bag_count: 0,
+        kg_per_bag: 0
       });
       setEditingStock(null);
       setShowDialog(false);
@@ -176,7 +182,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
       protein_content: stock.protein_content || 0,
       fat_content: stock.fat_content || 0,
       notes: stock.notes || '',
-      min_threshold: stock.min_threshold || 50
+      min_threshold: stock.min_threshold || 50,
+      bag_count: stock.bag_count || 0,
+      kg_per_bag: stock.kg_per_bag || 0
     });
     setShowDialog(true);
   };
