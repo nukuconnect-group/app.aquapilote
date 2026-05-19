@@ -494,7 +494,9 @@ const LivestockManagement = () => {
         last_health_check: new Date().toISOString().split('T')[0],
         expected_survival_rate: formData.expectedSurvivalRate,
         male_count: formData.type === 'geniteurs' ? formData.maleCount : 0,
-        female_count: formData.type === 'geniteurs' ? formData.femaleCount : 0
+        female_count: formData.type === 'geniteurs' ? formData.femaleCount : 0,
+        male_weight: formData.type === 'geniteurs' ? ((formData as any).maleWeight ?? 0) : 0,
+        female_weight: formData.type === 'geniteurs' ? ((formData as any).femaleWeight ?? 0) : 0
       });
 
       addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
@@ -857,10 +859,58 @@ const LivestockManagement = () => {
                           />
                         </div>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Poids total mâles (kg)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={(formData as any).maleWeight ?? 0}
+                            onChange={(e) => {
+                              const maleWeight = parseFloat(e.target.value) || 0;
+                              const femaleWeight = (formData as any).femaleWeight ?? 0;
+                              const totalCount = formData.maleCount + formData.femaleCount;
+                              const totalKg = maleWeight + femaleWeight;
+                              setFormData({
+                                ...formData,
+                                maleWeight,
+                                averageWeight: totalCount > 0 ? Math.round((totalKg * 1000) / totalCount) : 0
+                              } as any);
+                            }}
+                            placeholder="Poids cumulé des mâles"
+                          />
+                        </div>
+                        <div>
+                          <Label>Poids total femelles (kg)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={(formData as any).femaleWeight ?? 0}
+                            onChange={(e) => {
+                              const femaleWeight = parseFloat(e.target.value) || 0;
+                              const maleWeight = (formData as any).maleWeight ?? 0;
+                              const totalCount = formData.maleCount + formData.femaleCount;
+                              const totalKg = maleWeight + femaleWeight;
+                              setFormData({
+                                ...formData,
+                                femaleWeight,
+                                averageWeight: totalCount > 0 ? Math.round((totalKg * 1000) / totalCount) : 0
+                              } as any);
+                            }}
+                            placeholder="Poids cumulé des femelles"
+                          />
+                        </div>
+                      </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
                         <p className="text-sm text-blue-700 dark:text-blue-300">
                           <strong>Total géniteurs:</strong> {formData.maleCount + formData.femaleCount} 
                           ({formData.maleCount} ♂ mâles, {formData.femaleCount} ♀ femelles)
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                          <strong>Biomasse totale :</strong> {(((formData as any).maleWeight ?? 0) + ((formData as any).femaleWeight ?? 0)).toFixed(1)} kg
+                          {' '}— <strong>Poids moyen :</strong> {formData.averageWeight} g/individu
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Ces données seront synchronisées avec le tableau de bord reproduction.
@@ -1013,7 +1063,11 @@ const LivestockManagement = () => {
                     </div>
                   )}
                   <div>
-                    <Label>Taux de survie prévisionnel (%)</Label>
+                    <Label>
+                      {formData.type === 'geniteurs'
+                        ? 'Taux de participation prévisionnel (%)'
+                        : 'Taux de survie prévisionnel (%)'}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1024,7 +1078,9 @@ const LivestockManagement = () => {
                       placeholder="Ex: 95"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Taux de survie attendu pour ce lot (par défaut 95%)
+                      {formData.type === 'geniteurs'
+                        ? 'Pourcentage de géniteurs participant effectivement à la reproduction (par défaut 95%)'
+                        : 'Taux de survie attendu pour ce lot (par défaut 95%)'}
                     </p>
                   </div>
 

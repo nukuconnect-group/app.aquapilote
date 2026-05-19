@@ -467,16 +467,35 @@ const SalesManagement = () => {
             </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={showSaleDialog} onOpenChange={setShowSaleDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto text-sm sm:text-base">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
+                  onClick={() => {
+                    setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }));
+                    setShowSaleDialog(true);
+                  }}
+                >
                   <Plus className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">{t('new_sale')}</span>
-                  <span className="sm:hidden">{t('add')}</span>
+                  <span>Créer un reçu</span>
                 </Button>
-              </DialogTrigger>
+                <Button
+                  variant="outline"
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
+                  onClick={() => {
+                    setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }));
+                    setShowSaleDialog(true);
+                  }}
+                >
+                  <FileText className="w-4 h-4 sm:mr-2" />
+                  <span>Créer une facture</span>
+                </Button>
+              </div>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
-                  <DialogTitle className="text-base sm:text-lg">Créer une Nouvelle Vente</DialogTitle>
+                  <DialogTitle className="text-base sm:text-lg">
+                    {newSale.documentType === 'invoice' ? 'Créer une facture (FAC-)' : 'Créer un reçu (REC-)'}
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
                   {/* Type de document : Reçu ou Facture */}

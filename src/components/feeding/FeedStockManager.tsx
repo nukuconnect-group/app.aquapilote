@@ -55,7 +55,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
     protein_content: 0,
     fat_content: 0,
     notes: '',
-    min_threshold: 50
+    min_threshold: 50,
+    bag_count: 0,
+    kg_per_bag: 0
   });
 
   const predefinedFeedTypes = [
@@ -110,7 +112,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         protein_content: newStock.protein_content || undefined,
         fat_content: newStock.fat_content || undefined,
         notes: newStock.notes || undefined,
-        min_threshold: newStock.min_threshold || 50
+        min_threshold: newStock.min_threshold || 50,
+        bag_count: newStock.bag_count || undefined,
+        kg_per_bag: newStock.kg_per_bag || undefined
       };
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -154,7 +158,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         protein_content: 0,
         fat_content: 0,
         notes: '',
-        min_threshold: 50
+        min_threshold: 50,
+        bag_count: 0,
+        kg_per_bag: 0
       });
       setEditingStock(null);
       setShowDialog(false);
@@ -176,7 +182,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
       protein_content: stock.protein_content || 0,
       fat_content: stock.fat_content || 0,
       notes: stock.notes || '',
-      min_threshold: stock.min_threshold || 50
+      min_threshold: stock.min_threshold || 50,
+      bag_count: stock.bag_count || 0,
+      kg_per_bag: stock.kg_per_bag || 0
     });
     setShowDialog(true);
   };
@@ -416,6 +424,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     className="text-sm"
                     placeholder="0"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total en kg (calculé automatiquement si vous renseignez sacs × kg/sac)
+                  </p>
                 </div>
 
                 <div>
@@ -451,6 +462,69 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     className="text-sm"
                     placeholder="0"
                   />
+                </div>
+
+                <div className="sm:col-span-2 border-t pt-3 mt-1">
+                  <Label className="text-sm font-semibold">Conditionnement en sacs (optionnel)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Renseignez le nombre de sacs et les kg par sac, la quantité totale (kg) sera calculée automatiquement.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Nombre de sacs</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={newStock.bag_count || ''}
+                        onChange={(e) => {
+                          const bag_count = parseFloat(e.target.value) || 0;
+                          const kg_per_bag = newStock.kg_per_bag || 0;
+                          const computedQty = bag_count * kg_per_bag;
+                          setNewStock(prev => ({
+                            ...prev,
+                            bag_count,
+                            quantity: computedQty > 0 ? computedQty : prev.quantity,
+                            unit: 'kg'
+                          }));
+                        }}
+                        placeholder="Ex: 10"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Kg par sac</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={newStock.kg_per_bag || ''}
+                        onChange={(e) => {
+                          const kg_per_bag = parseFloat(e.target.value) || 0;
+                          const bag_count = newStock.bag_count || 0;
+                          const computedQty = bag_count * kg_per_bag;
+                          setNewStock(prev => ({
+                            ...prev,
+                            kg_per_bag,
+                            quantity: computedQty > 0 ? computedQty : prev.quantity,
+                            unit: 'kg'
+                          }));
+                        }}
+                        placeholder="Ex: 25"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Total calculé</Label>
+                      <div className="text-sm font-semibold p-2 bg-muted rounded border">
+                        {((newStock.bag_count || 0) * (newStock.kg_per_bag || 0)).toLocaleString('fr-FR')} kg
+                      </div>
+                    </div>
+                  </div>
+                  {(newStock.bag_count || 0) > 0 && (newStock.kg_per_bag || 0) > 0 && (newStock.cost || 0) > 0 && (
+                    <p className="text-xs text-primary mt-2">
+                      Prix par sac : {((newStock.cost || 0) * (newStock.kg_per_bag || 0)).toLocaleString('fr-FR')} F CFA
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -528,6 +602,20 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 >
                   {editingStock ? 'Modifier' : 'Ajouter'} le stock
                 </Button>
+                {!editingStock && (
+                  <Button
+                    variant="secondary"
+                    className="min-h-[44px]"
+                    disabled={!newStock.feed_type || newStock.quantity <= 0}
+                    onClick={async () => {
+                      await handleSaveStock();
+                      // handleSaveStock closes the dialog ; rouvre immédiatement
+                      setShowDialog(true);
+                    }}
+                  >
+                    Enregistrer et nouveau
+                  </Button>
+                )}
                 <Button variant="outline" className="min-h-[44px]" onClick={() => {
                   setShowDialog(false);
                   setEditingStock(null);
@@ -542,7 +630,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     protein_content: 0,
                     fat_content: 0,
                     notes: '',
-                    min_threshold: 50
+                    min_threshold: 50,
+                    bag_count: 0,
+                    kg_per_bag: 0
                   });
                 }}>
                   Annuler

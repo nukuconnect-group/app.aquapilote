@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Edit, Trash2, Settings, Key, Eye, CheckCircle, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, Settings, Key, Eye, CheckCircle } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { TeamMember } from '@/hooks/useTeamMembers';
 
@@ -76,17 +76,10 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             <Badge variant="outline" className="text-xs">
               {getPermissionCount(member.permissions)} permissions
             </Badge>
-            {member.user_id ? (
-              <Badge className="bg-green-100 text-green-800 text-xs">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                {t('account_created')}
-              </Badge>
-            ) : (
-              <Badge variant="destructive" className="text-xs">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                {t('no_account')}
-              </Badge>
-            )}
+            <Badge className="bg-green-100 text-green-800 text-xs">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              {t('account_created') || 'Compte actif'}
+            </Badge>
           </div>
         </div>
       </div>

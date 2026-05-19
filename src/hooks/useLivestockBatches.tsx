@@ -34,6 +34,8 @@ export interface LivestockBatch {
   // Champs pour géniteurs (mâles/femelles)
   male_count: number;
   female_count: number;
+  male_weight?: number;
+  female_weight?: number;
 }
 
 export const useLivestockBatches = (unitId?: string) => {
