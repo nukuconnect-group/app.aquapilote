@@ -602,6 +602,20 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                 >
                   {editingStock ? 'Modifier' : 'Ajouter'} le stock
                 </Button>
+                {!editingStock && (
+                  <Button
+                    variant="secondary"
+                    className="min-h-[44px]"
+                    disabled={!newStock.feed_type || newStock.quantity <= 0}
+                    onClick={async () => {
+                      await handleSaveStock();
+                      // handleSaveStock closes the dialog ; rouvre immédiatement
+                      setShowDialog(true);
+                    }}
+                  >
+                    Enregistrer et nouveau
+                  </Button>
+                )}
                 <Button variant="outline" className="min-h-[44px]" onClick={() => {
                   setShowDialog(false);
                   setEditingStock(null);
