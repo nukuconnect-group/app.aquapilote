@@ -452,6 +452,7 @@ export type Database = {
       }
       feed_stocks: {
         Row: {
+          bag_count: number | null
           cost: number | null
           created_at: string | null
           custom_name: string | null
@@ -459,6 +460,7 @@ export type Database = {
           fat_content: number | null
           feed_type: string
           id: string
+          kg_per_bag: number | null
           min_threshold: number | null
           notes: string | null
           protein_content: number | null
@@ -470,6 +472,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bag_count?: number | null
           cost?: number | null
           created_at?: string | null
           custom_name?: string | null
@@ -477,6 +480,7 @@ export type Database = {
           fat_content?: number | null
           feed_type: string
           id?: string
+          kg_per_bag?: number | null
           min_threshold?: number | null
           notes?: string | null
           protein_content?: number | null
@@ -488,6 +492,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bag_count?: number | null
           cost?: number | null
           created_at?: string | null
           custom_name?: string | null
@@ -495,6 +500,7 @@ export type Database = {
           fat_content?: number | null
           feed_type?: string
           id?: string
+          kg_per_bag?: number | null
           min_threshold?: number | null
           notes?: string | null
           protein_content?: number | null
@@ -738,9 +744,11 @@ export type Database = {
           expected_survival_rate: number | null
           feeding_plan: string | null
           female_count: number | null
+          female_weight: number | null
           id: string
           last_health_check: string | null
           male_count: number | null
+          male_weight: number | null
           notes: string | null
           quantity: number
           source: string | null
@@ -763,9 +771,11 @@ export type Database = {
           expected_survival_rate?: number | null
           feeding_plan?: string | null
           female_count?: number | null
+          female_weight?: number | null
           id?: string
           last_health_check?: string | null
           male_count?: number | null
+          male_weight?: number | null
           notes?: string | null
           quantity?: number
           source?: string | null
@@ -788,9 +798,11 @@ export type Database = {
           expected_survival_rate?: number | null
           feeding_plan?: string | null
           female_count?: number | null
+          female_weight?: number | null
           id?: string
           last_health_check?: string | null
           male_count?: number | null
+          male_weight?: number | null
           notes?: string | null
           quantity?: number
           source?: string | null
