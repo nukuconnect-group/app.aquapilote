@@ -550,7 +550,9 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
                     protein_content: 0,
                     fat_content: 0,
                     notes: '',
-                    min_threshold: 50
+                    min_threshold: 50,
+                    bag_count: 0,
+                    kg_per_bag: 0
                   });
                 }}>
                   Annuler
