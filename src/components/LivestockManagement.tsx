@@ -857,10 +857,58 @@ const LivestockManagement = () => {
                           />
                         </div>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Poids total mâles (kg)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={(formData as any).maleWeight ?? 0}
+                            onChange={(e) => {
+                              const maleWeight = parseFloat(e.target.value) || 0;
+                              const femaleWeight = (formData as any).femaleWeight ?? 0;
+                              const totalCount = formData.maleCount + formData.femaleCount;
+                              const totalKg = maleWeight + femaleWeight;
+                              setFormData({
+                                ...formData,
+                                maleWeight,
+                                averageWeight: totalCount > 0 ? Math.round((totalKg * 1000) / totalCount) : 0
+                              } as any);
+                            }}
+                            placeholder="Poids cumulé des mâles"
+                          />
+                        </div>
+                        <div>
+                          <Label>Poids total femelles (kg)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={(formData as any).femaleWeight ?? 0}
+                            onChange={(e) => {
+                              const femaleWeight = parseFloat(e.target.value) || 0;
+                              const maleWeight = (formData as any).maleWeight ?? 0;
+                              const totalCount = formData.maleCount + formData.femaleCount;
+                              const totalKg = maleWeight + femaleWeight;
+                              setFormData({
+                                ...formData,
+                                femaleWeight,
+                                averageWeight: totalCount > 0 ? Math.round((totalKg * 1000) / totalCount) : 0
+                              } as any);
+                            }}
+                            placeholder="Poids cumulé des femelles"
+                          />
+                        </div>
+                      </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
                         <p className="text-sm text-blue-700 dark:text-blue-300">
                           <strong>Total géniteurs:</strong> {formData.maleCount + formData.femaleCount} 
                           ({formData.maleCount} ♂ mâles, {formData.femaleCount} ♀ femelles)
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                          <strong>Biomasse totale :</strong> {(((formData as any).maleWeight ?? 0) + ((formData as any).femaleWeight ?? 0)).toFixed(1)} kg
+                          {' '}— <strong>Poids moyen :</strong> {formData.averageWeight} g/individu
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Ces données seront synchronisées avec le tableau de bord reproduction.
