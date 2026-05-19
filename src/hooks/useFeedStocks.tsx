@@ -18,6 +18,8 @@ export interface FeedStock {
   fat_content?: number;
   notes?: string;
   min_threshold?: number;
+  bag_count?: number;
+  kg_per_bag?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -106,7 +108,7 @@ export const useFeedStocks = (unitId?: string) => {
       console.error('Error creating feed stock:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer le stock d\'aliment',
+        description: error?.message || 'Impossible de créer le stock d\'aliment',
         variant: 'destructive',
       });
       throw error;
