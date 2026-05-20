@@ -1122,7 +1122,10 @@ const LivestockManagement = () => {
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>
                     Annuler
                   </Button>
-                  <Button onClick={handleAddBatch}>
+                  <Button variant="secondary" onClick={() => handleAddBatch(true)}>
+                    Enregistrer et nouveau
+                  </Button>
+                  <Button onClick={() => handleAddBatch(false)}>
                     Ajouter le lot
                   </Button>
                 </div>
