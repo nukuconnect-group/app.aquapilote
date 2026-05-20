@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 // Sub-components
 import TeamStats from './team/TeamStats';
 import TeamMemberList from './team/TeamMemberList';
-import PermissionsOverview from './team/PermissionsOverview';
 import AddMemberDialog from './team/AddMemberDialog';
 import SummaryDialog from './team/SummaryDialog';
 import MemberDetailsDialog from './team/MemberDetailsDialog';
