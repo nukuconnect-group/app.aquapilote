@@ -62,7 +62,10 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   const displayCompanyContact = data.companyContact || (companyInfo.phone ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}` : companyInfo.email);
   const displayCompanyLogo = companyInfo.logoUrl;
   const displayStamp = companyInfo.stampUrl;
-  const displaySignature = companyInfo.signatureUrl;
+  // Signature only used for receipts (proof of payment).
+  const displaySignature = data.type === 'receipt' ? companyInfo.signatureUrl : undefined;
+  // PAYÉ stamp is only meaningful on receipts.
+  const showPaidStamp = data.type === 'receipt' && !!data.isPaid;
 
   const getDocumentTitle = () => {
     switch (data.type) {
@@ -164,8 +167,8 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           data-receipt-root="true"
           className="relative overflow-hidden rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm sm:p-8"
         >
-          {/* PAID stamp */}
-          {data.isPaid && (
+          {/* PAID stamp (receipts only) */}
+          {showPaidStamp && (
             <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 -rotate-[24deg] opacity-25">
               <div className="rounded-xl border-[6px] border-destructive px-8 py-4">
                 <span className="text-[4.5rem] font-extrabold tracking-[0.4em] text-destructive sm:text-[6.5rem]">PAYÉ</span>
