@@ -508,13 +508,12 @@ const TeamManagement = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="dashboard">
             <LayoutDashboard className="w-4 h-4 mr-1.5" />
             Tableau de bord
           </TabsTrigger>
           <TabsTrigger value="members">{t('team_members_tab')}</TabsTrigger>
-          <TabsTrigger value="permissions">{t('permissions_tab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -534,10 +533,6 @@ const TeamManagement = () => {
             onResetPassword={openResetPasswordDialog}
             onDelete={handleDeleteMember}
           />
-        </TabsContent>
-
-        <TabsContent value="permissions">
-          <PermissionsOverview modulePermissions={modulePermissions} teamMembers={teamMembers} />
         </TabsContent>
       </Tabs>
 
