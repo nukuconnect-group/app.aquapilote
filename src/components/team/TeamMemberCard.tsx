@@ -43,10 +43,6 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
     }
   };
 
-  const getPermissionCount = (permissions: Record<string, boolean>) => {
-    return Object.values(permissions).filter(Boolean).length;
-  };
-
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
       <div className="flex items-center gap-4">
@@ -72,9 +68,6 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             )}
             <Badge className={getStatusColor(member.status)}>
               {getStatusLabel(member.status)}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {getPermissionCount(member.permissions)} permissions
             </Badge>
             <Badge className="bg-green-100 text-green-800 text-xs">
               <CheckCircle className="w-3 h-3 mr-1" />

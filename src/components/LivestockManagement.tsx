@@ -459,7 +459,7 @@ const LivestockManagement = () => {
 
   const species = ['Tilapia', 'Carpe', 'Truite', 'Poisson-chat', 'Bar', 'Daurade'];
 
-  const handleAddBatch = async () => {
+  const handleAddBatch = async (keepOpen: boolean = false) => {
     if (!formData.species || !formData.quantity || !formData.unitId) {
       toast({
         title: "Erreur",
@@ -467,6 +467,26 @@ const LivestockManagement = () => {
         variant: "destructive"
       });
       return;
+    }
+
+    if (formData.type === 'geniteurs') {
+      const total = (formData.maleCount || 0) + (formData.femaleCount || 0);
+      if (total <= 0) {
+        toast({
+          title: "Erreur",
+          description: "Indiquez au moins un géniteur (mâle ou femelle).",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (total !== formData.quantity) {
+        toast({
+          title: "Quantité incohérente",
+          description: `Total géniteurs (${total}) ≠ quantité (${formData.quantity}).`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     const selectedUnit = units.find(u => u.id === formData.unitId);
@@ -501,10 +521,14 @@ const LivestockManagement = () => {
 
       addLog('Ajout cheptel', 'Cheptel', `Nouveau lot: ${formData.species} - ${formData.quantity} individus - Unité: ${selectedUnit?.name}`, 'success');
 
+      // Conserve l'unité et le type pour la saisie en chaîne.
+      const keepUnitId = formData.unitId;
+      const keepUnitName = formData.unitName;
+      const keepType = formData.type;
       setFormData({
         species: '',
         variety: '',
-        type: 'alevins',
+        type: keepOpen ? keepType : 'alevins',
         sex: '' as '' | 'male' | 'female' | 'mixed',
         maleCount: 0,
         femaleCount: 0,
@@ -512,15 +536,15 @@ const LivestockManagement = () => {
         averageWeight: 0,
         acquisitionDate: '',
         source: '',
-        unitId: '',
-        unitName: '',
+        unitId: keepOpen ? keepUnitId : '',
+        unitName: keepOpen ? keepUnitName : '',
         notes: '',
         expectedHarvestDate: '',
         feedingPlan: '',
         status: 'healthy',
         expectedSurvivalRate: 95
       });
-      setShowAddForm(false);
+      if (!keepOpen) setShowAddForm(false);
     } catch (error) {
       console.error('Error adding batch:', error);
     }
@@ -1098,7 +1122,10 @@ const LivestockManagement = () => {
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>
                     Annuler
                   </Button>
-                  <Button onClick={handleAddBatch}>
+                  <Button variant="secondary" onClick={() => handleAddBatch(true)}>
+                    Enregistrer et nouveau
+                  </Button>
+                  <Button onClick={() => handleAddBatch(false)}>
                     Ajouter le lot
                   </Button>
                 </div>

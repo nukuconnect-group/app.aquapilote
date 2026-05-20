@@ -165,7 +165,8 @@ const SalesManagement = () => {
       total,
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
-      isPaid: !newSale.isCredit,
+      // Une facture n'est jamais marquée payée à l'émission.
+      isPaid: newSale.documentType === 'invoice' ? false : !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
@@ -191,13 +192,18 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount: finalAmount,
-      status: newSale.isCredit ? 'confirmed' : 'paid',
+      // Facture = document à payer (jamais "payé" par défaut). Reçu = preuve de paiement (payé sauf crédit).
+      status: newSale.documentType === 'invoice'
+        ? (newSale.isCredit ? 'pending' : 'confirmed')
+        : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       isCredit: newSale.isCredit,
       dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: newSale.isCredit ? 0 : finalAmount,
+      paidAmount: newSale.documentType === 'invoice'
+        ? 0
+        : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
       documentNumber,
       taxRate,

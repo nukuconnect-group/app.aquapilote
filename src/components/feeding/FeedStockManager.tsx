@@ -100,6 +100,37 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
   const handleSaveStock = async () => {
     try {
+      // Validation cohérence sacs ↔ kg
+      const bags = newStock.bag_count || 0;
+      const kgPerBag = newStock.kg_per_bag || 0;
+      if ((bags > 0) !== (kgPerBag > 0)) {
+        toast({
+          title: 'Conditionnement incomplet',
+          description: 'Renseignez à la fois le nombre de sacs ET les kg par sac, ou laissez les deux vides.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (bags > 0 && kgPerBag > 0) {
+        const expected = +(bags * kgPerBag).toFixed(2);
+        if (Math.abs(expected - (newStock.quantity || 0)) > 0.01) {
+          toast({
+            title: 'Quantité incohérente',
+            description: `La quantité saisie (${newStock.quantity} kg) ne correspond pas à ${bags} sacs × ${kgPerBag} kg = ${expected} kg.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+      if ((newStock.quantity || 0) <= 0) {
+        toast({
+          title: 'Quantité requise',
+          description: 'La quantité doit être strictement positive.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const stockData = {
         unit_id: unitId,
         custom_name: newStock.custom_name,

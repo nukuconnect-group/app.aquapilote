@@ -89,7 +89,7 @@ export const useTeamMembers = () => {
           custom_role: member.custom_role || null,
           department: member.department,
           permissions: member.permissions,
-          status: 'pending'
+          status: 'active'
         })
         .select()
         .single();
