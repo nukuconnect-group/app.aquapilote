@@ -165,7 +165,8 @@ const SalesManagement = () => {
       total,
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
-      isPaid: !newSale.isCredit,
+      // Une facture n'est jamais marquée payée à l'émission.
+      isPaid: newSale.documentType === 'invoice' ? false : !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
