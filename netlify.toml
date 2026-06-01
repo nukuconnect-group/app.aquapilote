@@ -1,0 +1,22 @@
+[[redirects]]
+  from = "http://aquapilote.app/*"
+  to = "https://aquapilote.app/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.aquapilote.app/*"
+  to = "https://aquapilote.app/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.aquapilote.app/*"
+  to = "https://aquapilote.app/:splat"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
