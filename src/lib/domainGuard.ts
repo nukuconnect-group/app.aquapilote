@@ -5,6 +5,9 @@
 
 const AUTHORIZED_DOMAINS = [
   'aqua-pilote.lovable.app',
+  'aquapilote.app',
+  'www.aquapilote.app',
+  'aqua001.lovable.app',
   'localhost',
   '127.0.0.1',
   'id-preview--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c.lovable.app',
