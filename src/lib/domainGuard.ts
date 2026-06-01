@@ -17,6 +17,9 @@ const AUTHORIZED_DOMAINS = [
 const AUTHORIZED_PATTERNS = [
   /^.*--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c\.lovable\.app$/,
   /^.*\.lovable\.app$/, // All lovable.app subdomains (published apps)
+  /^.*\.netlify\.app$/, // Netlify deployments
+  /^.*\.aquapilote\.app$/, // All aquapilote.app subdomains
+  /^.*\.vercel\.app$/, // Vercel deployments
 ];
 
 // Capacitor / native app protocols
