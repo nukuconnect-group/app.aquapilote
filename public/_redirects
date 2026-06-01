@@ -1,8 +1,5 @@
 # Redirections pour SPA - Compatible avec tous les navigateurs y compris iOS Safari
 
-# Rediriger toutes les routes vers index.html pour le routing côté client
-/*    /index.html    200
-
 # Forcer HTTPS (si domaine personnalisé)
 http://*  https://:splat  301!
 
@@ -27,3 +24,6 @@ http://*  https://:splat  301!
   
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+# Rediriger toutes les routes applicatives vers index.html pour le routing côté client
+/*    /index.html    200
