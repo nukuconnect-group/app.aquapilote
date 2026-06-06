@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -21,8 +21,40 @@ import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
-import ExportDropdown from './ExportDropdown';
-import { getCompanyDocumentFields, isSaleSettled, generateNextDocumentNumber } from '@/lib/salesDocumentUtils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
+import { SalesDocumentType, generateNextDocumentNumber, getDefaultLegalMentions, validateSalesDocumentDraft } from '@/lib/salesDocumentHelpers';
+
+interface SaleFormState {
+  clientName: string;
+  clientContact: string;
+  unitId: string;
+  products: Array<{ name: string; quantity: number; unitPrice: number }>;
+  paymentMethod: string;
+  notes: string;
+  isCredit: boolean;
+  dueDate: string;
+  paymentTerms: string;
+  documentType: SalesDocumentType;
+  taxRate: number;
+  legalMentions: string;
+}
+
+const createEmptySale = (unitId = '', documentType: SalesDocumentType = 'receipt'): SaleFormState => ({
+  clientName: '',
+  clientContact: '',
+  unitId,
+  products: [{ name: '', quantity: 0, unitPrice: 0 }],
+  paymentMethod: 'Espèces',
+  notes: '',
+  isCredit: false,
+  dueDate: '',
+  paymentTerms: '',
+  documentType,
+  taxRate: documentType === 'receipt' ? 0 : 20,
+  legalMentions: getDefaultLegalMentions(documentType),
+});
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -39,19 +71,8 @@ const SalesManagement = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
 
-  const [newSale, setNewSale] = useState({
-    clientName: '',
-    clientContact: '',
-    unitId: activeUnit?.id || '',
-    products: [{ name: '', quantity: 0, unitPrice: 0 }],
-    paymentMethod: 'Espèces',
-    notes: '',
-    isCredit: false,
-    dueDate: '',
-    paymentTerms: '',
-    documentType: 'receipt' as 'receipt' | 'invoice',
-    taxRate: 0,
-  });
+  const [newSale, setNewSale] = useState<SaleFormState>(createEmptySale(activeUnit?.id || ''));
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Synchroniser la vente avec l'unité active
   useEffect(() => {
@@ -63,7 +84,7 @@ const SalesManagement = () => {
   const filteredSales = sales;
 
   // Calcul des stats basées sur les ventes de l'unité active
-  const salesData = React.useMemo(() => {
+  const salesData = useMemo(() => {
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalOrders = filteredSales.length;
     const totalClients = [...new Set(filteredSales.map((s) => s.clientName))].length;
@@ -120,37 +141,49 @@ const SalesManagement = () => {
     ...getCompanyDocumentFields(companyInfo),
   });
 
-  // Génère le prochain numéro de document unique (FAC-YYYY-NNNN ou REC-YYYY-NNNN)
-  // en évitant les doublons parmi toutes les ventes existantes du même type.
-  const generateNextDocumentNumber = (type: 'receipt' | 'invoice'): string => {
-    const prefix = type === 'invoice' ? 'FAC' : (type === 'proforma' ? 'PRO' : 'REC');
-    const year = new Date().getFullYear();
-    const used = new Set(
-      sales
-        .filter((s) => (s.documentType ?? 'receipt') === type && s.documentNumber)
-        .map((s) => s.documentNumber as string)
-    );
-    let seq = sales.filter((s) => (s.documentType ?? 'receipt') === type).length + 1;
-    let candidate = '';
-    do {
-      candidate = `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
-      seq += 1;
-    } while (used.has(candidate));
-    return candidate;
+  const isBillingDocument = (type: SalesDocumentType) => type === 'invoice' || type === 'proforma';
+
+  const applyDocumentType = (type: SalesDocumentType) => {
+    setValidationErrors([]);
+    setNewSale((prev) => ({
+      ...prev,
+      documentType: type,
+      taxRate: type === 'receipt' ? 0 : prev.taxRate || 20,
+      legalMentions:
+        prev.legalMentions.trim().length > 0 && prev.documentType === type
+          ? prev.legalMentions
+          : getDefaultLegalMentions(type),
+      notes: prev.notes,
+    }));
+  };
+
+  const auditDocumentAction = async (action: string, details: string, severity: 'info' | 'warning' | 'error' | 'success' = 'info') => {
+    await addLog(action, 'Vente', details, severity);
+  };
+
+  const validateCurrentDraft = () => {
+    const result = validateSalesDocumentDraft(newSale);
+    setValidationErrors(result.errors);
+    if (!result.valid) {
+      toast({ title: 'Champs obligatoires manquants', description: result.errors[0], variant: 'destructive' });
+    }
+    return result.valid;
   };
 
   const handlePreviewReceipt = () => {
+    if (!validateCurrentDraft()) return;
+
     const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate =  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.taxRate || 0) : 0;
+    const taxRate = isBillingDocument(newSale.documentType) ? (newSale.taxRate || 0) : 0;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
-    const documentNumber = generateNextDocumentNumber(newSale.documentType, sales);
+    const documentNumber = generateNextDocumentNumber(sales, newSale.documentType);
 
     const receiptData = buildReceiptData({
       type: newSale.documentType,
       number: documentNumber,
       date: new Date().toISOString(),
-      dueDate:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
       items: newSale.products.map((product) => ({
@@ -164,9 +197,8 @@ const SalesManagement = () => {
       taxRate,
       total,
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes,
-      // Une facture n'est jamais marquée payée à l'émission.
-      isPaid:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? false : !newSale.isCredit,
+      notes: newSale.legalMentions || newSale.notes,
+      isPaid: isBillingDocument(newSale.documentType) ? false : !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
@@ -176,10 +208,11 @@ const SalesManagement = () => {
   };
 
   const handleConfirmSale = async () => {
+    if (!validateCurrentDraft()) return;
+
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate =  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.taxRate || 0) : 0;
-    // Réutilise le numéro déjà affiché en preview si disponible, sinon en génère un nouveau.
-    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType, sales);
+    const taxRate = isBillingDocument(newSale.documentType) ? (newSale.taxRate || 0) : 0;
+    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
     const result = await addSale({
@@ -192,16 +225,15 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount: finalAmount,
-      // Facture = document à payer (jamais "payé" par défaut). Reçu = preuve de paiement (payé sauf crédit).
-      status:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
+      status: isBillingDocument(newSale.documentType)
         ? (newSale.isCredit ? 'pending' : 'confirmed')
         : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes,
+      notes: newSale.legalMentions || newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
+      paidAmount: isBillingDocument(newSale.documentType)
         ? 0
         : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
@@ -210,41 +242,32 @@ const SalesManagement = () => {
     });
 
     if (result) {
-      if (newSale.documentType === 'proforma') addLog('Nouvelle proforma', 'Vente', `Proforma confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info'); else addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
-      toast({ title: "Vente enregistrée", description: `Vente de ${formatCurrency(totalAmount)} confirmée` });
+      const label = newSale.documentType === 'invoice' ? 'Facture' : newSale.documentType === 'proforma' ? 'Proforma' : 'Reçu';
+      await auditDocumentAction(`${label} créé`, `${documentNumber} créé pour ${newSale.clientName}`, 'success');
+      toast({ title: `${label} enregistré`, description: `${documentNumber} créé avec succès` });
       
-      // Create notification for the sale
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await createNotification({
           userId: user.id,
-          title: 'Nouvelle vente',
-          message: `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`,
+          title: `${label} créé`,
+          message: `${documentNumber} pour ${newSale.clientName} - ${formatCurrency(finalAmount)}`,
           type: 'success',
           module: 'Ventes',
           isCritical: false,
           metadata: {
             clientName: newSale.clientName,
-            totalAmount,
-            paymentMethod: newSale.paymentMethod
+            totalAmount: finalAmount,
+            paymentMethod: newSale.paymentMethod,
+            documentNumber,
+            documentType: newSale.documentType,
           }
         });
       }
     }
     
-    setNewSale({
-      clientName: '',
-      clientContact: '',
-      unitId: activeUnit?.id || '',
-      products: [{ name: '', quantity: 0, unitPrice: 0 }],
-      paymentMethod: 'Espèces',
-      notes: '',
-      isCredit: false,
-      dueDate: '',
-      paymentTerms: '',
-      documentType: 'receipt',
-      taxRate: 0,
-    });
+    setNewSale(createEmptySale(activeUnit?.id || ''));
+    setValidationErrors([]);
     setShowSaleDialog(false);
     setShowReceiptPreview(false);
   };
@@ -395,6 +418,7 @@ const SalesManagement = () => {
       paymentTerms: editingSale.paymentTerms,
     });
     if (result) {
+      await auditDocumentAction('Document modifié', `${editingSale.documentNumber || editingSale.id} modifié`, 'info');
       toast({ title: "Vente modifiée", description: "Les modifications ont été enregistrées" });
       setShowEditDialog(false);
       setEditingSale(null);
@@ -407,6 +431,7 @@ const SalesManagement = () => {
     if (!confirm(`Supprimer la vente de ${sale.clientName} ?`)) return;
     const result = await deleteSale(sale.id);
     if (result) {
+      await auditDocumentAction('Document annulé', `${sale.documentNumber || sale.id} annulé pour ${sale.clientName}`, 'warning');
       toast({ title: "Vente supprimée", description: `Vente de ${sale.clientName} supprimée` });
     }
   };
