@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, Printer, CreditCard, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -21,8 +21,40 @@ import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
-import ExportDropdown from './ExportDropdown';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
+import { SalesDocumentType, generateNextDocumentNumber, getDefaultLegalMentions, validateSalesDocumentDraft } from '@/lib/salesDocumentHelpers';
+
+interface SaleFormState {
+  clientName: string;
+  clientContact: string;
+  unitId: string;
+  products: Array<{ name: string; quantity: number; unitPrice: number }>;
+  paymentMethod: string;
+  notes: string;
+  isCredit: boolean;
+  dueDate: string;
+  paymentTerms: string;
+  documentType: SalesDocumentType;
+  taxRate: number;
+  legalMentions: string;
+}
+
+const createEmptySale = (unitId = '', documentType: SalesDocumentType = 'receipt'): SaleFormState => ({
+  clientName: '',
+  clientContact: '',
+  unitId,
+  products: [{ name: '', quantity: 0, unitPrice: 0 }],
+  paymentMethod: 'Espèces',
+  notes: '',
+  isCredit: false,
+  dueDate: '',
+  paymentTerms: '',
+  documentType,
+  taxRate: documentType === 'receipt' ? 0 : 20,
+  legalMentions: getDefaultLegalMentions(documentType),
+});
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -39,19 +71,8 @@ const SalesManagement = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
 
-  const [newSale, setNewSale] = useState({
-    clientName: '',
-    clientContact: '',
-    unitId: activeUnit?.id || '',
-    products: [{ name: '', quantity: 0, unitPrice: 0 }],
-    paymentMethod: 'Espèces',
-    notes: '',
-    isCredit: false,
-    dueDate: '',
-    paymentTerms: '',
-    documentType: 'receipt' as 'receipt' | 'invoice',
-    taxRate: 0,
-  });
+  const [newSale, setNewSale] = useState<SaleFormState>(createEmptySale(activeUnit?.id || ''));
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Synchroniser la vente avec l'unité active
   useEffect(() => {
@@ -63,7 +84,7 @@ const SalesManagement = () => {
   const filteredSales = sales;
 
   // Calcul des stats basées sur les ventes de l'unité active
-  const salesData = React.useMemo(() => {
+  const salesData = useMemo(() => {
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalOrders = filteredSales.length;
     const totalClients = [...new Set(filteredSales.map((s) => s.clientName))].length;
@@ -120,37 +141,49 @@ const SalesManagement = () => {
     ...getCompanyDocumentFields(companyInfo),
   });
 
-  // Génère le prochain numéro de document unique (FAC-YYYY-NNNN ou REC-YYYY-NNNN)
-  // en évitant les doublons parmi toutes les ventes existantes du même type.
-  const generateNextDocumentNumber = (type: 'receipt' | 'invoice'): string => {
-    const prefix = type === 'invoice' ? 'FAC' : 'REC';
-    const year = new Date().getFullYear();
-    const used = new Set(
-      sales
-        .filter((s) => (s.documentType ?? 'receipt') === type && s.documentNumber)
-        .map((s) => s.documentNumber as string)
-    );
-    let seq = sales.filter((s) => (s.documentType ?? 'receipt') === type).length + 1;
-    let candidate = '';
-    do {
-      candidate = `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
-      seq += 1;
-    } while (used.has(candidate));
-    return candidate;
+  const isBillingDocument = (type: SalesDocumentType) => type === 'invoice' || type === 'proforma';
+
+  const applyDocumentType = (type: SalesDocumentType) => {
+    setValidationErrors([]);
+    setNewSale((prev) => ({
+      ...prev,
+      documentType: type,
+      taxRate: type === 'receipt' ? 0 : prev.taxRate || 20,
+      legalMentions:
+        prev.legalMentions.trim().length > 0 && prev.documentType === type
+          ? prev.legalMentions
+          : getDefaultLegalMentions(type),
+      notes: prev.notes,
+    }));
+  };
+
+  const auditDocumentAction = async (action: string, details: string, severity: 'info' | 'warning' | 'error' | 'success' = 'info') => {
+    await addLog(action, 'Vente', details, severity);
+  };
+
+  const validateCurrentDraft = () => {
+    const result = validateSalesDocumentDraft(newSale);
+    setValidationErrors(result.errors);
+    if (!result.valid) {
+      toast({ title: 'Champs obligatoires manquants', description: result.errors[0], variant: 'destructive' });
+    }
+    return result.valid;
   };
 
   const handlePreviewReceipt = () => {
+    if (!validateCurrentDraft()) return;
+
     const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
+    const taxRate = isBillingDocument(newSale.documentType) ? (newSale.taxRate || 0) : 0;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
-    const documentNumber = generateNextDocumentNumber(newSale.documentType);
+    const documentNumber = generateNextDocumentNumber(sales, newSale.documentType);
 
     const receiptData = buildReceiptData({
       type: newSale.documentType,
       number: documentNumber,
       date: new Date().toISOString(),
-      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
       items: newSale.products.map((product) => ({
@@ -164,9 +197,8 @@ const SalesManagement = () => {
       taxRate,
       total,
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes,
-      // Une facture n'est jamais marquée payée à l'émission.
-      isPaid: newSale.documentType === 'invoice' ? false : !newSale.isCredit,
+      notes: newSale.legalMentions || newSale.notes,
+      isPaid: isBillingDocument(newSale.documentType) ? false : !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
@@ -176,10 +208,11 @@ const SalesManagement = () => {
   };
 
   const handleConfirmSale = async () => {
+    if (!validateCurrentDraft()) return;
+
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
-    // Réutilise le numéro déjà affiché en preview si disponible, sinon en génère un nouveau.
-    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType);
+    const taxRate = isBillingDocument(newSale.documentType) ? (newSale.taxRate || 0) : 0;
+    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
     const result = await addSale({
@@ -192,16 +225,15 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount: finalAmount,
-      // Facture = document à payer (jamais "payé" par défaut). Reçu = preuve de paiement (payé sauf crédit).
-      status: newSale.documentType === 'invoice'
+      status: isBillingDocument(newSale.documentType)
         ? (newSale.isCredit ? 'pending' : 'confirmed')
         : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
-      notes: newSale.notes,
+      notes: newSale.legalMentions || newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: newSale.documentType === 'invoice'
+      paidAmount: isBillingDocument(newSale.documentType)
         ? 0
         : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
@@ -210,41 +242,32 @@ const SalesManagement = () => {
     });
 
     if (result) {
-      addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
-      toast({ title: "Vente enregistrée", description: `Vente de ${formatCurrency(totalAmount)} confirmée` });
+      const label = newSale.documentType === 'invoice' ? 'Facture' : newSale.documentType === 'proforma' ? 'Proforma' : 'Reçu';
+      await auditDocumentAction(`${label} créé`, `${documentNumber} créé pour ${newSale.clientName}`, 'success');
+      toast({ title: `${label} enregistré`, description: `${documentNumber} créé avec succès` });
       
-      // Create notification for the sale
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await createNotification({
           userId: user.id,
-          title: 'Nouvelle vente',
-          message: `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`,
+          title: `${label} créé`,
+          message: `${documentNumber} pour ${newSale.clientName} - ${formatCurrency(finalAmount)}`,
           type: 'success',
           module: 'Ventes',
           isCritical: false,
           metadata: {
             clientName: newSale.clientName,
-            totalAmount,
-            paymentMethod: newSale.paymentMethod
+            totalAmount: finalAmount,
+            paymentMethod: newSale.paymentMethod,
+            documentNumber,
+            documentType: newSale.documentType,
           }
         });
       }
     }
     
-    setNewSale({
-      clientName: '',
-      clientContact: '',
-      unitId: activeUnit?.id || '',
-      products: [{ name: '', quantity: 0, unitPrice: 0 }],
-      paymentMethod: 'Espèces',
-      notes: '',
-      isCredit: false,
-      dueDate: '',
-      paymentTerms: '',
-      documentType: 'receipt',
-      taxRate: 0,
-    });
+    setNewSale(createEmptySale(activeUnit?.id || ''));
+    setValidationErrors([]);
     setShowSaleDialog(false);
     setShowReceiptPreview(false);
   };
@@ -340,12 +363,12 @@ const SalesManagement = () => {
       ? +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2)
       : sale.totalAmount;
     const tax = +(sale.totalAmount - subtotal).toFixed(2);
-    const stored = (sale.documentType ?? 'receipt') === 'invoice' && sale.documentNumber
+    const stored = (sale.documentType === 'invoice' || sale.documentType === 'proforma') && sale.documentNumber
       ? sale.documentNumber
-      : `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
+      : `${sale.documentType === 'proforma' ? 'PRO' : 'FAC'}-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
-      type: 'invoice',
+      type: (sale.documentType === 'proforma' ? 'proforma' : 'invoice'),
       number: stored,
       date: sale.date,
       dueDate: sale.dueDate || undefined,
@@ -395,6 +418,7 @@ const SalesManagement = () => {
       paymentTerms: editingSale.paymentTerms,
     });
     if (result) {
+      await auditDocumentAction('Document modifié', `${editingSale.documentNumber || editingSale.id} modifié`, 'info');
       toast({ title: "Vente modifiée", description: "Les modifications ont été enregistrées" });
       setShowEditDialog(false);
       setEditingSale(null);
@@ -407,6 +431,7 @@ const SalesManagement = () => {
     if (!confirm(`Supprimer la vente de ${sale.clientName} ?`)) return;
     const result = await deleteSale(sale.id);
     if (result) {
+      await auditDocumentAction('Document annulé', `${sale.documentNumber || sale.id} annulé pour ${sale.clientName}`, 'warning');
       toast({ title: "Vente supprimée", description: `Vente de ${sale.clientName} supprimée` });
     }
   };
@@ -478,7 +503,7 @@ const SalesManagement = () => {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
                   onClick={() => {
-                    setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }));
+                    applyDocumentType('receipt');
                     setShowSaleDialog(true);
                   }}
                 >
@@ -489,28 +514,39 @@ const SalesManagement = () => {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
                   onClick={() => {
-                    setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }));
+                    applyDocumentType('invoice');
                     setShowSaleDialog(true);
                   }}
                 >
                   <FileText className="w-4 h-4 sm:mr-2" />
                   <span>Créer une facture</span>
                 </Button>
+                <Button
+                  variant="outline"
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
+                  onClick={() => {
+                    applyDocumentType('proforma');
+                    setShowSaleDialog(true);
+                  }}
+                >
+                  <FileText className="w-4 h-4 sm:mr-2" />
+                  <span>Créer une proforma</span>
+                </Button>
               </div>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle className="text-base sm:text-lg">
-                    {newSale.documentType === 'invoice' ? 'Créer une facture (FAC-)' : 'Créer un reçu (REC-)'}
+                    {isBillingDocument(newSale.documentType) ? 'Créer une facture / proforma' : 'Créer un reçu (REC-)'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
                   {/* Type de document : Reçu ou Facture */}
                   <div className="p-3 border rounded-lg bg-primary/5 space-y-3">
                     <Label className="text-sm font-semibold">Type de document à générer</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <button
                         type="button"
-                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }))}
+                        onClick={() => applyDocumentType('receipt')}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
                           newSale.documentType === 'receipt'
                             ? 'border-primary bg-primary/10'
@@ -524,9 +560,9 @@ const SalesManagement = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }))}
+                        onClick={() => applyDocumentType('invoice')}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
-                          newSale.documentType === 'invoice'
+                           newSale.documentType === 'invoice'
                             ? 'border-primary bg-primary/10'
                             : 'border-border bg-background hover:bg-muted/40'
                         }`}
@@ -536,9 +572,22 @@ const SalesManagement = () => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Document légal avec TVA et mentions obligatoires.</p>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => applyDocumentType('proforma')}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === "proforma"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-background hover:bg-muted/40"
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Proforma (PRO-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Devis / Facture proforma pour devis client.</p>
+                      </button>
                     </div>
-
-                    {newSale.documentType === 'invoice' && (
+                    {isBillingDocument(newSale.documentType) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
                         <div>
                           <Label className="text-sm">Taux de TVA</Label>
@@ -622,7 +671,7 @@ const SalesManagement = () => {
                             onChange={(e) => updateProduct(index, 'name', e.target.value)}
                             className="text-sm sm:text-base"
                           />
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <Input 
                               type="number"
                               placeholder="Quantité"
@@ -672,14 +721,26 @@ const SalesManagement = () => {
                     </div>
                     <div>
                       <Label className="text-sm sm:text-base">Notes</Label>
-                      <Input 
+                      <Textarea
                         value={newSale.notes}
                         onChange={(e) => setNewSale(prev => ({ ...prev, notes: e.target.value }))}
                         placeholder="Notes additionnelles"
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base min-h-[88px]"
                       />
                     </div>
                   </div>
+
+                  {isBillingDocument(newSale.documentType) && (
+                    <div>
+                      <Label className="text-sm sm:text-base">Mentions légales</Label>
+                      <Textarea
+                        value={newSale.legalMentions}
+                        onChange={(e) => setNewSale((prev) => ({ ...prev, legalMentions: e.target.value }))}
+                        placeholder="Mentions légales obligatoires"
+                        className="text-sm sm:text-base min-h-[96px]"
+                      />
+                    </div>
+                  )}
 
                   {/* Section Crédit et Échéance */}
                   <div className="p-3 border rounded-lg bg-muted/30 space-y-3">
@@ -728,15 +789,29 @@ const SalesManagement = () => {
                     )}
                   </div>
 
+                  {validationErrors.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Champs obligatoires</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {validationErrors.map((error) => (
+                            <li key={error}>{error}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
                       onClick={handlePreviewReceipt} 
                       className="flex-1"
-                      disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
+                      disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity <= 0 || p.unitPrice <= 0)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      {newSale.documentType === 'invoice' ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
+                      {newSale.documentType === 'proforma' ? 'Prévisualiser la proforma' : isBillingDocument(newSale.documentType) ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
                     </Button>
                   </div>
                 </div>
@@ -1263,7 +1338,7 @@ const SalesManagement = () => {
                           setEditingSale({ ...editingSale, products: prods });
                         }}
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <Input
                           type="number"
                           placeholder="Quantité"
@@ -1340,7 +1415,7 @@ const SalesManagement = () => {
           onOpenChange={setShowReceiptPreview}
           data={previewReceiptData}
           onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
-          showConfirmButton={!viewingSaleReceipt}
+          showConfirmButton={!viewingSaleReceipt && validationErrors.length === 0}
           initialAction={pdfInitialAction}
           onInitialActionComplete={() => setPdfInitialAction(null)}
         />

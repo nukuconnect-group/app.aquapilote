@@ -15,7 +15,7 @@ export interface ReceiptItem {
 
 export interface ReceiptData {
   id?: string;
-  type: 'receipt' | 'quote' | 'invoice';
+  type: 'receipt' | 'quote' | 'invoice' | 'proforma';
   number: string;
   date: string;
   dueDate?: string;
@@ -71,6 +71,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     switch (data.type) {
       case 'quote': return 'DEVIS';
       case 'invoice': return 'FACTURE';
+      case 'proforma': return 'FACTURE PROFORMA';
       case 'receipt': return 'REÇU DE VENTE';
       default: return 'DOCUMENT';
     }
@@ -278,6 +279,12 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
               <p className="font-semibold text-foreground mb-1">Mentions légales</p>
               <p>Facture émise conformément à la législation en vigueur. En cas de retard de paiement, des pénalités de retard pourront être appliquées au taux légal. Aucun escompte pour paiement anticipé sauf mention contraire.</p>
               {companyInfo.taxId && <p className="mt-1">N° d'identification fiscale: {companyInfo.taxId}</p>}
+            </div>
+          )}
+          {data.type === "proforma" && (
+            <div className="relative z-10 mb-4 rounded border border-blue-500/40 bg-blue-50 p-3 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+              <p className="font-semibold mb-0.5">Facture Proforma</p>
+              <p>Ce document est une facture proforma délivrée à titre indicatif. Elle ne constitue pas une demande de paiement et ne peut servir de justificatif comptable pour la récupération de la TVA.</p>
             </div>
           )}
           {data.type === 'receipt' && (

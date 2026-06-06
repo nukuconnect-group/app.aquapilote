@@ -16,6 +16,7 @@ interface SummaryDialogProps {
     role: string;
     customRole: string;
     department: string;
+    dashboardRoles?: string[];
     unitPermissions: { unitId: string; unitName: string; permissions: Record<string, boolean> }[];
   };
   generatedPassword: string;
@@ -57,18 +58,18 @@ const SummaryDialog: React.FC<SummaryDialogProps> = ({
               <span className="font-medium">{inviteData.name}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Rôle</span>
-              <Badge variant="secondary">
-                {inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role || 'Membre'}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Département</span>
-              <span>{inviteData.department}</span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Unités assignées</span>
               <span>{inviteData.unitPermissions.length} unité(s)</span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-sm text-muted-foreground">Tableaux de bord</span>
+              <div className="flex flex-wrap justify-end gap-1">
+                {(inviteData.dashboardRoles || []).map((dashboard) => (
+                  <Badge key={dashboard} variant="secondary">
+                    {dashboard === 'production' ? 'Production / Terrain' : 'Administration / Finance'}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -225,7 +225,7 @@ const TeamManagement = () => {
 
   // --- Handlers ---
   const handleProceedToSummary = () => {
-    if (!inviteData.name || !inviteData.email || !inviteData.department) {
+    if (!inviteData.name || !inviteData.email) {
       toast({ title: t('error'), description: t('fill_required_fields'), variant: "destructive" });
       return;
     }
@@ -245,17 +245,16 @@ const TeamManagement = () => {
     const finalPassword = inviteData.password || generatePasswordLocal();
     setGeneratedPassword(finalPassword);
     setInviteData(prev => ({ ...prev, password: finalPassword }));
-    // Création directe (les identifiants seront affichés dans CredentialsDialog).
-    void handleConfirmAndCreate(true, finalPassword);
+    setShowSummaryStep(true);
   };
 
   const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
     setIsSubmitting(true);
-    const finalRole = inviteData.role?.trim() || 'Membre';
+    const finalRole = 'Membre';
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
       role: finalRole, custom_role: undefined,
-      department: inviteData.department, permissions: inviteData.permissions
+      department: null as any, permissions: inviteData.permissions
     };
 
     const result = await addTeamMember(newMember);
@@ -409,47 +408,6 @@ const TeamManagement = () => {
     setIsResettingPassword(false);
   };
 
-  const handleCreateAccountForMember = async (member: TeamMember) => {
-    if (member.user_id) {
-      toast({ title: "Compte existant", description: "Ce membre a déjà un compte.", variant: "destructive" });
-      return;
-    }
-    setIsCreatingAccount(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Session expirée.');
-      const password = generatePasswordLocal();
-      const response = await supabase.functions.invoke('create-team-member-account', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { email: member.member_email, full_name: member.member_name, team_member_id: member.id, password, sendEmail: true }
-      });
-      if (response.error) throw new Error(response.error.message);
-
-      const loginUrl = `${window.location.origin}/auth`;
-      if (response.data?.existingUser || response.data?.alreadyLinked) {
-        setCreatedCredentials({ email: member.member_email, password: null, loginUrl, memberName: member.member_name, emailSent: false, existingUser: true });
-        setShowCredentialsDialog(true);
-        toast({ title: "Compte lié", description: "Utilisez \"Réinitialiser mot de passe\" si besoin." });
-        await refetch();
-      } else if (response.data?.success) {
-        setCreatedCredentials({
-          email: member.member_email, password: response.data.credentials?.password || password,
-          loginUrl: response.data.credentials?.loginUrl || loginUrl, memberName: member.member_name,
-          emailSent: response.data.emailSent || false, emailError: response.data.emailError
-        });
-        setShowCredentialsDialog(true);
-        addLog('Compte créé', 'Équipe', `Compte créé pour ${member.member_name}`, 'success');
-        toast({ title: response.data.emailSent ? "Compte créé et email envoyé" : "Compte créé" });
-        await refetch();
-      } else {
-        throw new Error(response.data?.error || 'Erreur inconnue');
-      }
-    } catch (error: any) {
-      console.error('Error creating account:', error);
-      toast({ title: "Erreur", description: error.message || "Impossible de créer le compte", variant: "destructive" });
-    }
-    setIsCreatingAccount(false);
-  };
 
   const openMemberDetails = async (member: TeamMember) => {
     setSelectedMember(member);
@@ -544,8 +502,6 @@ const TeamManagement = () => {
         units={units}
         selectedUnitsForInvite={selectedUnitsForInvite}
         setSelectedUnitsForInvite={setSelectedUnitsForInvite}
-        roles={roles}
-        departments={departments}
         modulePermissions={modulePermissions}
         isSubmitting={isSubmitting}
         onProceedToSummary={handleProceedToSummary}
@@ -576,8 +532,6 @@ const TeamManagement = () => {
         isLoadingUnits={isLoadingUnits}
         isSubmitting={isSubmitting}
         units={units}
-        roles={roles}
-        departments={departments}
         modulePermissions={modulePermissions}
         onSave={handleUpdateMemberPermissions}
         onResetPassword={openResetPasswordDialog}

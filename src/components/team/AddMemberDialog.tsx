@@ -51,8 +51,6 @@ interface AddMemberDialogProps {
   units: ProductionUnit[];
   selectedUnitsForInvite: Set<string>;
   setSelectedUnitsForInvite: React.Dispatch<React.SetStateAction<Set<string>>>;
-  roles: RoleOption[];
-  departments: DeptOption[];
   modulePermissions: ModulePermission[];
   isSubmitting: boolean;
   onProceedToSummary: () => void;
@@ -84,8 +82,6 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   setInviteData,
   units,
   selectedUnitsForInvite,
-  roles,
-  departments,
   isSubmitting,
   onProceedToSummary,
   onToggleUnitSelection,
@@ -189,25 +185,6 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
             </p>
           </div>
 
-          {/* 4. Rôle / département (informatif) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>{t('role') || 'Poste'}</Label>
-              <Input
-                value={inviteData.role}
-                onChange={(e) => setInviteData((prev) => ({ ...prev, role: e.target.value }))}
-                placeholder="Ex : Responsable production"
-              />
-            </div>
-            <div>
-              <Label>{t('department') || 'Département'} *</Label>
-              <Input
-                value={inviteData.department}
-                onChange={(e) => setInviteData((prev) => ({ ...prev, department: e.target.value }))}
-                placeholder="Ex : Production, Comptabilité..."
-              />
-            </div>
-          </div>
 
           {/* 5. Unités (portée des données) */}
           <div>

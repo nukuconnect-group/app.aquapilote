@@ -37,8 +37,6 @@ interface MemberDetailsDialogProps {
   isLoadingUnits: boolean;
   isSubmitting: boolean;
   units: ProductionUnit[];
-  roles: RoleOption[];
-  departments: DeptOption[];
   modulePermissions: ModulePermission[];
   onSave: () => void;
   onResetPassword: (member: TeamMember) => void;
@@ -57,8 +55,6 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
   isLoadingUnits,
   isSubmitting,
   units,
-  roles,
-  departments,
   modulePermissions,
   onSave,
   onResetPassword,
@@ -128,52 +124,6 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>{t('role')}</Label>
-              <Select
-                value={selectedMember.custom_role ? 'role_custom' : selectedMember.role}
-                onValueChange={(value) => {
-                  if (value === 'role_custom') {
-                    setSelectedMember({...selectedMember, role: value});
-                  } else {
-                    setSelectedMember({...selectedMember, role: value, custom_role: null});
-                  }
-                }}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {roles.map(role => (
-                    <SelectItem key={role.key} value={role.key}>{role.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {(selectedMember.role === 'role_custom' || selectedMember.custom_role) && (
-              <div>
-                <Label>{t('custom_role')}</Label>
-                <Input
-                  value={selectedMember.custom_role || ''}
-                  onChange={(e) => setSelectedMember({...selectedMember, custom_role: e.target.value})}
-                  placeholder={t('custom_role_placeholder')}
-                />
-              </div>
-            )}
-            <div>
-              <Label>{t('department')}</Label>
-              <Select
-                value={selectedMember.department || ''}
-                onValueChange={(value) => setSelectedMember({...selectedMember, department: value})}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {departments.map(dept => (
-                    <SelectItem key={dept.key} value={dept.key}>{dept.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
           {/* Units */}
           <div>
