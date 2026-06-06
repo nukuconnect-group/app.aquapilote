@@ -25,21 +25,6 @@ const TeamRoleDashboard: React.FC<TeamRoleDashboardProps> = ({ members, modulePe
   const inactiveMembers = members.filter(m => m.status === 'inactive');
   const pendingMembers = members.filter(m => m.status === 'pending');
 
-  // Group members by role
-  const membersByRole = members.reduce((acc, member) => {
-    const role = member.custom_role || member.role;
-    if (!acc[role]) acc[role] = [];
-    acc[role].push(member);
-    return acc;
-  }, {} as Record<string, TeamMember[]>);
-
-  // Group members by department
-  const membersByDept = members.reduce((acc, member) => {
-    const dept = member.department || 'Non assigné';
-    if (!acc[dept]) acc[dept] = [];
-    acc[dept].push(member);
-    return acc;
-  }, {} as Record<string, TeamMember[]>);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -92,19 +77,6 @@ const TeamRoleDashboard: React.FC<TeamRoleDashboardProps> = ({ members, modulePe
         </Card>
       </div>
 
-      {/* Members by Role */}
-      <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Shield className="w-5 h-5 text-primary" />
-            Membres par rôle
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6 space-y-4">
-          {Object.entries(membersByRole).map(([role, roleMembers]) => (
-            <div key={role} className="border rounded-lg p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-primary" />
                   <h4 className="font-semibold text-sm sm:text-base">{t(role) || role}</h4>
                   <Badge variant="outline" className="text-xs">{roleMembers.length} membre(s)</Badge>
@@ -120,50 +92,6 @@ const TeamRoleDashboard: React.FC<TeamRoleDashboardProps> = ({ members, modulePe
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {getStatusBadge(member.status)}
                       <Badge variant="secondary" className="text-xs">
-                        {getPermissionCount(member)} modules
-                      </Badge>
-                      <Button variant="ghost" size="sm" onClick={() => onEditMember(member)} className="h-7 w-7 p-0">
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {Object.keys(membersByRole).length === 0 && (
-            <p className="text-center text-muted-foreground py-8">Aucun membre dans l'équipe</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Permission Matrix */}
-      <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Shield className="w-5 h-5 text-blue-600" />
-            Matrice des permissions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6">
-          {members.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Ajoutez des membres pour voir la matrice</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2 font-semibold sticky left-0 bg-background min-w-[120px]">Membre</th>
-                    {modulePermissions.slice(0, 10).map(mod => (
-                      <th key={mod.id} className="text-center p-2 font-medium min-w-[70px]">
-                        <span className="hidden sm:inline">{mod.label}</span>
-                        <span className="sm:hidden">{mod.label.slice(0, 4)}</span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map(member => (
                     <tr key={member.id} className="border-b hover:bg-muted/50">
                       <td className="p-2 sticky left-0 bg-background">
                         <div className="flex items-center gap-2">

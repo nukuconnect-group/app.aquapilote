@@ -86,8 +86,6 @@ const TeamManagement = () => {
   });
 
   // Listes pré-remplies retirées : l'utilisateur saisit librement le poste et le département.
-  const roles: { key: string; label: string }[] = [];
-  const departments: { key: string; label: string }[] = [];
 
   const modulePermissions = [
     { id: 'dashboard', label: t('module_dashboard'), description: t('module_dashboard_desc') },
@@ -409,47 +407,6 @@ const TeamManagement = () => {
     setIsResettingPassword(false);
   };
 
-  const handleCreateAccountForMember = async (member: TeamMember) => {
-    if (member.user_id) {
-      toast({ title: "Compte existant", description: "Ce membre a déjà un compte.", variant: "destructive" });
-      return;
-    }
-    setIsCreatingAccount(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Session expirée.');
-      const password = generatePasswordLocal();
-      const response = await supabase.functions.invoke('create-team-member-account', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { email: member.member_email, full_name: member.member_name, team_member_id: member.id, password, sendEmail: true }
-      });
-      if (response.error) throw new Error(response.error.message);
-
-      const loginUrl = `${window.location.origin}/auth`;
-      if (response.data?.existingUser || response.data?.alreadyLinked) {
-        setCreatedCredentials({ email: member.member_email, password: null, loginUrl, memberName: member.member_name, emailSent: false, existingUser: true });
-        setShowCredentialsDialog(true);
-        toast({ title: "Compte lié", description: "Utilisez \"Réinitialiser mot de passe\" si besoin." });
-        await refetch();
-      } else if (response.data?.success) {
-        setCreatedCredentials({
-          email: member.member_email, password: response.data.credentials?.password || password,
-          loginUrl: response.data.credentials?.loginUrl || loginUrl, memberName: member.member_name,
-          emailSent: response.data.emailSent || false, emailError: response.data.emailError
-        });
-        setShowCredentialsDialog(true);
-        addLog('Compte créé', 'Équipe', `Compte créé pour ${member.member_name}`, 'success');
-        toast({ title: response.data.emailSent ? "Compte créé et email envoyé" : "Compte créé" });
-        await refetch();
-      } else {
-        throw new Error(response.data?.error || 'Erreur inconnue');
-      }
-    } catch (error: any) {
-      console.error('Error creating account:', error);
-      toast({ title: "Erreur", description: error.message || "Impossible de créer le compte", variant: "destructive" });
-    }
-    setIsCreatingAccount(false);
-  };
 
   const openMemberDetails = async (member: TeamMember) => {
     setSelectedMember(member);

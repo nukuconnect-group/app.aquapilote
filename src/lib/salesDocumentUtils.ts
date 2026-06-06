@@ -42,3 +42,22 @@ export const isSaleSettled = (
 
   return (sale.paidAmount || 0) >= sale.totalAmount;
 };
+export const generateNextDocumentNumber = (
+  type: 'receipt' | 'invoice' | 'proforma',
+  existingSales: Pick<Sale, 'documentType' | 'documentNumber'>[]
+): string => {
+  const prefix = type === 'invoice' ? 'FAC' : (type === 'proforma' ? 'PRO' : 'REC');
+  const year = new Date().getFullYear();
+  const used = new Set(
+    existingSales
+      .filter((s) => (s.documentType ?? 'receipt') === type && s.documentNumber)
+      .map((s) => s.documentNumber as string)
+  );
+  let seq = existingSales.filter((s) => (s.documentType ?? 'receipt') === type).length + 1;
+  let candidate = '';
+  do {
+    candidate = `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
+    seq += 1;
+  } while (used.has(candidate));
+  return candidate;
+};

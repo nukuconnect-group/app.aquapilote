@@ -59,7 +59,7 @@ const InvoiceManager = () => {
       return 'sent'; // confirmed / delivered
     };
 
-    return sales
+    return sales.filter(s => s.documentType === 'invoice' || s.documentType === 'proforma')
       .slice()
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .map((sale) => {
@@ -81,7 +81,7 @@ const InvoiceManager = () => {
 
         return {
           id: sale.id,
-          invoiceNumber: `INV-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
+          invoiceNumber: sale.documentNumber || `${sale.documentType === 'proforma' ? 'PRO' : 'FAC'}-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`,
           clientName: sale.clientName,
           clientContact: sale.clientContact || undefined,
           date: sale.date,
@@ -130,7 +130,7 @@ const InvoiceManager = () => {
 
   const buildInvoicePreviewData = (invoice: Invoice): ReceiptData => ({
     id: invoice.id,
-    type: 'invoice',
+    type: (sales.find(s => s.id === invoice.id)?.documentType || 'invoice') as any,
     number: invoice.invoiceNumber,
     date: invoice.date,
     dueDate: invoice.dueDate,

@@ -26,7 +26,7 @@ export interface Sale {
   isCredit?: boolean;
   paidAmount?: number;
   paymentTerms?: string;
-  documentType?: 'receipt' | 'invoice';
+  documentType?: 'receipt' | 'invoice' | 'proforma';
   documentNumber?: string;
   taxRate?: number;
 }
@@ -90,7 +90,7 @@ export const useSales = () => {
         isCredit: s.is_credit || false,
         paidAmount: s.paid_amount || 0,
         paymentTerms: s.payment_terms || undefined,
-        documentType: (s.document_type as 'receipt' | 'invoice') || 'receipt',
+        documentType: (s.document_type as 'receipt' | 'invoice' | 'proforma') || 'receipt',
         documentNumber: s.document_number || undefined,
         taxRate: typeof s.tax_rate === 'number' ? s.tax_rate : Number(s.tax_rate) || 0
       })));
@@ -178,7 +178,7 @@ export const useSales = () => {
         isCredit: saleData.is_credit || false,
         paidAmount: saleData.paid_amount || 0,
         paymentTerms: saleData.payment_terms || undefined,
-        documentType: (saleData.document_type as 'receipt' | 'invoice') || 'receipt',
+        documentType: (saleData.document_type as 'receipt' | 'invoice' | 'proforma') || 'receipt',
         documentNumber: saleData.document_number || undefined,
         taxRate: typeof saleData.tax_rate === 'number' ? saleData.tax_rate : Number(saleData.tax_rate) || 0
       };

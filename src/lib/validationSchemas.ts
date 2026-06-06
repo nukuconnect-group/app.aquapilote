@@ -100,7 +100,7 @@ export const invoiceSchema = z.object({
   items: z.array(invoiceItemSchema)
     .min(1, { message: "Une facture doit contenir au moins un article" })
     .max(100, { message: "Une facture ne peut pas contenir plus de 100 articles" }),
-  status: z.enum(['draft', 'sent', 'paid', 'overdue'], {
+  status: z.enum(['draft', 'sent', 'paid', 'overdue', 'proforma'], {
     required_error: "Le statut est requis",
   }),
   transactionId: z.string().optional(),

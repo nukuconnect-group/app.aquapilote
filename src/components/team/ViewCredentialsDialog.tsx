@@ -67,13 +67,6 @@ const ViewCredentialsDialog: React.FC<ViewCredentialsDialogProps> = ({
                 <p className="text-sm text-muted-foreground">{member.custom_role || member.role}</p>
               </div>
             </div>
-            {member.department && (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{member.department}</Badge>
-                <Badge className={getStatusColor(member.status)}>{getStatusLabel(member.status)}</Badge>
-              </div>
-            )}
-          </div>
 
           <div className="space-y-3">
             <h4 className="font-medium text-sm flex items-center gap-2">

@@ -57,16 +57,6 @@ const SummaryDialog: React.FC<SummaryDialogProps> = ({
               <span className="font-medium">{inviteData.name}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Rôle</span>
-              <Badge variant="secondary">
-                {inviteData.role === 'Personnalisé' ? inviteData.customRole : inviteData.role || 'Membre'}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Département</span>
-              <span>{inviteData.department}</span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Unités assignées</span>
               <span>{inviteData.unitPermissions.length} unité(s)</span>
             </div>

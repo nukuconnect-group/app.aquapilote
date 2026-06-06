@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
 import { supabase } from '@/integrations/supabase/client';
 import ExportDropdown from './ExportDropdown';
-import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
+import { getCompanyDocumentFields, isSaleSettled, generateNextDocumentNumber } from '@/lib/salesDocumentUtils';
 
 const SalesManagement = () => {
   const { addLog } = useLogs();
@@ -123,7 +123,7 @@ const SalesManagement = () => {
   // Génère le prochain numéro de document unique (FAC-YYYY-NNNN ou REC-YYYY-NNNN)
   // en évitant les doublons parmi toutes les ventes existantes du même type.
   const generateNextDocumentNumber = (type: 'receipt' | 'invoice'): string => {
-    const prefix = type === 'invoice' ? 'FAC' : 'REC';
+    const prefix = type === 'invoice' ? 'FAC' : (type === 'proforma' ? 'PRO' : 'REC');
     const year = new Date().getFullYear();
     const used = new Set(
       sales
@@ -141,16 +141,16 @@ const SalesManagement = () => {
 
   const handlePreviewReceipt = () => {
     const subtotal = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
+    const taxRate =  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.taxRate || 0) : 0;
     const tax = subtotal * (taxRate / 100);
     const total = subtotal + tax;
-    const documentNumber = generateNextDocumentNumber(newSale.documentType);
+    const documentNumber = generateNextDocumentNumber(newSale.documentType, sales);
 
     const receiptData = buildReceiptData({
       type: newSale.documentType,
       number: documentNumber,
       date: new Date().toISOString(),
-      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
+      dueDate:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.dueDate || undefined) : undefined,
       clientName: newSale.clientName,
       clientContact: newSale.clientContact,
       items: newSale.products.map((product) => ({
@@ -166,7 +166,7 @@ const SalesManagement = () => {
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       // Une facture n'est jamais marquée payée à l'émission.
-      isPaid: newSale.documentType === 'invoice' ? false : !newSale.isCredit,
+      isPaid:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? false : !newSale.isCredit,
     });
 
     setPreviewReceiptData(receiptData);
@@ -177,9 +177,9 @@ const SalesManagement = () => {
 
   const handleConfirmSale = async () => {
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
-    const taxRate = newSale.documentType === 'invoice' ? (newSale.taxRate || 0) : 0;
+    const taxRate =  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.taxRate || 0) : 0;
     // Réutilise le numéro déjà affiché en preview si disponible, sinon en génère un nouveau.
-    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType);
+    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(newSale.documentType, sales);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
     const result = await addSale({
@@ -193,15 +193,15 @@ const SalesManagement = () => {
       })),
       totalAmount: finalAmount,
       // Facture = document à payer (jamais "payé" par défaut). Reçu = preuve de paiement (payé sauf crédit).
-      status: newSale.documentType === 'invoice'
+      status:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
         ? (newSale.isCredit ? 'pending' : 'confirmed')
         : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
       notes: newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: newSale.documentType === 'invoice' ? (newSale.dueDate || undefined) : undefined,
+      dueDate:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: newSale.documentType === 'invoice'
+      paidAmount:  (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
         ? 0
         : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
@@ -210,7 +210,7 @@ const SalesManagement = () => {
     });
 
     if (result) {
-      addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
+      if (newSale.documentType === 'proforma') addLog('Nouvelle proforma', 'Vente', `Proforma confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info'); else addLog('Nouvelle vente', 'Vente', `Vente confirmée pour ${newSale.clientName} - ${formatCurrency(totalAmount)}`, 'info');
       toast({ title: "Vente enregistrée", description: `Vente de ${formatCurrency(totalAmount)} confirmée` });
       
       // Create notification for the sale
@@ -340,12 +340,12 @@ const SalesManagement = () => {
       ? +(sale.totalAmount / (1 + taxRate / 100)).toFixed(2)
       : sale.totalAmount;
     const tax = +(sale.totalAmount - subtotal).toFixed(2);
-    const stored = (sale.documentType ?? 'receipt') === 'invoice' && sale.documentNumber
+    const stored = (sale.documentType === 'invoice' || sale.documentType === 'proforma') && sale.documentNumber
       ? sale.documentNumber
-      : `FAC-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
+      : `${sale.documentType === 'proforma' ? 'PRO' : 'FAC'}-${sale.date.split('-').join('')}-${sale.id.slice(0, 6).toUpperCase()}`;
     return buildReceiptData({
       id: sale.id,
-      type: 'invoice',
+      type: (sale.documentType === 'proforma' ? 'proforma' : 'invoice'),
       number: stored,
       date: sale.date,
       dueDate: sale.dueDate || undefined,
@@ -496,18 +496,29 @@ const SalesManagement = () => {
                   <FileText className="w-4 h-4 sm:mr-2" />
                   <span>Créer une facture</span>
                 </Button>
+                <Button
+                  variant="outline"
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
+                  onClick={() => {
+                    setNewSale(prev => ({ ...prev, documentType: "proforma", taxRate: prev.taxRate || 20 }));
+                    setShowSaleDialog(true);
+                  }}
+                >
+                  <FileText className="w-4 h-4 sm:mr-2" />
+                  <span>Créer une proforma</span>
+                </Button>
               </div>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle className="text-base sm:text-lg">
-                    {newSale.documentType === 'invoice' ? 'Créer une facture (FAC-)' : 'Créer un reçu (REC-)'}
+                    { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? 'Créer une facture (FAC-)' : 'Créer un reçu (REC-)'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
                   {/* Type de document : Reçu ou Facture */}
                   <div className="p-3 border rounded-lg bg-primary/5 space-y-3">
                     <Label className="text-sm font-semibold">Type de document à générer</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <button
                         type="button"
                         onClick={() => setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }))}
@@ -526,7 +537,7 @@ const SalesManagement = () => {
                         type="button"
                         onClick={() => setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }))}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
-                          newSale.documentType === 'invoice'
+                           (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
                             ? 'border-primary bg-primary/10'
                             : 'border-border bg-background hover:bg-muted/40'
                         }`}
@@ -536,9 +547,22 @@ const SalesManagement = () => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Document légal avec TVA et mentions obligatoires.</p>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewSale(prev => ({ ...prev, documentType: "proforma", taxRate: prev.taxRate || 20 }))}
+                        className={`p-3 rounded-md border-2 transition-all text-left ${
+                          newSale.documentType === "proforma"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-background hover:bg-muted/40"
+                        }`}
+                      >
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Proforma (PRO-)
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Devis / Facture proforma pour devis client.</p>
+                      </button>
                     </div>
-
-                    {newSale.documentType === 'invoice' && (
+                    { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
                         <div>
                           <Label className="text-sm">Taux de TVA</Label>
@@ -622,7 +646,7 @@ const SalesManagement = () => {
                             onChange={(e) => updateProduct(index, 'name', e.target.value)}
                             className="text-sm sm:text-base"
                           />
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <Input 
                               type="number"
                               placeholder="Quantité"
@@ -736,7 +760,7 @@ const SalesManagement = () => {
                       disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      {newSale.documentType === 'invoice' ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
+                      { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
                     </Button>
                   </div>
                 </div>
@@ -1263,7 +1287,7 @@ const SalesManagement = () => {
                           setEditingSale({ ...editingSale, products: prods });
                         }}
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <Input
                           type="number"
                           placeholder="Quantité"
