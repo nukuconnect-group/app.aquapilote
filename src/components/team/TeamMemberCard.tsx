@@ -59,15 +59,16 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             )}
           </div>
           <p className="text-sm text-muted-foreground">{member.member_email}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge className={getStatusColor(member.status)}>
               {getStatusLabel(member.status)}
             </Badge>
             {member.user_id && (
-            <Badge className="bg-green-100 text-green-800 text-xs">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              {t('account_created') || 'Compte actif'}
+              <Badge className="bg-green-100 text-green-800 text-xs">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                {t('account_created') || 'Compte actif'}
+              </Badge>
             )}
-            </Badge>
           </div>
         </div>
       </div>
