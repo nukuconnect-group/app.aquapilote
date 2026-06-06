@@ -51,8 +51,6 @@ interface AddMemberDialogProps {
   units: ProductionUnit[];
   selectedUnitsForInvite: Set<string>;
   setSelectedUnitsForInvite: React.Dispatch<React.SetStateAction<Set<string>>>;
-  roles: RoleOption[];
-  departments: DeptOption[];
   modulePermissions: ModulePermission[];
   isSubmitting: boolean;
   onProceedToSummary: () => void;
@@ -84,8 +82,6 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   setInviteData,
   units,
   selectedUnitsForInvite,
-  roles,
-  departments,
   isSubmitting,
   onProceedToSummary,
   onToggleUnitSelection,

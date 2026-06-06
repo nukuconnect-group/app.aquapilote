@@ -86,6 +86,8 @@ const TeamManagement = () => {
   });
 
   // Listes pré-remplies retirées : l'utilisateur saisit librement le poste et le département.
+  const roles: { key: string; label: string }[] = [];
+  const departments: { key: string; label: string }[] = [];
 
   const modulePermissions = [
     { id: 'dashboard', label: t('module_dashboard'), description: t('module_dashboard_desc') },

@@ -37,8 +37,6 @@ interface MemberDetailsDialogProps {
   isLoadingUnits: boolean;
   isSubmitting: boolean;
   units: ProductionUnit[];
-  roles: RoleOption[];
-  departments: DeptOption[];
   modulePermissions: ModulePermission[];
   onSave: () => void;
   onResetPassword: (member: TeamMember) => void;
@@ -57,8 +55,6 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
   isLoadingUnits,
   isSubmitting,
   units,
-  roles,
-  departments,
   modulePermissions,
   onSave,
   onResetPassword,
