@@ -503,7 +503,7 @@ const SalesManagement = () => {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
                   onClick={() => {
-                    setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }));
+                    applyDocumentType('receipt');
                     setShowSaleDialog(true);
                   }}
                 >
@@ -514,7 +514,7 @@ const SalesManagement = () => {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
                   onClick={() => {
-                    setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }));
+                    applyDocumentType('invoice');
                     setShowSaleDialog(true);
                   }}
                 >
@@ -525,7 +525,7 @@ const SalesManagement = () => {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
                   onClick={() => {
-                    setNewSale(prev => ({ ...prev, documentType: "proforma", taxRate: prev.taxRate || 20 }));
+                    applyDocumentType('proforma');
                     setShowSaleDialog(true);
                   }}
                 >
@@ -536,7 +536,7 @@ const SalesManagement = () => {
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle className="text-base sm:text-lg">
-                    { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? 'Créer une facture (FAC-)' : 'Créer un reçu (REC-)'}
+                    {isBillingDocument(newSale.documentType) ? 'Créer une facture / proforma' : 'Créer un reçu (REC-)'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 sm:space-y-4">
@@ -546,7 +546,7 @@ const SalesManagement = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <button
                         type="button"
-                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'receipt', taxRate: 0 }))}
+                        onClick={() => applyDocumentType('receipt')}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
                           newSale.documentType === 'receipt'
                             ? 'border-primary bg-primary/10'
@@ -560,9 +560,9 @@ const SalesManagement = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setNewSale(prev => ({ ...prev, documentType: 'invoice', taxRate: prev.taxRate || 20 }))}
+                        onClick={() => applyDocumentType('invoice')}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
-                           (newSale.documentType === 'invoice' || newSale.documentType === 'proforma')
+                           newSale.documentType === 'invoice'
                             ? 'border-primary bg-primary/10'
                             : 'border-border bg-background hover:bg-muted/40'
                         }`}
@@ -574,7 +574,7 @@ const SalesManagement = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setNewSale(prev => ({ ...prev, documentType: "proforma", taxRate: prev.taxRate || 20 }))}
+                        onClick={() => applyDocumentType('proforma')}
                         className={`p-3 rounded-md border-2 transition-all text-left ${
                           newSale.documentType === "proforma"
                             ? "border-primary bg-primary/10"
@@ -587,7 +587,7 @@ const SalesManagement = () => {
                         <p className="text-xs text-muted-foreground mt-1">Devis / Facture proforma pour devis client.</p>
                       </button>
                     </div>
-                    { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') && (
+                    {isBillingDocument(newSale.documentType) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/20">
                         <div>
                           <Label className="text-sm">Taux de TVA</Label>
@@ -721,14 +721,26 @@ const SalesManagement = () => {
                     </div>
                     <div>
                       <Label className="text-sm sm:text-base">Notes</Label>
-                      <Input 
+                      <Textarea
                         value={newSale.notes}
                         onChange={(e) => setNewSale(prev => ({ ...prev, notes: e.target.value }))}
                         placeholder="Notes additionnelles"
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base min-h-[88px]"
                       />
                     </div>
                   </div>
+
+                  {isBillingDocument(newSale.documentType) && (
+                    <div>
+                      <Label className="text-sm sm:text-base">Mentions légales</Label>
+                      <Textarea
+                        value={newSale.legalMentions}
+                        onChange={(e) => setNewSale((prev) => ({ ...prev, legalMentions: e.target.value }))}
+                        placeholder="Mentions légales obligatoires"
+                        className="text-sm sm:text-base min-h-[96px]"
+                      />
+                    </div>
+                  )}
 
                   {/* Section Crédit et Échéance */}
                   <div className="p-3 border rounded-lg bg-muted/30 space-y-3">
@@ -777,15 +789,29 @@ const SalesManagement = () => {
                     )}
                   </div>
 
+                  {validationErrors.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Champs obligatoires</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {validationErrors.map((error) => (
+                            <li key={error}>{error}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
                       onClick={handlePreviewReceipt} 
                       className="flex-1"
-                      disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity === 0)}
+                      disabled={!newSale.clientName || newSale.products.some(p => !p.name || p.quantity <= 0 || p.unitPrice <= 0)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      { (newSale.documentType === 'invoice' || newSale.documentType === 'proforma') ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
+                      {newSale.documentType === 'proforma' ? 'Prévisualiser la proforma' : isBillingDocument(newSale.documentType) ? 'Prévisualiser la facture' : 'Prévisualiser le reçu'}
                     </Button>
                   </div>
                 </div>
@@ -1389,7 +1415,7 @@ const SalesManagement = () => {
           onOpenChange={setShowReceiptPreview}
           data={previewReceiptData}
           onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
-          showConfirmButton={!viewingSaleReceipt}
+          showConfirmButton={!viewingSaleReceipt && validationErrors.length === 0}
           initialAction={pdfInitialAction}
           onInitialActionComplete={() => setPdfInitialAction(null)}
         />
