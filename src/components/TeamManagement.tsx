@@ -225,7 +225,7 @@ const TeamManagement = () => {
 
   // --- Handlers ---
   const handleProceedToSummary = () => {
-    if (!inviteData.name || !inviteData.email || !inviteData.department) {
+    if (!inviteData.name || !inviteData.email) {
       toast({ title: t('error'), description: t('fill_required_fields'), variant: "destructive" });
       return;
     }
@@ -245,17 +245,16 @@ const TeamManagement = () => {
     const finalPassword = inviteData.password || generatePasswordLocal();
     setGeneratedPassword(finalPassword);
     setInviteData(prev => ({ ...prev, password: finalPassword }));
-    // Création directe (les identifiants seront affichés dans CredentialsDialog).
-    void handleConfirmAndCreate(true, finalPassword);
+    setShowSummaryStep(true);
   };
 
   const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
     setIsSubmitting(true);
-    const finalRole = inviteData.role?.trim() || 'Membre';
+    const finalRole = 'Membre';
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
       role: finalRole, custom_role: undefined,
-      department: inviteData.department, permissions: inviteData.permissions
+      department: null as any, permissions: inviteData.permissions
     };
 
     const result = await addTeamMember(newMember);
