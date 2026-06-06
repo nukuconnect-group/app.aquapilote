@@ -503,8 +503,6 @@ const TeamManagement = () => {
         units={units}
         selectedUnitsForInvite={selectedUnitsForInvite}
         setSelectedUnitsForInvite={setSelectedUnitsForInvite}
-        roles={roles}
-        departments={departments}
         modulePermissions={modulePermissions}
         isSubmitting={isSubmitting}
         onProceedToSummary={handleProceedToSummary}
@@ -535,8 +533,6 @@ const TeamManagement = () => {
         isLoadingUnits={isLoadingUnits}
         isSubmitting={isSubmitting}
         units={units}
-        roles={roles}
-        departments={departments}
         modulePermissions={modulePermissions}
         onSave={handleUpdateMemberPermissions}
         onResetPassword={openResetPasswordDialog}
