@@ -77,7 +77,10 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Extract token explicitly — calling getUser() without arg relies on a
+    // session in the client storage which doesn't exist server-side.
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(JSON.stringify({ error: 'Non autorisé' }),
