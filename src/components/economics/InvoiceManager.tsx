@@ -8,6 +8,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSales } from '@/hooks/useSales';
 import ReceiptPreview, { ReceiptData } from './ReceiptPreview';
 import { getCompanyDocumentFields, isSaleSettled } from '@/lib/salesDocumentUtils';
+import { Plus } from 'lucide-react';
+import type { SalesDocumentType } from '@/lib/salesDocumentHelpers';
 
 type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 
@@ -36,7 +38,11 @@ interface InvoiceItem {
   total: number;
 }
 
-const InvoiceManager = () => {
+interface InvoiceManagerProps {
+  onCreateDocument?: (type: SalesDocumentType) => void;
+}
+
+const InvoiceManager: React.FC<InvoiceManagerProps> = ({ onCreateDocument }) => {
   const { formatCurrency, t, companyInfo } = useSettings();
   const { sales } = useSales(); // déjà filtré par unité active dans le hook
   const [previewData, setPreviewData] = useState<ReceiptData | null>(null);
@@ -173,8 +179,31 @@ const InvoiceManager = () => {
           <FileText className="w-5 h-5 text-primary" />
           {t('invoiceManagement') || 'Factures'}
         </h3>
-        <div className="text-sm text-muted-foreground">
-          {invoices.length} facture{invoices.length > 1 ? 's' : ''} au total
+        <div className="flex items-center gap-2">
+          {onCreateDocument && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onCreateDocument('invoice')}
+                className="text-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Créer une facture
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onCreateDocument('proforma')}
+                className="text-sm"
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                Créer une proforma
+              </Button>
+            </>
+          )}
+          <span className="text-sm text-muted-foreground hidden sm:inline">
+            {invoices.length} facture{invoices.length > 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 

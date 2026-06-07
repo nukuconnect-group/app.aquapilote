@@ -83,16 +83,29 @@ const SalesManagement = () => {
   // Les données affichées sont déjà filtrées par unité dans le hook
   const filteredSales = sales;
 
-  // Calcul des stats basées sur les ventes de l'unité active
+  // Une vente est "effectuée" si c'est un reçu (paiement direct) ou
+  // une facture/proforma déjà soldée. Les factures en attente ne comptent
+  // pas dans le chiffre d'affaires tant qu'elles ne sont pas payées.
+  const settledSales = useMemo(
+    () =>
+      filteredSales.filter((s) => {
+        const type = s.documentType ?? 'receipt';
+        if (type === 'receipt') return true;
+        return s.status === 'paid';
+      }),
+    [filteredSales]
+  );
+
+  // Calcul des stats basées sur les ventes effectivement réalisées
   const salesData = useMemo(() => {
-    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalOrders = filteredSales.length;
-    const totalClients = [...new Set(filteredSales.map((s) => s.clientName))].length;
-    const avgOrderValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
+    const totalRevenue = settledSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalOrders = settledSales.length;
+    const totalClients = [...new Set(settledSales.map((s) => s.clientName))].length;
+    const avgOrderValue = settledSales.length > 0 ? totalRevenue / settledSales.length : 0;
     
     // Calculer les produits les plus vendus à partir des vraies données
     const productsMap = new Map<string, { name: string; quantity: number; revenue: number }>();
-    filteredSales.forEach(sale => {
+    settledSales.forEach(sale => {
       sale.products.forEach(product => {
         const existing = productsMap.get(product.name);
         if (existing) {
@@ -114,7 +127,7 @@ const SalesManagement = () => {
 
     // Calculer les ventes par unité à partir des vraies données
     const salesByUnit = units.map(unit => {
-      const unitSales = sales.filter(s => s.unitId === unit.id);
+      const unitSales = settledSales.filter(s => s.unitId === unit.id);
       const unitRevenue = unitSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
       return {
         id: unit.id,
@@ -134,7 +147,7 @@ const SalesManagement = () => {
       topProducts,
       salesByUnit
     };
-  }, [filteredSales, units, sales]);
+  }, [settledSales, units]);
 
   const buildReceiptData = (baseData: Omit<ReceiptData, 'companyName' | 'companyAddress' | 'companyContact'>): ReceiptData => ({
     ...baseData,
@@ -215,6 +228,7 @@ const SalesManagement = () => {
     const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
+    const isBilling = isBillingDocument(newSale.documentType);
     const result = await addSale({
       date: new Date().toISOString().split('T')[0],
       clientName: newSale.clientName,
@@ -225,15 +239,17 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount: finalAmount,
-      status: isBillingDocument(newSale.documentType)
-        ? (newSale.isCredit ? 'pending' : 'confirmed')
+      // Les factures / proformas restent toujours en attente jusqu'à
+      // ce qu'elles soient marquées comme payées manuellement.
+      status: isBilling
+        ? 'pending'
         : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
       notes: newSale.legalMentions || newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBilling ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: isBillingDocument(newSale.documentType)
+      paidAmount: isBilling
         ? 0
         : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
@@ -509,39 +525,6 @@ const SalesManagement = () => {
                 >
                   <Plus className="w-4 h-4 sm:mr-2" />
                   <span>Nouvelle vente</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('receipt');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer un reçu</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('invoice');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer une facture</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('proforma');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer une proforma</span>
                 </Button>
               </div>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
@@ -1154,7 +1137,12 @@ const SalesManagement = () => {
         </TabsContent>
 
         <TabsContent value="invoices">
-          <InvoiceManager />
+          <InvoiceManager
+            onCreateDocument={(type) => {
+              applyDocumentType(type);
+              setShowSaleDialog(true);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="templates">
