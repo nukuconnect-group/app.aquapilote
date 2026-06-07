@@ -48,8 +48,9 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify user is authenticated
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify user is authenticated — pass token explicitly (no session in edge runtime)
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: 'Non autorisé' }),
