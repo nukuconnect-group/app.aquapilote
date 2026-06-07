@@ -316,6 +316,10 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           <div className="relative z-10 border-t-2 border-border pt-4 text-center text-xs text-muted-foreground">
             <p>Document généré le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR')}</p>
             <p>Merci pour votre confiance</p>
+            <p className="mt-2 font-semibold text-primary">
+              AquaPilote — application de gestion aquacole intelligente
+            </p>
+            <p className="text-[10px]">www.aquapilote.app</p>
           </div>
         </div>
 
