@@ -526,39 +526,6 @@ const SalesManagement = () => {
                   <Plus className="w-4 h-4 sm:mr-2" />
                   <span>Nouvelle vente</span>
                 </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('receipt');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer un reçu</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('invoice');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer une facture</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm sm:text-base"
-                  onClick={() => {
-                    applyDocumentType('proforma');
-                    setShowSaleDialog(true);
-                  }}
-                >
-                  <FileText className="w-4 h-4 sm:mr-2" />
-                  <span>Créer une proforma</span>
-                </Button>
               </div>
               <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
