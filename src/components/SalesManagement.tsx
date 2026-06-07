@@ -215,6 +215,7 @@ const SalesManagement = () => {
     const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
     
+    const isBilling = isBillingDocument(newSale.documentType);
     const result = await addSale({
       date: new Date().toISOString().split('T')[0],
       clientName: newSale.clientName,
@@ -225,15 +226,17 @@ const SalesManagement = () => {
         total: p.quantity * p.unitPrice
       })),
       totalAmount: finalAmount,
-      status: isBillingDocument(newSale.documentType)
-        ? (newSale.isCredit ? 'pending' : 'confirmed')
+      // Les factures / proformas restent toujours en attente jusqu'à
+      // ce qu'elles soient marquées comme payées manuellement.
+      status: isBilling
+        ? 'pending'
         : (newSale.isCredit ? 'confirmed' : 'paid'),
       paymentMethod: newSale.paymentMethod,
       notes: newSale.legalMentions || newSale.notes,
       isCredit: newSale.isCredit,
-      dueDate: isBillingDocument(newSale.documentType) ? (newSale.dueDate || undefined) : undefined,
+      dueDate: isBilling ? (newSale.dueDate || undefined) : undefined,
       paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: isBillingDocument(newSale.documentType)
+      paidAmount: isBilling
         ? 0
         : (newSale.isCredit ? 0 : finalAmount),
       documentType: newSale.documentType,
