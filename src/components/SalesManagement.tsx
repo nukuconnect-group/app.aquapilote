@@ -83,16 +83,29 @@ const SalesManagement = () => {
   // Les données affichées sont déjà filtrées par unité dans le hook
   const filteredSales = sales;
 
-  // Calcul des stats basées sur les ventes de l'unité active
+  // Une vente est "effectuée" si c'est un reçu (paiement direct) ou
+  // une facture/proforma déjà soldée. Les factures en attente ne comptent
+  // pas dans le chiffre d'affaires tant qu'elles ne sont pas payées.
+  const settledSales = useMemo(
+    () =>
+      filteredSales.filter((s) => {
+        const type = s.documentType ?? 'receipt';
+        if (type === 'receipt') return true;
+        return s.status === 'paid';
+      }),
+    [filteredSales]
+  );
+
+  // Calcul des stats basées sur les ventes effectivement réalisées
   const salesData = useMemo(() => {
-    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalOrders = filteredSales.length;
-    const totalClients = [...new Set(filteredSales.map((s) => s.clientName))].length;
-    const avgOrderValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
+    const totalRevenue = settledSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalOrders = settledSales.length;
+    const totalClients = [...new Set(settledSales.map((s) => s.clientName))].length;
+    const avgOrderValue = settledSales.length > 0 ? totalRevenue / settledSales.length : 0;
     
     // Calculer les produits les plus vendus à partir des vraies données
     const productsMap = new Map<string, { name: string; quantity: number; revenue: number }>();
-    filteredSales.forEach(sale => {
+    settledSales.forEach(sale => {
       sale.products.forEach(product => {
         const existing = productsMap.get(product.name);
         if (existing) {
@@ -114,7 +127,7 @@ const SalesManagement = () => {
 
     // Calculer les ventes par unité à partir des vraies données
     const salesByUnit = units.map(unit => {
-      const unitSales = sales.filter(s => s.unitId === unit.id);
+      const unitSales = settledSales.filter(s => s.unitId === unit.id);
       const unitRevenue = unitSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
       return {
         id: unit.id,
@@ -134,7 +147,7 @@ const SalesManagement = () => {
       topProducts,
       salesByUnit
     };
-  }, [filteredSales, units, sales]);
+  }, [settledSales, units]);
 
   const buildReceiptData = (baseData: Omit<ReceiptData, 'companyName' | 'companyAddress' | 'companyContact'>): ReceiptData => ({
     ...baseData,
