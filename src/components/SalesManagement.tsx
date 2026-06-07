@@ -1137,7 +1137,12 @@ const SalesManagement = () => {
         </TabsContent>
 
         <TabsContent value="invoices">
-          <InvoiceManager />
+          <InvoiceManager
+            onCreateDocument={(type) => {
+              applyDocumentType(type);
+              setShowSaleDialog(true);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="templates">
