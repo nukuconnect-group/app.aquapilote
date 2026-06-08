@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Download, Printer, FileText, CheckCircle } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface ReceiptItem {
   name: string;
@@ -55,11 +56,19 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 }) => {
   const { formatCurrency, companyInfo } = useSettings();
   const { toast } = useToast();
+  const { user } = useAuth();
   const receiptRef = useRef<HTMLDivElement>(null);
   
-  const displayCompanyName = data.companyName || companyInfo.name;
-  const displayCompanyAddress = data.companyAddress || companyInfo.address;
-  const displayCompanyContact = data.companyContact || (companyInfo.phone ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}` : companyInfo.email);
+  // Always show the seller (current logged-in user / company) coordinates as a fallback
+  // so factures/reçus include vendor info even if companyInfo isn't fully filled in.
+  const fallbackName = user?.name || 'AquaPilote';
+  const fallbackEmail = user?.email || '';
+  const displayCompanyName = data.companyName || companyInfo.name || fallbackName;
+  const displayCompanyAddress = data.companyAddress || companyInfo.address || '';
+  const builtContact = companyInfo.phone
+    ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}`
+    : companyInfo.email;
+  const displayCompanyContact = data.companyContact || builtContact || (fallbackEmail ? `Email: ${fallbackEmail}` : '');
   const displayCompanyLogo = companyInfo.logoUrl;
   const displayStamp = companyInfo.stampUrl;
   // Signature only used for receipts (proof of payment).
@@ -287,12 +296,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
               <p>Ce document est une facture proforma délivrée à titre indicatif. Elle ne constitue pas une demande de paiement et ne peut servir de justificatif comptable pour la récupération de la TVA.</p>
             </div>
           )}
-          {data.type === 'receipt' && (
-            <div className="relative z-10 mb-4 rounded border border-amber-500/40 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-              <p className="font-semibold mb-0.5">Document non contractuel</p>
-              <p>Ce reçu de vente atteste le paiement reçu. Il ne vaut pas facture au sens fiscal et ne peut être utilisé pour la déduction de TVA. Demandez une facture pour vos obligations comptables.</p>
-            </div>
-          )}
+          {/* Le reçu n'affiche plus de mention auto : l'utilisateur peut écrire sa note dans le champ "Notes". */}
 
           {/* Cachet et signature */}
           {(displayStamp || displaySignature) && (
