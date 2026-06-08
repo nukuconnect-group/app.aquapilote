@@ -190,12 +190,16 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           <div className="relative z-10 mb-6 border-b-[3px] border-primary pb-4 text-center">
             {displayCompanyLogo && (
               <div className="flex justify-center mb-3">
-                <img
-                  src={displayCompanyLogo}
-                  alt="Logo"
-                  className="h-16 w-auto object-contain"
-                  crossOrigin="anonymous"
-                />
+                <div className="flex items-center justify-center rounded-md bg-white p-2 shadow-sm" style={{ maxWidth: 220 }}>
+                  <img
+                    src={displayCompanyLogo}
+                    alt="Logo"
+                    className="object-contain"
+                    style={{ maxHeight: 72, maxWidth: 200, width: 'auto', height: 'auto', display: 'block' }}
+                    crossOrigin="anonymous"
+                    onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                  />
+                </div>
               </div>
             )}
             {displayCompanyName && (
@@ -300,16 +304,37 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
           {/* Cachet et signature */}
           {(displayStamp || displaySignature) && (
-            <div className="relative z-10 mb-4 flex items-end justify-end gap-6">
+            <div className="relative z-10 mb-4 flex items-end justify-end gap-8">
               {displaySignature && (
                 <div className="flex flex-col items-center">
-                  <img src={displaySignature} alt="Signature" className="h-16 w-auto object-contain" crossOrigin="anonymous" />
+                  <div className="flex items-center justify-center rounded-md bg-white p-1" style={{ maxWidth: 180 }}>
+                    <img
+                      src={displaySignature}
+                      alt="Signature"
+                      className="object-contain"
+                      style={{ maxHeight: 64, maxWidth: 160, width: 'auto', height: 'auto', display: 'block' }}
+                      crossOrigin="anonymous"
+                      onError={(e) => { (e.currentTarget.parentElement?.parentElement as HTMLElement).style.display = 'none'; }}
+                    />
+                  </div>
                   <span className="mt-1 border-t border-border pt-1 text-xs text-muted-foreground">Signature</span>
                 </div>
               )}
               {displayStamp && (
                 <div className="flex flex-col items-center">
-                  <img src={displayStamp} alt="Cachet" className="h-20 w-auto object-contain opacity-90" crossOrigin="anonymous" />
+                  <div
+                    className="flex items-center justify-center rounded-md bg-white p-2"
+                    style={{ maxWidth: 180, mixBlendMode: 'multiply' as React.CSSProperties['mixBlendMode'] }}
+                  >
+                    <img
+                      src={displayStamp}
+                      alt="Cachet"
+                      className="object-contain"
+                      style={{ maxHeight: 110, maxWidth: 160, width: 'auto', height: 'auto', display: 'block' }}
+                      crossOrigin="anonymous"
+                      onError={(e) => { (e.currentTarget.parentElement?.parentElement as HTMLElement).style.display = 'none'; }}
+                    />
+                  </div>
                   <span className="mt-1 border-t border-border pt-1 text-xs text-muted-foreground">Cachet</span>
                 </div>
               )}

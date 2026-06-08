@@ -77,6 +77,17 @@ const HRManagement = () => {
     mealAllowance: 0
   });
 
+  // Pré-remplir automatiquement la période avec le mois en cours dès qu'on ouvre le générateur
+  useEffect(() => {
+    if (showPaySlipGenerator && !paySlipData.period) {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      setPaySlipData(prev => ({ ...prev, period: `${now.getFullYear()}-${month}` }));
+    }
+  }, [showPaySlipGenerator, paySlipData.period]);
+
+  const selectedPayslipEmployee = employees.find(e => e.id === paySlipData.employeeId) || null;
+
   const positions = [
     'Directeur',
     'Responsable de production',
