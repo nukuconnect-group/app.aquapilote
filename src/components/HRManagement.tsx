@@ -773,12 +773,22 @@ const HRManagement = () => {
               </Select>
             </div>
 
+            {selectedPayslipEmployee && (
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Nom complet</span><span className="font-medium">{selectedPayslipEmployee.firstName} {selectedPayslipEmployee.lastName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Poste</span><span className="font-medium">{selectedPayslipEmployee.position}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Contrat</span><span className="font-medium">{selectedPayslipEmployee.contractType}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Unité</span><span className="font-medium">{selectedPayslipEmployee.unitName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Salaire de base</span><span className="font-semibold text-primary">{formatSalary(selectedPayslipEmployee.salary)}</span></div>
+              </div>
+            )}
+
             <div>
-              <Label>Période (YYYY-MM) *</Label>
+              <Label>Période *</Label>
               <Input
+                type="month"
                 value={paySlipData.period}
                 onChange={(e) => setPaySlipData({...paySlipData, period: e.target.value})}
-                placeholder="2024-03"
               />
             </div>
 
