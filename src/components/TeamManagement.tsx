@@ -224,7 +224,7 @@ const TeamManagement = () => {
   };
 
   // --- Handlers ---
-  const handleProceedToSummary = () => {
+  const handleProceedToSummary = async () => {
     if (!inviteData.name || !inviteData.email) {
       toast({ title: t('error'), description: t('fill_required_fields'), variant: "destructive" });
       return;
@@ -242,10 +242,12 @@ const TeamManagement = () => {
       toast({ title: t('error'), description: t('assign_at_least_one_unit'), variant: "destructive" });
       return;
     }
+    // Automatisation : on saute l'étape intermédiaire "Créer le compte".
+    // Génération sécurisée du mot de passe et création immédiate du compte avec envoi d'email.
     const finalPassword = inviteData.password || generatePasswordLocal();
     setGeneratedPassword(finalPassword);
     setInviteData(prev => ({ ...prev, password: finalPassword }));
-    setShowSummaryStep(true);
+    await handleConfirmAndCreate(true, finalPassword);
   };
 
   const handleConfirmAndCreate = async (sendEmail: boolean, explicitPassword?: string) => {
