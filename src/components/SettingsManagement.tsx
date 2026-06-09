@@ -886,6 +886,20 @@ const SettingsManagement = () => {
                     <p className="text-xs text-muted-foreground">
                       {language === 'fr' ? 'PNG transparent recommandé. Apparaît sur factures et reçus. Max 2 Mo.' : 'Transparent PNG recommended. Shown on invoices and receipts. Max 2 MB.'}
                     </p>
+                    <div className="flex items-center gap-2 pt-2">
+                      <input
+                        id="hide-stamp-toggle"
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input"
+                        checked={!!companyInfo.hideStampOnDocuments}
+                        onChange={(e) => setCompanyInfo({ hideStampOnDocuments: e.target.checked })}
+                      />
+                      <Label htmlFor="hide-stamp-toggle" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                        {language === 'fr'
+                          ? "Masquer le cachet sur les reçus et factures"
+                          : 'Hide stamp on receipts and invoices'}
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </div>
