@@ -826,7 +826,7 @@ const SettingsManagement = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => logoInputRef.current?.click()}
-                        disabled={isUploadingLogo}
+                        disabled={isUploadingLogo || companyLocked}
                         className="w-full sm:w-auto"
                       >
                         {isUploadingLogo ? (
@@ -846,7 +846,7 @@ const SettingsManagement = () => {
                           variant="ghost"
                           size="sm"
                           onClick={handleRemoveLogo}
-                          disabled={isUploadingLogo}
+                          disabled={isUploadingLogo || companyLocked}
                           className="w-full sm:w-auto text-destructive hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -877,11 +877,11 @@ const SettingsManagement = () => {
                   <div className="space-y-2 w-full">
                     <input ref={stampInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'stamp')} className="hidden" />
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Button variant="outline" size="sm" onClick={() => stampInputRef.current?.click()} disabled={isUploadingStamp} className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" onClick={() => stampInputRef.current?.click()} disabled={isUploadingStamp || companyLocked} className="w-full sm:w-auto">
                         {isUploadingStamp ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser le cachet' : 'Upload stamp'}</>)}
                       </Button>
                       {companyInfo.stampUrl && (
-                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('stamp')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('stamp')} disabled={companyLocked} className="w-full sm:w-auto text-destructive hover:text-destructive">
                           <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
                         </Button>
                       )}
@@ -903,6 +903,11 @@ const SettingsManagement = () => {
                           : 'Hide stamp on receipts and invoices'}
                       </Label>
                     </div>
+                    {companyLocked && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Géré par l'administrateur de l'entreprise.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -923,11 +928,11 @@ const SettingsManagement = () => {
                   <div className="space-y-2 w-full">
                     <input ref={signatureInputRef} type="file" accept="image/*" onChange={(e) => handleCompanyAssetUpload(e, 'signature')} className="hidden" />
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Button variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={isUploadingSignature} className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={isUploadingSignature || companyLocked} className="w-full sm:w-auto">
                         {isUploadingSignature ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'fr' ? 'Envoi...' : 'Uploading...'}</>) : (<><Upload className="w-4 h-4 mr-2" />{language === 'fr' ? 'Téléverser la signature' : 'Upload signature'}</>)}
                       </Button>
                       {companyInfo.signatureUrl && (
-                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('signature')} className="w-full sm:w-auto text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="sm" onClick={() => handleRemoveCompanyAsset('signature')} disabled={companyLocked} className="w-full sm:w-auto text-destructive hover:text-destructive">
                           <Trash2 className="w-4 h-4 mr-2" />{language === 'fr' ? 'Supprimer' : 'Remove'}
                         </Button>
                       )}
@@ -949,6 +954,7 @@ const SettingsManagement = () => {
                     onChange={e => setCompanyInfo({ name: e.target.value })}
                     placeholder={language === 'fr' ? "Nom de votre entreprise" : "Your company name"}
                     className="mt-1.5"
+                    disabled={companyLocked}
                   />
                 </div>
                 <div>
@@ -959,6 +965,7 @@ const SettingsManagement = () => {
                     onChange={e => setCompanyInfo({ email: e.target.value })}
                     placeholder="contact@entreprise.com"
                     className="mt-1.5"
+                    disabled={companyLocked}
                   />
                 </div>
                 <div>
@@ -968,6 +975,7 @@ const SettingsManagement = () => {
                     onChange={e => setCompanyInfo({ phone: e.target.value })}
                     placeholder="+228 XX XX XX XX"
                     className="mt-1.5"
+                    disabled={companyLocked}
                   />
                 </div>
                 <div>
@@ -977,6 +985,7 @@ const SettingsManagement = () => {
                     onChange={e => setCompanyInfo({ registrationNumber: e.target.value })}
                     placeholder="RCCM / Numéro"
                     className="mt-1.5"
+                    disabled={companyLocked}
                   />
                 </div>
               </div>
@@ -988,6 +997,7 @@ const SettingsManagement = () => {
                   placeholder={language === 'fr' ? "Adresse complète de l'entreprise" : "Complete company address"}
                   rows={2}
                   className="mt-1.5"
+                  disabled={companyLocked}
                 />
               </div>
               <div>
@@ -997,8 +1007,14 @@ const SettingsManagement = () => {
                   onChange={e => setCompanyInfo({ taxId: e.target.value })}
                   placeholder={language === 'fr' ? "Numéro fiscal / NIF" : "Tax ID / VAT number"}
                   className="mt-1.5"
+                  disabled={companyLocked}
                 />
               </div>
+              {companyLocked && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                  Les informations de l'entreprise sont définies par l'administrateur principal. Vous pouvez modifier votre nom et votre mot de passe dans la section <strong>Profil</strong>.
+                </div>
+              )}
               <div className="pt-3">
                 <Badge variant="outline" className="text-xs">
                   <CheckCircle className="w-3 h-3 mr-1" />
