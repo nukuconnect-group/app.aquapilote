@@ -13,6 +13,7 @@ export interface CompanyInfo {
   taxId: string;
   stampUrl: string;
   signatureUrl: string;
+  hideStampOnDocuments?: boolean;
 }
 
 interface SettingsContextType {
@@ -47,7 +48,8 @@ const defaultCompanyInfo: CompanyInfo = {
   registrationNumber: '',
   taxId: '',
   stampUrl: '',
-  signatureUrl: ''
+  signatureUrl: '',
+  hideStampOnDocuments: false,
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
