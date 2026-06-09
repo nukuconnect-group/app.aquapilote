@@ -1162,6 +1162,12 @@ const AdminDashboard = () => {
           <SupportModule />
         </TabsContent>
 
+        <TabsContent value="subscriptions" className="space-y-4">
+          <SubscriptionsPanel
+            users={users.map((u) => ({ id: u.id, email: u.email, full_name: u.full_name }))}
+          />
+        </TabsContent>
+
         <TabsContent value="database" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <DatabaseStoragePanel />
