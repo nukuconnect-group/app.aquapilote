@@ -648,7 +648,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -658,6 +658,11 @@ const AdminDashboard = () => {
             <Users className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Utilisateurs</span>
             <span className="sm:hidden">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions">
+            <CreditCard className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Abonnements</span>
+            <span className="sm:hidden">Abo</span>
           </TabsTrigger>
           <TabsTrigger value="support">
             <Headphones className="w-4 h-4 mr-2" />
