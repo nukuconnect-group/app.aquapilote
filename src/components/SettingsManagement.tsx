@@ -19,6 +19,7 @@ import {
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { supabase } from '@/integrations/supabase/client';
 import BackupManagement from '@/components/BackupManagement';
 import MFASettings from '@/components/auth/MFASettings';
@@ -68,6 +69,8 @@ const SettingsManagement = () => {
   } = useSettings();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { isTeamMember } = useTeamMemberAccess();
+  const companyLocked = isTeamMember;
   
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
