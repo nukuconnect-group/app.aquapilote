@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import UserUnitsDisplay from './admin/UserUnitsDisplay';
 import AddUserWithUnitsDialog from './admin/AddUserWithUnitsDialog';
 import SupportModule from './SupportModule';
 import VisitsStatsPanel from './admin/VisitsStatsPanel';
+import SubscriptionsPanel from './admin/SubscriptionsPanel';
 
 interface UserProfile {
   id: string;
@@ -647,7 +648,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -657,6 +658,11 @@ const AdminDashboard = () => {
             <Users className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Utilisateurs</span>
             <span className="sm:hidden">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions">
+            <CreditCard className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Abonnements</span>
+            <span className="sm:hidden">Abo</span>
           </TabsTrigger>
           <TabsTrigger value="support">
             <Headphones className="w-4 h-4 mr-2" />
@@ -1154,6 +1160,12 @@ const AdminDashboard = () => {
 
         <TabsContent value="support" className="space-y-4">
           <SupportModule />
+        </TabsContent>
+
+        <TabsContent value="subscriptions" className="space-y-4">
+          <SubscriptionsPanel
+            users={users.map((u) => ({ id: u.id, email: u.email, full_name: u.full_name }))}
+          />
         </TabsContent>
 
         <TabsContent value="database" className="space-y-4">
