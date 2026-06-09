@@ -70,7 +70,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     : companyInfo.email;
   const displayCompanyContact = data.companyContact || builtContact || (fallbackEmail ? `Email: ${fallbackEmail}` : '');
   const displayCompanyLogo = companyInfo.logoUrl;
-  const displayStamp = companyInfo.stampUrl;
+  const displayStamp = companyInfo.hideStampOnDocuments ? undefined : companyInfo.stampUrl;
   // Signature only used for receipts (proof of payment).
   const displaySignature = data.type === 'receipt' ? companyInfo.signatureUrl : undefined;
   // PAYÉ stamp is only meaningful on receipts.
