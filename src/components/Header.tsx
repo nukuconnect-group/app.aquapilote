@@ -68,10 +68,10 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const currentLang = supportedLanguages.find(l => l.code === language);
 
   return <>
-    <header className="bg-emerald-800 h-12 lg:h-14 w-full shadow-md m-0 p-0 border-0">
-      <div className="flex justify-between items-center h-full w-full px-3 sm:px-4 lg:px-6 m-0">
+    <header className="bg-emerald-800 h-12 lg:h-14 w-screen max-w-none shadow-md m-0 p-0 border-0 left-0 right-0">
+      <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
         {/* Logo et titre à gauche */}
-        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 pl-0">
           <div className="min-w-0">
             <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold truncate">
               {t('app_title')}
@@ -83,7 +83,7 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
         </div>
 
         {/* Navigation actions à droite */}
-        <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2 pr-0">
           {/* Indicateur de statut de connexion - visible uniquement sur ordinateur et tablette */}
           <div className="hidden md:flex">
             <ConnectionStatusIndicator />
