@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle, ScanLine, Tag } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -17,6 +17,8 @@ import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
 import ReceiptPreview, { ReceiptData } from './economics/ReceiptPreview';
+import BarcodeScanner from './sales/BarcodeScanner';
+import BarcodeLabelGenerator from './sales/BarcodeLabelGenerator';
 import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
@@ -70,6 +72,7 @@ const SalesManagement = () => {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const [newSale, setNewSale] = useState<SaleFormState>(createEmptySale(activeUnit?.id || ''));
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -651,10 +654,16 @@ const SalesManagement = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-sm sm:text-base">Produits</Label>
-                      <Button size="sm" variant="outline" onClick={addProduct} className="text-xs sm:text-sm">
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        Ajouter
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setShowScanner(true)} className="text-xs sm:text-sm">
+                          <ScanLine className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          Scanner
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={addProduct} className="text-xs sm:text-sm">
+                          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          Ajouter
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-2 sm:space-y-3">
                       {newSale.products.map((product, index) => (
