@@ -298,6 +298,33 @@ const SalesManagement = () => {
     }));
   };
 
+  // Add or increment a product from a scanned code. Tries to find an existing
+  // entry matching the catalog (top products), otherwise inserts a new line.
+  const handleScannedCode = (code: string) => {
+    const trimmed = (code || '').trim();
+    if (!trimmed) return;
+    setShowSaleDialog(true);
+    const catalogMatch = salesData.topProducts.find(
+      (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+    );
+    const productName = catalogMatch?.name || trimmed;
+    const lastUnitPrice = catalogMatch ? Math.round(catalogMatch.revenue / Math.max(1, catalogMatch.quantity)) : 0;
+    setNewSale((prev) => {
+      const idx = prev.products.findIndex((p) => p.name.toLowerCase() === productName.toLowerCase());
+      if (idx >= 0) {
+        const products = prev.products.map((p, i) => (i === idx ? { ...p, quantity: (p.quantity || 0) + 1 } : p));
+        return { ...prev, products };
+      }
+      // remove empty leading row if present
+      const base = prev.products.length === 1 && !prev.products[0].name ? [] : prev.products;
+      return {
+        ...prev,
+        products: [...base, { name: productName, quantity: 1, unitPrice: lastUnitPrice }],
+      };
+    });
+    toast({ title: 'Produit scanné', description: productName });
+  };
+
   const updateProduct = (index: number, field: string, value: any) => {
     setNewSale(prev => ({
       ...prev,
@@ -920,6 +947,11 @@ const SalesManagement = () => {
               <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Échéances</span>
               <span className="sm:hidden">Éch.</span>
+            </TabsTrigger>
+            <TabsTrigger value="labels" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <Tag className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Étiquettes</span>
+              <span className="sm:hidden">Étiq.</span>
             </TabsTrigger>
           </TabsList>
         </div>
