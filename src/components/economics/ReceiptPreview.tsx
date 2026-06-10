@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Download, Printer, FileText, CheckCircle } from 'lucide-react';
@@ -329,6 +330,23 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
           {/* Footer */}
           <div className="relative z-10 border-t-2 border-border pt-4 text-center text-xs text-muted-foreground">
+            <div className="flex justify-center mb-3">
+              <div className="rounded bg-white p-2 shadow-sm">
+                <QRCodeSVG
+                  value={JSON.stringify({
+                    type: data.type,
+                    n: data.number,
+                    d: data.date,
+                    c: data.clientName,
+                    t: data.total,
+                    co: displayCompanyName,
+                  })}
+                  size={96}
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+            </div>
             <p>Document généré le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR')}</p>
             <p>Merci pour votre confiance</p>
             <p className="mt-2 font-semibold text-primary">

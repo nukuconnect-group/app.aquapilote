@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Plus, TrendingUp, Users, FileText, Download, Calendar, DollarSign, Eye, CreditCard, Pencil, Trash2, AlertTriangle, ScanLine, Tag } from 'lucide-react';
 import { useLogs } from '@/contexts/LogsContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -17,6 +17,8 @@ import ClientManager from './economics/ClientManager';
 import InvoiceManager from './economics/InvoiceManager';
 import DocumentTemplateManager from './economics/DocumentTemplateManager';
 import ReceiptPreview, { ReceiptData } from './economics/ReceiptPreview';
+import BarcodeScanner from './sales/BarcodeScanner';
+import BarcodeLabelGenerator from './sales/BarcodeLabelGenerator';
 import { useSales, Sale, SaleItem } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/notificationService';
@@ -70,6 +72,7 @@ const SalesManagement = () => {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const [newSale, setNewSale] = useState<SaleFormState>(createEmptySale(activeUnit?.id || ''));
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -293,6 +296,33 @@ const SalesManagement = () => {
       ...prev,
       products: [...prev.products, { name: '', quantity: 0, unitPrice: 0 }]
     }));
+  };
+
+  // Add or increment a product from a scanned code. Tries to find an existing
+  // entry matching the catalog (top products), otherwise inserts a new line.
+  const handleScannedCode = (code: string) => {
+    const trimmed = (code || '').trim();
+    if (!trimmed) return;
+    setShowSaleDialog(true);
+    const catalogMatch = salesData.topProducts.find(
+      (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+    );
+    const productName = catalogMatch?.name || trimmed;
+    const lastUnitPrice = catalogMatch ? Math.round(catalogMatch.revenue / Math.max(1, catalogMatch.quantity)) : 0;
+    setNewSale((prev) => {
+      const idx = prev.products.findIndex((p) => p.name.toLowerCase() === productName.toLowerCase());
+      if (idx >= 0) {
+        const products = prev.products.map((p, i) => (i === idx ? { ...p, quantity: (p.quantity || 0) + 1 } : p));
+        return { ...prev, products };
+      }
+      // remove empty leading row if present
+      const base = prev.products.length === 1 && !prev.products[0].name ? [] : prev.products;
+      return {
+        ...prev,
+        products: [...base, { name: productName, quantity: 1, unitPrice: lastUnitPrice }],
+      };
+    });
+    toast({ title: 'Produit scanné', description: productName });
   };
 
   const updateProduct = (index: number, field: string, value: any) => {
@@ -651,10 +681,16 @@ const SalesManagement = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-sm sm:text-base">Produits</Label>
-                      <Button size="sm" variant="outline" onClick={addProduct} className="text-xs sm:text-sm">
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        Ajouter
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setShowScanner(true)} className="text-xs sm:text-sm">
+                          <ScanLine className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          Scanner
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={addProduct} className="text-xs sm:text-sm">
+                          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          Ajouter
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-2 sm:space-y-3">
                       {newSale.products.map((product, index) => (
@@ -911,6 +947,11 @@ const SalesManagement = () => {
               <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Échéances</span>
               <span className="sm:hidden">Éch.</span>
+            </TabsTrigger>
+            <TabsTrigger value="labels" className="text-xs sm:text-sm flex-1 sm:flex-none px-3 sm:px-4 whitespace-nowrap">
+              <Tag className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Étiquettes</span>
+              <span className="sm:hidden">Étiq.</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1288,6 +1329,10 @@ const SalesManagement = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="labels" className="space-y-4">
+          <BarcodeLabelGenerator />
+        </TabsContent>
       </Tabs>
 
       {/* Edit Sale Dialog */}
@@ -1419,6 +1464,12 @@ const SalesManagement = () => {
           onInitialActionComplete={() => setPdfInitialAction(null)}
         />
       )}
+
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleScannedCode}
+      />
     </div>
   );
 };
