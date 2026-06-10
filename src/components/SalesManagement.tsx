@@ -1329,6 +1329,10 @@ const SalesManagement = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="labels" className="space-y-4">
+          <BarcodeLabelGenerator />
+        </TabsContent>
       </Tabs>
 
       {/* Edit Sale Dialog */}
@@ -1460,6 +1464,12 @@ const SalesManagement = () => {
           onInitialActionComplete={() => setPdfInitialAction(null)}
         />
       )}
+
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleScannedCode}
+      />
     </div>
   );
 };
