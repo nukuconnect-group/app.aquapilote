@@ -6,6 +6,10 @@ import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import IntelligentDashboard from './IntelligentDashboard';
 import AdminDashboard from './AdminDashboard';
+import MemberDashboard from './MemberDashboard';
+import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { Card, CardContent } from '@/components/ui/card';
+import { ShieldAlert } from 'lucide-react';
 import PWAInstallPrompt from './PWAInstallPrompt';
 import IoTControlCenter from './IoTControlCenter';
 import ProductionUnitsManagement from './ProductionUnitsManagement';
@@ -35,16 +39,45 @@ import PerformanceAlertsPanel from './alerts/PerformanceAlertsPanel';
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { isTeamMember, hasAccessToModule, isLoading: accessLoading } = useTeamMemberAccess();
 
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
-    } else {
+    } else if (!isTeamMember || hasAccessToModule(tab) || tab === 'dashboard') {
       setActiveTab(tab);
+    } else {
+      // Membre sans accès — on revient au tableau de bord membre
+      setActiveTab('dashboard');
     }
   };
 
   const renderContent = () => {
+    // Tableau de bord spécifique pour les membres
+    if (isTeamMember && activeTab === 'dashboard') {
+      return <MemberDashboard onNavigate={(tab) => setActiveTab(tab)} />;
+    }
+
+    // Blocage strict : un membre ne peut afficher qu'un module autorisé
+    if (isTeamMember && !accessLoading && activeTab !== 'dashboard' && activeTab !== 'settings' && !hasAccessToModule(activeTab)) {
+      return (
+        <div className="p-4">
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="p-6 flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-destructive mt-1" />
+              <div>
+                <p className="font-semibold text-foreground">Accès non autorisé</p>
+                <p className="text-sm text-muted-foreground">
+                  Ce module n'est pas inclus dans les permissions attribuées par votre responsable.
+                  Retournez au tableau de bord pour voir vos modules accessibles.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'dashboard':
         return <IntelligentDashboard />;
