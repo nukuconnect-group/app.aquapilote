@@ -116,8 +116,8 @@ const MainLayout = () => {
 
         {/* Conteneur principal avec header et contenu */}
         <div className="flex-1 flex flex-col min-w-0 mt-0 pt-0">
-          {/* Header fixe en haut sans marges - pleine largeur sur mobile */}
-          <div className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-emerald-800 w-full m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto">
+          {/* Header fixe en haut sans marges - pleine largeur sur mobile (100vw) */}
+          <div className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-emerald-800 w-screen max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:w-auto md:max-w-full">
             <div className="hidden md:block">
               <SidebarTrigger className="ml-2" />
             </div>
