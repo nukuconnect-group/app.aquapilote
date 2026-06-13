@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/components/ThemeProvider';
 import { supportedLanguages, type SupportedLanguage } from '@/i18n';
 
-const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
+const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) => void; onOpenMobileMenu?: () => void }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -72,6 +72,17 @@ const Header = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
       <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
         {/* Logo et titre à gauche */}
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 pl-0">
+          {onOpenMobileMenu && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 p-0 -ml-1"
+              onClick={onOpenMobileMenu}
+              aria-label="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
           <div className="min-w-0">
             <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold truncate">
               {t('app_title')}
