@@ -220,7 +220,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex w-full">
+      <div className="min-h-screen bg-background flex w-full m-0 p-0 overflow-x-hidden">
         {/* Sidebar Navigation - masqué sur mobile */}
         <div className="hidden md:flex">
           <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -230,7 +230,8 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0 mt-0 pt-0">
           {/* Header fixe pleine largeur sur mobile (100vw, bord à bord) */}
           <div
-            className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-sidebar w-screen max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:right-auto md:top-auto md:w-full md:max-w-full md:relative md:z-40"
+            className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-sidebar w-full max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:right-auto md:top-auto md:w-full md:max-w-full md:relative md:z-40"
+            style={{ top: 0, left: 0, right: 0 }}
           >
             <div className="hidden md:block">
               <SidebarTrigger className="ml-2" />
@@ -241,7 +242,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Main Content avec padding-top pour compenser le header fixe sur mobile */}
-          <main className="flex-1 overflow-y-auto px-2 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[4.5rem] sm:pt-[5rem] md:pt-2">
+          <main className="flex-1 overflow-y-auto px-2 sm:p-4 lg:p-6 pb-16 md:pb-6 pt-[3.75rem] sm:pt-[5rem] md:pt-2">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
