@@ -69,7 +69,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
 
   return <>
     <header className="bg-sidebar md:bg-emerald-800 h-12 lg:h-14 w-full max-w-none shadow-md m-0 p-0 border-0">
-      <div className="flex justify-between items-center h-full w-full px-0 sm:px-4 lg:px-6 m-0">
+      <div className="flex justify-between items-center h-full w-full pl-0 pr-0 sm:px-4 lg:px-6 m-0">
         {/* Logo et titre à gauche */}
         <div className="flex items-center space-x-1 sm:space-x-3 min-w-0 pl-0">
           {onOpenMobileMenu && (
@@ -77,7 +77,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
               variant="ghost"
               size="sm"
               data-mobile-menu-trigger
-              className="md:hidden text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8 p-0 ml-0"
+              className="md:hidden text-sidebar-foreground hover:bg-white/10 hover:text-sidebar-foreground h-8 w-8 p-0 ml-0 rounded-none"
               onClick={onOpenMobileMenu}
               aria-label="Menu"
             >
@@ -95,7 +95,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
         </div>
 
         {/* Navigation actions à droite */}
-        <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2 pr-0">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2 pr-0 text-sidebar-foreground md:text-primary-foreground">
           {/* Indicateur de statut de connexion - visible uniquement sur ordinateur et tablette */}
           <div className="hidden md:flex">
             <ConnectionStatusIndicator />
