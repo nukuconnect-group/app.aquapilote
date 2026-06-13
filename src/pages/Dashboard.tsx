@@ -262,9 +262,6 @@ const Dashboard: React.FC = () => {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
-
-        {/* Assistant IA AquaAssistant */}
-        <AquaAssistant />
       </div>
     </SidebarProvider>
   );
