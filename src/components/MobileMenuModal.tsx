@@ -168,7 +168,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="p-0 w-[85vw] max-w-[340px] flex flex-col bg-sidebar text-sidebar-foreground border-sidebar-border">
+      <SheetContent side="left" className="p-0 w-[75vw] max-w-[280px] flex flex-col bg-sidebar text-sidebar-foreground border-sidebar-border">
         <SheetHeader className="p-4 pb-2 border-b border-sidebar-border">
           <SheetTitle className="text-base text-sidebar-foreground">
             {t('main_menu')}
