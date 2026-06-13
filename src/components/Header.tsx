@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, Menu } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -68,7 +68,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
   const currentLang = supportedLanguages.find(l => l.code === language);
 
   return <>
-    <header className="bg-emerald-800 h-12 lg:h-14 w-screen max-w-none shadow-md m-0 p-0 border-0 left-0 right-0">
+    <header className="bg-emerald-800 h-12 lg:h-14 w-full max-w-none shadow-md m-0 p-0 border-0">
       <div className="flex justify-between items-center h-full w-full px-2 sm:px-4 lg:px-6 m-0">
         {/* Logo et titre à gauche */}
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 pl-0">
@@ -80,7 +80,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
               onClick={onOpenMobileMenu}
               aria-label="Menu"
             >
-              <Menu className="w-5 h-5" />
+              <PanelLeft className="w-5 h-5" />
             </Button>
           )}
           <div className="min-w-0">

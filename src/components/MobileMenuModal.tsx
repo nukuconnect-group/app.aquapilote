@@ -168,45 +168,47 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="p-0 w-[85vw] max-w-[340px] flex flex-col">
-        <SheetHeader className="p-4 pb-2 border-b">
-          <SheetTitle className="text-base">
+      <SheetContent side="left" className="p-0 w-[85vw] max-w-[340px] flex flex-col bg-sidebar text-sidebar-foreground border-sidebar-border">
+        <SheetHeader className="p-4 pb-2 border-b border-sidebar-border">
+          <SheetTitle className="text-base text-sidebar-foreground">
             {t('main_menu')}
           </SheetTitle>
           
           {/* Indicateur membre d'equipe */}
           {isTeamMember && teamMemberInfo && (
             <div className="flex items-center gap-2 mt-2">
-              <Shield className="w-4 h-4 text-primary" />
-              <Badge variant="outline" className="text-xs">
+              <Shield className="w-4 h-4 text-white" />
+              <Badge variant="outline" className="text-xs text-white border-white/30 bg-white/10">
                 {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
               </Badge>
             </div>
           )}
         </SheetHeader>
         
-        <ScrollArea className="flex-1 px-4 pt-3 pb-6">
-          <div className="space-y-4 sm:space-y-6">
+        <ScrollArea className="flex-1 px-3 pt-3 pb-6">
+          <div className="space-y-3">
             {filteredMenuItems.map((category) => (
               <div key={category.category}>
-                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3 uppercase tracking-wide">
+                <h3 className="text-[11px] font-semibold text-white/70 mb-1.5 uppercase tracking-wide px-1">
                   {category.category}
                 </h3>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-0.5">
                   {category.items.map((item) => (
-                    <Button
+                    <button
                       key={item.id}
-                      variant={activeTab === item.id ? 'default' : 'outline'}
-                      className="h-auto py-3 px-3 flex flex-row items-center gap-3 text-left justify-start touch-manipulation"
+                      type="button"
                       onClick={() => handleItemClick(item.id)}
+                      className={`w-full h-8 px-2 flex flex-row items-center gap-2 text-left rounded-md transition-colors touch-manipulation ${
+                        activeTab === item.id
+                          ? 'bg-white/20 text-white'
+                          : 'text-white/90 hover:bg-white/10 hover:text-white'
+                      }`}
                     >
-                      <item.icon className={`w-5 h-5 flex-shrink-0 ${
-                        activeTab === item.id ? '' : 'text-muted-foreground'
-                      }`} />
-                      <span className="font-medium leading-tight text-left text-sm">
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm leading-none truncate">
                         {item.label}
                       </span>
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>

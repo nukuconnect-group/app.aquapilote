@@ -175,10 +175,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                   return (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
+                        size="sm"
                         onClick={() => onTabChange(item.id)}
                         isActive={isActive}
                         tooltip={open ? undefined : item.label}
-                        className="text-white hover:text-white data-[active=true]:text-white"
+                        className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white"
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{item.label}</span>
