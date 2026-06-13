@@ -227,19 +227,22 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Conteneur principal avec header et contenu */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header fixe en haut sans marges sur mobile */}
-          <div className="sticky top-0 z-40 flex items-center border-b border-border bg-background w-full">
+        <div className="flex-1 flex flex-col min-w-0 mt-0 pt-0">
+          {/* Header fixe pleine largeur sur mobile (100vw, bord à bord) */}
+          <div
+            className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-emerald-800 w-screen max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:w-auto md:max-w-full md:relative md:z-40"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          >
             <div className="hidden md:block">
               <SidebarTrigger className="ml-2" />
             </div>
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full m-0 p-0">
               <Header onNavigate={setActiveTab} onOpenMobileMenu={() => setShowMobileMenu(true)} />
             </div>
           </div>
-          
-          {/* Main Content avec scroll */}
-          <main className="flex-1 overflow-y-auto px-0 py-2 sm:p-4 lg:p-6 pb-20 md:pb-6">
+
+          {/* Main Content avec padding-top pour compenser le header fixe sur mobile */}
+          <main className="flex-1 overflow-y-auto px-0 py-2 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[3rem] md:pt-2">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
