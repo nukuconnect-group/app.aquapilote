@@ -504,9 +504,9 @@ const AquaAssistant = () => {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-base sm:text-lg">AquaAssistant Pro</h3>
-                  <p className="text-[10px] sm:text-xs text-white/80">Expert aquacole IA - Données en temps réel</p>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base sm:text-lg leading-tight">AquaAssistant Pro</h3>
+                  <p className="text-xs sm:text-sm text-white/80 leading-tight">Expert aquacole IA</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">

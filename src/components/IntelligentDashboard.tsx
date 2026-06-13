@@ -425,34 +425,34 @@ const IntelligentDashboard = () => {
         </div>
 
         {/* Contenu */}
-        <div className="relative z-10 text-white px-3 sm:px-5 py-3 sm:py-5">
-          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-2 sm:mb-4">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="p-1.5 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg shrink-0">
-                <Fish className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
+        <div className="relative z-10 text-white p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg shrink-0">
+                <Fish className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm sm:text-2xl mb-0 sm:mb-1 tracking-tight font-extrabold truncate leading-tight">
+                <h1 className="text-lg sm:text-2xl lg:text-3xl mb-1 tracking-tight font-bold leading-tight">
                   {t('intelligent_dashboard')}
                 </h1>
-                <p className="text-blue-100 font-medium text-[10px] sm:text-sm truncate leading-tight">
+                <p className="text-blue-100 font-medium text-xs sm:text-sm lg:text-base leading-tight">
                   {t('adapted_view')}
                 </p>
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20 shrink-0">
-              <Clock className="w-5 h-5 text-white/90" />
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 sm:px-4 sm:py-3 border border-white/20 shrink-0 self-start sm:self-auto">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
               <div className="text-left">
-                <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                <p className="font-bold text-sm">{formatLastUpdate()}</p>
+                <p className="text-[10px] sm:text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
+                <p className="font-bold text-xs sm:text-sm">{formatLastUpdate()}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Sélecteur d'unité intégré dans l'en-tête */}
-        <div className="relative z-10 px-3 sm:px-5 pb-3 sm:pb-5">
+        <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6">
           <ProductionUnitSelector />
         </div>
       </div>
