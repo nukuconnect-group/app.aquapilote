@@ -198,12 +198,6 @@ const IntelligentDashboard = () => {
     const totalBatchQuantity = unitBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
     
     const baseMetrics = [{
-      title: t('current_stock'),
-      value: totalBatchQuantity > 0 ? totalBatchQuantity.toLocaleString() : activeUnit.currentStock.toLocaleString(),
-      subtitle: `${(activeUnit.currentStock / activeUnit.capacity * 100).toFixed(1)}% ${t('capacity_percent')}`,
-      icon: Fish,
-      color: "aqua"
-    }, {
       title: t('active_cycles_label'),
       value: activeCycles.length.toString(),
       subtitle: `${unitCycles.length} ${t('total_label')}`,
@@ -412,47 +406,65 @@ const IntelligentDashboard = () => {
       </div>;
   }
   return <div className="space-y-4 sm:space-y-6">
-      {/* En-tête amélioré du tableau de bord avec image de ferme */}
-      <div className="relative rounded-xl shadow-lg overflow-hidden">
-        {/* Image de fond floutée */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={farmBackground} 
-            alt="Ferme aquacole" 
-            className="w-full h-full object-cover blur-sm scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/85 via-blue-800/85 to-blue-900/85" />
+      {/* En-tête compact avec arrière-plan réseau neuronal flouté */}
+      <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        {/* Arrière-plan réseau de courbes connectées (SVG flouté) */}
+        <div className="absolute inset-0 z-0 opacity-60" aria-hidden="true">
+          <svg className="w-full h-full blur-[2px]" viewBox="0 0 400 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="netLine" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.4" />
+              </linearGradient>
+              <radialGradient id="netNode">
+                <stop offset="0%" stopColor="#67e8f9" stopOpacity="1" />
+                <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <g stroke="url(#netLine)" strokeWidth="0.8" fill="none">
+              <path d="M0,140 Q80,40 160,110 T320,80 T400,130" />
+              <path d="M0,80 Q100,160 200,90 T400,60" />
+              <path d="M20,180 Q120,80 220,160 T400,100" />
+              <path d="M0,30 Q90,120 180,40 T380,150" />
+            </g>
+            <g fill="url(#netNode)">
+              {[[40,120],[120,70],[200,110],[280,60],[340,130],[80,160],[240,40],[360,90]].map(([x,y],i)=>(
+                <circle key={i} cx={x} cy={y} r="6" />
+              ))}
+            </g>
+          </svg>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-blue-950/60 to-slate-950/80" />
         </div>
 
-        {/* Contenu */}
-        <div className="relative z-10 text-white p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
-            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-              <div className="p-2.5 sm:p-3 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg shrink-0">
-                <Fish className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+        {/* Contenu compact */}
+        <div className="relative z-10 text-white p-3 sm:p-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <div className="p-1.5 sm:p-3 bg-white/15 rounded-md sm:rounded-lg backdrop-blur-sm shrink-0 border border-white/10">
+                <Fish className="w-4 h-4 sm:w-8 sm:h-8 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl lg:text-3xl mb-1 tracking-tight font-bold leading-tight">
+                <h1 className="text-sm sm:text-2xl lg:text-3xl tracking-tight font-bold leading-tight truncate">
                   {t('intelligent_dashboard')}
                 </h1>
-                <p className="text-blue-100 font-medium text-xs sm:text-sm lg:text-base leading-tight">
+                <p className="text-blue-100/90 font-medium text-[10px] sm:text-sm lg:text-base leading-tight truncate">
                   {t('adapted_view')}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 sm:px-4 sm:py-3 border border-white/20 shrink-0 self-start sm:self-auto">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
-              <div className="text-left">
-                <p className="text-[10px] sm:text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
-                <p className="font-bold text-xs sm:text-sm">{formatLastUpdate()}</p>
+            <div className="flex items-center gap-1.5 sm:gap-3 bg-white/10 backdrop-blur-md rounded-md sm:rounded-lg px-2 py-1 sm:px-4 sm:py-3 border border-white/20 shrink-0">
+              <Clock className="w-3 h-3 sm:w-5 sm:h-5 text-white/90" />
+              <div className="text-left leading-tight">
+                <p className="text-[9px] sm:text-xs text-blue-200 font-medium hidden sm:block">{t('dashboard_last_update')}</p>
+                <p className="font-bold text-[10px] sm:text-sm">{formatLastUpdate()}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Sélecteur d'unité intégré dans l'en-tête */}
-        <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6">
+        <div className="relative z-10 px-3 sm:px-6 pb-3 sm:pb-6">
           <ProductionUnitSelector />
         </div>
       </div>
