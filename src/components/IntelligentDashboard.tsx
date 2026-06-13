@@ -454,6 +454,7 @@ const IntelligentDashboard = () => {
         {/* Sélecteur d'unité intégré dans l'en-tête */}
         <div className="relative z-10 px-3 sm:px-5 pb-3 sm:pb-5">
           <ProductionUnitSelector />
+        </div>
       </div>
 
       {/* Sélecteur de vue */}
