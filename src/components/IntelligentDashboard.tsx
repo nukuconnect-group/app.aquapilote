@@ -425,23 +425,23 @@ const IntelligentDashboard = () => {
         </div>
 
         {/* Contenu */}
-        <div className="relative z-10 p-6 text-white px-[18px] py-[18px]">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg hidden sm:block">
-                <Fish className="w-8 h-8 text-white" />
+        <div className="relative z-10 text-white px-3 sm:px-5 py-3 sm:py-5">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-2 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="p-1.5 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg shrink-0">
+                <Fish className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div>
-                <h1 className="sm:text-3xl mb-2 tracking-tight text-xl font-extrabold">
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-2xl mb-0 sm:mb-1 tracking-tight font-extrabold truncate leading-tight">
                   {t('intelligent_dashboard')}
                 </h1>
-                <p className="text-blue-100 font-medium text-sm">
+                <p className="text-blue-100 font-medium text-[10px] sm:text-sm truncate leading-tight">
                   {t('adapted_view')}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20">
+            <div className="hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-lg px-4 py-3 border border-white/20 shrink-0">
               <Clock className="w-5 h-5 text-white/90" />
               <div className="text-left">
                 <p className="text-xs text-blue-200 font-medium">{t('dashboard_last_update')}</p>
@@ -452,9 +452,8 @@ const IntelligentDashboard = () => {
         </div>
 
         {/* Sélecteur d'unité intégré dans l'en-tête */}
-        <div className="relative z-10 px-6 pb-6">
+        <div className="relative z-10 px-3 sm:px-5 pb-3 sm:pb-5">
           <ProductionUnitSelector />
-        </div>
       </div>
 
       {/* Sélecteur de vue */}
