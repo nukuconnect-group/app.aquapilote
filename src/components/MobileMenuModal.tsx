@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -167,12 +167,12 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm max-h-[85vh] p-0 mobile-friendly-modal">
-        <DialogHeader className="p-4 pb-2">
-          <DialogTitle className="text-responsive-title">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="left" className="p-0 w-[85vw] max-w-[340px] flex flex-col">
+        <SheetHeader className="p-4 pb-2 border-b">
+          <SheetTitle className="text-base">
             {t('main_menu')}
-          </DialogTitle>
+          </SheetTitle>
           
           {/* Indicateur membre d'équipe */}
           {isTeamMember && teamMemberInfo && (
@@ -183,9 +183,9 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
               </Badge>
             </div>
           )}
-        </DialogHeader>
+        </SheetHeader>
         
-        <ScrollArea className="flex-1 px-4 pb-4">
+        <ScrollArea className="flex-1 px-4 pt-3 pb-6">
           <div className="space-y-4 sm:space-y-6">
             {filteredMenuItems.map((category) => (
               <div key={category.category}>
@@ -213,8 +213,8 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
             ))}
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 
