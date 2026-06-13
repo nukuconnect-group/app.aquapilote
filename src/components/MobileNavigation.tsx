@@ -40,7 +40,8 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.08)] backdrop-blur-sm m-0">
+      <div className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-card border-t border-border shadow-[0_-2px_10px_rgba(0,0,0,0.08)] backdrop-blur-sm m-0"
+        style={{ left: 0, right: 0, bottom: 0, margin: 0 }}>
         <div className="flex justify-around items-stretch w-full px-1 py-1 pb-0">
           {mainItems.map((item) => (
             <Button
