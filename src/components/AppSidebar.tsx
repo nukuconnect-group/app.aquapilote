@@ -56,9 +56,9 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     'performance-alerts': 'dashboard'
   };
 
-  // Vérifier si un tab est accessible
+  // Verifier si un tab est accessible
   const isTabAllowed = (tabId: string): boolean => {
-    if (!isTeamMember) return true; // Non-membre = accès complet
+    if (!isTeamMember) return true; // Non-membre = acces complet
     const moduleId = tabToModuleMapping[tabId] || tabId;
     return hasAccessToModule(moduleId);
   };
@@ -133,31 +133,31 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     });
   }
 
-  // Filtrer les groupes et items selon les permissions du membre d'équipe
+  // Filtrer les groupes et items selon les permissions du membre d'equipe
   const filteredGroups = navigationGroups.map(group => ({
     ...group,
     items: group.items.filter(item => isTabAllowed(item.id))
   })).filter(group => group.items.length > 0);
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarContent className="overflow-y-auto">
-        {/* Indicateur membre d'équipe */}
+        {/* Indicateur membre d'equipe */}
         {isTeamMember && teamMemberInfo && open && (
-          <div className="px-3 py-2 border-b border-border">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="px-3 py-2 border-b border-sidebar-border/50">
+            <div className="flex items-center gap-2 text-xs text-white/70">
               <Shield className="w-3 h-3" />
               <span>{t('team_member')}</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs text-white border-white/30 bg-white/10">
                 {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
               </Badge>
               {teamMemberInfo.dashboardRoles?.includes('production') && (
-                <Badge variant="secondary" className="text-[10px]">Production</Badge>
+                <Badge variant="secondary" className="text-[10px] bg-white/20 text-white">Production</Badge>
               )}
               {teamMemberInfo.dashboardRoles?.includes('administration') && (
-                <Badge variant="secondary" className="text-[10px]">Administration</Badge>
+                <Badge variant="secondary" className="text-[10px] bg-white/20 text-white">Administration</Badge>
               )}
             </div>
           </div>
@@ -165,7 +165,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         
         {filteredGroups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-white/80 font-semibold tracking-wide uppercase text-[11px]">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
@@ -178,6 +178,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                         onClick={() => onTabChange(item.id)}
                         isActive={isActive}
                         tooltip={open ? undefined : item.label}
+                        className="text-white hover:text-white data-[active=true]:text-white"
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{item.label}</span>
