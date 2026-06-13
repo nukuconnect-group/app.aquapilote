@@ -89,7 +89,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'units', label: t('units'), icon: Factory },
       ]
     },
-    // Production & Élevage
+    // Production & Elevage
     { 
       category: t('category_production'),
       items: [
@@ -100,7 +100,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'production', label: t('production_cycles'), icon: Package },
       ]
     },
-    // Gestion financière
+    // Gestion financiere
     {
       category: t('category_financial'),
       items: [
@@ -145,7 +145,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
     }
   ];
 
-  // Ajouter section Admin si l'utilisateur est admin et non membre d'équipe
+  // Ajouter section Admin si l'utilisateur est admin et non membre d'equipe
   if (user?.role === 'admin' && !isTeamMember) {
     menuItems.push({
       category: t('category_admin'),
@@ -174,7 +174,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
             {t('main_menu')}
           </SheetTitle>
           
-          {/* Indicateur membre d'équipe */}
+          {/* Indicateur membre d'equipe */}
           {isTeamMember && teamMemberInfo && (
             <div className="flex items-center gap-2 mt-2">
               <Shield className="w-4 h-4 text-primary" />
@@ -192,18 +192,18 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
                 <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3 uppercase tracking-wide">
                   {category.category}
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
                   {category.items.map((item) => (
                     <Button
                       key={item.id}
                       variant={activeTab === item.id ? 'default' : 'outline'}
-                      className="h-16 sm:h-18 flex flex-col items-center justify-center space-y-1 text-xs p-2 min-h-[60px] touch-manipulation"
+                      className="h-auto py-3 px-3 flex flex-row items-center gap-3 text-left justify-start touch-manipulation"
                       onClick={() => handleItemClick(item.id)}
                     >
-                      <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                      <item.icon className={`w-5 h-5 flex-shrink-0 ${
                         activeTab === item.id ? '' : 'text-muted-foreground'
                       }`} />
-                      <span className="font-medium leading-tight text-center text-xs">
+                      <span className="font-medium leading-tight text-left text-sm">
                         {item.label}
                       </span>
                     </Button>
