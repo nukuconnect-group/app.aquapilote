@@ -230,7 +230,7 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0 mt-0 pt-0">
           {/* Header fixe pleine largeur sur mobile (100vw, bord à bord) */}
           <div
-            className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-emerald-800 w-screen max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:w-auto md:max-w-full md:relative md:z-40"
+            className="fixed top-0 left-0 right-0 z-[1000] flex items-center bg-emerald-800 w-screen max-w-none m-0 p-0 border-0 md:border-b md:border-border md:bg-background md:left-auto md:right-auto md:top-auto md:w-full md:max-w-full md:relative md:z-40"
             style={{ paddingTop: 'env(safe-area-inset-top)' }}
           >
             <div className="hidden md:block">
