@@ -409,19 +409,19 @@ const IntelligentDashboard = () => {
       {/* En-tête compact avec arrière-plan réseau neuronal flouté */}
       <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         {/* Arrière-plan réseau de courbes connectées (SVG flouté) */}
-        <div className="absolute inset-0 z-0 opacity-60" aria-hidden="true">
-          <svg className="w-full h-full blur-[2px]" viewBox="0 0 400 200" preserveAspectRatio="none">
+        <div className="absolute inset-0 z-0" aria-hidden="true">
+          <svg className="w-full h-full blur-[1.5px] opacity-90" viewBox="0 0 400 200" preserveAspectRatio="none">
             <defs>
               <linearGradient id="netLine" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity="1" />
+                <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.7" />
               </linearGradient>
               <radialGradient id="netNode">
-                <stop offset="0%" stopColor="#67e8f9" stopOpacity="1" />
-                <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
+                <stop offset="0%" stopColor="#a5f3fc" stopOpacity="1" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
               </radialGradient>
             </defs>
-            <g stroke="url(#netLine)" strokeWidth="0.8" fill="none">
+            <g stroke="url(#netLine)" strokeWidth="1.4" fill="none">
               <path d="M0,140 Q80,40 160,110 T320,80 T400,130" />
               <path d="M0,80 Q100,160 200,90 T400,60" />
               <path d="M20,180 Q120,80 220,160 T400,100" />
@@ -429,11 +429,11 @@ const IntelligentDashboard = () => {
             </g>
             <g fill="url(#netNode)">
               {[[40,120],[120,70],[200,110],[280,60],[340,130],[80,160],[240,40],[360,90]].map(([x,y],i)=>(
-                <circle key={i} cx={x} cy={y} r="6" />
+                <circle key={i} cx={x} cy={y} r="8" />
               ))}
             </g>
           </svg>
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-blue-950/60 to-slate-950/80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/40 via-blue-950/30 to-slate-950/50" />
         </div>
 
         {/* Contenu compact */}
