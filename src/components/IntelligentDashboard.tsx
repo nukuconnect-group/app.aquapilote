@@ -407,7 +407,16 @@ const IntelligentDashboard = () => {
   }
   return <div className="space-y-4 sm:space-y-6">
       {/* En-tête compact avec arrière-plan réseau neuronal flouté */}
-      <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 md:bg-none md:bg-gradient-to-r md:from-blue-900 md:via-blue-800 md:to-blue-900">
+      <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        {/* Image de fond (tablette / desktop uniquement) */}
+        <div className="absolute inset-0 z-0 hidden md:block">
+          <img
+            src={farmBackground}
+            alt="Ferme aquacole"
+            className="w-full h-full object-cover blur-sm scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/85 via-blue-800/85 to-blue-900/85" />
+        </div>
         {/* Arrière-plan réseau de courbes connectées (mobile uniquement) */}
         <div className="absolute inset-0 z-0 md:hidden" aria-hidden="true">
           <svg className="w-full h-full blur-[1.5px] opacity-90" viewBox="0 0 400 200" preserveAspectRatio="none">
