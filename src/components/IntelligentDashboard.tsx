@@ -407,9 +407,9 @@ const IntelligentDashboard = () => {
   }
   return <div className="space-y-4 sm:space-y-6">
       {/* En-tête compact avec arrière-plan réseau neuronal flouté */}
-      <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        {/* Arrière-plan réseau de courbes connectées (SVG flouté) */}
-        <div className="absolute inset-0 z-0" aria-hidden="true">
+      <div className="relative rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 md:bg-none md:bg-gradient-to-r md:from-blue-900 md:via-blue-800 md:to-blue-900">
+        {/* Arrière-plan réseau de courbes connectées (mobile uniquement) */}
+        <div className="absolute inset-0 z-0 md:hidden" aria-hidden="true">
           <svg className="w-full h-full blur-[1.5px] opacity-90" viewBox="0 0 400 200" preserveAspectRatio="none">
             <defs>
               <linearGradient id="netLine" x1="0" x2="1" y1="0" y2="1">
