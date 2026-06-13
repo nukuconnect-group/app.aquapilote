@@ -198,12 +198,6 @@ const IntelligentDashboard = () => {
     const totalBatchQuantity = unitBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
     
     const baseMetrics = [{
-      title: t('current_stock'),
-      value: totalBatchQuantity > 0 ? totalBatchQuantity.toLocaleString() : activeUnit.currentStock.toLocaleString(),
-      subtitle: `${(activeUnit.currentStock / activeUnit.capacity * 100).toFixed(1)}% ${t('capacity_percent')}`,
-      icon: Fish,
-      color: "aqua"
-    }, {
       title: t('active_cycles_label'),
       value: activeCycles.length.toString(),
       subtitle: `${unitCycles.length} ${t('total_label')}`,
