@@ -215,7 +215,7 @@ html, body {
     body {
       padding-left: max(0px, env(safe-area-inset-left));
       padding-right: max(0px, env(safe-area-inset-right));
-      padding-bottom: max(0px, env(safe-area-inset-bottom));
+      padding-bottom: 0;
     }
   }
 

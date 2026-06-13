@@ -168,10 +168,25 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
 
   return (
     <Sheet modal={false} open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <SheetContent side="left" className="p-0 w-[62vw] max-w-[220px] flex flex-col bg-sidebar text-sidebar-foreground border-sidebar-border">
+      <SheetContent
+        side="left"
+        className="p-0 w-[62vw] max-w-[220px] flex flex-col bg-sidebar text-sidebar-foreground border-sidebar-border"
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('[data-mobile-menu-trigger]')) {
+            e.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('[data-mobile-menu-trigger]')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <SheetHeader className="p-4 pb-2 border-b border-sidebar-border">
-          <SheetTitle className="text-base text-sidebar-foreground">
-            {t('main_menu')}
+          <SheetTitle className="text-base font-bold tracking-wider text-white">
+            AQUAPILOTE
           </SheetTitle>
           
           {/* Indicateur membre d'equipe */}
