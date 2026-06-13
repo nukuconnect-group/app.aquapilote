@@ -242,7 +242,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Main Content avec padding-top pour compenser le header fixe sur mobile */}
-          <main className="flex-1 overflow-y-auto px-0 py-2 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[3rem] md:pt-2">
+          <main className="flex-1 overflow-y-auto px-2 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[4.5rem] sm:pt-[5rem] md:pt-2">
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
