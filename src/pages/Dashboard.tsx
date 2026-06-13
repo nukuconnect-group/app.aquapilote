@@ -234,7 +234,7 @@ const Dashboard: React.FC = () => {
               <SidebarTrigger className="ml-2" />
             </div>
             <div className="flex-1 w-full">
-              <Header onNavigate={setActiveTab} />
+              <Header onNavigate={setActiveTab} onOpenMobileMenu={() => setShowMobileMenu(true)} />
             </div>
           </div>
           
