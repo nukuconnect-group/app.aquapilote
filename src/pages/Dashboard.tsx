@@ -7,6 +7,7 @@ import MobileMenuModal from '@/components/MobileMenuModal';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineDataManager from '@/components/OfflineDataManager';
 import IntelligentDashboard from '@/components/IntelligentDashboard';
+import ModernDashboard from '@/components/ModernDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
 import IoTControlCenter from '@/components/IoTControlCenter';
 import ProductionUnitsManagement from '@/components/ProductionUnitsManagement';
@@ -151,7 +152,7 @@ const Dashboard: React.FC = () => {
             {isTeamMember ? (
               <MemberDashboard onNavigate={setActiveTab} />
             ) : (
-              <IntelligentDashboard />
+              <ModernDashboard onNavigate={setActiveTab} />
             )}
           </>
         );
@@ -212,7 +213,7 @@ const Dashboard: React.FC = () => {
         return (
           <>
             {renderTeamMemberWelcome()}
-            <IntelligentDashboard />
+            <ModernDashboard onNavigate={setActiveTab} />
           </>
         );
     }
