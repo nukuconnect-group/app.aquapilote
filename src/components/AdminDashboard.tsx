@@ -897,13 +897,10 @@ const AdminDashboard = () => {
           <VisitsStatsPanel />
         </TabsContent>
 
-        <TabsContent value="users" className="space-y-4">
-
-        </TabsContent>
         <TabsContent value="activations" className="space-y-4">
           <PendingActivations />
         </TabsContent>
-        <TabsContent value="_users_real" className="space-y-4">
+        <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
