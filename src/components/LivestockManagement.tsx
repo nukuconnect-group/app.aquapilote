@@ -1482,6 +1482,15 @@ const LivestockManagement = () => {
                             <p className="text-xs line-clamp-2">{batch.notes}</p>
                           </div>
                         )}
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setSelectedBatchPreview(batch)}>
+                            <Eye className="w-3 h-3 mr-1" /> Visualiser
+                          </Button>
+                          <Button variant="outline" size="sm" className="border-primary/30 text-primary" onClick={() => setSelectedBatchPreview(batch)}>
+                            <Fish className="w-3 h-3 mr-1" /> Miniature lot
+                          </Button>
+                        </div>
                         
                         {/* QR Code et Code-barres pour traçabilité avancée */}
                         <Dialog>
