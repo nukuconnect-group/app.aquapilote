@@ -598,7 +598,10 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                 <p className="text-sm text-muted-foreground text-center py-6">Aucun actif amortissable enregistré.</p>
               ) : (
                 unitAssets.slice(0, 8).map((a: any) => {
-                  const dep = calculateDepreciation ? calculateDepreciation(a) : { currentValue: a.purchaseValue || 0, totalDepreciated: 0, percentageDepreciated: 0 };
+                  const depRaw: any = calculateDepreciation ? calculateDepreciation(a) : null;
+                  const dep = depRaw && typeof depRaw === 'object'
+                    ? depRaw
+                    : { currentValue: a.purchaseValue || 0, totalDepreciated: 0, percentageDepreciated: 0 };
                   return (
                     <div key={a.id} className="p-3 rounded-lg border border-border/60">
                       <div className="flex items-center justify-between mb-2">
