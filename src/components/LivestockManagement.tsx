@@ -2011,7 +2011,15 @@ const LivestockManagement = () => {
                                      </div>
                                    </div>
                                   </summary>
-                                  {record.notes && (
+                                   <div className="px-3 pb-3 pt-1 flex flex-wrap gap-2">
+                                     <Button variant="outline" size="sm" onClick={() => setSelectedFishingPreview({ ...record, infrastructureName: infra?.infrastructure_name || 'N/A' })}>
+                                       <Eye className="w-3 h-3 mr-1" /> Visualiser
+                                     </Button>
+                                     <Button variant="outline" size="sm" className="border-cyan-500/30 text-cyan-700" onClick={() => setSelectedFishingPreview({ ...record, infrastructureName: infra?.infrastructure_name || 'N/A' })}>
+                                       <Waves className="w-3 h-3 mr-1" /> Miniature
+                                     </Button>
+                                   </div>
+                                   {record.notes && (
                                     <div className="px-3 pb-3">
                                       <pre className="text-xs p-2 bg-muted rounded whitespace-pre-wrap">
                                         {record.notes}
@@ -2041,6 +2049,74 @@ const LivestockManagement = () => {
                   </p>
                 </div>
               )}
+
+              <Dialog open={!!selectedFishingPreview} onOpenChange={(open) => !open && setSelectedFishingPreview(null)}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Waves className="w-4 h-4 text-cyan-600" /> Détail pêche de contrôle</DialogTitle>
+                  </DialogHeader>
+                  {selectedFishingPreview && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Infrastructure</p><p className="font-semibold">{selectedFishingPreview.infrastructureName}</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">PMI</p><p className="font-semibold">{selectedFishingPreview.average_weight?.toFixed(1) ?? '-'} g</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Échantillon</p><p className="font-semibold">{selectedFishingPreview.sample_count ?? '-'}</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Poids total</p><p className="font-semibold">{selectedFishingPreview.feeding?.toFixed(2) ?? '-'} kg</p></div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Température</p><p className="text-lg font-bold">{selectedFishingPreview.temperature ?? '-'}°C</p></div>
+                        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">pH</p><p className="text-lg font-bold">{selectedFishingPreview.ph ?? '-'}</p></div>
+                        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">O₂</p><p className="text-lg font-bold">{selectedFishingPreview.oxygen ?? '-'} mg/L</p></div>
+                      </div>
+                      {selectedFishingPreview.notes && <div className="rounded-lg border p-3 bg-muted/20 text-sm whitespace-pre-wrap">{selectedFishingPreview.notes}</div>}
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={!!selectedBatchPreview} onOpenChange={(open) => !open && setSelectedBatchPreview(null)}>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Fish className="w-4 h-4 text-primary" /> Vue détaillée du lot</DialogTitle>
+                  </DialogHeader>
+                  {selectedBatchPreview && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Espèce</p><p className="font-semibold">{selectedBatchPreview.species}</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Quantité</p><p className="font-semibold">{selectedBatchPreview.quantity.toLocaleString()} ind.</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Poids moyen</p><p className="font-semibold">{selectedBatchPreview.averageWeight} g</p></div>
+                        <div className="rounded-lg border p-3 bg-muted/20"><p className="text-xs text-muted-foreground">Biomasse</p><p className="font-semibold">{selectedBatchPreview.totalWeight.toFixed(1)} kg</p></div>
+                      </div>
+                      <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/10 via-background to-cyan-500/10">
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Miniature opérationnelle</p>
+                            <p className="text-lg font-semibold">{selectedBatchPreview.unitName}</p>
+                          </div>
+                          <Badge className={getStatusColor(selectedBatchPreview.status)}>
+                            {selectedBatchPreview.status === 'healthy' ? 'Sain' : selectedBatchPreview.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 items-end h-40">
+                          {[0, 1, 2].map((column) => {
+                            const height = Math.max(28, Math.min(100, (selectedBatchPreview.averageWeight / 5) + (column * 8)));
+                            return (
+                              <div key={column} className="flex flex-col items-center gap-2">
+                                <div className="w-full max-w-[70px] rounded-t-[24px] border border-cyan-500/30 bg-cyan-500/10 relative overflow-hidden" style={{ height: 120 }}>
+                                  <div className="absolute bottom-0 inset-x-0 bg-cyan-500/25" style={{ height: `${height}%` }} />
+                                  <Fish className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-cyan-700" />
+                                </div>
+                                <span className="text-[11px] text-muted-foreground">Zone {column + 1}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {selectedBatchPreview.notes && <div className="rounded-lg border p-3 text-sm bg-muted/20">{selectedBatchPreview.notes}</div>}
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>
