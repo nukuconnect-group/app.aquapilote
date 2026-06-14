@@ -202,20 +202,44 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     return { unit: u, activeCycles: uCycles.filter((c) => c.status === 'active').length, stock: uStock, ratio, status };
   });
 
+  const thresholdRecommendations = useMemo(() => {
+    return [
+      analyzeParameter('oxygen', latestWater.oxy),
+      analyzeParameter('temperature', latestWater.temp),
+      analyzeParameter('ph', latestWater.ph),
+    ].filter(Boolean);
+  }, [latestWater]);
+
   const recommendations = useMemo(() => {
     const list: { title: string; detail: string; tone: 'danger' | 'warning' | 'info' }[] = [];
-    if (latestWater.oxy && latestWater.oxy < 5)
-      list.push({ title: 'Oxygène dissous faible', detail: 'Activez l\'aération et surveillez la densité des bassins.', tone: 'danger' });
-    if (latestWater.temp && (latestWater.temp > 30 || latestWater.temp < 22))
-      list.push({ title: 'Température hors plage', detail: 'Procédez à un renouvellement partiel d\'eau.', tone: 'warning' });
-    if (latestWater.ph && (latestWater.ph < 6.5 || latestWater.ph > 8.5))
-      list.push({ title: 'pH déséquilibré', detail: 'Vérifiez l\'alcalinité et ajustez progressivement.', tone: 'warning' });
-    if (criticalAlerts > 0)
-      list.push({ title: `${criticalAlerts} analyse(s) IA critique(s)`, detail: 'Consultez l\'historique IoT pour les actions recommandées.', tone: 'danger' });
-    if (list.length === 0)
-      list.push({ title: 'Paramètres dans la norme', detail: 'Continuez le suivi quotidien des bassins.', tone: 'info' });
+
+    thresholdRecommendations.forEach((alert: any) => {
+      list.push({
+        title: alert.message,
+        detail: alert.recommendation,
+        tone: alert.level === 'critical' ? 'danger' : 'warning',
+      });
+    });
+
+    analyses
+      .filter((analysis) => analysis.alerte)
+      .slice(0, 2)
+      .forEach((analysis) => {
+        list.push({
+          title: 'Analyse IA requise',
+          detail: analysis.conseil,
+          tone: 'danger',
+        });
+      });
+
     return list;
-  }, [latestWater, criticalAlerts]);
+  }, [thresholdRecommendations, analyses]);
+
+  const latestRecordDate = filteredHealthRecords[0]?.date;
+  const freshnessLabel = latestRecordDate
+    ? new Date(latestRecordDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' } as any)
+    : 'Aucun relevé';
+  const isConnected = filteredHealthRecords.length > 0;
 
   // Cycles progression (temporelle + production)
   const cycleProgress = useMemo(() => {
