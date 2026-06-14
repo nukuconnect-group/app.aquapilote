@@ -469,49 +469,160 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-cyan-600" /> Progression des cycles & amortissement
+            <Gauge className="w-5 h-5 text-cyan-600" /> Suivi opérationnel — {unitLabel}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {cycleProgress.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aucun cycle actif en cours.</p>
-          ) : (
-            cycleProgress.map((c) => (
-              <div key={c.id} className="p-3 rounded-lg border border-border/60">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="font-semibold text-sm">{c.name}</p>
-                    {c.startDate && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Démarré le {c.startDate.toLocaleDateString('fr-FR')} • {c.elapsed} jours
-                      </p>
-                    )}
+        <CardContent>
+          <Tabs defaultValue="cycles" className="w-full">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="cycles" className="text-xs sm:text-sm">Cycles</TabsTrigger>
+              <TabsTrigger value="equipment" className="text-xs sm:text-sm">Équipements</TabsTrigger>
+              <TabsTrigger value="infrastructure" className="text-xs sm:text-sm">Infrastructures</TabsTrigger>
+              <TabsTrigger value="depreciation" className="text-xs sm:text-sm">Amortissements</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="cycles" className="space-y-3 mt-4">
+              {cycleProgress.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun cycle actif en cours.</p>
+              ) : (
+                cycleProgress.map((c) => (
+                  <div key={c.id} className="p-3 rounded-lg border border-border/60">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-semibold text-sm">{c.name}</p>
+                        {c.startDate && (
+                          <p className="text-[11px] text-muted-foreground">
+                            Démarré le {c.startDate.toLocaleDateString('fr-FR')} • {c.elapsed} jours
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant="secondary" className="text-[10px]">En cours</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-muted-foreground">Progression temporelle</span>
+                          <span className="font-medium">{c.timeProgress}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-cyan-500" style={{ width: `${c.timeProgress}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-muted-foreground">Production</span>
+                          <span className="font-medium">{c.current.toLocaleString()}/{c.target.toLocaleString()}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-blue-500" style={{ width: `${c.prodProgress}%` }} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="text-[10px]">En cours</Badge>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-muted-foreground">Progression temporelle</span>
-                      <span className="font-medium">{c.timeProgress}%</span>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="equipment" className="space-y-3 mt-4">
+              {unitEquipment.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun équipement enregistré pour cette unité.</p>
+              ) : (
+                unitEquipment.slice(0, 8).map((e: any) => {
+                  const cap = Number(e.capacity || e.maxCapacity || 0);
+                  const used = Number(e.currentUsage || e.usage || 0);
+                  const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+                  return (
+                    <div key={e.id} className="p-3 rounded-lg border border-border/60">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-sm flex items-center gap-2"><Wrench className="w-3.5 h-3.5 text-muted-foreground" />{e.name || e.type}</p>
+                          <p className="text-[11px] text-muted-foreground">{e.type} {e.brand ? `• ${e.brand}` : ''}</p>
+                        </div>
+                        <Badge variant={e.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+                          {e.status || 'actif'}
+                        </Badge>
+                      </div>
+                      {cap > 0 && (
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-1">
+                            <span className="text-muted-foreground">Utilisation</span>
+                            <span className="font-medium">{pct}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-cyan-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full bg-cyan-500" style={{ width: `${c.timeProgress}%` }} />
+                  );
+                })
+              )}
+            </TabsContent>
+
+            <TabsContent value="infrastructure" className="space-y-3 mt-4">
+              {unitInfra.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucune infrastructure enregistrée.</p>
+              ) : (
+                unitInfra.slice(0, 8).map((inf: any) => {
+                  const cap = Number(inf.capacity || 0);
+                  const occ = Number(inf.currentOccupancy || inf.occupancy || 0);
+                  const pct = cap > 0 ? Math.min(100, Math.round((occ / cap) * 100)) : 0;
+                  return (
+                    <div key={inf.id} className="p-3 rounded-lg border border-border/60">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-sm flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-muted-foreground" />{inf.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{inf.type} {cap ? `• capacité ${cap.toLocaleString()}` : ''}</p>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px]">{inf.status || 'actif'}</Badge>
+                      </div>
+                      {cap > 0 && (
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-1">
+                            <span className="text-muted-foreground">Occupation</span>
+                            <span className="font-medium">{occ.toLocaleString()}/{cap.toLocaleString()}</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full ${pct > 85 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-muted-foreground">Production</span>
-                      <span className="font-medium">{c.current.toLocaleString()}/{c.target.toLocaleString()}</span>
+                  );
+                })
+              )}
+            </TabsContent>
+
+            <TabsContent value="depreciation" className="space-y-3 mt-4">
+              {unitAssets.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun actif amortissable enregistré.</p>
+              ) : (
+                unitAssets.slice(0, 8).map((a: any) => {
+                  const dep = calculateDepreciation ? calculateDepreciation(a) : { currentValue: a.purchaseValue || 0, totalDepreciated: 0, percentageDepreciated: 0 };
+                  return (
+                    <div key={a.id} className="p-3 rounded-lg border border-border/60">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-sm flex items-center gap-2"><PiggyBank className="w-3.5 h-3.5 text-muted-foreground" />{a.name}</p>
+                          <p className="text-[11px] text-muted-foreground">Valeur initiale : {formatCurrency(a.purchaseValue || 0)}</p>
+                        </div>
+                        <span className="text-sm font-bold text-emerald-700">{formatCurrency(dep.currentValue)}</span>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-muted-foreground">Amortissement cumulé</span>
+                          <span className="font-medium">{Math.round(dep.percentageDepreciated || 0)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, dep.percentageDepreciated || 0)}%` }} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full bg-blue-500" style={{ width: `${c.prodProgress}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+                  );
+                })
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
