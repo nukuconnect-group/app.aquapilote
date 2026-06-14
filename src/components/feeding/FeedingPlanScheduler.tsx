@@ -27,8 +27,10 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
   const { plans, loading, createPlan, updatePlan, deletePlan } = useFeedingPlans(unitId, cycleId);
   const { infrastructures, loading: loadingInfra } = useCycleInfrastructures(cycleId || '');
   const { stocks } = useFeedStocks(unitId);
+  const { toast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [formData, setFormData] = useState({
     time: '',
     feedType: '',
@@ -62,6 +64,134 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
   
   // Afficher d'abord les aliments en stock, puis les types par défaut
   const feedTypes = [...new Set([...stockFeedTypes, ...defaultFeedTypes])];
+
+  const feedingSheetRows = useMemo(() => plans.map((plan) => ({
+    time: plan.time,
+    infrastructureName: infrastructures.find((infra) => infra.id === plan.infrastructure_id)?.infrastructure_name,
+    feedType: plan.feed_type,
+    quantity: plan.quantity,
+    unit: plan.unit,
+    days: plan.days,
+    notes: plan.notes,
+  })), [plans, infrastructures]);
+
+  const handleDownloadSheet = () => {
+    const html = generateFeedingSheetHTML(feedingSheetRows, unitName, 'Fiche de nourrissage');
+    downloadHTML(html, `fiche-nourrissage-${unitName.replace(/\s+/g, '-').toLowerCase()}.html`);
+  };
+
+  const handlePrintSheet = () => {
+    const html = generateFeedingSheetHTML(feedingSheetRows, unitName, 'Fiche de nourrissage');
+    printHTML(html);
+  };
+
+  const handleGenerateWithAI = async () => {
+    try {
+      setIsAiGenerating(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Connexion requise', description: 'Connectez-vous pour générer une fiche IA.', variant: 'destructive' });
+        return;
+      }
+
+      const infraSummary = infrastructures.slice(0, 8).map((infra) => `${infra.infrastructure_name} (${infra.infrastructure_type})`).join(', ') || 'Aucune infrastructure';
+      const stockSummary = stocks.slice(0, 10).map((stock) => `${stock.custom_name || stock.feed_type}: ${stock.quantity} ${stock.unit}`).join(', ') || 'Aucun stock';
+
+      const prompt = `Crée une fiche de nourrissage aquacole professionnelle pour l'unité ${unitName}, cycle ${cycleName || 'actif'}.
+Infrastructures: ${infraSummary}.
+Stocks disponibles: ${stockSummary}.
+Réponds avec EXACTEMENT 4 lignes maximum, au format:
+heure | infrastructure | aliment | quantite_kg | jours | note
+Exemple:
+08:00 | Bassin A | Aliment croissance 3mm | 12 | lundi,mardi,mercredi | ration matin
+Utilise seulement du texte brut.`;
+
+      const response = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/aqua-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          language: 'Français',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Impossible de générer la fiche');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Réponse IA indisponible');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let assistantContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) assistantContent += content;
+          } catch {
+            continue;
+          }
+        }
+      }
+
+      const parsedRows = assistantContent
+        .split('\n')
+        .map((row) => row.trim())
+        .filter((row) => row.includes('|'))
+        .slice(0, 4)
+        .map((row) => row.split('|').map((cell) => cell.trim()));
+
+      if (parsedRows.length === 0) throw new Error('Aucune ligne exploitable générée par l’IA');
+
+      const daysMap = weekDays.map((day) => day.key);
+      const firstInfrastructureId = infrastructures[0]?.id || '';
+
+      for (const row of parsedRows) {
+        const [time, infraName, feedType, quantityKg, days, note] = row;
+        const infra = infrastructures.find((item) => item.infrastructure_name.toLowerCase() === (infraName || '').toLowerCase());
+        await createPlan({
+          unit_id: unitId,
+          cycle_id: cycleId,
+          infrastructure_id: infra?.id || firstInfrastructureId || undefined,
+          time: time || '08:00',
+          feed_type: feedType || feedTypes[0] || 'Aliment croissance (2-3mm)',
+          quantity: Number(quantityKg || '0') || 1,
+          unit: 'kg',
+          days: (days || 'lundi,mardi,mercredi').split(',').map((day) => day.trim().toLowerCase()).filter((day) => daysMap.includes(day)),
+          is_active: true,
+          notes: note || 'Fiche générée par IA',
+        });
+      }
+
+      toast({ title: 'Fiche IA créée', description: 'Le planning proposé a été ajouté.' });
+    } catch (error: any) {
+      toast({ title: 'Erreur IA', description: error?.message || 'Impossible de générer la fiche.', variant: 'destructive' });
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,8 +300,21 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                 <Printer className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Imprimer</span>
               </Button>
+              <Button size="sm" variant="outline" onClick={handleDownloadSheet} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Télécharger fiche</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={handlePrintSheet} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Imprimer fiche</span>
+              </Button>
             </>
           )}
+          <Button size="sm" variant="secondary" onClick={handleGenerateWithAI} disabled={isAiGenerating} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+            {isAiGenerating ? <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1 animate-pulse" /> : <Wand2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />}
+            <span className="hidden sm:inline">IA créer la fiche</span>
+            <span className="sm:hidden">IA</span>
+          </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
