@@ -28,6 +28,7 @@ export interface NewTeamMember {
   custom_role?: string;
   department: string;
   permissions: Record<string, boolean>;
+  dashboard_roles?: ('production' | 'administration')[];
 }
 
 export const useTeamMembers = () => {
@@ -89,8 +90,9 @@ export const useTeamMembers = () => {
           custom_role: member.custom_role || null,
           department: member.department,
           permissions: member.permissions,
-          status: 'active'
-        })
+          status: 'active',
+          dashboard_roles: member.dashboard_roles || []
+        } as any)
         .select()
         .single();
 
