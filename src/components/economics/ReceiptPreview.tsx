@@ -33,6 +33,7 @@ export interface ReceiptData {
   companyName?: string;
   companyAddress?: string;
   companyContact?: string;
+  companyLogo?: string;
   isPaid?: boolean;
 }
 
@@ -70,7 +71,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}`
     : companyInfo.email;
   const displayCompanyContact = data.companyContact || builtContact || (fallbackEmail ? `Email: ${fallbackEmail}` : '');
-  const displayCompanyLogo = data.companyName ? (companyInfo.logoUrl || undefined) : (companyInfo.logoUrl || undefined);
+  const displayCompanyLogo = data.companyLogo || companyInfo.logoUrl || undefined;
   const displayStamp = companyInfo.hideStampOnDocuments ? undefined : companyInfo.stampUrl;
   // Signature only used for receipts (proof of payment).
   const displaySignature = data.type === 'receipt' ? companyInfo.signatureUrl : undefined;
