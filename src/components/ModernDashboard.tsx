@@ -490,27 +490,49 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-emerald-600" /> Détails financiers
+              <Activity className="w-5 h-5 text-cyan-600" /> Paramètres en direct
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Ventes confirmées" value={formatCurrency(financial.totalSalesRevenue)} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Ventes en attente" value={`${financial.pendingSales}`} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Achats reçus" value={formatCurrency(financial.totalPurchases)} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Achats d'aliments" value={formatCurrency(financial.feedPurchases)} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Autres achats" value={formatCurrency(financial.otherPurchases)} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Salaires (mensuel)" value={formatCurrency(financial.totalSalaries)} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Employés actifs" value={`${financial.employeesCount}`} /></div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Aliment consommé" value={`${financial.feedConsumed.toFixed(1)} kg`} /></div>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+                <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Thermometer className="w-3 h-3" /> Temp.</p>
+                <p className={`text-sm font-bold ${latestWater.temp > 30 || latestWater.temp < 22 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.temp}°C</p>
+                {waterChart.length > 1 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {waterChart[waterChart.length - 1].temperature >= waterChart[waterChart.length - 2].temperature ? '↗' : '↘'}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+                <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Wind className="w-3 h-3" /> O₂</p>
+                <p className={`text-sm font-bold ${latestWater.oxy < 5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.oxy} mg/L</p>
+                {waterChart.length > 1 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {waterChart[waterChart.length - 1].oxygene >= waterChart[waterChart.length - 2].oxygene ? '↗' : '↘'}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+                <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Droplets className="w-3 h-3" /> pH</p>
+                <p className={`text-sm font-bold ${latestWater.ph < 6.5 || latestWater.ph > 8.5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.ph}</p>
+                {waterChart.length > 1 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {waterChart[waterChart.length - 1].ph >= waterChart[waterChart.length - 2].ph ? '↗' : '↘'}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="pt-2 mt-2 border-t flex items-center justify-between font-semibold">
-              <span>Solde net</span>
-              <span className={financial.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}>{formatCurrency(financial.netBalance)}</span>
+            <div className="h-[90px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={waterChart.slice(-7)}>
+                  <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="oxygene" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="ph" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => go('accounting')}>
-              Ouvrir la comptabilité <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </Button>
+            <p className="text-[10px] text-muted-foreground mt-1 text-center">Tendances sur 7 derniers jours</p>
           </CardContent>
         </Card>
 
