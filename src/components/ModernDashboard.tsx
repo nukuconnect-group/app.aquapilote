@@ -575,8 +575,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+            <div className="flex items-center justify-between gap-2 mb-3 text-[10px] sm:text-xs text-muted-foreground">
+              <span>Dernier relevé: <span className="font-medium text-foreground">{freshnessLabel}</span></span>
+              <span className={`inline-flex items-center gap-1 ${isConnected ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {isConnected ? 'Connecté' : 'Déconnecté'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Thermometer className="w-3 h-3" /> Temp.</p>
                 <p className={`text-sm font-bold ${latestWater.temp > 30 || latestWater.temp < 22 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.temp}°C</p>
                 {waterChart.length > 1 && (
@@ -585,7 +592,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   </p>
                 )}
               </div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Wind className="w-3 h-3" /> O₂</p>
                 <p className={`text-sm font-bold ${latestWater.oxy < 5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.oxy} mg/L</p>
                 {waterChart.length > 1 && (
@@ -594,7 +601,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   </p>
                 )}
               </div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Droplets className="w-3 h-3" /> pH</p>
                 <p className={`text-sm font-bold ${latestWater.ph < 6.5 || latestWater.ph > 8.5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.ph}</p>
                 {waterChart.length > 1 && (
@@ -604,7 +611,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                 )}
               </div>
             </div>
-            <div className="h-[90px]">
+            <div className="h-[90px] sm:h-[96px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={waterChart.slice(-7)}>
                   <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={false} />
@@ -624,8 +631,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="flex items-center justify-between gap-2 mb-3 text-[10px] sm:text-xs text-muted-foreground">
+              <span>Signal: <span className="font-medium text-foreground">{recommendations.length > 0 ? 'Action requise' : 'RAS'}</span></span>
+              <span className={`inline-flex items-center gap-1 ${isConnected ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {isConnected ? 'Flux actif' : 'Hors ligne'}
+              </span>
+            </div>
             {/* Mini paramètres en ligne */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Temp.</span>
@@ -667,8 +681,8 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
-              {recommendations.map((r, i) => {
+            <div className="grid grid-cols-1 gap-2 max-h-[190px] overflow-y-auto pr-1">
+              {recommendations.length > 0 ? recommendations.map((r, i) => {
               const tones: Record<string, string> = {
                 danger: 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900',
                 warning: 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900',
@@ -680,7 +694,12 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   <p className="text-[11px] text-muted-foreground mt-0.5">{r.detail}</p>
                 </div>
               );
-              })}
+              }) : (
+                <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20">
+                  <p className="font-semibold text-xs text-emerald-700 dark:text-emerald-300">Aucune recommandation nécessaire</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Les recommandations IA restent masquées tant qu'aucun seuil critique ou d'avertissement n'est franchi.</p>
+                </div>
+              )}
             </div>
             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => go('aqua-assistant')}>
               Ouvrir AquaAssistant
