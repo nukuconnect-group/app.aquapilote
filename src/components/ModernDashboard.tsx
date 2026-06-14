@@ -100,16 +100,23 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
+  const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
+  const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
+  const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
   const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
   const { records: feedingRecords } = useFeedingRecords(undefined, activeUnit?.id);
   const financial = useFinancialSummary(activeUnit?.id);
-  const { analyses } = useAIAnalyses(5);
+  const { analyses } = useAIAnalyses(8, activeUnit?.id);
   const { stocks: feedStocks } = useFeedStocks(activeUnit?.id);
 
   const go = (tab: string) => onNavigate?.(tab);
+  const basinOptions = useMemo(() => {
+    const unitInfrastructures = activeUnit ? (getUnitInfrastructures?.(activeUnit.id) || []) : [];
+    return unitInfrastructures.filter((infra: any) => infra.infrastructure_name);
+  }, [activeUnit, getUnitInfrastructures]);
 
   // KPIs
   const activeCycles = cycles.filter((c) => c.status === 'active').length;
