@@ -241,100 +241,87 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       </div>
 
       {/* KPIs — 4 cartes principales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Fermes */}
         <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-2">
+          <CardContent className="p-2.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground font-medium truncate">Fermes</p>
-                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{units.length}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{units.filter((u) => u.isActive).length} actives</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Fermes</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{units.length}</p>
               </div>
-              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-1.5 sm:p-2 rounded-md bg-primary/10 text-primary shrink-0">
+                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">{units.filter((u) => u.isActive).length} actives</p>
+            <div className="mt-2 grid grid-cols-1 gap-1 text-[10px] text-muted-foreground">
               <div className="flex items-center justify-between gap-2">
-                <span>Unité active</span>
-                <span className="font-medium text-foreground truncate">{activeUnit?.name || 'Vue globale'}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>Types suivis</span>
-                <span className="font-medium text-foreground">{new Set(units.map((u) => u.type)).size}</span>
+                <span className="truncate">Active</span>
+                <span className="font-medium text-foreground truncate">{activeUnit?.name || 'Globale'}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+        {/* Cycles actifs */}
         <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium truncate">Bassins actifs</p>
-                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{activeCycles}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{cycles.length} cycles total</p>
+          <CardContent className="p-2.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Cycles actifs</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{activeCycles}</p>
               </div>
-              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 shrink-0">
-                <Factory className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-1.5 sm:p-2 rounded-md bg-sky-500/10 text-sky-600 shrink-0">
+                <Factory className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Biomasse</p>
-                <p className="font-semibold text-foreground mt-0.5">{totalBiomassKg.toFixed(1)} kg</p>
-              </div>
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Effectifs</p>
-                <p className="font-semibold text-foreground mt-0.5">{totalStock.toLocaleString()}</p>
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">{cycles.length} cycles total</p>
+            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-muted-foreground">Effectifs</span>
+                <span className="font-semibold text-foreground">{totalStock.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+        {/* Biomasse */}
         <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium truncate">Production</p>
-                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{estimatedProduction.toFixed(1)} kg</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Projection en cours</p>
+          <CardContent className="p-2.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Biomasse</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{totalBiomassKg.toFixed(1)}<span className="text-[10px] sm:text-xs font-medium text-muted-foreground ml-1">kg</span></p>
               </div>
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-                <Fish className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-1.5 sm:p-2 rounded-md bg-emerald-500/10 text-emerald-600 shrink-0">
+                <Fish className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Taux survie</p>
-                <p className="font-semibold text-foreground mt-0.5">{survivalRate}%</p>
-              </div>
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Production estimée</p>
-                <p className="font-semibold text-foreground mt-0.5">{estimatedProduction.toFixed(1)} kg</p>
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">Estimée en cours</p>
+            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-muted-foreground">Survie</span>
+                <span className="font-semibold text-foreground">{survivalRate}%</span>
               </div>
             </div>
           </CardContent>
         </Card>
+        {/* Alertes */}
         <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium truncate">Alertes</p>
-                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{criticalAlerts}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Dernières 24 h</p>
+          <CardContent className="p-2.5 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Alertes</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{criticalAlerts}</p>
               </div>
-              <div className={`p-2 rounded-lg shrink-0 ${criticalAlerts > 0 ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className={`p-1.5 sm:p-2 rounded-md shrink-0 ${criticalAlerts > 0 ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Aliment restant</p>
-                <p className="font-semibold text-foreground mt-0.5">{totalFeedRemaining.toFixed(1)} kg</p>
-              </div>
-              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
-                <p className="text-muted-foreground">Stocks critiques</p>
-                <p className="font-semibold text-foreground mt-0.5">{lowFeedAlerts}</p>
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">24 dernières heures</p>
+            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-muted-foreground">Stocks bas</span>
+                <span className="font-semibold text-foreground">{lowFeedAlerts}</span>
               </div>
             </div>
           </CardContent>
