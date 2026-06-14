@@ -87,6 +87,7 @@ const QuickAction: React.FC<{
 const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, units } = useProductionUnits();
   const { formatCurrency } = useSettings();
+  const [showMap, setShowMap] = useState(false);
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
@@ -180,9 +181,6 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centre de pilotage</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
-        </div>
-        <div className="w-full sm:w-auto sm:min-w-[260px]">
-          <ProductionUnitSelector />
         </div>
       </div>
 
