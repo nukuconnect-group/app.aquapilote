@@ -272,7 +272,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
-          <Select value={selectedFarmFilter} onValueChange={setSelectedFarmFilter}>
+          <Select value={selectedFarmFilter} onValueChange={(value) => {
+            setSelectedFarmFilter(value);
+            if (value === 'all') {
+              setActiveUnit(null);
+              return;
+            }
+            const unit = units.find((u) => u.id === value);
+            if (unit) setActiveUnit(unit);
+          }}>
             <SelectTrigger className="h-9 min-w-[140px] text-xs sm:text-sm">
               <SelectValue placeholder="Ferme" />
             </SelectTrigger>
