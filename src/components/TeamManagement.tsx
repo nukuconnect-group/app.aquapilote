@@ -9,6 +9,8 @@ import { useTeamMemberUnits, TeamMemberUnit } from '@/hooks/useTeamMemberUnits';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
+import { createNotification } from '@/lib/notificationService';
+import { DASHBOARD_ROLE_DEFINITIONS } from '@/lib/dashboardRoles';
 
 // Sub-components
 import TeamStats from './team/TeamStats';
