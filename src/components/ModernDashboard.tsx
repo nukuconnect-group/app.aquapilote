@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Activity, AlertTriangle, Building2, Droplets, Factory, FileText,
   Fish, Plus, Settings, Sparkles, Thermometer, TrendingUp, Users,
   Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight,
-  Wallet, ArrowDownRight, ArrowUpRight, PiggyBank, ChevronDown, ChevronUp
+  Wallet, ArrowDownRight, ArrowUpRight, PiggyBank, ChevronDown, ChevronUp,
+  Gauge
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis,
@@ -92,7 +94,7 @@ const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
 );
 
 const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
-  const { activeUnit, units } = useProductionUnits();
+  const { activeUnit, setActiveUnit, units } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
 
@@ -181,6 +183,23 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     return list;
   }, [latestWater, criticalAlerts]);
 
+  // Cycles progression (temporelle + production)
+  const cycleProgress = useMemo(() => {
+    return cycles
+      .filter((c) => c.status === 'active')
+      .slice(0, 5)
+      .map((c: any) => {
+        const start = c.start_date ? new Date(c.start_date) : null;
+        const durationDays = c.expected_duration || c.duration || 0;
+        const elapsed = start ? Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000)) : 0;
+        const timeProgress = durationDays > 0 ? Math.min(100, Math.round((elapsed / durationDays) * 100)) : 0;
+        const target = c.target_production || c.expected_production || 0;
+        const current = c.current_production || 0;
+        const prodProgress = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+        return { id: c.id, name: c.name || c.cycle_name || `Cycle ${c.id?.slice(0, 4)}`, startDate: start, elapsed, timeProgress, current, target, prodProgress };
+      });
+  }, [cycles]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header bar */}
@@ -191,15 +210,36 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-        <KpiCard label="Fermes" value={units.length} icon={Building2} tone="primary" hint={`${units.filter(u => u.isActive).length} actives`} />
+      {/* KPIs — 4 cartes principales */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Fermes avec sélecteur d'unité */}
+        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground font-medium truncate">Fermes</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{units.length}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{units.filter((u) => u.isActive).length} actives</p>
+              </div>
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+            </div>
+            <Select value={activeUnit?.id || ''} onValueChange={(v) => { const u = units.find((x) => x.id === v); if (u) setActiveUnit(u); }}>
+              <SelectTrigger className="mt-3 h-8 text-xs">
+                <SelectValue placeholder="Sélectionner une unité" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((u) => (
+                  <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
         <KpiCard label="Bassins actifs" value={activeCycles} icon={Factory} tone="info" hint={`${cycles.length} cycles total`} />
         <KpiCard label="Production estimée" value={`${estimatedProduction.toFixed(1)} kg`} icon={Fish} tone="success" hint={`${totalStock.toLocaleString()} individus`} />
         <KpiCard label="Alertes critiques" value={criticalAlerts} icon={AlertTriangle} tone={criticalAlerts > 0 ? 'danger' : 'success'} hint="Dernières 24 h" />
-        <KpiCard label="Qualité moy." value={latestWater.ph ? `pH ${latestWater.ph}` : '—'} icon={Droplets} tone="info" hint="Moyenne récente" />
-        <KpiCard label="Température" value={latestWater.temp ? `${latestWater.temp}°C` : '—'} icon={Thermometer} tone="warning" hint="Moyenne 10 derniers" />
-        <KpiCard label="Oxygène dissous" value={latestWater.oxy ? `${latestWater.oxy} mg/L` : '—'} icon={Wind} tone={latestWater.oxy && latestWater.oxy < 5 ? 'danger' : 'success'} hint="Moyenne récente" />
       </div>
 
       {/* Quick access */}
@@ -220,66 +260,6 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Charts grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Droplets className="w-5 h-5 text-sky-600" /> Qualité de l'eau
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[240px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={waterChart}>
-                  <defs>
-                    <linearGradient id="gTemp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gOxy" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="label" fontSize={11} />
-                  <YAxis fontSize={11} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="temperature" name="Température (°C)" stroke="#f97316" fill="url(#gTemp)" />
-                  <Area type="monotone" dataKey="oxygene" name="Oxygène (mg/L)" stroke="#06b6d4" fill="url(#gOxy)" />
-                  <Line type="monotone" dataKey="ph" name="pH" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-600" /> Production & mortalité
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[240px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={productionChart}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="month" fontSize={11} />
-                  <YAxis fontSize={11} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="production" name="Production (k)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="mortalite" name="Mortalité" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Finance KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -447,6 +427,55 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       </div>
 
       {/* Reports per unit */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-cyan-600" /> Progression des cycles & amortissement
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {cycleProgress.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Aucun cycle actif en cours.</p>
+          ) : (
+            cycleProgress.map((c) => (
+              <div key={c.id} className="p-3 rounded-lg border border-border/60">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-sm">{c.name}</p>
+                    {c.startDate && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Démarré le {c.startDate.toLocaleDateString('fr-FR')} • {c.elapsed} jours
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">En cours</Badge>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Progression temporelle</span>
+                      <span className="font-medium">{c.timeProgress}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-cyan-500" style={{ width: `${c.timeProgress}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Production</span>
+                      <span className="font-medium">{c.current.toLocaleString()}/{c.target.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${c.prodProgress}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
