@@ -543,7 +543,50 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-2 max-h-[240px] overflow-y-auto pr-1">
+            {/* Mini paramètres en ligne */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">Temp.</span>
+                  <span className={`text-xs font-bold ${latestWater.temp > 30 || latestWater.temp < 22 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.temp}°C</span>
+                </div>
+                <div className="h-8">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={waterChart.slice(-7)}>
+                      <Area type="monotone" dataKey="temperature" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">O₂</span>
+                  <span className={`text-xs font-bold ${latestWater.oxy < 5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.oxy} mg/L</span>
+                </div>
+                <div className="h-8">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={waterChart.slice(-7)}>
+                      <Area type="monotone" dataKey="oxygene" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">pH</span>
+                  <span className={`text-xs font-bold ${latestWater.ph < 6.5 || latestWater.ph > 8.5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.ph}</span>
+                </div>
+                <div className="h-8">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={waterChart.slice(-7)}>
+                      <Area type="monotone" dataKey="ph" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
               {recommendations.map((r, i) => {
               const tones: Record<string, string> = {
                 danger: 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900',
@@ -551,9 +594,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                 info: 'border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-900',
               };
               return (
-                <div key={i} className={`p-3 rounded-lg border ${tones[r.tone]}`}>
-                  <p className="font-semibold text-sm">{r.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{r.detail}</p>
+                <div key={i} className={`p-2.5 rounded-lg border ${tones[r.tone]}`}>
+                  <p className="font-semibold text-xs">{r.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{r.detail}</p>
                 </div>
               );
               })}
