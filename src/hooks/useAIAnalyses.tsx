@@ -16,7 +16,7 @@ export interface AIAnalysis {
   created_at: string;
 }
 
-export const useAIAnalyses = (limit: number = 10) => {
+export const useAIAnalyses = (limit: number = 10, unitId?: string) => {
   const { user } = useAuth();
   const [analyses, setAnalyses] = useState<AIAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +29,17 @@ export const useAIAnalyses = (limit: number = 10) => {
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ai_analyses')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
+
+      if (unitId) {
+        query = query.eq('unit_id', unitId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching analyses:', error);
@@ -69,7 +75,7 @@ export const useAIAnalyses = (limit: number = 10) => {
 
   useEffect(() => {
     fetchAnalyses();
-  }, [user]);
+  }, [user, unitId, limit]);
 
   return {
     analyses,

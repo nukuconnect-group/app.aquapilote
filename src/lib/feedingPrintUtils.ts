@@ -1,6 +1,14 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export const generateFeedingRecordHTML = (record: any, unitName: string) => {
   return `
     <!DOCTYPE html>
@@ -218,6 +226,107 @@ export const generateFeedingPlanHTML = (plans: any[], unitName: string) => {
       
       <div class="footer">
         <p>Document généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</p>
+        <p>AquaPilote - Système de gestion aquacole</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+export const generateFeedingSheetHTML = (
+  rows: Array<{
+    time: string;
+    infrastructureName?: string;
+    feedType: string;
+    quantity: number;
+    unit: string;
+    days: string[];
+    notes?: string;
+  }>,
+  unitName: string,
+  title: string,
+) => {
+  const totalQuantity = rows.reduce((sum, row) => sum + (row.quantity || 0), 0);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${escapeHtml(title)} - ${escapeHtml(unitName)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 1080px; margin: 32px auto; padding: 20px; color: #1f2937; }
+        .header { display: flex; justify-content: space-between; align-items: end; gap: 20px; border-bottom: 3px solid #f97316; padding-bottom: 18px; margin-bottom: 24px; }
+        .header h1 { margin: 0 0 6px; color: #c2410c; }
+        .header p { margin: 2px 0; color: #6b7280; }
+        .meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .meta-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px; }
+        .meta-label { font-size: 11px; text-transform: uppercase; color: #9a3412; margin-bottom: 4px; }
+        .meta-value { font-size: 18px; font-weight: 700; color: #7c2d12; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th { background: #ea580c; color: white; padding: 12px 10px; text-align: left; font-size: 12px; }
+        td { border-bottom: 1px solid #e5e7eb; padding: 10px; vertical-align: top; font-size: 13px; }
+        tr:nth-child(even) td { background: #fffaf5; }
+        .pill { display: inline-block; background: #f3f4f6; border-radius: 999px; padding: 3px 8px; font-size: 11px; margin: 2px 4px 0 0; }
+        .notes { color: #6b7280; font-size: 12px; }
+        .footer { margin-top: 22px; padding-top: 14px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1>${escapeHtml(title)}</h1>
+          <p>Unité: ${escapeHtml(unitName)}</p>
+          <p>Document généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</p>
+        </div>
+        <div>
+          <p><strong>AquaPilote</strong></p>
+          <p>Fiche opérationnelle de nourrissage</p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-card">
+          <div class="meta-label">Lignes planifiées</div>
+          <div class="meta-value">${rows.length}</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Quantité totale</div>
+          <div class="meta-value">${totalQuantity.toLocaleString('fr-FR')} kg</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Couverture</div>
+          <div class="meta-value">${rows.some((row) => row.days.length > 0) ? 'Hebdo' : 'Ponctuelle'}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Heure</th>
+            <th>Infrastructure</th>
+            <th>Aliment</th>
+            <th>Quantité</th>
+            <th>Jours</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr>
+              <td><strong>${escapeHtml(row.time || '-')}</strong></td>
+              <td>${escapeHtml(row.infrastructureName || 'Toutes')}</td>
+              <td>${escapeHtml(row.feedType || '-')}</td>
+              <td><strong>${row.quantity || 0}</strong> ${escapeHtml(row.unit || 'kg')}</td>
+              <td>${row.days.map((day) => `<span class="pill">${escapeHtml(day)}</span>`).join('')}</td>
+              <td class="notes">${escapeHtml(row.notes || '-')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <p>Document prêt pour impression ou archivage.</p>
         <p>AquaPilote - Système de gestion aquacole</p>
       </div>
     </body>

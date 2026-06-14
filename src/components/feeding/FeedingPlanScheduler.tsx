@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, Plus, Clock, Bell, Printer, Trash2, Download, Sparkles, Wand2 } from 'lucide-react';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
-import { generateFeedingPlanHTML, printHTML } from '@/lib/feedingPrintUtils';
+import { generateFeedingPlanHTML, generateFeedingSheetHTML, printHTML, downloadHTML } from '@/lib/feedingPrintUtils';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FeedingPlanSchedulerProps {
   unitId: string;
@@ -21,12 +24,37 @@ interface FeedingPlanSchedulerProps {
   cycleName: string;
 }
 
+interface FeedingSheetRow {
+  id: string;
+  time: string;
+  feedType: string;
+  quantity: string;
+  unit: string;
+  daysText: string;
+  infrastructureId: string;
+  notes: string;
+}
+
+const createEmptySheetRow = (): FeedingSheetRow => ({
+  id: Math.random().toString(36).slice(2, 9),
+  time: '',
+  feedType: '',
+  quantity: '',
+  unit: 'kg',
+  daysText: 'lundi,mardi,mercredi,jeudi,vendredi,samedi,dimanche',
+  infrastructureId: '',
+  notes: '',
+});
+
 const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingPlanSchedulerProps) => {
   const { plans, loading, createPlan, updatePlan, deletePlan } = useFeedingPlans(unitId, cycleId);
-  const { infrastructures, loading: loadingInfra } = useCycleInfrastructures(cycleId || '');
+  const { infrastructures } = useCycleInfrastructures(cycleId || '');
   const { stocks } = useFeedStocks(unitId);
+  const { toast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [formData, setFormData] = useState({
     time: '',
     feedType: '',
@@ -36,6 +64,11 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
     infrastructureId: '',
     notes: ''
   });
+  const [sheetRows, setSheetRows] = useState<FeedingSheetRow[]>([
+    createEmptySheetRow(),
+    createEmptySheetRow(),
+    createEmptySheetRow(),
+  ]);
 
   const weekDays = [
     { key: 'lundi', label: 'Lundi' },
@@ -60,6 +93,171 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
   
   // Afficher d'abord les aliments en stock, puis les types par défaut
   const feedTypes = [...new Set([...stockFeedTypes, ...defaultFeedTypes])];
+
+  const feedingSheetRows = useMemo(() => plans.map((plan) => ({
+    time: plan.time,
+    infrastructureName: infrastructures.find((infra) => infra.id === plan.infrastructure_id)?.infrastructure_name,
+    feedType: plan.feed_type,
+    quantity: plan.quantity,
+    unit: plan.unit,
+    days: plan.days,
+    notes: plan.notes,
+  })), [plans, infrastructures]);
+
+  const handleDownloadSheet = () => {
+    const html = generateFeedingSheetHTML(feedingSheetRows, unitName, 'Fiche de nourrissage');
+    downloadHTML(html, `fiche-nourrissage-${unitName.replace(/\s+/g, '-').toLowerCase()}.html`);
+  };
+
+  const handlePrintSheet = () => {
+    const html = generateFeedingSheetHTML(feedingSheetRows, unitName, 'Fiche de nourrissage');
+    printHTML(html);
+  };
+
+  const handleGenerateWithAI = async () => {
+    try {
+      setIsAiGenerating(true);
+      setIsSheetOpen(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Connexion requise', description: 'Connectez-vous pour générer une fiche IA.', variant: 'destructive' });
+        return;
+      }
+
+      const infraSummary = infrastructures.slice(0, 8).map((infra) => `${infra.infrastructure_name} (${infra.infrastructure_type})`).join(', ') || 'Aucune infrastructure';
+      const stockSummary = stocks.slice(0, 10).map((stock) => `${stock.custom_name || stock.feed_type}: ${stock.quantity} ${stock.unit}`).join(', ') || 'Aucun stock';
+
+      const prompt = `Crée une fiche de nourrissage aquacole professionnelle pour l'unité ${unitName}, cycle ${cycleName || 'actif'}.
+Infrastructures: ${infraSummary}.
+Stocks disponibles: ${stockSummary}.
+Réponds avec EXACTEMENT 4 lignes maximum, au format:
+heure | infrastructure | aliment | quantite_kg | jours | note
+Exemple:
+08:00 | Bassin A | Aliment croissance 3mm | 12 | lundi,mardi,mercredi | ration matin
+Utilise seulement du texte brut.`;
+
+      const response = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/aqua-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          language: 'Français',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Impossible de générer la fiche');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Réponse IA indisponible');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let assistantContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) assistantContent += content;
+          } catch {
+            continue;
+          }
+        }
+      }
+
+      const parsedRows = assistantContent
+        .split('\n')
+        .map((row) => row.trim())
+        .filter((row) => row.includes('|'))
+        .slice(0, 4)
+        .map((row) => row.split('|').map((cell) => cell.trim()));
+
+      if (parsedRows.length === 0) throw new Error('Aucune ligne exploitable générée par l’IA');
+
+      const daysMap = weekDays.map((day) => day.key);
+      const firstInfrastructureId = infrastructures[0]?.id || '';
+
+      setSheetRows(parsedRows.map((row) => {
+        const [time, infraName, feedType, quantityKg, days, note] = row;
+        const infra = infrastructures.find((item) => item.infrastructure_name.toLowerCase() === (infraName || '').toLowerCase());
+        return {
+          id: Math.random().toString(36).slice(2, 9),
+          time: time || '08:00',
+          feedType: feedType || feedTypes[0] || 'Aliment croissance (2-3mm)',
+          quantity: quantityKg || '1',
+          unit: 'kg',
+          daysText: (days || 'lundi,mardi,mercredi').split(',').map((day) => day.trim().toLowerCase()).filter((day) => daysMap.includes(day)).join(','),
+          infrastructureId: infra?.id || firstInfrastructureId,
+          notes: note || 'Fiche générée par IA',
+        };
+      }));
+
+      toast({ title: 'Proposition IA prête', description: 'Relisez puis enregistrez la fiche.' });
+    } catch (error: any) {
+      toast({ title: 'Erreur IA', description: error?.message || 'Impossible de générer la fiche.', variant: 'destructive' });
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const updateSheetRow = (rowId: string, field: keyof FeedingSheetRow, value: string) => {
+    setSheetRows((prev) => prev.map((row) => row.id === rowId ? { ...row, [field]: value } : row));
+  };
+
+  const addSheetRow = () => setSheetRows((prev) => [...prev, createEmptySheetRow()]);
+
+  const removeSheetRow = (rowId: string) => {
+    setSheetRows((prev) => prev.length === 1 ? prev : prev.filter((row) => row.id !== rowId));
+  };
+
+  const handleSaveSheet = async () => {
+    const validRows = sheetRows.filter((row) => row.time && row.feedType && Number(row.quantity) > 0);
+
+    if (validRows.length === 0) {
+      toast({ title: 'Fiche vide', description: 'Ajoutez au moins une ligne valide.', variant: 'destructive' });
+      return;
+    }
+
+    for (const row of validRows) {
+      await createPlan({
+        unit_id: unitId,
+        cycle_id: cycleId,
+        infrastructure_id: row.infrastructureId || undefined,
+        time: row.time,
+        feed_type: row.feedType,
+        quantity: Number(row.quantity),
+        unit: row.unit,
+        days: row.daysText.split(',').map((day) => day.trim().toLowerCase()).filter(Boolean),
+        is_active: true,
+        notes: row.notes,
+      });
+    }
+
+    setIsSheetOpen(false);
+    setSheetRows([createEmptySheetRow(), createEmptySheetRow(), createEmptySheetRow()]);
+    toast({ title: 'Fiche enregistrée', description: `${validRows.length} ligne(s) ajoutée(s) au planning.` });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,8 +366,118 @@ const FeedingPlanScheduler = ({ unitId, unitName, cycleId, cycleName }: FeedingP
                 <Printer className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Imprimer</span>
               </Button>
+              <Button size="sm" variant="outline" onClick={handleDownloadSheet} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Télécharger fiche</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={handlePrintSheet} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Imprimer fiche</span>
+              </Button>
             </>
           )}
+          <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Créer fiche</span>
+                <span className="sm:hidden">Fiche</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-[98vw] max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+              <DialogHeader>
+                <DialogTitle>Fiche de nourrissage — saisie tabulaire</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <p className="text-sm text-muted-foreground">Renseignez la fiche comme un tableau de gestion, puis enregistrez en une seule fois.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" size="sm" onClick={handleGenerateWithAI} disabled={isAiGenerating}>
+                      {isAiGenerating ? <Sparkles className="w-4 h-4 mr-2 animate-pulse" /> : <Wand2 className="w-4 h-4 mr-2" />}
+                      IA proposer la fiche
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={addSheetRow}>
+                      <Plus className="w-4 h-4 mr-2" /> Ajouter une ligne
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[110px]">Heure</TableHead>
+                        <TableHead className="min-w-[180px]">Infrastructure</TableHead>
+                        <TableHead className="min-w-[220px]">Aliment</TableHead>
+                        <TableHead className="min-w-[110px]">Qté</TableHead>
+                        <TableHead className="min-w-[90px]">Unité</TableHead>
+                        <TableHead className="min-w-[220px]">Jours</TableHead>
+                        <TableHead className="min-w-[220px]">Notes</TableHead>
+                        <TableHead className="w-[70px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sheetRows.map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell><Input type="time" value={row.time} onChange={(e) => updateSheetRow(row.id, 'time', e.target.value)} /></TableCell>
+                          <TableCell>
+                            <Select value={row.infrastructureId || undefined} onValueChange={(value) => updateSheetRow(row.id, 'infrastructureId', value)}>
+                              <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
+                              <SelectContent>
+                                {infrastructures.filter((infra) => Boolean(infra.id)).map((infra) => (
+                                  <SelectItem key={infra.id} value={infra.id}>{infra.infrastructure_name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select value={row.feedType || undefined} onValueChange={(value) => updateSheetRow(row.id, 'feedType', value)}>
+                              <SelectTrigger><SelectValue placeholder="Choisir un aliment" /></SelectTrigger>
+                              <SelectContent>
+                                {feedTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell><Input type="number" step="0.1" value={row.quantity} onChange={(e) => updateSheetRow(row.id, 'quantity', e.target.value)} placeholder="0" /></TableCell>
+                          <TableCell>
+                            <Select value={row.unit} onValueChange={(value) => updateSheetRow(row.id, 'unit', value)}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="kg">kg</SelectItem>
+                                <SelectItem value="g">g</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell><Input value={row.daysText} onChange={(e) => updateSheetRow(row.id, 'daysText', e.target.value)} placeholder="lundi,mardi,mercredi" /></TableCell>
+                          <TableCell><Input value={row.notes} onChange={(e) => updateSheetRow(row.id, 'notes', e.target.value)} placeholder="Observation ou consigne" /></TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" onClick={() => removeSheetRow(row.id)} className="text-red-600">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="flex flex-wrap justify-between items-center gap-3 border-t pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Total prévisionnel: <span className="font-semibold text-foreground">{sheetRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0).toLocaleString('fr-FR')} kg</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => setIsSheetOpen(false)}>Fermer</Button>
+                    <Button onClick={handleSaveSheet}>Enregistrer la fiche</Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button size="sm" variant="secondary" onClick={handleGenerateWithAI} disabled={isAiGenerating} className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">
+            {isAiGenerating ? <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1 animate-pulse" /> : <Wand2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />}
+            <span className="hidden sm:inline">IA créer la fiche</span>
+            <span className="sm:hidden">IA</span>
+          </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3">

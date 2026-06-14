@@ -27,6 +27,7 @@ import { useAIAnalyses } from '@/hooks/useAIAnalyses';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
 import AlertsPanel from './AlertsPanel';
 import FarmsMap from './dashboard/FarmsMap';
+import { analyzeParameter } from '@/lib/waterQualityThresholds';
 
 interface ModernDashboardProps {
   onNavigate?: (tab: string) => void;
@@ -99,16 +100,23 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
+  const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
+  const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
+  const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
   const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
   const { records: feedingRecords } = useFeedingRecords(undefined, activeUnit?.id);
   const financial = useFinancialSummary(activeUnit?.id);
-  const { analyses } = useAIAnalyses(5);
+  const { analyses } = useAIAnalyses(8, activeUnit?.id);
   const { stocks: feedStocks } = useFeedStocks(activeUnit?.id);
 
   const go = (tab: string) => onNavigate?.(tab);
+  const basinOptions = useMemo(() => {
+    const unitInfrastructures = activeUnit ? (getUnitInfrastructures?.(activeUnit.id) || []) : [];
+    return unitInfrastructures.filter((infra: any) => infra.infrastructure_name);
+  }, [activeUnit, getUnitInfrastructures]);
 
   // KPIs
   const activeCycles = cycles.filter((c) => c.status === 'active').length;
@@ -128,8 +136,20 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     ? Math.max(0, Math.min(100, Math.round((totalStock / totalInitialStock) * 100)))
     : 100;
 
+  const filteredHealthRecords = useMemo(() => {
+    const periodDays = Number(selectedPeriodFilter);
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() - periodDays);
+
+    return healthRecords.filter((record: any) => {
+      const matchesBasin = selectedBasinFilter === 'all' || record.basin_id === selectedBasinFilter;
+      const matchesPeriod = !record.date || new Date(record.date) >= minDate;
+      return matchesBasin && matchesPeriod;
+    });
+  }, [healthRecords, selectedBasinFilter, selectedPeriodFilter]);
+
   const latestWater = useMemo(() => {
-    const recent = healthRecords.slice(0, 10);
+    const recent = filteredHealthRecords.slice(0, 10);
     if (recent.length === 0) return { temp: 0, oxy: 0, ph: 0 };
     const avg = (k: 'temperature' | 'oxygen' | 'ph') =>
       recent.reduce((s, r) => s + ((r as any)[k] || 0), 0) / recent.length;
@@ -138,21 +158,22 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       oxy: +avg('oxygen').toFixed(2),
       ph: +avg('ph').toFixed(2),
     };
-  }, [healthRecords]);
+  }, [filteredHealthRecords]);
 
   // Chart data — water quality last 14 records
   const waterChart = useMemo(() => {
-    const recs = [...healthRecords]
-      .slice(0, 14)
+    const recs = [...filteredHealthRecords]
+      .slice(0, Number(selectedPeriodFilter))
       .reverse()
       .map((r, i) => ({
         label: r.date ? new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : `J${i + 1}`,
         temperature: r.temperature || 0,
         oxygene: r.oxygen || 0,
         ph: r.ph || 0,
+        timestamp: r.date || '',
       }));
     return recs;
-  }, [healthRecords]);
+  }, [filteredHealthRecords, selectedPeriodFilter]);
 
   // Production / mortality monthly
   const productionChart = useMemo(() => {
@@ -181,20 +202,46 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     return { unit: u, activeCycles: uCycles.filter((c) => c.status === 'active').length, stock: uStock, ratio, status };
   });
 
+  const thresholdRecommendations = useMemo(() => {
+    if (filteredHealthRecords.length === 0) return [];
+
+    return [
+      analyzeParameter('oxygen', latestWater.oxy),
+      analyzeParameter('temperature', latestWater.temp),
+      analyzeParameter('ph', latestWater.ph),
+    ].filter(Boolean);
+  }, [latestWater, filteredHealthRecords.length]);
+
   const recommendations = useMemo(() => {
     const list: { title: string; detail: string; tone: 'danger' | 'warning' | 'info' }[] = [];
-    if (latestWater.oxy && latestWater.oxy < 5)
-      list.push({ title: 'Oxygène dissous faible', detail: 'Activez l\'aération et surveillez la densité des bassins.', tone: 'danger' });
-    if (latestWater.temp && (latestWater.temp > 30 || latestWater.temp < 22))
-      list.push({ title: 'Température hors plage', detail: 'Procédez à un renouvellement partiel d\'eau.', tone: 'warning' });
-    if (latestWater.ph && (latestWater.ph < 6.5 || latestWater.ph > 8.5))
-      list.push({ title: 'pH déséquilibré', detail: 'Vérifiez l\'alcalinité et ajustez progressivement.', tone: 'warning' });
-    if (criticalAlerts > 0)
-      list.push({ title: `${criticalAlerts} analyse(s) IA critique(s)`, detail: 'Consultez l\'historique IoT pour les actions recommandées.', tone: 'danger' });
-    if (list.length === 0)
-      list.push({ title: 'Paramètres dans la norme', detail: 'Continuez le suivi quotidien des bassins.', tone: 'info' });
+
+    thresholdRecommendations.forEach((alert: any) => {
+      list.push({
+        title: alert.message,
+        detail: alert.recommendation,
+        tone: alert.level === 'critical' ? 'danger' : 'warning',
+      });
+    });
+
+    analyses
+      .filter((analysis) => analysis.alerte)
+      .slice(0, 2)
+      .forEach((analysis) => {
+        list.push({
+          title: 'Analyse IA requise',
+          detail: analysis.conseil,
+          tone: 'danger',
+        });
+      });
+
     return list;
-  }, [latestWater, criticalAlerts]);
+  }, [thresholdRecommendations, analyses]);
+
+  const latestRecordDate = filteredHealthRecords[0]?.date;
+  const freshnessLabel = latestRecordDate
+    ? new Date(latestRecordDate).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : 'Aucun relevé';
+  const isConnected = filteredHealthRecords.length > 0;
 
   // Cycles progression (temporelle + production)
   const cycleProgress = useMemo(() => {
@@ -227,6 +274,42 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
+          <Select value={selectedFarmFilter} onValueChange={(value) => {
+            setSelectedFarmFilter(value);
+            if (value === 'all') {
+              setActiveUnit(null);
+              return;
+            }
+            const unit = units.find((u) => u.id === value);
+            if (unit) setActiveUnit(unit);
+          }}>
+            <SelectTrigger className="h-9 min-w-[140px] text-xs sm:text-sm">
+              <SelectValue placeholder="Ferme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes fermes</SelectItem>
+              {units.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedBasinFilter} onValueChange={setSelectedBasinFilter}>
+            <SelectTrigger className="h-9 min-w-[140px] text-xs sm:text-sm">
+              <SelectValue placeholder="Bassin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous bassins</SelectItem>
+              {basinOptions.map((infra: any) => <SelectItem key={infra.id} value={infra.id}>{infra.infrastructure_name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedPeriodFilter} onValueChange={(value: '7' | '14' | '30') => setSelectedPeriodFilter(value)}>
+            <SelectTrigger className="h-9 min-w-[120px] text-xs sm:text-sm">
+              <SelectValue placeholder="Période" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">7 jours</SelectItem>
+              <SelectItem value="14">14 jours</SelectItem>
+              <SelectItem value="30">30 jours</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={activeUnit?.id || ''} onValueChange={(v) => { const u = units.find((x) => x.id === v); if (u) setActiveUnit(u); }}>
             <SelectTrigger className="h-9 min-w-[210px] text-xs sm:text-sm">
               <SelectValue placeholder="Sélectionner une unité" />
@@ -494,8 +577,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+            <div className="flex items-center justify-between gap-2 mb-3 text-[10px] sm:text-xs text-muted-foreground">
+              <span>Dernier relevé: <span className="font-medium text-foreground">{freshnessLabel}</span></span>
+              <span className={`inline-flex items-center gap-1 ${isConnected ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {isConnected ? 'Connecté' : 'Déconnecté'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Thermometer className="w-3 h-3" /> Temp.</p>
                 <p className={`text-sm font-bold ${latestWater.temp > 30 || latestWater.temp < 22 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.temp}°C</p>
                 {waterChart.length > 1 && (
@@ -504,7 +594,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   </p>
                 )}
               </div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Wind className="w-3 h-3" /> O₂</p>
                 <p className={`text-sm font-bold ${latestWater.oxy < 5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.oxy} mg/L</p>
                 {waterChart.length > 1 && (
@@ -513,7 +603,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   </p>
                 )}
               </div>
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-2 text-center min-h-[78px] flex flex-col justify-center">
                 <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><Droplets className="w-3 h-3" /> pH</p>
                 <p className={`text-sm font-bold ${latestWater.ph < 6.5 || latestWater.ph > 8.5 ? 'text-red-600' : 'text-foreground'}`}>{latestWater.ph}</p>
                 {waterChart.length > 1 && (
@@ -523,7 +613,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                 )}
               </div>
             </div>
-            <div className="h-[90px]">
+            <div className="h-[90px] sm:h-[96px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={waterChart.slice(-7)}>
                   <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={false} />
@@ -543,8 +633,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="flex items-center justify-between gap-2 mb-3 text-[10px] sm:text-xs text-muted-foreground">
+              <span>Signal: <span className="font-medium text-foreground">{recommendations.length > 0 ? 'Action requise' : 'RAS'}</span></span>
+              <span className={`inline-flex items-center gap-1 ${isConnected ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {isConnected ? 'Flux actif' : 'Hors ligne'}
+              </span>
+            </div>
             {/* Mini paramètres en ligne */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Temp.</span>
@@ -586,8 +683,8 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
-              {recommendations.map((r, i) => {
+            <div className="grid grid-cols-1 gap-2 max-h-[190px] overflow-y-auto pr-1">
+              {recommendations.length > 0 ? recommendations.map((r, i) => {
               const tones: Record<string, string> = {
                 danger: 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900',
                 warning: 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900',
@@ -599,7 +696,12 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   <p className="text-[11px] text-muted-foreground mt-0.5">{r.detail}</p>
                 </div>
               );
-              })}
+              }) : (
+                <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20">
+                  <p className="font-semibold text-xs text-emerald-700 dark:text-emerald-300">Aucune recommandation nécessaire</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Les recommandations IA restent masquées tant qu'aucun seuil critique ou d'avertissement n'est franchi.</p>
+                </div>
+              )}
             </div>
             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => go('aqua-assistant')}>
               Ouvrir AquaAssistant

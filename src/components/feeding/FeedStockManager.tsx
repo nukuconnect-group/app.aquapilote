@@ -19,7 +19,10 @@ import {
   BarChart3,
   Loader2,
   Bell,
-  History
+  History,
+  Search,
+  Boxes,
+  ShieldCheck
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
@@ -43,6 +46,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
   const [editingStock, setEditingStock] = useState<any | null>(null);
   const [showCustomTypeInput, setShowCustomTypeInput] = useState(false);
   const [customFeedTypeName, setCustomFeedTypeName] = useState('');
+  const [stockSearch, setStockSearch] = useState('');
 
   const [newStock, setNewStock] = useState({
     custom_name: '',
@@ -259,6 +263,18 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
     return totalQty > 0 ? getTotalValue() / totalQty : 0;
   };
 
+  const filteredStocks = stocks.filter((stock) => {
+    const query = stockSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [stock.custom_name, stock.feed_type, stock.supplier, stock.notes]
+      .filter(Boolean)
+      .some((value) => value?.toLowerCase().includes(query));
+  });
+
+  const stockHealthRate = stocks.length > 0
+    ? Math.round(((stocks.length - getLowStockItems().length) / stocks.length) * 100)
+    : 100;
+
   const handleCheckAlerts = async () => {
     try {
       setSendingAlerts(true);
@@ -364,9 +380,43 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         </Card>
       </div>
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4 items-start">
+        <Card className="border-border/60">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">Gestion des Stocks d'Aliment</h3>
+                <p className="text-sm text-muted-foreground">Interface avancée type gestion de stock avec recherche, couverture et alertes.</p>
+              </div>
+              <div className="relative w-full md:w-[280px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input value={stockSearch} onChange={(e) => setStockSearch(e.target.value)} placeholder="Rechercher un aliment, fournisseur..." className="pl-9" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1"><Boxes className="w-4 h-4" /> Références</div>
+                <p className="text-xl font-bold">{stocks.length}</p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1"><Package className="w-4 h-4" /> Couverture</div>
+                <p className="text-xl font-bold">{getTotalQuantity().toLocaleString('fr-FR')} kg</p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1"><ShieldCheck className="w-4 h-4" /> Santé stock</div>
+                <p className="text-xl font-bold">{stockHealthRate}%</p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1"><AlertTriangle className="w-4 h-4" /> À traiter</div>
+                <p className="text-xl font-bold">{getLowStockItems().length + getExpiringItems().length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Gestion des Stocks d'Aliment</h3>
           <p className="text-sm text-muted-foreground">
             {getLowStockItems().length > 0 && (
               <span className="text-yellow-600 mr-2">⚠️ {getLowStockItems().length} stock(s) faible(s)</span>
@@ -674,6 +724,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
           </Dialog>
         </div>
       </div>
+      </div>
 
       {/* Tabs for Stocks, Movement History, and Alert History */}
       <Tabs defaultValue="stocks" className="space-y-4">
@@ -779,7 +830,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
           {/* Liste des stocks */}
           <div className="grid gap-4">
-            {stocks.map(stock => {
+            {filteredStocks.map(stock => {
               const stockValue = stock.quantity * (stock.cost || 0);
               const isLow = stock.quantity <= (stock.min_threshold || 50);
               return (
