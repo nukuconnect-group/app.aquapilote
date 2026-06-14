@@ -27,6 +27,7 @@ import AddUserWithUnitsDialog from './admin/AddUserWithUnitsDialog';
 import SupportModule from './SupportModule';
 import VisitsStatsPanel from './admin/VisitsStatsPanel';
 import SubscriptionsPanel from './admin/SubscriptionsPanel';
+import PendingActivations from './admin/PendingActivations';
 
 interface UserProfile {
   id: string;
@@ -648,11 +649,16 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-9">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
             <span className="sm:hidden">Stats</span>
+          </TabsTrigger>
+          <TabsTrigger value="activations">
+            <UserPlus className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Activations</span>
+            <span className="sm:hidden">Act.</span>
           </TabsTrigger>
           <TabsTrigger value="users">
             <Users className="w-4 h-4 mr-2" />
