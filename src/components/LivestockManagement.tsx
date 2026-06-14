@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode, Link2, Repeat, Shield, AlertTriangle, HeartPulse, Stethoscope, ArrowRight } from 'lucide-react';
+import { Fish, Plus, Edit, Trash2, Calendar, TrendingUp, Activity, BarChart3, Heart, Printer, FileText, QrCode, Download, ChevronDown, Search, ScanBarcode, Link2, Repeat, Shield, AlertTriangle, HeartPulse, Stethoscope, ArrowRight, Eye, Waves } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -418,6 +418,8 @@ const LivestockManagement = () => {
   ] : [];
   
   const [controlRecords, setControlRecords] = useState<ControlFishing[]>(getDemoControlRecords());
+  const [selectedBatchPreview, setSelectedBatchPreview] = useState<LivestockBatch | null>(null);
+  const [selectedFishingPreview, setSelectedFishingPreview] = useState<any | null>(null);
   
   // Mettre à jour les données de contrôle quand le mode démo change
   useEffect(() => {
