@@ -9,6 +9,8 @@ import { useTeamMemberUnits, TeamMemberUnit } from '@/hooks/useTeamMemberUnits';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
+import { createNotification } from '@/lib/notificationService';
+import { DASHBOARD_ROLE_DEFINITIONS } from '@/lib/dashboardRoles';
 
 // Sub-components
 import TeamStats from './team/TeamStats';
@@ -256,7 +258,8 @@ const TeamManagement = () => {
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
       role: finalRole, custom_role: undefined,
-      department: null as any, permissions: inviteData.permissions
+      department: null as any, permissions: inviteData.permissions,
+      dashboard_roles: inviteData.dashboardRoles ?? []
     };
 
     const result = await addTeamMember(newMember);
@@ -276,6 +279,26 @@ const TeamManagement = () => {
           team_member_id: result.data.id, unit_id: unitPerm.unitId, unit_name: unitPerm.unitName, permissions: unitPerm.permissions
         });
         if (unitErr) console.error('Error inserting unit permission:', unitErr);
+      }
+
+      // Notification pour le propriétaire : récap des tableaux de bord assignés
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s?.user?.id) {
+          const labels = (inviteData.dashboardRoles ?? [])
+            .map(r => DASHBOARD_ROLE_DEFINITIONS[r]?.label || r)
+            .join(', ') || 'Aucun';
+          await createNotification({
+            userId: s.user.id,
+            title: 'Nouveau membre ajouté',
+            message: `${inviteData.name} a été ajouté à l'équipe avec accès aux tableaux : ${labels}.`,
+            type: 'success',
+            module: 'team',
+            metadata: { memberId: result.data.id, dashboards: inviteData.dashboardRoles }
+          });
+        }
+      } catch (notifErr) {
+        console.error('Notification creation failed:', notifErr);
       }
 
       try {

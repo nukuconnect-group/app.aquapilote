@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,8 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const {
     user,
     isAuthenticated,
@@ -67,6 +70,17 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
 
   const currentLang = supportedLanguages.find(l => l.code === language);
 
+  const broadcastSearch = (q: string) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('app:search', { detail: q }));
+    }
+  };
+
+  const handleSearchChange = (v: string) => {
+    setSearchQuery(v);
+    broadcastSearch(v);
+  };
+
   return <>
     <header className="bg-sidebar md:bg-emerald-800 h-12 lg:h-14 w-full max-w-none shadow-md m-0 p-0 border-0">
       <div className="flex justify-between items-center h-full w-full pl-0 pr-0 sm:px-4 lg:px-6 m-0">
@@ -84,7 +98,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
               <PanelLeft className="w-5 h-5" />
             </Button>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 shrink-0">
             <h1 className="text-primary-foreground text-sm sm:text-base lg:text-lg tracking-wide font-semibold truncate">
               {t('app_title')}
             </h1>
@@ -94,8 +108,43 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
           </div>
         </div>
 
+        {/* Barre de recherche centrale (responsive) */}
+        <div className="hidden sm:flex flex-1 max-w-xl mx-3 lg:mx-6">
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/70" />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={t('search') || 'Rechercher dans l\'application…'}
+              className="h-8 lg:h-9 pl-8 pr-8 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/60 focus-visible:ring-primary-foreground/30 focus-visible:bg-primary-foreground/15"
+              aria-label="Recherche"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-primary-foreground/70 hover:text-primary-foreground"
+                aria-label="Effacer la recherche"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Navigation actions à droite */}
         <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0 ml-2 pr-0 text-sidebar-foreground md:text-primary-foreground">
+          {/* Bouton recherche mobile */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="sm:hidden text-primary-foreground hover:bg-primary-foreground/20 h-7 w-7 p-0"
+            onClick={() => setMobileSearchOpen((v) => !v)}
+            aria-label="Rechercher"
+          >
+            <Search className="w-4 h-4" />
+          </Button>
           {/* Indicateur de statut de connexion - visible uniquement sur ordinateur et tablette */}
           <div className="hidden md:flex">
             <ConnectionStatusIndicator />
@@ -185,6 +234,26 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
           )}
         </div>
       </div>
+      {mobileSearchOpen && (
+        <div className="sm:hidden px-2 pb-2 -mt-1 bg-sidebar md:bg-emerald-800">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/70" />
+            <Input
+              type="search"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Rechercher…"
+              className="h-8 pl-8 pr-8 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/60"
+            />
+            {searchQuery && (
+              <button type="button" onClick={() => handleSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-primary-foreground/70">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
 
     {/* Settings Sidebar */}
