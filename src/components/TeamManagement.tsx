@@ -281,6 +281,26 @@ const TeamManagement = () => {
         if (unitErr) console.error('Error inserting unit permission:', unitErr);
       }
 
+      // Notification pour le propriétaire : récap des tableaux de bord assignés
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s?.user?.id) {
+          const labels = (inviteData.dashboardRoles ?? [])
+            .map(r => DASHBOARD_ROLE_DEFINITIONS[r]?.label || r)
+            .join(', ') || 'Aucun';
+          await createNotification({
+            userId: s.user.id,
+            title: 'Nouveau membre ajouté',
+            message: `${inviteData.name} a été ajouté à l'équipe avec accès aux tableaux : ${labels}.`,
+            type: 'success',
+            module: 'team',
+            metadata: { memberId: result.data.id, dashboards: inviteData.dashboardRoles }
+          });
+        }
+      } catch (notifErr) {
+        console.error('Notification creation failed:', notifErr);
+      }
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) throw new Error('Session expirée. Veuillez vous reconnecter.');
