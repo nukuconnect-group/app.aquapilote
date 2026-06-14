@@ -136,8 +136,20 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     ? Math.max(0, Math.min(100, Math.round((totalStock / totalInitialStock) * 100)))
     : 100;
 
+  const filteredHealthRecords = useMemo(() => {
+    const periodDays = Number(selectedPeriodFilter);
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() - periodDays);
+
+    return healthRecords.filter((record: any) => {
+      const matchesBasin = selectedBasinFilter === 'all' || record.basin_id === selectedBasinFilter;
+      const matchesPeriod = !record.date || new Date(record.date) >= minDate;
+      return matchesBasin && matchesPeriod;
+    });
+  }, [healthRecords, selectedBasinFilter, selectedPeriodFilter]);
+
   const latestWater = useMemo(() => {
-    const recent = healthRecords.slice(0, 10);
+    const recent = filteredHealthRecords.slice(0, 10);
     if (recent.length === 0) return { temp: 0, oxy: 0, ph: 0 };
     const avg = (k: 'temperature' | 'oxygen' | 'ph') =>
       recent.reduce((s, r) => s + ((r as any)[k] || 0), 0) / recent.length;
@@ -146,21 +158,22 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       oxy: +avg('oxygen').toFixed(2),
       ph: +avg('ph').toFixed(2),
     };
-  }, [healthRecords]);
+  }, [filteredHealthRecords]);
 
   // Chart data — water quality last 14 records
   const waterChart = useMemo(() => {
-    const recs = [...healthRecords]
-      .slice(0, 14)
+    const recs = [...filteredHealthRecords]
+      .slice(0, Number(selectedPeriodFilter))
       .reverse()
       .map((r, i) => ({
         label: r.date ? new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : `J${i + 1}`,
         temperature: r.temperature || 0,
         oxygene: r.oxygen || 0,
         ph: r.ph || 0,
+        timestamp: r.date || '',
       }));
     return recs;
-  }, [healthRecords]);
+  }, [filteredHealthRecords, selectedPeriodFilter]);
 
   // Production / mortality monthly
   const productionChart = useMemo(() => {
