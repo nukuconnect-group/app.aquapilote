@@ -260,7 +260,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         const fullName = `${firstName} ${lastName}`;
         const result = await register(fullName, email, password, selectedPlan || 'trial');
         if (result.success) {
-          toast({ title: `✅ ${t('registration_success')}`, description: t('check_email_confirm') });
+          toast({
+            title: '✅ Compte créé avec succès',
+            description: 'Votre compte a été créé et est en attente d\'activation par un administrateur. Vous recevrez une notification dès qu\'il sera activé.',
+            duration: 10000,
+          });
           onSwitchToLogin();
         } else {
           toast({ title: `❌ ${t('registration_error')}`, description: result.error || t('registration_error'), variant: "destructive" });
