@@ -84,6 +84,13 @@ const QuickAction: React.FC<{
   </button>
 );
 
+const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium">{value}</span>
+  </div>
+);
+
 const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, units } = useProductionUnits();
   const { formatCurrency } = useSettings();
@@ -505,6 +512,20 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
 
       {/* Alerts panel */}
       <AlertsPanel />
+
+      {/* Map (option) */}
+      <div>
+        <Button variant="outline" size="sm" onClick={() => setShowMap((v) => !v)} className="gap-2">
+          <MapIcon className="w-4 h-4" />
+          {showMap ? 'Masquer la carte des fermes' : 'Afficher la carte des fermes'}
+          {showMap ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </Button>
+        {showMap && (
+          <div className="mt-3">
+            <FarmsMap />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
