@@ -37,7 +37,7 @@ interface MFAChallenge {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string; pendingActivation?: boolean }>;
   completeMFALogin: (code: string) => Promise<boolean>;
   completeMFALoginWithRecoveryCode: (code: string) => Promise<boolean>;
   cancelMFALogin: () => void;
@@ -313,7 +313,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresMFA?: boolean; factorId?: string; pendingActivation?: boolean }> => {
     setIsLoading(true);
     
     // Validation basique
@@ -370,7 +370,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profileCheck && profileCheck.is_activated === false) {
           await supabase.auth.signOut();
           setIsLoading(false);
-          return { success: false, requiresMFA: false } as any;
+          return { success: false, pendingActivation: true };
         }
 
         // No MFA required - complete login
