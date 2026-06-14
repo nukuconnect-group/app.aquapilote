@@ -5,6 +5,7 @@ export interface CompanyDocumentInfo {
   address?: string | null;
   phone?: string | null;
   email?: string | null;
+  logoUrl?: string | null;
 }
 
 export const buildCompanyContactText = (companyInfo: CompanyDocumentInfo): string | undefined => {
@@ -27,6 +28,7 @@ export const getCompanyDocumentFields = (companyInfo: CompanyDocumentInfo) => ({
   companyName: companyInfo.name || undefined,
   companyAddress: companyInfo.address || undefined,
   companyContact: buildCompanyContactText(companyInfo),
+  companyLogo: companyInfo.logoUrl || undefined,
 });
 
 export const isSaleSettled = (
