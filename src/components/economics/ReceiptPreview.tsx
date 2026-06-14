@@ -70,7 +70,7 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
     ? `Tél: ${companyInfo.phone}${companyInfo.email ? ` | Email: ${companyInfo.email}` : ''}`
     : companyInfo.email;
   const displayCompanyContact = data.companyContact || builtContact || (fallbackEmail ? `Email: ${fallbackEmail}` : '');
-  const displayCompanyLogo = companyInfo.logoUrl;
+  const displayCompanyLogo = data.companyName ? (companyInfo.logoUrl || undefined) : (companyInfo.logoUrl || undefined);
   const displayStamp = companyInfo.hideStampOnDocuments ? undefined : companyInfo.stampUrl;
   // Signature only used for receipts (proof of payment).
   const displaySignature = data.type === 'receipt' ? companyInfo.signatureUrl : undefined;
@@ -349,10 +349,10 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             </div>
             <p>Document généré le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR')}</p>
             <p>Merci pour votre confiance</p>
-            <p className="mt-2 font-semibold text-primary">
-              AquaPilote — application de gestion aquacole intelligente
-            </p>
-            <p className="text-[10px]">www.aquapilote.app</p>
+            <div className="mt-2 inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-primary">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span className="font-semibold">Émis par le logiciel AquaPilote</span>
+            </div>
           </div>
         </div>
 

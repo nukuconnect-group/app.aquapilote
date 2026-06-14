@@ -9,6 +9,12 @@ console.log('🚀 AQUA PILOT - Application complète restaurée');
 // Enregistrement du Service Worker avec gestion améliorée des mises à jour
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    const isLovablePreview = /lovable\.app$/i.test(window.location.hostname);
+    if (isLovablePreview) {
+      console.info('ℹ️ Service Worker désactivé sur le preview Lovable pour éviter les erreurs de redirection.');
+      return;
+    }
+
     navigator.serviceWorker
       .register('/sw.js', { updateViaCache: 'none' })
       .then((registration) => {

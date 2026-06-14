@@ -24,6 +24,7 @@ import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
+import { useFeedStocks } from '@/hooks/useFeedStocks';
 import AlertsPanel from './AlertsPanel';
 import FarmsMap from './dashboard/FarmsMap';
 
@@ -105,6 +106,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { records: feedingRecords } = useFeedingRecords(undefined, activeUnit?.id);
   const financial = useFinancialSummary(activeUnit?.id);
   const { analyses } = useAIAnalyses(5);
+  const { stocks: feedStocks } = useFeedStocks(activeUnit?.id);
 
   const go = (tab: string) => onNavigate?.(tab);
 
@@ -115,6 +117,16 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
     (s, b) => s + ((b.quantity || 0) * (b.average_weight || 0)) / 1000, 0
   );
   const criticalAlerts = analyses.filter((a) => a.alerte).length;
+  const totalBiomassKg = batches.reduce(
+    (sum, batch) => sum + (((batch.quantity || 0) * (batch.average_weight || 0)) / 1000),
+    0,
+  );
+  const totalFeedRemaining = feedStocks.reduce((sum, stock) => sum + (stock.quantity || 0), 0);
+  const lowFeedAlerts = feedStocks.filter((stock) => (stock.quantity || 0) <= (stock.min_threshold || 50)).length;
+  const totalInitialStock = batches.reduce((sum, batch) => sum + ((batch as any).initial_quantity || batch.quantity || 0), 0);
+  const survivalRate = totalInitialStock > 0
+    ? Math.max(0, Math.min(100, Math.round((totalStock / totalInitialStock) * 100)))
+    : 100;
 
   const latestWater = useMemo(() => {
     const recent = healthRecords.slice(0, 10);
@@ -214,11 +226,23 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centre de pilotage</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
+          <Select value={activeUnit?.id || ''} onValueChange={(v) => { const u = units.find((x) => x.id === v); if (u) setActiveUnit(u); }}>
+            <SelectTrigger className="h-9 min-w-[210px] text-xs sm:text-sm">
+              <SelectValue placeholder="Sélectionner une unité" />
+            </SelectTrigger>
+            <SelectContent>
+              {units.map((u) => (
+                <SelectItem key={u.id} value={u.id} className="text-xs sm:text-sm">{u.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* KPIs — 4 cartes principales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Fermes avec sélecteur d'unité */}
+        {/* Fermes */}
         <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-2">
@@ -231,21 +255,90 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                 <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
-            <Select value={activeUnit?.id || ''} onValueChange={(v) => { const u = units.find((x) => x.id === v); if (u) setActiveUnit(u); }}>
-              <SelectTrigger className="mt-3 h-8 text-xs">
-                <SelectValue placeholder="Sélectionner une unité" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((u) => (
-                  <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-3 grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <span>Unité active</span>
+                <span className="font-medium text-foreground truncate">{activeUnit?.name || 'Vue globale'}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span>Types suivis</span>
+                <span className="font-medium text-foreground">{new Set(units.map((u) => u.type)).size}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <KpiCard label="Bassins actifs" value={activeCycles} icon={Factory} tone="info" hint={`${cycles.length} cycles total`} />
-        <KpiCard label="Production estimée" value={`${estimatedProduction.toFixed(1)} kg`} icon={Fish} tone="success" hint={`${totalStock.toLocaleString()} individus`} />
-        <KpiCard label="Alertes critiques" value={criticalAlerts} icon={AlertTriangle} tone={criticalAlerts > 0 ? 'danger' : 'success'} hint="Dernières 24 h" />
+        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground font-medium truncate">Bassins actifs</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{activeCycles}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{cycles.length} cycles total</p>
+              </div>
+              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 shrink-0">
+                <Factory className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Biomasse</p>
+                <p className="font-semibold text-foreground mt-0.5">{totalBiomassKg.toFixed(1)} kg</p>
+              </div>
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Effectifs</p>
+                <p className="font-semibold text-foreground mt-0.5">{totalStock.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground font-medium truncate">Production</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{estimatedProduction.toFixed(1)} kg</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Projection en cours</p>
+              </div>
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
+                <Fish className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Taux survie</p>
+                <p className="font-semibold text-foreground mt-0.5">{survivalRate}%</p>
+              </div>
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Production estimée</p>
+                <p className="font-semibold text-foreground mt-0.5">{estimatedProduction.toFixed(1)} kg</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground font-medium truncate">Alertes</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{criticalAlerts}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">Dernières 24 h</p>
+              </div>
+              <div className={`p-2 rounded-lg shrink-0 ${criticalAlerts > 0 ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:text-xs">
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Aliment restant</p>
+                <p className="font-semibold text-foreground mt-0.5">{totalFeedRemaining.toFixed(1)} kg</p>
+              </div>
+              <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                <p className="text-muted-foreground">Stocks critiques</p>
+                <p className="font-semibold text-foreground mt-0.5">{lowFeedAlerts}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick access */}
@@ -377,38 +470,33 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         </Card>
       </div>
 
-      {/* Circular gauges + Finance details + AI reco */}
+      {/* Analytics + Finance details + AI reco */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" /> Indicateurs circulaires
+              <BarChart3 className="w-5 h-5 text-primary" /> Indicateurs comparatifs
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const margin = financial.totalRevenue > 0 ? Math.max(0, Math.round((financial.netBalance / financial.totalRevenue) * 100)) : 0;
-              const occupancy = units.reduce((s, u) => s + (u.capacity || 0), 0) > 0
-                ? Math.min(100, Math.round((totalStock / units.reduce((s, u) => s + (u.capacity || 0), 0)) * 100))
-                : 0;
-              const salesRate = financial.salesCount > 0 ? Math.round((financial.confirmedSales / financial.salesCount) * 100) : 0;
-              const gauges = [
-                { name: 'Marge nette', value: margin, fill: '#10b981' },
-                { name: 'Occupation', value: occupancy, fill: '#3b82f6' },
-                { name: 'Ventes confirmées', value: salesRate, fill: '#f59e0b' },
-              ];
-              return (
-                <div className="h-[260px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart innerRadius="25%" outerRadius="100%" data={gauges} startAngle={90} endAngle={-270}>
-                      <RadialBar background dataKey="value" cornerRadius={10} />
-                      <Tooltip formatter={(v: number) => `${v}%`} />
-                      <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                </div>
-              );
-            })()}
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    { name: 'Revenus', value: financial.totalRevenue },
+                    { name: 'Dépenses', value: financial.totalExpenses },
+                    { name: 'Stock alim.', value: financial.feedStockValue },
+                    { name: 'Conso alim.', value: financial.feedConsumed },
+                  ]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="name" fontSize={11} />
+                  <YAxis fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -418,15 +506,17 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               <Wallet className="w-5 h-5 text-emerald-600" /> Détails financiers
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <Row label="Ventes confirmées" value={formatCurrency(financial.totalSalesRevenue)} />
-            <Row label="Ventes en attente" value={`${financial.pendingSales}`} />
-            <Row label="Achats reçus" value={formatCurrency(financial.totalPurchases)} />
-            <Row label="Achats d'aliments" value={formatCurrency(financial.feedPurchases)} />
-            <Row label="Autres achats" value={formatCurrency(financial.otherPurchases)} />
-            <Row label="Salaires (mensuel)" value={formatCurrency(financial.totalSalaries)} />
-            <Row label="Employés actifs" value={`${financial.employeesCount}`} />
-            <Row label="Aliment consommé" value={`${financial.feedConsumed.toFixed(1)} kg`} />
+          <CardContent className="text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Ventes confirmées" value={formatCurrency(financial.totalSalesRevenue)} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Ventes en attente" value={`${financial.pendingSales}`} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Achats reçus" value={formatCurrency(financial.totalPurchases)} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Achats d'aliments" value={formatCurrency(financial.feedPurchases)} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Autres achats" value={formatCurrency(financial.otherPurchases)} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Salaires (mensuel)" value={formatCurrency(financial.totalSalaries)} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Employés actifs" value={`${financial.employeesCount}`} /></div>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3"><Row label="Aliment consommé" value={`${financial.feedConsumed.toFixed(1)} kg`} /></div>
+            </div>
             <div className="pt-2 mt-2 border-t flex items-center justify-between font-semibold">
               <span>Solde net</span>
               <span className={financial.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}>{formatCurrency(financial.netBalance)}</span>
@@ -443,8 +533,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               <Sparkles className="w-5 h-5 text-purple-600" /> Recommandations IA
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2.5">
-            {recommendations.map((r, i) => {
+          <CardContent>
+            <div className="grid grid-cols-1 gap-2 max-h-[240px] overflow-y-auto pr-1">
+              {recommendations.map((r, i) => {
               const tones: Record<string, string> = {
                 danger: 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900',
                 warning: 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900',
@@ -456,7 +547,8 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
                   <p className="text-xs text-muted-foreground mt-0.5">{r.detail}</p>
                 </div>
               );
-            })}
+              })}
+            </div>
             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => go('aqua-assistant')}>
               Ouvrir AquaAssistant
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
