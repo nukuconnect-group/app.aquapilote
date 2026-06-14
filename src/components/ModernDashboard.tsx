@@ -1,15 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Activity, AlertTriangle, Building2, Droplets, Factory, FileText,
   Fish, Plus, Settings, Sparkles, Thermometer, TrendingUp, Users,
-  Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight
+  Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight,
+  Wallet, ArrowDownRight, ArrowUpRight, PiggyBank, ChevronDown, ChevronUp
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, BarChart, Bar, Legend
+  CartesianGrid, Tooltip, BarChart, Bar, Legend,
+  PieChart, Pie, Cell, RadialBarChart, RadialBar
 } from 'recharts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -19,7 +21,6 @@ import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
-import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
 import FarmsMap from './dashboard/FarmsMap';
 
