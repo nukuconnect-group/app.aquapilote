@@ -47,9 +47,15 @@ import { Badge } from '@/components/ui/badge';
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess } = useTeamMemberAccess();
+  const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule } = useTeamMemberAccess();
 
   const handleTabChange = (tab: string) => {
+    if (isTeamMember && !isLoadingAccess && tab !== 'dashboard' && tab !== 'settings' && tab !== 'support' && !hasAccessToModule(tab)) {
+      setActiveTab('dashboard');
+      setShowMobileMenu(false);
+      return;
+    }
+
     setActiveTab(tab);
     setShowMobileMenu(false);
   };
@@ -57,32 +63,11 @@ const Dashboard: React.FC = () => {
   // Vérifier si le membre d'équipe a accès à l'onglet actuel
   useEffect(() => {
     if (isTeamMember && teamMemberInfo && !isLoadingAccess) {
-      const allowedTabs = new Set<string>(['dashboard', 'settings', 'support']);
-
-      teamMemberInfo.assignedUnits.forEach(unit => {
-        const perms = unit.permissions;
-        if (perms.canView) {
-          allowedTabs.add('units');
-          allowedTabs.add('infrastructures');
-        }
-        if (perms.canManageFeeding) {
-          allowedTabs.add('feeding');
-        }
-        if (perms.canManageHealth) {
-          allowedTabs.add('health');
-        }
-        if (perms.canManageProduction) {
-          allowedTabs.add('production');
-          allowedTabs.add('livestock');
-        }
-      });
-
-      // Si l'onglet actuel n'est pas autorisé, rediriger vers dashboard
-      if (!allowedTabs.has(activeTab)) {
+      if (activeTab !== 'dashboard' && activeTab !== 'settings' && activeTab !== 'support' && !hasAccessToModule(activeTab)) {
         setActiveTab('dashboard');
       }
     }
-  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess]);
+  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
