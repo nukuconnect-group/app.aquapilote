@@ -100,7 +100,6 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
-  const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
   const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
   const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
 
@@ -203,12 +202,14 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   });
 
   const thresholdRecommendations = useMemo(() => {
+    if (filteredHealthRecords.length === 0) return [];
+
     return [
       analyzeParameter('oxygen', latestWater.oxy),
       analyzeParameter('temperature', latestWater.temp),
       analyzeParameter('ph', latestWater.ph),
     ].filter(Boolean);
-  }, [latestWater]);
+  }, [latestWater, filteredHealthRecords.length]);
 
   const recommendations = useMemo(() => {
     const list: { title: string; detail: string; tone: 'danger' | 'warning' | 'info' }[] = [];
@@ -237,7 +238,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
 
   const latestRecordDate = filteredHealthRecords[0]?.date;
   const freshnessLabel = latestRecordDate
-    ? new Date(latestRecordDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' } as any)
+    ? new Date(latestRecordDate).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
     : 'Aucun relevé';
   const isConnected = filteredHealthRecords.length > 0;
 
