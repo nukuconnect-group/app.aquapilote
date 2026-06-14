@@ -27,6 +27,7 @@ import { useAIAnalyses } from '@/hooks/useAIAnalyses';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
 import AlertsPanel from './AlertsPanel';
 import FarmsMap from './dashboard/FarmsMap';
+import { analyzeParameter } from '@/lib/waterQualityThresholds';
 
 interface ModernDashboardProps {
   onNavigate?: (tab: string) => void;
