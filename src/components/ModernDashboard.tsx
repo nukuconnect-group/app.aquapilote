@@ -100,6 +100,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
+  const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
   const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
   const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
 
