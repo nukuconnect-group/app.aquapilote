@@ -272,6 +272,34 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
+          <Select value={selectedFarmFilter} onValueChange={setSelectedFarmFilter}>
+            <SelectTrigger className="h-9 min-w-[140px] text-xs sm:text-sm">
+              <SelectValue placeholder="Ferme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes fermes</SelectItem>
+              {units.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedBasinFilter} onValueChange={setSelectedBasinFilter}>
+            <SelectTrigger className="h-9 min-w-[140px] text-xs sm:text-sm">
+              <SelectValue placeholder="Bassin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous bassins</SelectItem>
+              {basinOptions.map((infra: any) => <SelectItem key={infra.id} value={infra.id}>{infra.infrastructure_name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedPeriodFilter} onValueChange={(value: '7' | '14' | '30') => setSelectedPeriodFilter(value)}>
+            <SelectTrigger className="h-9 min-w-[120px] text-xs sm:text-sm">
+              <SelectValue placeholder="Période" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">7 jours</SelectItem>
+              <SelectItem value="14">14 jours</SelectItem>
+              <SelectItem value="30">30 jours</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={activeUnit?.id || ''} onValueChange={(v) => { const u = units.find((x) => x.id === v); if (u) setActiveUnit(u); }}>
             <SelectTrigger className="h-9 min-w-[210px] text-xs sm:text-sm">
               <SelectValue placeholder="Sélectionner une unité" />
