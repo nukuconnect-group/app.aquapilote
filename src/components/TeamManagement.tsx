@@ -256,7 +256,8 @@ const TeamManagement = () => {
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
       role: finalRole, custom_role: undefined,
-      department: null as any, permissions: inviteData.permissions
+      department: null as any, permissions: inviteData.permissions,
+      dashboard_roles: inviteData.dashboardRoles ?? []
     };
 
     const result = await addTeamMember(newMember);
