@@ -73,9 +73,11 @@ const FarmsMap: React.FC = () => {
       return;
     }
 
-    const init = () => {
-      if (!mapRef.current || !window.google?.maps) return;
-      const map = new window.google.maps.Map(mapRef.current, {
+    const init = async () => {
+      if (!mapRef.current || !window.google?.maps?.importLibrary) return;
+      const { Map, InfoWindow } = (await window.google.maps.importLibrary('maps')) as any;
+      const { Marker } = (await window.google.maps.importLibrary('marker')) as any;
+      const map = new Map(mapRef.current, {
         center,
         zoom: 7,
         disableDefaultUI: false,
@@ -92,7 +94,7 @@ const FarmsMap: React.FC = () => {
       });
 
       markers.forEach((m) => {
-        const marker = new window.google.maps.Marker({
+        const marker = new Marker({
           position: { lat: m.lat, lng: m.lng },
           map,
           title: m.name,
@@ -105,7 +107,7 @@ const FarmsMap: React.FC = () => {
             strokeWeight: 2,
           },
         });
-        const info = new window.google.maps.InfoWindow({
+        const info = new InfoWindow({
           content: `<div style="font-family:system-ui;padding:4px 6px;color:#0f172a;min-width:160px">
             <div style="font-weight:600;margin-bottom:2px">${m.name}</div>
             <div style="font-size:12px;color:#475569">${m.type}</div>
