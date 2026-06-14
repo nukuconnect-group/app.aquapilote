@@ -1,71 +1,53 @@
-## 1. Nouveau logo Aquapilote partout
+## Plan d'exécution (par lots, validable étape par étape)
 
-- Copier `user-uploads://LOGO_AQUAPILOTE_REVU.png` vers :
-  - `public/favicon.png` (remplace l'actuel)
-  - `public/aquapilote-logo.png`
-  - `src/assets/aqua-pilot-logo-main.png` et `src/assets/aqua-pilot-logo.png` (remplace les anciens, mêmes noms = aucun import à modifier)
-- Supprimer `public/favicon.ico` pour qu'il ne prenne pas la priorité
-- Mettre à jour `index.html` (favicon + meta og:image)
-- Mettre à jour `public/manifest.json` (icons)
-- Retirer toute référence textuelle "Lovable" :
-  - `index.html` (titre, meta), `vite.config.ts` (componentTagger), `README.md`, `capacitor.config.ts`
-  - Edge functions : `aqua-assistant`, `create-team-member-account`, `reset-team-member-password` (commentaires/labels uniquement, ne pas toucher `LOVABLE_API_KEY` qui est le nom de variable obligatoire)
-  - `src/lib/domainGuard.ts` (whitelist domaines lovable conservée techniquement mais commentaire générique)
+### Lot 1 — Inscription en page unique + workflow d'activation admin
+- Refondre `EnhancedRegistration` en **page unique** style image fournie : fond dégradé bleu→magenta animé, carte blanche centrée, champs avec icônes (Nom, Prénom, Email, Téléphone, Pays, Nom ferme, Adresse ferme, Cheptel) + section « Type d'élevage » avec cases à cocher utilisant les types existants : **Écloserie, Algoculture, Aquaculture marine, Pisciculture, Commercialisation/Conservation, Aquaculture d'eau douce**.
+- Ajout colonne `is_activated boolean default false` sur `profiles` via migration (les comptes existants sont marqués `true` pour ne pas casser).
+- Après inscription : toast « Compte créé, en attente d'activation par un administrateur ».
+- Blocage de connexion tant que `is_activated = false` (sauf comptes existants déjà migrés à `true`).
+- Notification créée pour les admins à chaque nouvelle inscription.
+- **Module Admin Dashboard** : nouvelle section « Comptes en attente d'activation » listant les profils non activés avec bouton **Activer** qui passe `is_activated=true` et envoie une notification à l'utilisateur (« Votre compte est activé »).
 
-## 2. Module Vente — Facture ET Reçu indépendants
+### Lot 2 — Dashboard : KPIs + en-tête + finance + IA + indicateurs
+- **Header dashboard** : déplacer le `Select` d'unité dans la barre de titre « Centre de pilotage » à côté du sélecteur de période (alignés horizontalement).
+- Retirer le `Select` de la carte « Fermes ».
+- Sur les 3 cartes (Bassins actifs, Production, Alertes) : intégrer des sous-stats compactes et bien alignées :
+  - Bassins actifs → biomasse totale + effectifs
+  - Production → taux de survie + production estimée
+  - Alertes → aliment restant + alertes critiques
+- Rendre la section **Détails financiers** entièrement responsive (grid 1/2/4 cols).
+- **Recommandations IA** : affichage en miniatures (cartes compactes scrollables).
+- Remplacer le bloc « indicateurs circulaires » par d'autres graphiques (ex. courbes empilées ou camemberts comparatifs).
 
-Dans `SalesManagement.tsx` :
-- Remplacer le sélecteur actuel par **deux boutons d'action distincts** en haut de la page :
-  - "Créer un reçu" (REC-) → marqué PAYÉ, avec signature
-  - "Créer une facture" (FAC-) → sans mention PAYÉ, sans signature, avec champ TVA + échéance, cachet optionnel
-- Le choix verrouille `document_type` dans le formulaire (au lieu d'un toggle modifiable)
-- Adapter `ReceiptPreview.tsx` : si `document_type === 'invoice'` → ne pas afficher PAYÉ ni signature, afficher cachet si présent ; si `receipt` → comportement actuel
+### Lot 3 — Sécurité données par rôles (RLS / API)
+- Forcer dans les hooks `useProductionCycles`, `useUnitEquipment`, `useUnitInfrastructures`, `useDepreciableAssets` un filtrage côté requête basé sur les `assignedUnits` du membre (déjà géré côté UI) — appliquer `.in('unit_id', allowedUnitIds)` systématiquement.
+- Vérifier policies RLS existantes; ajouter une policy `team_member_has_unit_access` là où elle manque.
 
-## 3. Module Cheptel — Géniteurs
+### Lot 4 — Module Alimentation : Stock pro
+- Refondre `FeedStockManager` en interface de gestion de stock avancée : tableau avec colonnes (Produit, SKU, Type, Quantité, Unité, Seuil min, Valeur unitaire, Valeur totale, Fournisseur, Date péremption, État), filtres, recherche, badges d'alerte, mouvements (entrée/sortie), export.
 
-Dans `src/components/LivestockManagement.tsx` (formulaire de création de lot) :
-- Si `type === 'geniteurs'` :
-  - Afficher champs : `male_count`, `male_weight_kg`, `female_count`, `female_weight_kg`
-  - Calcul auto : `total_weight = male_weight_kg + female_weight_kg`, `quantity = male_count + female_count`, `average_weight = total_weight / quantity`
-  - Remplacer le libellé "Taux de survie" par "Taux de participation" (réutilise la colonne existante `expected_survival_rate`, libellé UI uniquement)
-- Migration : ajouter colonnes `male_weight` et `female_weight` (numeric) à `livestock_batches`
+### Lot 5 — Cheptel & Pêche de contrôle
+- **Cheptel/Lots** : ajouter bouton **Visualiser** par lot ouvrant un dialog détaillé (effectifs, biomasse, historique santé/alimentation/mortalité).
+- **Pêche de contrôle** : ajouter bouton **Visualiser** par pêche ouvrant le détail.
+- **PDF** : améliorer la mise en page des PDF générés (en-tête logo + nom ferme, mise en page tableau pro, pagination, footer signature AquaPilote).
 
-## 4. Module Alimentation — Stock kg + sacs
+### Lot 6 — Ventes : logo & marque sur reçus/factures
+- Corriger `salesDocumentUtils` pour **forcer** le chargement du logo défini dans Paramètres (company-logos bucket) dans l'en-tête PDF.
+- Retirer l'affichage de l'URL/lien de l'app dans le footer des documents.
+- Ajouter un sceau/badge « Généré par AquaPilote » (icône + texte) en footer.
 
-Dans `FeedStockManager.tsx` :
-- Ajouter champs au formulaire : `bag_count` (nombre de sacs), `kg_per_bag` (kg par sac)
-- Calcul auto : `quantity (kg) = bag_count × kg_per_bag`
-- Garder `cost` comme prix total ; afficher prix/kg calculé
-- Corriger l'erreur actuelle de création (vérifier validation, champs requis, payload envoyé à `feed_stocks`)
-- Permettre la création répétée (reset propre du formulaire après succès, ne pas fermer le dialog tant que l'utilisateur ne le ferme pas explicitement, ou bouton "Enregistrer et nouveau")
-- Migration : ajouter `bag_count` et `kg_per_bag` (numeric, nullable) à `feed_stocks`
+### Lot 7 — Vérification module Équipe
+- Vérifier `useTeamMemberAccess` + `Dashboard.tsx` : confirmer que les `dashboard_roles` filtrent réellement les onglets visibles. Corriger si manquant.
 
-## 5. Module Équipe — Création directe
+---
 
-Dans `TeamMemberCard.tsx`, `TeamMemberList.tsx`, `MemberDetailsDialog.tsx` :
-- Supprimer tout bouton/section "Créer le compte" qui apparaît après ajout d'un membre
-- Le compte est déjà créé via l'edge function `create-team-member-account` lors de l'ajout → forcer `status = 'active'` et `account_created = true` dès l'insertion
-- Nettoyer les flags conditionnels qui ré-affichent l'étape
+### Détails techniques
+- Migration : `ALTER TABLE profiles ADD COLUMN is_activated boolean DEFAULT true NOT NULL; UPDATE profiles SET is_activated = true;` (les nouveaux comptes via trigger `handle_new_user` seront créés avec `false`).
+- Modifier `handle_new_user()` pour insérer `is_activated = false` + créer une notification pour chaque admin.
+- AuthContext : après login, si `!is_activated` → déconnecter et afficher message.
+- Composant `PendingActivations` dans `AdminDashboard`.
 
-## Migrations DB (un seul fichier)
+### Ordre proposé
+Je propose d'attaquer **Lot 1 + Lot 7** d'abord (les plus critiques fonctionnellement), puis 2, 4, 5, 6, 3.
 
-```sql
-ALTER TABLE livestock_batches 
-  ADD COLUMN IF NOT EXISTS male_weight numeric DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS female_weight numeric DEFAULT 0;
-
-ALTER TABLE feed_stocks
-  ADD COLUMN IF NOT EXISTS bag_count numeric,
-  ADD COLUMN IF NOT EXISTS kg_per_bag numeric;
-```
-
-## Fichiers touchés
-
-- `index.html`, `public/manifest.json`, `public/favicon.png` (remplacé), `src/assets/aqua-pilot-logo-main.png` (remplacé), `vite.config.ts`, `README.md`, `capacitor.config.ts`
-- `src/components/SalesManagement.tsx`, `src/components/economics/ReceiptPreview.tsx`
-- `src/components/LivestockManagement.tsx`
-- `src/components/feeding/FeedStockManager.tsx`, `src/hooks/useFeedStocks.tsx`
-- `src/components/team/TeamMemberCard.tsx`, `src/components/team/TeamMemberList.tsx`, `src/components/team/MemberDetailsDialog.tsx`
-- Edge functions : nettoyage commentaires "Lovable" uniquement
-
-Confirmer pour lancer l'implémentation + la migration.
+**Confirmez-vous ce plan et l'ordre ? Ou souhaitez-vous prioriser différemment / tout faire d'un coup ?**
