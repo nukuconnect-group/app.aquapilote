@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Clock, Bell, Printer, Mail, Trash2, Download, Sparkles, Wand2 } from 'lucide-react';
 import { useFeedingPlans } from '@/hooks/useFeedingPlans';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
-import { generateFeedingPlanHTML, printHTML } from '@/lib/feedingPrintUtils';
+import { generateFeedingPlanHTML, generateFeedingSheetHTML, printHTML, downloadHTML } from '@/lib/feedingPrintUtils';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FeedingPlanSchedulerProps {
   unitId: string;
