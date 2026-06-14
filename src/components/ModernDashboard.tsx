@@ -1,15 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Activity, AlertTriangle, Building2, Droplets, Factory, FileText,
   Fish, Plus, Settings, Sparkles, Thermometer, TrendingUp, Users,
-  Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight
+  Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight,
+  Wallet, ArrowDownRight, ArrowUpRight, PiggyBank, ChevronDown, ChevronUp
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, BarChart, Bar, Legend
+  CartesianGrid, Tooltip, BarChart, Bar, Legend,
+  PieChart, Pie, Cell, RadialBarChart, RadialBar
 } from 'recharts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -19,7 +21,6 @@ import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useFeedingRecords } from '@/hooks/useFeedingRecords';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 import { useAIAnalyses } from '@/hooks/useAIAnalyses';
-import ProductionUnitSelector from './ProductionUnitSelector';
 import AlertsPanel from './AlertsPanel';
 import FarmsMap from './dashboard/FarmsMap';
 
@@ -83,9 +84,17 @@ const QuickAction: React.FC<{
   </button>
 );
 
+const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium">{value}</span>
+  </div>
+);
+
 const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { activeUnit, units } = useProductionUnits();
   const { formatCurrency } = useSettings();
+  const [showMap, setShowMap] = useState(false);
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
@@ -180,9 +189,6 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centre de pilotage</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
-        <div className="w-full sm:w-auto sm:min-w-[260px]">
-          <ProductionUnitSelector />
-        </div>
       </div>
 
       {/* KPIs */}
@@ -275,11 +281,143 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         </Card>
       </div>
 
-      {/* Map + AI Recommendations */}
+      {/* Finance KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard label="Revenus totaux" value={formatCurrency(financial.totalRevenue)} icon={ArrowUpRight} tone="success" hint={`${financial.confirmedSales} ventes confirmées`} />
+        <KpiCard label="Dépenses totales" value={formatCurrency(financial.totalExpenses)} icon={ArrowDownRight} tone="danger" hint={`${financial.purchasesCount} achats reçus`} />
+        <KpiCard label="Résultat net" value={formatCurrency(financial.netBalance)} icon={Wallet} tone={financial.netBalance >= 0 ? 'success' : 'danger'} hint={financial.netBalance >= 0 ? 'Bénéfice' : 'Perte'} />
+        <KpiCard label="Stock aliments" value={formatCurrency(financial.feedStockValue)} icon={PiggyBank} tone="info" hint={`${financial.feedStocksCount} références`} />
+      </div>
+
+      {/* Finance evolution + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <FarmsMap />
-        </div>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" /> Évolution financière (6 derniers mois)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={financial.monthlyData}>
+                  <defs>
+                    <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.45} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="month" fontSize={11} />
+                  <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Area type="monotone" dataKey="revenue" name="Revenus" stroke="#10b981" fill="url(#gRev)" />
+                  <Area type="monotone" dataKey="expenses" name="Dépenses" stroke="#ef4444" fill="url(#gExp)" />
+                  <Line type="monotone" dataKey="profit" name="Bénéfice" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Activity className="w-5 h-5 text-orange-500" /> Répartition des dépenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={financial.expenseBreakdown.length ? financial.expenseBreakdown : [{ name: 'Aucune', value: 1, color: '#e5e7eb' }]}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
+                    {(financial.expenseBreakdown.length ? financial.expenseBreakdown : [{ name: 'Aucune', value: 1, color: '#e5e7eb' }]).map((e, i) => (
+                      <Cell key={i} fill={e.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Circular gauges + Finance details + AI reco */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" /> Indicateurs circulaires
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const margin = financial.totalRevenue > 0 ? Math.max(0, Math.round((financial.netBalance / financial.totalRevenue) * 100)) : 0;
+              const occupancy = units.reduce((s, u) => s + (u.capacity || 0), 0) > 0
+                ? Math.min(100, Math.round((totalStock / units.reduce((s, u) => s + (u.capacity || 0), 0)) * 100))
+                : 0;
+              const salesRate = financial.salesCount > 0 ? Math.round((financial.confirmedSales / financial.salesCount) * 100) : 0;
+              const gauges = [
+                { name: 'Marge nette', value: margin, fill: '#10b981' },
+                { name: 'Occupation', value: occupancy, fill: '#3b82f6' },
+                { name: 'Ventes confirmées', value: salesRate, fill: '#f59e0b' },
+              ];
+              return (
+                <div className="h-[260px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart innerRadius="25%" outerRadius="100%" data={gauges} startAngle={90} endAngle={-270}>
+                      <RadialBar background dataKey="value" cornerRadius={10} />
+                      <Tooltip formatter={(v: number) => `${v}%`} />
+                      <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-emerald-600" /> Détails financiers
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row label="Ventes confirmées" value={formatCurrency(financial.totalSalesRevenue)} />
+            <Row label="Ventes en attente" value={`${financial.pendingSales}`} />
+            <Row label="Achats reçus" value={formatCurrency(financial.totalPurchases)} />
+            <Row label="Achats d'aliments" value={formatCurrency(financial.feedPurchases)} />
+            <Row label="Autres achats" value={formatCurrency(financial.otherPurchases)} />
+            <Row label="Salaires (mensuel)" value={formatCurrency(financial.totalSalaries)} />
+            <Row label="Employés actifs" value={`${financial.employeesCount}`} />
+            <Row label="Aliment consommé" value={`${financial.feedConsumed.toFixed(1)} kg`} />
+            <div className="pt-2 mt-2 border-t flex items-center justify-between font-semibold">
+              <span>Solde net</span>
+              <span className={financial.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}>{formatCurrency(financial.netBalance)}</span>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => go('accounting')}>
+              Ouvrir la comptabilité <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -374,6 +512,20 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
 
       {/* Alerts panel */}
       <AlertsPanel />
+
+      {/* Map (option) */}
+      <div>
+        <Button variant="outline" size="sm" onClick={() => setShowMap((v) => !v)} className="gap-2">
+          <MapIcon className="w-4 h-4" />
+          {showMap ? 'Masquer la carte des fermes' : 'Afficher la carte des fermes'}
+          {showMap ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </Button>
+        {showMap && (
+          <div className="mt-3">
+            <FarmsMap />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
