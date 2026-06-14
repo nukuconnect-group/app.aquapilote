@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Activity, AlertTriangle, Building2, Droplets, Factory, FileText,
   Fish, Plus, Settings, Sparkles, Thermometer, TrendingUp, Users,
   Wind, BarChart3, Bell, Map as MapIcon, Download, ArrowRight,
   Wallet, ArrowDownRight, ArrowUpRight, PiggyBank, ChevronDown, ChevronUp,
-  Gauge
+  Gauge, DollarSign, ShoppingCart, UserCog, Wrench, Layers, CircleDollarSign
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis,
@@ -94,7 +95,7 @@ const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
 );
 
 const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
-  const { activeUnit, setActiveUnit, units } = useProductionUnits();
+  const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
 
@@ -199,6 +200,11 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         return { id: c.id, name: c.name || c.cycle_name || `Cycle ${c.id?.slice(0, 4)}`, startDate: start, elapsed, timeProgress, current, target, prodProgress };
       });
   }, [cycles]);
+
+  const unitEquipment = activeUnit ? (getUnitEquipment?.(activeUnit.id) || []) : [];
+  const unitInfra = activeUnit ? (getUnitInfrastructures?.(activeUnit.id) || []) : [];
+  const unitAssets = activeUnit ? (getUnitDepreciableAssets?.(activeUnit.id) || []) : [];
+  const unitLabel = activeUnit?.name?.toUpperCase() || 'GLOBAL';
 
   return (
     <div className="space-y-4 sm:space-y-6">
