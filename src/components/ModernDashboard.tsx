@@ -428,6 +428,55 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
 
       {/* Reports per unit */}
       <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-cyan-600" /> Progression des cycles & amortissement
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {cycleProgress.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Aucun cycle actif en cours.</p>
+          ) : (
+            cycleProgress.map((c) => (
+              <div key={c.id} className="p-3 rounded-lg border border-border/60">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-sm">{c.name}</p>
+                    {c.startDate && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Démarré le {c.startDate.toLocaleDateString('fr-FR')} • {c.elapsed} jours
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">En cours</Badge>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Progression temporelle</span>
+                      <span className="font-medium">{c.timeProgress}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-cyan-500" style={{ width: `${c.timeProgress}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Production</span>
+                      <span className="font-medium">{c.current.toLocaleString()}/{c.target.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${c.prodProgress}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" /> Rapports des unités de production
