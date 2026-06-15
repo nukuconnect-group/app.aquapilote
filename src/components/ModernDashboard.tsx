@@ -430,48 +430,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         </CardContent>
       </Card>
 
-      {/* Résumé Financier - mini-stats inline */}
-      <Card className="border-emerald-200/60 bg-emerald-50/40 dark:bg-emerald-950/10 dark:border-emerald-900/40">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-600" /> Résumé Financier — {unitLabel}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-lg border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                <TrendingUp className="w-3.5 h-3.5" /> Revenus
-              </div>
-              <p className="text-lg sm:text-xl font-bold mt-1 text-emerald-600">{formatCurrency(financial.totalRevenue)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{financial.confirmedSales} ventes</p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-xs text-red-600 font-medium">
-                <ShoppingCart className="w-3.5 h-3.5" /> Dépenses
-              </div>
-              <p className="text-lg sm:text-xl font-bold mt-1 text-red-600">{formatCurrency(financial.totalExpenses)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{financial.purchasesCount} achats</p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium">
-                <UserCog className="w-3.5 h-3.5" /> Salaires
-              </div>
-              <p className="text-lg sm:text-xl font-bold mt-1 text-purple-600">{formatCurrency(financial.totalSalaries)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{financial.employeesCount} employés</p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
-                <CircleDollarSign className="w-3.5 h-3.5" /> Solde
-              </div>
-              <p className={`text-lg sm:text-xl font-bold mt-1 ${financial.netBalance >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{formatCurrency(financial.netBalance)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{financial.netBalance >= 0 ? 'Bénéfice' : 'Perte'}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Finance evolution + Donut */}
+      {/* Finance evolution + Donut (placés au-dessus) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">

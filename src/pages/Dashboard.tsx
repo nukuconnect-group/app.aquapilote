@@ -134,11 +134,10 @@ const Dashboard: React.FC = () => {
       case 'dashboard':
         return (
           <>
-            {isTeamMember ? (
-              <MemberDashboard onNavigate={setActiveTab} />
-            ) : (
-              <ModernDashboard onNavigate={setActiveTab} />
-            )}
+            {/* Single unified RBAC dashboard — visibility & navigation are
+                already filtered by useTeamMemberAccess + hasAccessToModule. */}
+            {renderTeamMemberWelcome()}
+            <ModernDashboard onNavigate={setActiveTab} />
           </>
         );
       case 'iot-control':
