@@ -193,13 +193,23 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             {displayCompanyLogo && (
               <div className="flex justify-center mb-3">
                 <div className="flex items-center justify-center rounded-md bg-white p-2 shadow-sm" style={{ maxWidth: 220 }}>
+                  {/* Logo forcé : si crossOrigin échoue (CORS), on retente sans, sinon on garde un placeholder visible. */}
                   <img
                     src={displayCompanyLogo}
-                    alt="Logo"
+                    alt={displayCompanyName || 'Logo entreprise'}
                     className="object-contain"
                     style={{ maxHeight: 72, maxWidth: 200, width: 'auto', height: 'auto', display: 'block' }}
-                    crossOrigin="anonymous"
-                    onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.crossOrigin) {
+                        img.crossOrigin = '';
+                        img.src = displayCompanyLogo + (displayCompanyLogo.includes('?') ? '&' : '?') + 't=' + Date.now();
+                        return;
+                      }
+                      // Échec final : on cache uniquement l'image, pas le bloc entreprise.
+                      img.style.display = 'none';
+                    }}
                   />
                 </div>
               </div>
