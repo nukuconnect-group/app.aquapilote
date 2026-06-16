@@ -165,13 +165,14 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
             )}
           </div>
 
-          {/* Dashboards assignés (rôle principal) */}
+          {/* Rôles RBAC : tableau de bord unique, modules pilotés par les rôles */}
           <div>
-            <Label className="mb-2 block font-semibold">Tableaux de bord assignés *</Label>
+            <Label className="mb-2 block font-semibold">Rôles attribués *</Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Les modules visibles dépendent uniquement des tableaux de bord choisis.
+              Cumulez plusieurs rôles : les modules visibles sont la réunion des permissions de chaque rôle.
+              Retirer un rôle masque immédiatement les menus associés.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
               {(Object.keys(DASHBOARD_ROLE_DEFINITIONS) as DashboardRole[]).map((roleKey) => {
                 const def = DASHBOARD_ROLE_DEFINITIONS[roleKey];
                 const current = selectedMember.dashboard_roles ?? [];
@@ -180,7 +181,7 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                   <label
                     key={roleKey}
                     htmlFor={`edit-dashboard-${roleKey}`}
-                    className={`flex gap-2 p-3 rounded-md border cursor-pointer transition-colors ${
+                    className={`flex gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
                       checked ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-muted/40'
                     }`}
                   >
@@ -196,7 +197,7 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{def.label}</div>
-                      <p className="text-xs text-muted-foreground mt-1">{def.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{def.description}</p>
                     </div>
                   </label>
                 );
