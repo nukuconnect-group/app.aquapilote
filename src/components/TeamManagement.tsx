@@ -237,7 +237,7 @@ const TeamManagement = () => {
       return;
     }
     if (!inviteData.dashboardRoles || inviteData.dashboardRoles.length === 0) {
-      toast({ title: t('error'), description: "Sélectionnez au moins un tableau de bord (Production ou Administration).", variant: "destructive" });
+      toast({ title: t('error'), description: "Sélectionnez au moins un rôle pour ce membre.", variant: "destructive" });
       return;
     }
     if (inviteData.unitPermissions.length === 0) {
