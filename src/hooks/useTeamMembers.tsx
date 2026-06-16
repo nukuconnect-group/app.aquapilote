@@ -110,7 +110,7 @@ export const useTeamMembers = () => {
         status: data.status as 'active' | 'inactive' | 'pending',
         custom_role: (data as any).custom_role || null,
         user_id: data.user_id || null,
-        dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
+        dashboard_roles: ((data as any).dashboard_roles || []) as TeamRole[]
       }, ...prev]);
       
       return { success: true, data };
@@ -141,7 +141,7 @@ export const useTeamMembers = () => {
           status: data.status as 'active' | 'inactive' | 'pending',
           custom_role: (data as any).custom_role || null,
           user_id: data.user_id || null,
-          dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
+          dashboard_roles: ((data as any).dashboard_roles || []) as TeamRole[]
         } : m
       ));
       
