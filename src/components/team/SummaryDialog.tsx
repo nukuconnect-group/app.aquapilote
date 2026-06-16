@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Copy, Key, Link, Mail, Settings, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TEAM_ROLE_DEFINITIONS } from '@/lib/dashboardRoles';
 
 interface SummaryDialogProps {
   open: boolean;
