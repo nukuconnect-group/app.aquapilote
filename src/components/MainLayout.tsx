@@ -6,7 +6,6 @@ import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import IntelligentDashboard from './IntelligentDashboard';
 import AdminDashboard from './AdminDashboard';
-import MemberDashboard from './MemberDashboard';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShieldAlert } from 'lucide-react';
@@ -53,11 +52,8 @@ const MainLayout = () => {
   };
 
   const renderContent = () => {
-    // Tableau de bord spécifique pour les membres
-    if (isTeamMember && activeTab === 'dashboard') {
-      return <MemberDashboard onNavigate={(tab) => setActiveTab(tab)} />;
-    }
-
+    // Tableau de bord unifié : tous les utilisateurs (admin, membres) partagent
+    // la même vue. La visibilité des modules est pilotée par le RBAC dans la sidebar.
     // Blocage strict : un membre ne peut afficher qu'un module autorisé
     if (isTeamMember && !accessLoading && activeTab !== 'dashboard' && activeTab !== 'settings' && !hasAccessToModule(activeTab)) {
       return (

@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, KeyRound, RefreshCw } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ProductionUnit } from '@/contexts/ProductionUnitsContext';
-import { DASHBOARD_ROLE_DEFINITIONS, DashboardRole } from '@/lib/dashboardRoles';
+import { TEAM_ROLE_DEFINITIONS, TeamRole } from '@/lib/dashboardRoles';
 
 interface UnitPermissions {
   unitId: string;
@@ -24,7 +24,7 @@ interface InviteData {
   department: string;
   permissions: Record<string, boolean>;
   unitPermissions: UnitPermissions[];
-  dashboardRoles?: DashboardRole[];
+  dashboardRoles?: TeamRole[];
 }
 
 interface ModulePermission {
@@ -88,12 +88,12 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
 }) => {
   const { t } = useSettings();
 
-  const toggleDashboardRole = (roleKey: DashboardRole) => {
+  const toggleDashboardRole = (roleKey: TeamRole) => {
     setInviteData((prev) => {
       const current = new Set(prev.dashboardRoles ?? []);
       if (current.has(roleKey)) current.delete(roleKey);
       else current.add(roleKey);
-      return { ...prev, dashboardRoles: Array.from(current) as DashboardRole[] };
+      return { ...prev, dashboardRoles: Array.from(current) as TeamRole[] };
     });
   };
 
@@ -104,32 +104,33 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
           <DialogTitle>{t('add_new_member') || 'Ajouter un membre'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-5">
-          {/* 1. Tableaux de bord (rôle principal) */}
+          {/* 1. Rôles (RBAC) — un seul tableau de bord partagé, modules pilotés par les rôles */}
           <div className="border rounded-lg p-4 bg-muted/30">
-            <Label className="block mb-2 font-semibold">Tableaux de bord assignés *</Label>
+            <Label className="block mb-2 font-semibold">Rôles attribués *</Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Choisissez un ou les deux tableaux. Les modules accessibles s'ajusteront automatiquement.
+              Tous les membres partagent le même tableau de bord. Les menus et modules visibles
+              sont automatiquement ajustés selon les rôles cochés. Plusieurs rôles peuvent être cumulés.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(Object.keys(DASHBOARD_ROLE_DEFINITIONS) as DashboardRole[]).map((roleKey) => {
-                const def = DASHBOARD_ROLE_DEFINITIONS[roleKey];
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+              {(Object.keys(TEAM_ROLE_DEFINITIONS) as TeamRole[]).map((roleKey) => {
+                const def = TEAM_ROLE_DEFINITIONS[roleKey];
                 const checked = inviteData.dashboardRoles?.includes(roleKey) ?? false;
                 return (
                   <label
                     key={roleKey}
-                    htmlFor={`dashboard-role-${roleKey}`}
-                    className={`flex gap-2 p-3 rounded-md border cursor-pointer transition-colors ${
+                    htmlFor={`role-${roleKey}`}
+                    className={`flex gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
                       checked ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-muted/40'
                     }`}
                   >
                     <Checkbox
-                      id={`dashboard-role-${roleKey}`}
+                      id={`role-${roleKey}`}
                       checked={checked}
                       onCheckedChange={() => toggleDashboardRole(roleKey)}
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{def.label}</div>
-                      <p className="text-xs text-muted-foreground mt-1">{def.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{def.description}</p>
                     </div>
                   </label>
                 );

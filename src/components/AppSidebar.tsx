@@ -153,12 +153,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
               <Badge variant="outline" className="text-xs text-white border-white/30 bg-white/10">
                 {teamMemberInfo.role === 'custom' ? teamMemberInfo.customRole : teamMemberInfo.role}
               </Badge>
-              {teamMemberInfo.dashboardRoles?.includes('production') && (
-                <Badge variant="secondary" className="text-[10px] bg-white/20 text-white">Production</Badge>
-              )}
-              {teamMemberInfo.dashboardRoles?.includes('administration') && (
-                <Badge variant="secondary" className="text-[10px] bg-white/20 text-white">Administration</Badge>
-              )}
+              {(teamMemberInfo.dashboardRoles ?? []).map((r) => (
+                <Badge key={r} variant="secondary" className="text-[10px] bg-white/20 text-white">
+                  {r}
+                </Badge>
+              ))}
             </div>
           </div>
         )}

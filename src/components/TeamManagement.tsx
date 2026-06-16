@@ -10,7 +10,7 @@ import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from '@/lib/notificationService';
-import { DASHBOARD_ROLE_DEFINITIONS } from '@/lib/dashboardRoles';
+import { DASHBOARD_ROLE_DEFINITIONS, TeamRole } from '@/lib/dashboardRoles';
 
 // Sub-components
 import TeamStats from './team/TeamStats';
@@ -74,7 +74,7 @@ const TeamManagement = () => {
     department: string;
     permissions: Record<string, boolean>;
     unitPermissions: UnitPermissions[];
-    dashboardRoles: ('production' | 'administration')[];
+    dashboardRoles: TeamRole[];
   }>({
     name: '',
     email: '',
@@ -237,7 +237,7 @@ const TeamManagement = () => {
       return;
     }
     if (!inviteData.dashboardRoles || inviteData.dashboardRoles.length === 0) {
-      toast({ title: t('error'), description: "Sélectionnez au moins un tableau de bord (Production ou Administration).", variant: "destructive" });
+      toast({ title: t('error'), description: "Sélectionnez au moins un rôle pour ce membre.", variant: "destructive" });
       return;
     }
     if (inviteData.unitPermissions.length === 0) {

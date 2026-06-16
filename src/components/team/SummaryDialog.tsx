@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Copy, Key, Link, Mail, Settings, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TEAM_ROLE_DEFINITIONS } from '@/lib/dashboardRoles';
 
 interface SummaryDialogProps {
   open: boolean;
@@ -61,12 +62,12 @@ const SummaryDialog: React.FC<SummaryDialogProps> = ({
               <span className="text-sm text-muted-foreground">Unités assignées</span>
               <span>{inviteData.unitPermissions.length} unité(s)</span>
             </div>
-            <div className="flex justify-between items-center gap-4">
-              <span className="text-sm text-muted-foreground">Tableaux de bord</span>
-              <div className="flex flex-wrap justify-end gap-1">
-                {(inviteData.dashboardRoles || []).map((dashboard) => (
-                  <Badge key={dashboard} variant="secondary">
-                    {dashboard === 'production' ? 'Production / Terrain' : 'Administration / Finance'}
+            <div className="flex justify-between items-start gap-4">
+              <span className="text-sm text-muted-foreground">Rôles</span>
+              <div className="flex flex-wrap justify-end gap-1 max-w-[60%]">
+                {(inviteData.dashboardRoles || []).map((roleKey) => (
+                  <Badge key={roleKey} variant="secondary">
+                    {TEAM_ROLE_DEFINITIONS[roleKey as keyof typeof TEAM_ROLE_DEFINITIONS]?.label || roleKey}
                   </Badge>
                 ))}
               </div>

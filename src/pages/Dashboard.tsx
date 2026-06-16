@@ -33,7 +33,6 @@ import SettingsManagement from '@/components/SettingsManagement';
 import SupportModule from '@/components/SupportModule';
 import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
-import MemberDashboard from '@/components/MemberDashboard';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info } from 'lucide-react';

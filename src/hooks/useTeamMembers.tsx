@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import type { TeamRole } from '@/lib/dashboardRoles';
 
 export interface TeamMember {
   id: string;
@@ -18,7 +19,7 @@ export interface TeamMember {
   created_at: string;
   updated_at: string;
   user_id: string | null; // Auth user ID - null if account not created
-  dashboard_roles?: ('production' | 'administration')[];
+  dashboard_roles?: TeamRole[];
 }
 
 export interface NewTeamMember {
@@ -28,7 +29,7 @@ export interface NewTeamMember {
   custom_role?: string;
   department: string;
   permissions: Record<string, boolean>;
-  dashboard_roles?: ('production' | 'administration')[];
+  dashboard_roles?: TeamRole[];
 }
 
 export const useTeamMembers = () => {
@@ -56,7 +57,7 @@ export const useTeamMembers = () => {
         status: item.status as 'active' | 'inactive' | 'pending',
         custom_role: (item as any).custom_role || null,
         user_id: item.user_id || null,
-        dashboard_roles: ((item as any).dashboard_roles || []) as ('production' | 'administration')[]
+        dashboard_roles: ((item as any).dashboard_roles || []) as TeamRole[]
       })));
     } catch (error: any) {
       console.error('Error fetching team members:', error);
@@ -109,7 +110,7 @@ export const useTeamMembers = () => {
         status: data.status as 'active' | 'inactive' | 'pending',
         custom_role: (data as any).custom_role || null,
         user_id: data.user_id || null,
-        dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
+        dashboard_roles: ((data as any).dashboard_roles || []) as TeamRole[]
       }, ...prev]);
       
       return { success: true, data };
@@ -140,7 +141,7 @@ export const useTeamMembers = () => {
           status: data.status as 'active' | 'inactive' | 'pending',
           custom_role: (data as any).custom_role || null,
           user_id: data.user_id || null,
-          dashboard_roles: ((data as any).dashboard_roles || []) as ('production' | 'administration')[]
+          dashboard_roles: ((data as any).dashboard_roles || []) as TeamRole[]
         } : m
       ));
       
