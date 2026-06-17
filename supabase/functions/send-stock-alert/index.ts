@@ -12,6 +12,7 @@ const corsHeaders = {
 
 interface StockAlert {
   stock_id?: string;
+  unit_id?: string;
   manual_check?: boolean;
 }
 
@@ -77,6 +78,10 @@ const handler = async (req: Request): Promise<Response> => {
     // If a specific stock_id is provided, verify it belongs to the user
     if (requestData.stock_id) {
       query = query.eq('id', requestData.stock_id);
+    }
+
+    if (requestData.unit_id) {
+      query = query.eq('unit_id', requestData.unit_id);
     }
 
     const { data: stocks, error: stockError } = await query;
@@ -250,7 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
           title: '⚠️ Stock faible',
           message: `${stock.custom_name || stock.feed_type} est en dessous du seuil minimum (${stock.quantity} ${stock.unit})`,
           type: 'warning',
-          module: 'Stock',
+          module: 'Alimentation',
           is_critical: stock.quantity <= (stock.min_threshold || 50) / 2, // Critical if below half threshold
           metadata: {
             stock_id: stock.id,

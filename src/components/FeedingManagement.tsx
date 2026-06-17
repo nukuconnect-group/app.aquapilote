@@ -31,6 +31,7 @@ const FeedingManagement = () => {
   const { activeUnit } = useProductionUnits();
   const { t } = useSettings();
   const { toast } = useToast();
+  const [feedingTab, setFeedingTab] = useState('history');
   
   // Filtrer les enregistrements par unité active
   const { records: feedingRecords, loading, createRecord, updateRecord, deleteRecord } = useFeedingRecords(undefined, activeUnit?.id);
@@ -111,6 +112,7 @@ const FeedingManagement = () => {
   };
 
   const feedingData = getFeedingData();
+  const lowStockItems = stocks.filter((stock) => (stock.quantity || 0) <= (stock.min_threshold || 50));
 
   if (!['ecloserie', 'grossissement', 'fabrication_aliment'].includes(activeUnit.type)) {
     return (
@@ -352,7 +354,7 @@ const FeedingManagement = () => {
       </div>
 
       {/* Onglets pour les détails */}
-      <Tabs defaultValue="history" className="space-y-4">
+      <Tabs value={feedingTab} onValueChange={setFeedingTab} className="space-y-4">
         <div className="overflow-x-auto -mx-2 px-2">
           <TabsList className="w-full grid grid-cols-2 sm:inline-flex sm:w-auto gap-1">
             <TabsTrigger value="history" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
@@ -443,7 +445,56 @@ const FeedingManagement = () => {
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
-          <SmartAlerts unitId={activeUnit.id} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Card className={lowStockItems.length > 0 ? 'border-amber-300 bg-amber-50/70 dark:bg-amber-950/20' : ''}>
+              <CardContent className="p-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-md bg-amber-500/10 text-amber-600">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm">Alertes stock aliment</p>
+                    <p className="text-xs text-muted-foreground truncate">{lowStockItems.length} aliment(s) sous seuil</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setFeedingTab('stock')}>Stock</Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <div>
+                  <p className="font-semibold text-sm">Nourrissage</p>
+                  <p className="text-xs text-muted-foreground">{feedingData.feedingTimes} repas enregistrés aujourd’hui</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          {lowStockItems.length > 0 && (
+            <Card className="border-amber-300">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2"><Bell className="w-4 h-4 text-amber-600" /> Stocks à réapprovisionner</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {lowStockItems.map((stock) => (
+                  <div key={stock.id} className="rounded-md border bg-card p-3 text-sm">
+                    <p className="font-medium truncate">{stock.custom_name || stock.feed_type}</p>
+                    <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{stock.quantity} {stock.unit}</span>
+                      <Badge variant="outline">Seuil {stock.min_threshold || 50}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          <SmartAlerts
+            unitId={activeUnit.id}
+            data={{
+              unitName: activeUnit.name,
+              feedingEfficiency: feedingRecords.length > 0 ? Math.max(1, Number((feedingData.feedingTimes || 1)) / Math.max(1, lowStockItems.length + 1)) : undefined,
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

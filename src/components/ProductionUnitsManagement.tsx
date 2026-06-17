@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
@@ -22,7 +23,12 @@ import {
   EyeOff,
   AlertTriangle,
   Camera,
-  X
+  X,
+  Activity,
+  Gauge,
+  Users,
+  BarChart3,
+  Search
 } from 'lucide-react';
 import { useProductionUnits, ProductionUnitType } from '@/contexts/ProductionUnitsContext';
 import { useLogs } from '@/contexts/LogsContext';
@@ -43,6 +49,8 @@ const ProductionUnitsManagement = () => {
   const [configUnit, setConfigUnit] = useState<any>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [unitSearch, setUnitSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
   const [newUnit, setNewUnit] = useState({
     name: '',
@@ -63,6 +71,22 @@ const ProductionUnitsManagement = () => {
     { value: 'fabrication_aliment', label: t('fabrication_aliment') },
     { value: 'commercialisation', label: t('commercialisation') }
   ];
+
+  const activeUnits = units.filter((unit) => unit.isActive).length;
+  const totalCapacity = units.reduce((sum, unit) => sum + (unit.capacity || 0), 0);
+  const totalStock = units.reduce((sum, unit) => sum + (unit.currentStock || 0), 0);
+  const capacityUsage = totalCapacity > 0 ? Math.round((totalStock / totalCapacity) * 100) : 0;
+  const filteredUnits = useMemo(() => {
+    const query = unitSearch.trim().toLowerCase();
+    return units.filter((unit) => {
+      const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? unit.isActive : !unit.isActive);
+      const typeLabel = unitTypes.find((type) => type.value === unit.type)?.label || unit.type;
+      const matchesSearch = !query || [unit.name, unit.description, unit.manager, typeLabel]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [units, unitSearch, statusFilter, unitTypes]);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -361,8 +385,33 @@ const ProductionUnitsManagement = () => {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {units.map(unit => (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2 text-xs text-muted-foreground"><Building className="w-4 h-4 text-primary" /> Unités</div><p className="text-xl sm:text-2xl font-bold mt-1">{units.length}</p></CardContent></Card>
+        <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2 text-xs text-muted-foreground"><Activity className="w-4 h-4 text-emerald-600" /> Actives</div><p className="text-xl sm:text-2xl font-bold mt-1 text-emerald-600">{activeUnits}</p></CardContent></Card>
+        <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2 text-xs text-muted-foreground"><Gauge className="w-4 h-4 text-sky-600" /> Occupation</div><p className="text-xl sm:text-2xl font-bold mt-1">{capacityUsage}%</p></CardContent></Card>
+        <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2 text-xs text-muted-foreground"><BarChart3 className="w-4 h-4 text-amber-600" /> Capacité</div><p className="text-xl sm:text-2xl font-bold mt-1">{totalCapacity.toLocaleString()}</p></CardContent></Card>
+      </div>
+
+      <Card>
+        <CardContent className="p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={unitSearch} onChange={(e) => setUnitSearch(e.target.value)} placeholder="Rechercher une unité, type ou responsable..." className="pl-9" />
+          </div>
+          <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')} className="w-full lg:w-auto">
+            <TabsList className="grid grid-cols-3 w-full lg:w-[320px]">
+              <TabsTrigger value="all">Toutes</TabsTrigger>
+              <TabsTrigger value="active">Actives</TabsTrigger>
+              <TabsTrigger value="inactive">Inactives</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {filteredUnits.map(unit => {
+          const unitRatio = unit.capacity > 0 ? Math.min(100, Math.round((unit.currentStock / unit.capacity) * 100)) : 0;
+          return (
           <Card key={unit.id} className={`${!unit.isActive ? 'opacity-60 border-gray-300' : 'border-l-4 border-l-purple-500'}`}>
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -465,9 +514,16 @@ const ProductionUnitsManagement = () => {
                   <strong>{t('description')}:</strong> {unit.description}
                 </div>
               )}
+              <div className="mt-3">
+                <div className="flex justify-between text-xs mb-1"><span className="text-muted-foreground">Taux d’occupation</span><span className="font-medium">{unitRatio}%</span></div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden"><div className={`h-full ${unitRatio > 85 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${unitRatio}%` }} /></div>
+              </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
+        {filteredUnits.length === 0 && (
+          <Card className="xl:col-span-2"><CardContent className="p-8 text-center text-muted-foreground">Aucune unité ne correspond aux filtres.</CardContent></Card>
+        )}
       </div>
 
       {/* Dialog/Sheet de configuration selon le device */}

@@ -10,7 +10,20 @@ import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
-const NotificationsPanel = () => {
+const moduleToTab: Record<string, string> = {
+  Alimentation: 'feeding',
+  Stock: 'feeding',
+  Surveillance: 'iot-control',
+  Production: 'production',
+  Santé: 'health',
+  Équipe: 'team',
+  Ventes: 'sales',
+  Achats: 'purchases',
+  Fournisseurs: 'suppliers',
+  Planification: 'planning',
+};
+
+const NotificationsPanel = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const { isAuthenticated, isDemoMode } = useAuth();
   const { t } = useSettings();
   const {
@@ -76,6 +89,12 @@ const NotificationsPanel = () => {
     }
   };
 
+  const handleOpenNotification = (notification: Notification) => {
+    handleMarkAsRead(notification.id);
+    const target = moduleToTab[notification.module || ''];
+    if (target) onNavigate?.(target);
+  };
+
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({
       ...prev,
@@ -118,9 +137,15 @@ const NotificationsPanel = () => {
   const renderNotificationItem = (notification: Notification) => (
     <div
       key={notification.id}
+      role="button"
+      tabIndex={0}
+      onClick={() => handleOpenNotification(notification)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') handleOpenNotification(notification);
+      }}
       className={`border-l-4 p-3 rounded-r-lg transition-all ${getTypeColor(notification.type, notification.is_critical)} ${
         !notification.is_read ? 'bg-opacity-100' : 'bg-opacity-50 opacity-75'
-      }`}
+      } cursor-pointer`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -154,7 +179,7 @@ const NotificationsPanel = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleMarkAsRead(notification.id)}
+              onClick={(event) => { event.stopPropagation(); handleMarkAsRead(notification.id); }}
               className="h-7 w-7 p-0 hover:bg-green-100 dark:hover:bg-green-900"
               title="Marquer comme lu"
             >
@@ -164,7 +189,7 @@ const NotificationsPanel = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleDelete(notification.id)}
+            onClick={(event) => { event.stopPropagation(); handleDelete(notification.id); }}
             className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900"
             title={t('delete')}
           >

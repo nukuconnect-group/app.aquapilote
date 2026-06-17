@@ -154,7 +154,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
           <TaskAlertIndicator />
           
           {/* Notifications */}
-          <NotificationsPanel />
+          <NotificationsPanel onNavigate={onNavigate} />
           
           {/* Langue */}
           <Select value={language} onValueChange={(value) => setLanguage(value as SupportedLanguage)}>

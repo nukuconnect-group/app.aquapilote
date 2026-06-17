@@ -165,12 +165,11 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
             )}
           </div>
 
-          {/* Rôles RBAC : tableau de bord unique, modules pilotés par les rôles */}
+          {/* Rôles RBAC : fonction uniquement */}
           <div>
             <Label className="mb-2 block font-semibold">Rôles attribués *</Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Cumulez plusieurs rôles : les modules visibles sont la réunion des permissions de chaque rôle.
-              Retirer un rôle masque immédiatement les menus associés.
+              Les rôles décrivent la fonction. Les accès réels sont contrôlés par les modules cochés ci-dessous.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
               {(Object.keys(DASHBOARD_ROLE_DEFINITIONS) as DashboardRole[]).map((roleKey) => {
@@ -198,6 +197,59 @@ const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                     <div className="flex-1">
                       <div className="font-medium text-sm">{def.label}</div>
                       <p className="text-xs text-muted-foreground mt-0.5">{def.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Modules autorisés */}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+              <div>
+                <Label className="block font-semibold">Modules autorisés *</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Un module décoché disparaît du menu et devient inaccessible par URL.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allEnabled = modulePermissions.every((m) => selectedMember.permissions?.[m.id]);
+                  setSelectedMember({
+                    ...selectedMember,
+                    permissions: modulePermissions.reduce<Record<string, boolean>>((acc, module) => {
+                      acc[module.id] = !allEnabled;
+                      return acc;
+                    }, {}),
+                  });
+                }}
+              >
+                {modulePermissions.every((m) => selectedMember.permissions?.[m.id]) ? 'Tout retirer' : 'Tout cocher'}
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+              {modulePermissions.map((module) => {
+                const checked = Boolean(selectedMember.permissions?.[module.id]);
+                return (
+                  <label
+                    key={module.id}
+                    htmlFor={`edit-module-${module.id}`}
+                    className={`flex gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
+                      checked ? 'border-primary bg-primary/5' : 'border-border bg-muted/20 hover:bg-muted/40'
+                    }`}
+                  >
+                    <Checkbox
+                      id={`edit-module-${module.id}`}
+                      checked={checked}
+                      onCheckedChange={() => onToggleMemberPermission(module.id)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm truncate">{module.label}</div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{module.description}</p>
                     </div>
                   </label>
                 );

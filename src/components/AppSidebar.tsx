@@ -15,6 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Badge } from '@/components/ui/badge';
+import { hasAssignedModule } from '@/lib/moduleAccess';
 
 interface AppSidebarProps {
   activeTab: string;
@@ -27,40 +28,10 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const { user } = useAuth();
   const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
 
-  // Mapping des IDs de tabs vers les IDs de modules/permissions
-  const tabToModuleMapping: Record<string, string> = {
-    'dashboard': 'dashboard',
-    'iot-control': 'iot',
-    'units': 'infrastructure',
-    'infrastructures': 'infrastructure',
-    'livestock': 'livestock',
-    'feeding': 'feeding',
-    'health': 'health',
-    'transformation': 'production',
-    'production': 'production',
-    'accounting': 'accounting',
-    'purchases': 'purchases',
-    'sales': 'sales',
-    'suppliers': 'suppliers',
-    'hr': 'accounting',
-    'team': 'settings',
-    'planning': 'planning',
-    'reports': 'reports',
-    'settings': 'settings',
-    'support': 'support',
-    'aqua-assistant': 'dashboard',
-    'offline': 'settings',
-    'weather': 'environment',
-    'admin': 'admin',
-    'analytics': 'reports',
-    'performance-alerts': 'dashboard'
-  };
-
   // Verifier si un tab est accessible
   const isTabAllowed = (tabId: string): boolean => {
     if (!isTeamMember) return true; // Non-membre = acces complet
-    const moduleId = tabToModuleMapping[tabId] || tabId;
-    return hasAccessToModule(moduleId);
+    return hasAssignedModule(tabId, hasAccessToModule);
   };
 
   const navigationGroups = [

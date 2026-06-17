@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Home, Factory, Wifi, Beef, ShoppingBag } from 'lucide-react';
+import { Home, Factory, Wifi, Beef, ShoppingBag, Utensils, Heart, Package, FileText, Calculator } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { hasAssignedModule } from '@/lib/moduleAccess';
 
 interface MobileNavigationProps {
   activeTab: string;
@@ -13,19 +14,9 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
   const { t } = useSettings();
   const { isTeamMember, hasAccessToModule } = useTeamMemberAccess();
   
-  // Mapping des IDs de tabs vers les IDs de modules
-  const tabToModuleMapping: Record<string, string> = {
-    'dashboard': 'dashboard',
-    'iot-control': 'iot',
-    'units': 'infrastructure',
-    'livestock': 'livestock',
-    'sales': 'sales',
-  };
-
   const isTabAllowed = (tabId: string): boolean => {
     if (!isTeamMember) return true;
-    const moduleId = tabToModuleMapping[tabId] || tabId;
-    return hasAccessToModule(moduleId);
+    return hasAssignedModule(tabId, hasAccessToModule);
   };
   
   const allMainItems = [
@@ -33,7 +24,12 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
     { id: 'iot-control', label: t('iot-control'), icon: Wifi },
     { id: 'units', label: t('units'), icon: Factory },
     { id: 'livestock', label: t('livestock'), icon: Beef },
+    { id: 'feeding', label: t('feeding'), icon: Utensils },
+    { id: 'health', label: t('health'), icon: Heart },
+    { id: 'production', label: t('production'), icon: Package },
+    { id: 'accounting', label: t('accounting'), icon: Calculator },
     { id: 'sales', label: t('sales'), icon: ShoppingBag },
+    { id: 'reports', label: t('reports'), icon: FileText },
   ];
 
   const mainItems = allMainItems.filter(item => isTabAllowed(item.id)).slice(0, 5);
