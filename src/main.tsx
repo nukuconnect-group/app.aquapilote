@@ -12,6 +12,9 @@ if ('serviceWorker' in navigator) {
     const isLovablePreview = /lovable\.app$/i.test(window.location.hostname);
     if (isLovablePreview) {
       console.info('ℹ️ Service Worker désactivé sur le preview Lovable pour éviter les erreurs de redirection.');
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
       return;
     }
 

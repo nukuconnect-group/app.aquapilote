@@ -11,6 +11,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from '@/lib/notificationService';
 import { DASHBOARD_ROLE_DEFINITIONS, TeamRole } from '@/lib/dashboardRoles';
+import { APP_MODULE_PERMISSIONS, sanitizeModulePermissions } from '@/lib/moduleAccess';
 
 // Sub-components
 import TeamStats from './team/TeamStats';
@@ -91,25 +92,7 @@ const TeamManagement = () => {
   const roles: { key: string; label: string }[] = [];
   const departments: { key: string; label: string }[] = [];
 
-  const modulePermissions = [
-    { id: 'dashboard', label: t('module_dashboard'), description: t('module_dashboard_desc') },
-    { id: 'production', label: t('module_production'), description: t('module_production_desc') },
-    { id: 'feeding', label: t('module_feeding'), description: t('module_feeding_desc') },
-    { id: 'livestock', label: t('module_livestock'), description: t('module_livestock_desc') },
-    { id: 'health', label: t('module_health'), description: t('module_health_desc') },
-    { id: 'reproduction', label: t('module_reproduction'), description: t('module_reproduction_desc') },
-    { id: 'infrastructure', label: t('module_infrastructure'), description: t('module_infrastructure_desc') },
-    { id: 'environment', label: t('module_environment'), description: t('module_environment_desc') },
-    { id: 'iot', label: t('module_iot'), description: t('module_iot_desc') },
-    { id: 'accounting', label: t('module_accounting'), description: t('module_accounting_desc') },
-    { id: 'economics', label: t('module_economics'), description: t('module_economics_desc') },
-    { id: 'sales', label: t('module_sales'), description: t('module_sales_desc') },
-    { id: 'purchases', label: t('module_purchases'), description: t('module_purchases_desc') },
-    { id: 'suppliers', label: t('module_suppliers'), description: t('module_suppliers_desc') },
-    { id: 'planning', label: t('module_planning'), description: t('module_planning_desc') },
-    { id: 'reports', label: t('module_reports'), description: t('module_reports_desc') },
-    { id: 'settings', label: t('module_settings'), description: t('module_settings_desc') }
-  ];
+  const modulePermissions = APP_MODULE_PERMISSIONS;
 
   // --- Helpers ---
   const generatePasswordLocal = () => {
@@ -177,7 +160,7 @@ const TeamManagement = () => {
         setInviteData(prevData => ({ ...prevData, unitPermissions: prevData.unitPermissions.filter(up => up.unitId !== unitId) }));
       } else {
         newSet.add(unitId);
-        setInviteData(prevData => ({ ...prevData, unitPermissions: [...prevData.unitPermissions, { unitId: unit.id, unitName: unit.name, permissions: {} }] }));
+        setInviteData(prevData => ({ ...prevData, unitPermissions: [...prevData.unitPermissions, { unitId: unit.id, unitName: unit.name, permissions: sanitizeModulePermissions(prevData.permissions) }] }));
       }
       return newSet;
     });
@@ -198,7 +181,14 @@ const TeamManagement = () => {
   };
 
   const toggleInvitePermission = (permissionId: string) => {
-    setInviteData(prev => ({ ...prev, permissions: { ...prev.permissions, [permissionId]: !prev.permissions[permissionId] } }));
+    setInviteData(prev => {
+      const nextPermissions = sanitizeModulePermissions({ ...prev.permissions, [permissionId]: !prev.permissions[permissionId] });
+      return {
+        ...prev,
+        permissions: nextPermissions,
+        unitPermissions: prev.unitPermissions.map((unit) => ({ ...unit, permissions: nextPermissions })),
+      };
+    });
   };
 
   const toggleMemberPermission = (permissionId: string) => {
@@ -240,6 +230,10 @@ const TeamManagement = () => {
       toast({ title: t('error'), description: "Sélectionnez au moins un rôle pour ce membre.", variant: "destructive" });
       return;
     }
+    if (Object.values(inviteData.permissions).filter(Boolean).length === 0) {
+      toast({ title: t('error'), description: "Sélectionnez au moins un module autorisé pour ce membre.", variant: "destructive" });
+      return;
+    }
     if (inviteData.unitPermissions.length === 0) {
       toast({ title: t('error'), description: t('assign_at_least_one_unit'), variant: "destructive" });
       return;
@@ -258,7 +252,7 @@ const TeamManagement = () => {
     const newMember: NewTeamMember = {
       member_name: inviteData.name, member_email: inviteData.email,
       role: finalRole, custom_role: undefined,
-      department: null as any, permissions: inviteData.permissions,
+      department: null as any, permissions: sanitizeModulePermissions(inviteData.permissions),
       dashboard_roles: inviteData.dashboardRoles ?? []
     };
 
@@ -276,7 +270,7 @@ const TeamManagement = () => {
 
       for (const unitPerm of inviteData.unitPermissions) {
         const { error: unitErr } = await supabase.from('team_member_units').insert({
-          team_member_id: result.data.id, unit_id: unitPerm.unitId, unit_name: unitPerm.unitName, permissions: unitPerm.permissions
+          team_member_id: result.data.id, unit_id: unitPerm.unitId, unit_name: unitPerm.unitName, permissions: sanitizeModulePermissions(inviteData.permissions)
         });
         if (unitErr) console.error('Error inserting unit permission:', unitErr);
       }
@@ -359,10 +353,15 @@ const TeamManagement = () => {
 
   const handleUpdateMemberPermissions = async () => {
     if (!selectedMember) return;
+    if (Object.values(selectedMember.permissions || {}).filter(Boolean).length === 0) {
+      toast({ title: t('error'), description: "Sélectionnez au moins un module autorisé pour ce membre.", variant: "destructive" });
+      return;
+    }
     setIsSubmitting(true);
+    const cleanPermissions = sanitizeModulePermissions(selectedMember.permissions);
     const result = await updateTeamMember(selectedMember.id, {
       member_name: selectedMember.member_name, member_email: selectedMember.member_email,
-      permissions: selectedMember.permissions, role: selectedMember.role, custom_role: selectedMember.custom_role,
+      permissions: cleanPermissions, role: selectedMember.role, custom_role: selectedMember.custom_role,
       department: selectedMember.department, status: selectedMember.status
     });
     if (result.success) {
@@ -378,7 +377,7 @@ const TeamManagement = () => {
       await supabase.from('team_member_units').delete().eq('team_member_id', selectedMember.id);
       for (const unitPerm of selectedMemberUnits) {
         await supabase.from('team_member_units').insert({
-          team_member_id: selectedMember.id, unit_id: unitPerm.unit_id, unit_name: unitPerm.unit_name, permissions: unitPerm.permissions
+          team_member_id: selectedMember.id, unit_id: unitPerm.unit_id, unit_name: unitPerm.unit_name, permissions: cleanPermissions
         });
       }
       toast({ title: "Membre mis à jour", description: `Les informations de ${selectedMember.member_name} ont été mises à jour` });

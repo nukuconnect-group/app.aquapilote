@@ -290,15 +290,30 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
         return;
       }
 
+      const lowStocks = getLowStockItems();
+      if (lowStocks.length === 0) {
+        toast({ title: 'Stock conforme', description: 'Aucun stock aliment sous le seuil minimum.' });
+        return;
+      }
+
+      await Promise.all(lowStocks.map((stock) =>
+        notificationHelpers.stockAlert(
+          user.id,
+          stock.custom_name || stock.feed_type,
+          stock.quantity,
+          stock.min_threshold || 50,
+        )
+      ));
+
       const { data, error } = await supabase.functions.invoke('send-stock-alert', {
-        body: { user_id: user.id, manual_check: true }
+        body: { user_id: user.id, unit_id: unitId, manual_check: true }
       });
 
       if (error) throw error;
 
       toast({
         title: 'Vérification terminée',
-        description: data.message || 'Aucune alerte à envoyer',
+        description: `${lowStocks.length} alerte(s) stock créée(s). ${data?.message || ''}`,
       });
 
       console.log('Alert check result:', data);

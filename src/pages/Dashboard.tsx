@@ -38,7 +38,7 @@ import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
+import { APP_MODULE_PERMISSIONS, hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
 
 /**
  * Page principale du dashboard
@@ -49,22 +49,30 @@ const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => moduleParamToTabId(searchParams.get('module')));
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule } = useTeamMemberAccess();
+  const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule, getAllowedModulesList } = useTeamMemberAccess();
+
+  const getFirstAllowedTab = () => {
+    const allowed = getAllowedModulesList();
+    const firstModule = APP_MODULE_PERMISSIONS.find((module) => allowed.includes(module.id));
+    return firstModule?.tabIds[0] ?? 'dashboard';
+  };
 
   const canAccessTab = (tab: string) => {
-    if (tab === 'dashboard') return true;
     if (!isTeamMember) return true;
+    if (tab === 'dashboard' && getAllowedModulesList().length === 0) return true;
     return hasAssignedModule(tab, hasAccessToModule);
   };
 
   const commitTabChange = (tab: string) => {
+    const nextParams = tab === 'dashboard' ? '' : tab;
+    if (activeTab === tab && (searchParams.get('module') || '') === nextParams) return;
     setActiveTab(tab);
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
   };
 
   const handleTabChange = (tab: string) => {
     if (!isLoadingAccess && !canAccessTab(tab)) {
-      commitTabChange('dashboard');
+      commitTabChange(getFirstAllowedTab());
       setShowMobileMenu(false);
       return;
     }
@@ -78,12 +86,12 @@ const Dashboard: React.FC = () => {
     const requestedTab = moduleParamToTabId(searchParams.get('module'));
     if (requestedTab !== activeTab && (requestedTab === 'dashboard' || !isLoadingAccess)) {
       if (canAccessTab(requestedTab)) commitTabChange(requestedTab);
-      else commitTabChange('dashboard');
+      else commitTabChange(getFirstAllowedTab());
       return;
     }
 
     if (isTeamMember && teamMemberInfo && !isLoadingAccess && !canAccessTab(activeTab)) {
-      commitTabChange('dashboard');
+      commitTabChange(getFirstAllowedTab());
     }
   }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule, searchParams]);
 

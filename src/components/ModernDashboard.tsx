@@ -118,9 +118,11 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
   };
   const canViewUnits = canAccessModule('units');
   const canViewProduction = canAccessModule('production') || canAccessModule('livestock');
+  const canViewInfrastructure = canAccessModule('infrastructure');
   const canViewFeeding = canAccessModule('feeding');
   const canViewAlerts = canAccessModule('performance-alerts');
   const canViewFinance = ['accounting', 'sales', 'purchases', 'suppliers', 'hr'].some(canAccessModule);
+  const defaultOperationalTab = canViewProduction ? 'cycles' : canViewInfrastructure ? 'equipment' : 'depreciation';
   const quickActions = [
     { id: 'livestock', icon: Plus, label: 'Ajouter une donnée', tone: 'bg-primary/10 text-primary' },
     { id: 'units', icon: Building2, label: 'Mes fermes', tone: 'bg-sky-500/10 text-sky-600' },
@@ -444,7 +446,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
       </Card>}
 
       {/* Finance evolution + Donut (placés au-dessus) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {canViewFinance && <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -510,10 +512,10 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       {/* Résumé Financier — déplacé sous l'évolution financière et la répartition des dépenses */}
-      <Card className="border-emerald-200/60 bg-emerald-50/40 dark:bg-emerald-950/10 dark:border-emerald-900/40">
+      {canViewFinance && <Card className="border-emerald-200/60 bg-emerald-50/40 dark:bg-emerald-950/10 dark:border-emerald-900/40">
         <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-emerald-600" /> Résumé Financier — {unitLabel}
@@ -551,11 +553,11 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Analytics + Finance details + AI reco */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
+        {canViewFinance && <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary" /> Indicateurs comparatifs
@@ -581,7 +583,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
               </ResponsiveContainer>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
         <Card>
           <CardHeader className="pb-2">

@@ -34,6 +34,7 @@ import OfflineDataManager from './OfflineDataManager';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import PerformanceAlertsConfig from './alerts/PerformanceAlertsConfig';
 import PerformanceAlertsPanel from './alerts/PerformanceAlertsPanel';
+import { hasAssignedModule } from '@/lib/moduleAccess';
 
 const MainLayout = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -43,7 +44,7 @@ const MainLayout = () => {
   const handleTabChange = (tab: string) => {
     if (tab === 'settings') {
       setShowMobileMenu(true);
-    } else if (!isTeamMember || hasAccessToModule(tab) || tab === 'dashboard') {
+    } else if (!isTeamMember || hasAssignedModule(tab, hasAccessToModule) || tab === 'dashboard') {
       setActiveTab(tab);
     } else {
       // Membre sans accès — on revient au tableau de bord membre
@@ -55,7 +56,7 @@ const MainLayout = () => {
     // Tableau de bord unifié : tous les utilisateurs (admin, membres) partagent
     // la même vue. La visibilité des modules est pilotée par le RBAC dans la sidebar.
     // Blocage strict : un membre ne peut afficher qu'un module autorisé
-    if (isTeamMember && !accessLoading && activeTab !== 'dashboard' && activeTab !== 'settings' && !hasAccessToModule(activeTab)) {
+    if (isTeamMember && !accessLoading && activeTab !== 'dashboard' && !hasAssignedModule(activeTab, hasAccessToModule)) {
       return (
         <div className="p-4">
           <Card className="border-destructive/40 bg-destructive/5">
@@ -140,7 +141,7 @@ const MainLayout = () => {
       <div className="min-h-screen bg-background flex w-full">
         {/* Sidebar Navigation - masqué sur mobile */}
         <div className="hidden md:flex">
-          <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
         {/* Conteneur principal avec header et contenu */}
@@ -174,7 +175,7 @@ const MainLayout = () => {
           isOpen={showMobileMenu} 
           onClose={() => setShowMobileMenu(false)} 
           activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+          onTabChange={handleTabChange} 
         />
 
         {/* PWA Install Prompt */}

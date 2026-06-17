@@ -496,9 +496,7 @@ html, body {
 /* Support pour les appareils tactiles - Améliorations pour mobile */
 @media (hover: none) and (pointer: coarse) {
   button, .clickable, [role="button"] {
-    min-height: 48px;
-    min-width: 48px;
-    padding: 12px 16px;
+    min-height: 44px;
     -webkit-tap-highlight-color: transparent;
   }
   
@@ -512,13 +510,7 @@ html, body {
   /* Zone de touche plus large pour les liens et petits éléments */
   a, input, select, textarea, [role="tab"], [role="menuitem"] {
     min-height: 44px;
-    padding: 8px 12px;
     -webkit-tap-highlight-color: transparent;
-  }
-  
-  /* Espacement augmenté pour éviter les clics accidentels */
-  .grid > *, .flex > * {
-    margin: 2px;
   }
   
   /* Éviter le zoom sur les inputs iOS - CRITIQUE pour PWA */

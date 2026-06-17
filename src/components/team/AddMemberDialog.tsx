@@ -82,6 +82,7 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   setInviteData,
   units,
   selectedUnitsForInvite,
+  modulePermissions,
   isSubmitting,
   onProceedToSummary,
   onToggleUnitSelection,
@@ -104,12 +105,11 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
           <DialogTitle>{t('add_new_member') || 'Ajouter un membre'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-5">
-          {/* 1. Rôles (RBAC) — un seul tableau de bord partagé, modules pilotés par les rôles */}
+          {/* 1. Rôles (fonction uniquement) */}
           <div className="border rounded-lg p-4 bg-muted/30">
             <Label className="block mb-2 font-semibold">Rôles attribués *</Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Tous les membres partagent le même tableau de bord. Les menus et modules visibles
-              sont automatiquement ajustés selon les rôles cochés. Plusieurs rôles peuvent être cumulés.
+              Les rôles identifient la fonction du membre. Ils ne donnent aucun accès automatiquement.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
               {(Object.keys(TEAM_ROLE_DEFINITIONS) as TeamRole[]).map((roleKey) => {
@@ -138,7 +138,65 @@ const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
             </div>
           </div>
 
-          {/* 2. Identité */}
+          {/* 2. Modules autorisés */}
+          <div className="border rounded-lg p-4 bg-background">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+              <div>
+                <Label className="block font-semibold">Modules autorisés *</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Seuls les modules cochés apparaîtront dans le menu et seront accessibles.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allEnabled = modulePermissions.every((m) => inviteData.permissions[m.id]);
+                  setInviteData((prev) => ({
+                    ...prev,
+                    permissions: modulePermissions.reduce<Record<string, boolean>>((acc, module) => {
+                      acc[module.id] = !allEnabled;
+                      return acc;
+                    }, {}),
+                  }));
+                }}
+              >
+                {modulePermissions.every((m) => inviteData.permissions[m.id]) ? 'Tout retirer' : 'Tout cocher'}
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+              {modulePermissions.map((module) => {
+                const checked = Boolean(inviteData.permissions[module.id]);
+                return (
+                  <label
+                    key={module.id}
+                    htmlFor={`module-${module.id}`}
+                    className={`flex gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
+                      checked ? 'border-primary bg-primary/5' : 'border-border bg-muted/20 hover:bg-muted/40'
+                    }`}
+                  >
+                    <Checkbox
+                      id={`module-${module.id}`}
+                      checked={checked}
+                      onCheckedChange={() => {
+                        setInviteData((prev) => {
+                          const next = { ...prev.permissions, [module.id]: !prev.permissions[module.id] };
+                          return { ...prev, permissions: next };
+                        });
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm truncate">{module.label}</div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{module.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Identité */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>{t('full_name') || 'Nom complet'} *</Label>
