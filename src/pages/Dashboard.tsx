@@ -156,6 +156,15 @@ const Dashboard: React.FC = () => {
   }, [activeTab]);
 
   const renderContent = () => {
+    if (isTeamMember && !isLoadingAccess && !canAccessTab(activeTab)) {
+      return (
+        <>
+          {renderTeamMemberWelcome()}
+          <ModernDashboard onNavigate={handleTabChange} canAccessModule={(id) => canAccessTab(id)} />
+        </>
+      );
+    }
+
     switch (activeTab) {
       case 'dashboard':
         return (
