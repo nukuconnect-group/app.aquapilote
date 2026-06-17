@@ -31,6 +31,7 @@ import { analyzeParameter } from '@/lib/waterQualityThresholds';
 
 interface ModernDashboardProps {
   onNavigate?: (tab: string) => void;
+  canAccessModule?: (tabOrModuleId: string) => boolean;
 }
 
 const KpiCard: React.FC<{
@@ -96,7 +97,7 @@ const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   </div>
 );
 
-const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
+const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccessModule = () => true }) => {
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
@@ -112,7 +113,22 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
   const { analyses } = useAIAnalyses(8, activeUnit?.id);
   const { stocks: feedStocks } = useFeedStocks(activeUnit?.id);
 
-  const go = (tab: string) => onNavigate?.(tab);
+  const go = (tab: string) => {
+    if (canAccessModule(tab)) onNavigate?.(tab);
+  };
+  const canViewUnits = canAccessModule('units');
+  const canViewProduction = canAccessModule('production') || canAccessModule('livestock');
+  const canViewFeeding = canAccessModule('feeding');
+  const canViewAlerts = canAccessModule('performance-alerts');
+  const canViewFinance = ['accounting', 'sales', 'purchases', 'suppliers', 'hr'].some(canAccessModule);
+  const quickActions = [
+    { id: 'livestock', icon: Plus, label: 'Ajouter une donnée', tone: 'bg-primary/10 text-primary' },
+    { id: 'units', icon: Building2, label: 'Mes fermes', tone: 'bg-sky-500/10 text-sky-600' },
+    { id: 'reports', icon: FileText, label: 'Générer un rapport', tone: 'bg-emerald-500/10 text-emerald-600' },
+    { id: 'performance-alerts', icon: Bell, label: 'Voir les alertes', tone: 'bg-amber-500/10 text-amber-600' },
+    { id: 'team', icon: Users, label: 'Utilisateurs', tone: 'bg-purple-500/10 text-purple-600' },
+    { id: 'settings', icon: Settings, label: 'Paramètres', tone: 'bg-slate-500/10 text-slate-600' },
+  ].filter((action) => canAccessModule(action.id));
   const basinOptions = useMemo(() => {
     const unitInfrastructures = activeUnit ? (getUnitInfrastructures?.(activeUnit.id) || []) : [];
     return unitInfrastructures.filter((infra: any) => infra.infrastructure_name);
@@ -326,7 +342,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
       {/* KPIs — 4 cartes principales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Fermes */}
-        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewUnits && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -345,9 +361,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         {/* Cycles actifs */}
-        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewProduction && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -366,9 +382,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         {/* Biomasse */}
-        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewProduction && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -387,9 +403,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         {/* Alertes */}
-        <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {(canViewAlerts || canViewFeeding) && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -408,11 +424,11 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
       </div>
 
       {/* Quick access */}
-      <Card>
+      {quickActions.length > 0 && <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" /> Accès rapides
@@ -420,15 +436,12 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate }) => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
-            <QuickAction icon={Plus} label="Ajouter une donnée" onClick={() => go('livestock')} tone="bg-primary/10 text-primary" />
-            <QuickAction icon={Building2} label="Mes fermes" onClick={() => go('units')} tone="bg-sky-500/10 text-sky-600" />
-            <QuickAction icon={FileText} label="Générer un rapport" onClick={() => go('reports')} tone="bg-emerald-500/10 text-emerald-600" />
-            <QuickAction icon={Bell} label="Voir les alertes" onClick={() => go('performance-alerts')} tone="bg-amber-500/10 text-amber-600" />
-            <QuickAction icon={Users} label="Utilisateurs" onClick={() => go('team')} tone="bg-purple-500/10 text-purple-600" />
-            <QuickAction icon={Settings} label="Paramètres" onClick={() => go('settings')} tone="bg-slate-500/10 text-slate-600" />
+            {quickActions.map((action) => (
+              <QuickAction key={action.id} icon={action.icon} label={action.label} onClick={() => go(action.id)} tone={action.tone} />
+            ))}
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Finance evolution + Donut (placés au-dessus) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

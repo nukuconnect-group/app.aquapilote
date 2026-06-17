@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DashboardRole,
-  computeAllowedModulesFromDashboards,
   isValidDashboardRole,
 } from '@/lib/dashboardRoles';
 
@@ -106,8 +105,9 @@ export const useTeamMemberAccess = () => {
             ? (rawDashboardRoles.filter(isValidDashboardRole) as DashboardRole[])
             : [];
 
-          // Modules autorisés : union de (permissions globales + permissions par unité + dashboards assignés)
-          const modules = computeAllowedModulesFromDashboards(dashboardRoles);
+          // Modules autorisés : uniquement les modules explicitement attribués.
+          // Les rôles identifient la fonction mais ne donnent aucun accès automatique.
+          const modules = new Set<string>();
 
           // Permissions globales du membre
           const globalPerms = (teamMember.permissions as unknown) as TeamMemberModulePermissions || {};
@@ -115,15 +115,6 @@ export const useTeamMemberAccess = () => {
             if (globalPerms[key]) {
               modules.add(key);
             }
-          });
-
-          // Permissions par unité
-          assignedUnits.forEach(unit => {
-            Object.keys(unit.permissions).forEach(key => {
-              if (unit.permissions[key]) {
-                modules.add(key);
-              }
-            });
           });
 
           const info: TeamMemberInfo = {
@@ -158,6 +149,18 @@ export const useTeamMemberAccess = () => {
     };
 
     checkTeamMemberStatus();
+
+    const channel = user?.id
+      ? supabase
+          .channel(`team-member-access-${user.id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `user_id=eq.${user.id}` }, checkTeamMemberStatus)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'team_member_units' }, checkTeamMemberStatus)
+          .subscribe()
+      : null;
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   // Vérifier si l'utilisateur a accès à une unité spécifique

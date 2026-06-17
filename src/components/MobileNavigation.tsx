@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Home, Factory, Wifi, Beef, ShoppingBag } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import { hasAssignedModule } from '@/lib/moduleAccess';
 
 interface MobileNavigationProps {
   activeTab: string;
@@ -13,19 +14,9 @@ const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationProps) => 
   const { t } = useSettings();
   const { isTeamMember, hasAccessToModule } = useTeamMemberAccess();
   
-  // Mapping des IDs de tabs vers les IDs de modules
-  const tabToModuleMapping: Record<string, string> = {
-    'dashboard': 'dashboard',
-    'iot-control': 'iot',
-    'units': 'infrastructure',
-    'livestock': 'livestock',
-    'sales': 'sales',
-  };
-
   const isTabAllowed = (tabId: string): boolean => {
     if (!isTeamMember) return true;
-    const moduleId = tabToModuleMapping[tabId] || tabId;
-    return hasAccessToModule(moduleId);
+    return hasAssignedModule(tabId, hasAccessToModule);
   };
   
   const allMainItems = [

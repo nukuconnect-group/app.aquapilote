@@ -32,6 +32,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Badge } from '@/components/ui/badge';
+import { hasAssignedModule } from '@/lib/moduleAccess';
 
 interface MobileMenuModalProps {
   isOpen: boolean;
@@ -45,37 +46,9 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
   const { user } = useAuth();
   const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
 
-  // Mapping des IDs de tabs vers les IDs de modules
-  const tabToModuleMapping: Record<string, string> = {
-    'dashboard': 'dashboard',
-    'iot-control': 'iot',
-    'units': 'infrastructure',
-    'infrastructures': 'infrastructure',
-    'livestock': 'livestock',
-    'feeding': 'feeding',
-    'health': 'health',
-    'production': 'production',
-    'accounting': 'accounting',
-    'purchases': 'purchases',
-    'sales': 'sales',
-    'suppliers': 'suppliers',
-    'hr': 'accounting',
-    'team': 'settings',
-    'planning': 'planning',
-    'reports': 'reports',
-    'aqua-assistant': 'dashboard',
-    'support': 'support',
-    'offline': 'settings',
-    'settings': 'settings',
-    'admin': 'admin',
-    'analytics': 'reports',
-    'performance-alerts': 'dashboard'
-  };
-
   const isTabAllowed = (tabId: string): boolean => {
     if (!isTeamMember) return true;
-    const moduleId = tabToModuleMapping[tabId] || tabId;
-    return hasAccessToModule(moduleId);
+    return hasAssignedModule(tabId, hasAccessToModule);
   };
   
   const menuItems = [

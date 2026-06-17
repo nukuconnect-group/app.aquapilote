@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '@/components/Header';
@@ -37,6 +38,7 @@ import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
 
 /**
  * Page principale du dashboard
@@ -44,29 +46,46 @@ import { Badge } from '@/components/ui/badge';
  * Les membres d'équipe ont un accès restreint selon leurs permissions
  */
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => moduleParamToTabId(searchParams.get('module')));
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule } = useTeamMemberAccess();
 
+  const canAccessTab = (tab: string) => {
+    if (tab === 'dashboard') return true;
+    if (!isTeamMember) return true;
+    return hasAssignedModule(tab, hasAccessToModule);
+  };
+
+  const commitTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
+  };
+
   const handleTabChange = (tab: string) => {
-    if (isTeamMember && !isLoadingAccess && tab !== 'dashboard' && tab !== 'settings' && tab !== 'support' && !hasAccessToModule(tab)) {
-      setActiveTab('dashboard');
+    if (!isLoadingAccess && !canAccessTab(tab)) {
+      commitTabChange('dashboard');
       setShowMobileMenu(false);
       return;
     }
 
-    setActiveTab(tab);
+    commitTabChange(tab);
     setShowMobileMenu(false);
   };
 
   // Vérifier si le membre d'équipe a accès à l'onglet actuel
   useEffect(() => {
-    if (isTeamMember && teamMemberInfo && !isLoadingAccess) {
-      if (activeTab !== 'dashboard' && activeTab !== 'settings' && activeTab !== 'support' && !hasAccessToModule(activeTab)) {
-        setActiveTab('dashboard');
-      }
+    const requestedTab = moduleParamToTabId(searchParams.get('module'));
+    if (requestedTab !== activeTab && (requestedTab === 'dashboard' || !isLoadingAccess)) {
+      if (canAccessTab(requestedTab)) commitTabChange(requestedTab);
+      else commitTabChange('dashboard');
+      return;
     }
-  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
+
+    if (isTeamMember && teamMemberInfo && !isLoadingAccess && !canAccessTab(activeTab)) {
+      commitTabChange('dashboard');
+    }
+  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule, searchParams]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
@@ -136,7 +155,7 @@ const Dashboard: React.FC = () => {
             {/* Single unified RBAC dashboard — visibility & navigation are
                 already filtered by useTeamMemberAccess + hasAccessToModule. */}
             {renderTeamMemberWelcome()}
-            <ModernDashboard onNavigate={setActiveTab} />
+            <ModernDashboard onNavigate={handleTabChange} canAccessModule={(id) => canAccessTab(id)} />
           </>
         );
       case 'iot-control':
@@ -196,7 +215,7 @@ const Dashboard: React.FC = () => {
         return (
           <>
             {renderTeamMemberWelcome()}
-            <ModernDashboard onNavigate={setActiveTab} />
+            <ModernDashboard onNavigate={handleTabChange} canAccessModule={(id) => canAccessTab(id)} />
           </>
         );
     }
@@ -207,7 +226,7 @@ const Dashboard: React.FC = () => {
       <div className="min-h-screen bg-background flex w-full m-0 p-0 overflow-x-hidden">
         {/* Sidebar Navigation - masqué sur mobile */}
         <div className="hidden md:flex">
-          <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
         {/* Conteneur principal avec header et contenu */}
@@ -221,7 +240,7 @@ const Dashboard: React.FC = () => {
               <SidebarTrigger className="ml-2" />
             </div>
             <div className="flex-1 w-full m-0 p-0">
-              <Header onNavigate={setActiveTab} onOpenMobileMenu={() => setShowMobileMenu(prev => !prev)} />
+            <Header onNavigate={handleTabChange} onOpenMobileMenu={() => setShowMobileMenu(prev => !prev)} />
             </div>
           </div>
 
@@ -241,7 +260,7 @@ const Dashboard: React.FC = () => {
           isOpen={showMobileMenu} 
           onClose={() => setShowMobileMenu(false)} 
           activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+          onTabChange={handleTabChange} 
         />
 
         {/* PWA Install Prompt */}
