@@ -353,6 +353,10 @@ const TeamManagement = () => {
 
   const handleUpdateMemberPermissions = async () => {
     if (!selectedMember) return;
+    if (!selectedMember.dashboard_roles || selectedMember.dashboard_roles.length === 0) {
+      toast({ title: t('error'), description: "Sélectionnez au moins un rôle pour ce membre.", variant: "destructive" });
+      return;
+    }
     if (Object.values(selectedMember.permissions || {}).filter(Boolean).length === 0) {
       toast({ title: t('error'), description: "Sélectionnez au moins un module autorisé pour ce membre.", variant: "destructive" });
       return;
