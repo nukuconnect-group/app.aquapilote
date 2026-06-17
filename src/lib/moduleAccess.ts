@@ -9,6 +9,7 @@ export const APP_MODULE_PERMISSIONS: AppModulePermission[] = [
   { id: 'dashboard', label: 'Tableau de bord', description: 'Vue principale unifiée', tabIds: ['dashboard'] },
   { id: 'performance-alerts', label: 'Alertes performance', description: 'Alertes, seuils et suivi critique', tabIds: ['performance-alerts'] },
   { id: 'iot', label: 'IoT', description: 'Capteurs et paramètres en direct', tabIds: ['iot-control'] },
+  { id: 'environment', label: 'Environnement', description: 'Météo et paramètres environnementaux', tabIds: ['weather'] },
   { id: 'units', label: 'Unités', description: 'Gestion des unités de production', tabIds: ['units'] },
   { id: 'infrastructure', label: 'Infrastructures', description: 'Bassins, équipements et installations', tabIds: ['infrastructures'] },
   { id: 'livestock', label: 'Cheptel / lots', description: 'Lots, biomasse et pêche', tabIds: ['livestock'] },
