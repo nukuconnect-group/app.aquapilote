@@ -36,7 +36,7 @@ import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Building2, Info } from 'lucide-react';
+import { Shield, Building2, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { APP_MODULE_PERMISSIONS, hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
 
@@ -264,7 +264,12 @@ const Dashboard: React.FC = () => {
           {/* Main Content avec padding-top pour compenser le header fixe sur mobile */}
           <main className="flex-1 overflow-y-auto px-2 sm:p-4 lg:p-6 pb-16 md:pb-6 pt-[3.75rem] sm:pt-[5rem] md:pt-2">
             <div className="w-full max-w-none">
-              {renderContent()}
+              {isLoadingAccess ? (
+                <div className="min-h-[50vh] flex items-center justify-center text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  Chargement des permissions…
+                </div>
+              ) : renderContent()}
             </div>
           </main>
         </div>
