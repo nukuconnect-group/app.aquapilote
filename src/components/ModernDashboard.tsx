@@ -727,22 +727,22 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
       </div>
 
       {/* Reports per unit */}
-      <Card>
+      {(canViewProduction || canViewInfrastructure || canViewFinance) && <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <Gauge className="w-5 h-5 text-cyan-600" /> Suivi opérationnel — {unitLabel}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="cycles" className="w-full">
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="cycles" className="text-xs sm:text-sm">Cycles</TabsTrigger>
-              <TabsTrigger value="equipment" className="text-xs sm:text-sm">Équipements</TabsTrigger>
-              <TabsTrigger value="infrastructure" className="text-xs sm:text-sm">Infrastructures</TabsTrigger>
-              <TabsTrigger value="depreciation" className="text-xs sm:text-sm">Amortissements</TabsTrigger>
+          <Tabs defaultValue={defaultOperationalTab} className="w-full">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto">
+              {canViewProduction && <TabsTrigger value="cycles" className="text-xs sm:text-sm">Cycles</TabsTrigger>}
+              {canViewInfrastructure && <TabsTrigger value="equipment" className="text-xs sm:text-sm">Équipements</TabsTrigger>}
+              {canViewInfrastructure && <TabsTrigger value="infrastructure" className="text-xs sm:text-sm">Infrastructures</TabsTrigger>}
+              {canViewFinance && <TabsTrigger value="depreciation" className="text-xs sm:text-sm">Amortissements</TabsTrigger>}
             </TabsList>
 
-            <TabsContent value="cycles" className="space-y-3 mt-4">
+            {canViewProduction && <TabsContent value="cycles" className="space-y-3 mt-4">
               {cycleProgress.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">Aucun cycle actif en cours.</p>
               ) : (
@@ -782,9 +782,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
                   </div>
                 ))
               )}
-            </TabsContent>
+            </TabsContent>}
 
-            <TabsContent value="equipment" className="space-y-3 mt-4">
+            {canViewInfrastructure && <TabsContent value="equipment" className="space-y-3 mt-4">
               {unitEquipment.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">Aucun équipement enregistré pour cette unité.</p>
               ) : (
@@ -818,9 +818,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
                   );
                 })
               )}
-            </TabsContent>
+            </TabsContent>}
 
-            <TabsContent value="infrastructure" className="space-y-3 mt-4">
+            {canViewInfrastructure && <TabsContent value="infrastructure" className="space-y-3 mt-4">
               {unitInfra.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">Aucune infrastructure enregistrée.</p>
               ) : (
@@ -852,9 +852,9 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
                   );
                 })
               )}
-            </TabsContent>
+            </TabsContent>}
 
-            <TabsContent value="depreciation" className="space-y-3 mt-4">
+            {canViewFinance && <TabsContent value="depreciation" className="space-y-3 mt-4">
               {unitAssets.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">Aucun actif amortissable enregistré.</p>
               ) : (
@@ -885,12 +885,12 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
                   );
                 })
               )}
-            </TabsContent>
+            </TabsContent>}
           </Tabs>
         </CardContent>
-      </Card>
+      </Card>}
 
-      <Card>
+      {(canViewUnits || canAccessModule('reports')) && <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" /> Rapports des unités de production
@@ -951,13 +951,13 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Alerts panel */}
-      <AlertsPanel />
+      {canViewAlerts && <AlertsPanel />}
 
       {/* Map (option) */}
-      <div>
+      {canViewUnits && <div>
         <Button variant="outline" size="sm" onClick={() => setShowMap((v) => !v)} className="gap-2">
           <MapIcon className="w-4 h-4" />
           {showMap ? 'Masquer la carte des fermes' : 'Afficher la carte des fermes'}
@@ -968,7 +968,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
             <FarmsMap />
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 };
