@@ -47,7 +47,10 @@ import { APP_MODULE_PERMISSIONS, hasAssignedModule, moduleParamToTabId } from '@
  */
 const Dashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => moduleParamToTabId(searchParams.get('module')));
+  // Source unique de vérité : l'onglet actif est dérivé du paramètre `module`
+  // de l'URL. Cela évite les courses entre `setActiveTab` et `setSearchParams`
+  // qui faisaient revenir l'utilisateur au tableau de bord après un clic.
+  const activeTab = moduleParamToTabId(searchParams.get('module'));
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule, getAllowedModulesList } = useTeamMemberAccess();
 
@@ -65,8 +68,7 @@ const Dashboard: React.FC = () => {
 
   const commitTabChange = (tab: string) => {
     const nextParams = tab === 'dashboard' ? '' : tab;
-    if (activeTab === tab && (searchParams.get('module') || '') === nextParams) return;
-    setActiveTab(tab);
+    if ((searchParams.get('module') || '') === nextParams) return;
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
   };
 
@@ -81,19 +83,16 @@ const Dashboard: React.FC = () => {
     setShowMobileMenu(false);
   };
 
-  // Vérifier si le membre d'équipe a accès à l'onglet actuel
+  // Si un membre d'équipe atterrit sur un module non autorisé, on le ramène
+  // vers son premier module autorisé. On évite tout effet pour les utilisateurs
+  // non restreints afin de ne pas perturber la navigation.
   useEffect(() => {
-    const requestedTab = moduleParamToTabId(searchParams.get('module'));
-    if (requestedTab !== activeTab && (requestedTab === 'dashboard' || !isLoadingAccess)) {
-      if (canAccessTab(requestedTab)) commitTabChange(requestedTab);
-      else commitTabChange(getFirstAllowedTab());
-      return;
-    }
-
-    if (isTeamMember && teamMemberInfo && !isLoadingAccess && !canAccessTab(activeTab)) {
-      commitTabChange(getFirstAllowedTab());
-    }
-  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule, searchParams]);
+    if (isLoadingAccess) return;
+    if (!isTeamMember || !teamMemberInfo) return;
+    if (canAccessTab(activeTab)) return;
+    const fallback = getFirstAllowedTab();
+    if (fallback !== activeTab) commitTabChange(fallback);
+  }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
