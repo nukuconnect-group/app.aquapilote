@@ -50,15 +50,19 @@ if ('serviceWorker' in navigator) {
       });
   });
   
-  // Recharger la page si le contrôleur change
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
-      refreshing = true;
-      console.log('🔄 Nouveau contrôleur détecté, rechargement...');
-      window.location.reload();
-    }
-  });
+  // Recharger la page si le contrôleur change — uniquement hors preview
+  // Lovable, sinon la désinscription du SW déclenche un reload qui peut
+  // interrompre la navigation entre modules.
+  if (!/lovable\.app$/i.test(window.location.hostname)) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        console.log('🔄 Nouveau contrôleur détecté, rechargement...');
+        window.location.reload();
+      }
+    });
+  }
 }
 
 const rootElement = document.getElementById("root");
