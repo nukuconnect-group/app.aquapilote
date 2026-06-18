@@ -67,6 +67,18 @@ export const useTeamMemberAccess = () => {
         return;
       }
 
+      // Les administrateurs/propriétaires ne sont jamais soumis aux restrictions
+      // RBAC : même s'ils figurent par erreur dans `team_members`, ils gardent
+      // un accès complet à l'application.
+      if (user.role === 'admin') {
+        setIsTeamMember(false);
+        setTeamMemberInfo(null);
+        setAllowedUnitIds([]);
+        setAllowedModules(new Set());
+        setIsLoading(false);
+        return;
+      }
+
       try {
         // Vérifier si l'utilisateur est un membre d'équipe via user_id (pas email - plus sécurisé)
         const { data: teamMember, error: teamError } = await supabase
