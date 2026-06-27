@@ -442,7 +442,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
             <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="truncate">
               {selectedFarmFilter === 'all' ? 'Toutes fermes' : (units.find(u => u.id === selectedFarmFilter)?.name || 'Ferme')}
-              <span className="text-muted-foreground"> · {selectedBasinFilter === 'all' ? 'Tous bassins' : (basinOptions.find((b: any) => b.id === selectedBasinFilter)?.infrastructure_name || 'Bassin')}</span>
+              <span className="text-muted-foreground"> · {selectedBasinFilter === 'all' ? 'Tous bassins' : ((basinOptions as any[]).find((b) => b.id === selectedBasinFilter)?.infrastructure_name || 'Bassin')}</span>
               <span className="text-muted-foreground"> · {selectedPeriodFilter}j</span>
             </span>
           </span>
