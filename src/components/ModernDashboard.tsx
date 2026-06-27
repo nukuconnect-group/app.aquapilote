@@ -292,7 +292,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centre de pilotage</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Vue consolidée de vos opérations aquacoles</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
+        <div className="hidden sm:flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[320px]">
           <Select value={selectedFarmFilter} onValueChange={(value) => {
             setSelectedFarmFilter(value);
             if (value === 'all') {
