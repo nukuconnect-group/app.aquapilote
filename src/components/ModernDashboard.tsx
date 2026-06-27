@@ -104,6 +104,7 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
   const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
   const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
   const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
