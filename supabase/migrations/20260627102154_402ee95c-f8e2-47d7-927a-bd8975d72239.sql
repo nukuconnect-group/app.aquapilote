@@ -1,0 +1,1 @@
+UPDATE public.profiles p SET is_activated = true WHERE is_activated = false AND EXISTS (SELECT 1 FROM public.team_members tm WHERE tm.user_id = p.id AND tm.status = 'active');
