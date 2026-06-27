@@ -214,6 +214,7 @@ serve(async (req) => {
       .from('profiles')
       .upsert({
         id: createdUserId, email: cleanEmail, full_name: cleanName,
+        is_activated: true,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
     if (profileError) console.error('Profile upsert error:', profileError);
