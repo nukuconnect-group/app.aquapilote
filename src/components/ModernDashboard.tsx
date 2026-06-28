@@ -123,6 +123,15 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
   const setSelectedBasinFilter = (v: string) => updateFilterParam('basin', v);
   const setSelectedPeriodFilter = (v: '7' | '14' | '30') => updateFilterParam('period', v);
 
+  // Restaure l'unité active depuis l'URL (persiste les filtres entre modules)
+  useEffect(() => {
+    if (selectedFarmFilter === 'all') return;
+    if (activeUnit?.id === selectedFarmFilter) return;
+    const unit = units.find((u) => u.id === selectedFarmFilter);
+    if (unit) setActiveUnit(unit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFarmFilter, units]);
+
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
   const { records: healthRecords } = useHealthRecords(undefined, activeUnit?.id);
