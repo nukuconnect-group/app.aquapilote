@@ -102,10 +102,26 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
   const { activeUnit, setActiveUnit, units, getUnitEquipment, getUnitInfrastructures, getUnitDepreciableAssets, calculateDepreciation } = useProductionUnits();
   const { formatCurrency } = useSettings();
   const [showMap, setShowMap] = useState(false);
-  const [selectedFarmFilter, setSelectedFarmFilter] = useState<string>('all');
-  const [selectedBasinFilter, setSelectedBasinFilter] = useState<string>('all');
-  const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<'7' | '14' | '30'>('7');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedFarmFilter = searchParams.get('farm') || 'all';
+  const selectedBasinFilter = searchParams.get('basin') || 'all';
+  const periodParam = searchParams.get('period');
+  const selectedPeriodFilter: '7' | '14' | '30' =
+    periodParam === '14' || periodParam === '30' ? periodParam : '7';
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  const updateFilterParam = (key: 'farm' | 'basin' | 'period', value: string) => {
+    const next = new URLSearchParams(searchParams);
+    const isDefault =
+      (key === 'farm' && value === 'all') ||
+      (key === 'basin' && value === 'all') ||
+      (key === 'period' && value === '7');
+    if (isDefault) next.delete(key); else next.set(key, value);
+    setSearchParams(next, { replace: true });
+  };
+  const setSelectedFarmFilter = (v: string) => updateFilterParam('farm', v);
+  const setSelectedBasinFilter = (v: string) => updateFilterParam('basin', v);
+  const setSelectedPeriodFilter = (v: '7' | '14' | '30') => updateFilterParam('period', v);
 
   const { cycles } = useProductionCycles(activeUnit?.id);
   const { batches } = useLivestockBatches(activeUnit?.id);
