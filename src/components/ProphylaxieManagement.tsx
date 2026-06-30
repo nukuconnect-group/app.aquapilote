@@ -31,6 +31,7 @@ import CameraAnalysis from './prophylaxie/CameraAnalysis';
 import IoTModeAnalysis from './prophylaxie/IoTModeAnalysis';
 import ReportGenerator from './prophylaxie/ReportGenerator';
 import DiseaseManager from './prophylaxie/DiseaseManager';
+import AquaHealthAI from './prophylaxie/AquaHealthAI';
 
 interface Treatment {
   id: string;
@@ -423,7 +424,7 @@ const ProphylaxieManagement = () => {
 
       <Tabs defaultValue="calendar" className="space-y-4">
         <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-          <TabsList className="grid grid-cols-5 w-full min-w-[500px] sm:min-w-0">
+          <TabsList className="grid grid-cols-6 w-full min-w-[600px] sm:min-w-0">
             <TabsTrigger value="calendar" className="text-xs sm:text-sm px-1 sm:px-3">
               Calendrier
             </TabsTrigger>
@@ -443,6 +444,9 @@ const ProphylaxieManagement = () => {
             </TabsTrigger>
             <TabsTrigger value="planning" className="text-xs sm:text-sm px-1 sm:px-3">
               Planning
+            </TabsTrigger>
+            <TabsTrigger value="aquahealth" className="text-xs sm:text-sm px-1 sm:px-3">
+              AquaHealth AI
             </TabsTrigger>
           </TabsList>
         </div>
