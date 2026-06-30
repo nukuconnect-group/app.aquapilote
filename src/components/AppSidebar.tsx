@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell } from 'lucide-react';
+import { Sparkles, BookOpen } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +51,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         { id: 'infrastructures', label: t('infrastructures'), icon: Wrench },
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
+        { id: 'aquafeed', label: 'AquaFeed AI', icon: Sparkles },
         { id: 'health', label: t('health'), icon: Heart },
         { id: 'production', label: t('production'), icon: Package },
       ]
@@ -76,6 +78,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         { id: 'analytics', label: t('analytics'), icon: BarChart3 },
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText },
+        { id: 'library', label: 'Bibliothèque Premium', icon: BookOpen },
       ]
     },
     {

@@ -15,6 +15,8 @@ import ProductionUnitsManagement from '@/components/ProductionUnitsManagement';
 import InfrastructureManagement from '@/components/InfrastructureManagement';
 import LivestockManagement from '@/components/LivestockManagement';
 import FeedingManagement from '@/components/FeedingManagement';
+import AquaFeedAI from '@/components/aquafeed/AquaFeedAI';
+import PremiumLibrary from '@/components/library/PremiumLibrary';
 import ProphylaxieManagement from '@/components/ProphylaxieManagement';
 import TransformationManagement from '@/components/TransformationManagement';
 import ProductionManagement from '@/components/ProductionManagement';
@@ -184,6 +186,10 @@ const Dashboard: React.FC = () => {
         return <LivestockManagement />;
       case 'feeding':
         return <FeedingManagement />;
+      case 'aquafeed':
+        return <AquaFeedAI />;
+      case 'library':
+        return <PremiumLibrary />;
       case 'health':
         return <ProphylaxieManagement />;
       case 'transformation':
