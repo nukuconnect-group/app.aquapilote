@@ -26,7 +26,9 @@ import {
   MessageCircle,
   Headphones,
   BarChart3,
-  Bell
+  Bell,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,6 +71,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'infrastructures', label: t('infrastructures'), icon: Building },
         { id: 'livestock', label: t('livestock'), icon: Beef },
         { id: 'feeding', label: t('feeding'), icon: Utensils },
+        { id: 'aquafeed', label: 'AquaFeed AI', icon: Sparkles },
         { id: 'health', label: t('health'), icon: Heart },
         { id: 'production', label: t('production_cycles'), icon: Package },
       ]
@@ -98,6 +101,7 @@ const MobileMenuModal = ({ isOpen, onClose, activeTab, onTabChange }: MobileMenu
         { id: 'analytics', label: t('analytics'), icon: BarChart3 },
         { id: 'planning', label: t('planning'), icon: Calendar },
         { id: 'reports', label: t('reports'), icon: FileText }
+        ,{ id: 'library', label: 'Bibliothèque Premium', icon: BookOpen }
       ]
     },
     // Outils & Aide
