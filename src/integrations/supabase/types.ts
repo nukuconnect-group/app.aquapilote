@@ -288,6 +288,107 @@ export type Database = {
         }
         Relationships: []
       }
+      aqua_diagnoses: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          other_symptoms: string | null
+          results: Json
+          risk_level: string | null
+          selected_symptoms: string[]
+          top_disease_id: string | null
+          unit_id: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          other_symptoms?: string | null
+          results?: Json
+          risk_level?: string | null
+          selected_symptoms?: string[]
+          top_disease_id?: string | null
+          unit_id?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          other_symptoms?: string | null
+          results?: Json
+          risk_level?: string | null
+          selected_symptoms?: string[]
+          top_disease_id?: string | null
+          unit_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aqua_diagnoses_top_disease_id_fkey"
+            columns: ["top_disease_id"]
+            isOneToOne: false
+            referencedRelation: "aqua_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aqua_diseases: {
+        Row: {
+          category: string
+          causes: string | null
+          created_at: string
+          description: string | null
+          documents: string[] | null
+          favoring_factors: string | null
+          id: string
+          images: string[] | null
+          is_active: boolean
+          mortality_rate_pct: number | null
+          name: string
+          prevention: string | null
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          causes?: string | null
+          created_at?: string
+          description?: string | null
+          documents?: string[] | null
+          favoring_factors?: string | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean
+          mortality_rate_pct?: number | null
+          name: string
+          prevention?: string | null
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          causes?: string | null
+          created_at?: string
+          description?: string | null
+          documents?: string[] | null
+          favoring_factors?: string | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean
+          mortality_rate_pct?: number | null
+          name?: string
+          prevention?: string | null
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cycle_infrastructures: {
         Row: {
           created_at: string | null
@@ -396,6 +497,128 @@ export type Database = {
         }
         Relationships: []
       }
+      disease_symptom_map: {
+        Row: {
+          disease_id: string
+          id: string
+          symptom_id: string
+          weight: number
+        }
+        Insert: {
+          disease_id: string
+          id?: string
+          symptom_id: string
+          weight?: number
+        }
+        Update: {
+          disease_id?: string
+          id?: string
+          symptom_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_symptom_map_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "aqua_diseases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disease_symptom_map_symptom_id_fkey"
+            columns: ["symptom_id"]
+            isOneToOne: false
+            referencedRelation: "disease_symptoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disease_symptoms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      disease_treatments: {
+        Row: {
+          active_ingredient: string | null
+          administration: string | null
+          created_at: string
+          disease_id: string
+          dosage: string | null
+          duration: string | null
+          follow_up: string | null
+          id: string
+          isolation_required: boolean | null
+          name: string
+          order_index: number | null
+          updated_at: string
+          water_actions: string | null
+        }
+        Insert: {
+          active_ingredient?: string | null
+          administration?: string | null
+          created_at?: string
+          disease_id: string
+          dosage?: string | null
+          duration?: string | null
+          follow_up?: string | null
+          id?: string
+          isolation_required?: boolean | null
+          name: string
+          order_index?: number | null
+          updated_at?: string
+          water_actions?: string | null
+        }
+        Update: {
+          active_ingredient?: string | null
+          administration?: string | null
+          created_at?: string
+          disease_id?: string
+          dosage?: string | null
+          duration?: string | null
+          follow_up?: string | null
+          id?: string
+          isolation_required?: boolean | null
+          name?: string
+          order_index?: number | null
+          updated_at?: string
+          water_actions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_treatments_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "aqua_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           contract_type: string
@@ -449,6 +672,83 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      feed_calculations: {
+        Row: {
+          avg_weight_g: number
+          batch_id: string | null
+          biomass_kg: number
+          created_at: string
+          cycle_days: number | null
+          daily_ration_kg: number
+          feed_rate_pct: number
+          fish_count: number
+          id: string
+          meals_per_day: number
+          notes: string | null
+          projected_final_weight_g: number | null
+          projected_total_feed_kg: number | null
+          ration_per_meal_kg: number
+          species_id: string | null
+          species_name: string | null
+          stage: string | null
+          unit_id: string | null
+          user_id: string
+          water_temp: number | null
+        }
+        Insert: {
+          avg_weight_g: number
+          batch_id?: string | null
+          biomass_kg: number
+          created_at?: string
+          cycle_days?: number | null
+          daily_ration_kg: number
+          feed_rate_pct: number
+          fish_count: number
+          id?: string
+          meals_per_day: number
+          notes?: string | null
+          projected_final_weight_g?: number | null
+          projected_total_feed_kg?: number | null
+          ration_per_meal_kg: number
+          species_id?: string | null
+          species_name?: string | null
+          stage?: string | null
+          unit_id?: string | null
+          user_id: string
+          water_temp?: number | null
+        }
+        Update: {
+          avg_weight_g?: number
+          batch_id?: string | null
+          biomass_kg?: number
+          created_at?: string
+          cycle_days?: number | null
+          daily_ration_kg?: number
+          feed_rate_pct?: number
+          fish_count?: number
+          id?: string
+          meals_per_day?: number
+          notes?: string | null
+          projected_final_weight_g?: number | null
+          projected_total_feed_kg?: number | null
+          ration_per_meal_kg?: number
+          species_id?: string | null
+          species_name?: string | null
+          stage?: string | null
+          unit_id?: string | null
+          user_id?: string
+          water_temp?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_calculations_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "fish_species"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feed_stocks: {
         Row: {
@@ -665,6 +965,98 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feeding_rules: {
+        Row: {
+          created_at: string
+          feed_rate_pct: number
+          id: string
+          meals_per_day: number
+          notes: string | null
+          optimal_temp_max: number | null
+          optimal_temp_min: number | null
+          species_id: string
+          stage: string
+          updated_at: string
+          weight_max_g: number
+          weight_min_g: number
+        }
+        Insert: {
+          created_at?: string
+          feed_rate_pct: number
+          id?: string
+          meals_per_day?: number
+          notes?: string | null
+          optimal_temp_max?: number | null
+          optimal_temp_min?: number | null
+          species_id: string
+          stage: string
+          updated_at?: string
+          weight_max_g: number
+          weight_min_g: number
+        }
+        Update: {
+          created_at?: string
+          feed_rate_pct?: number
+          id?: string
+          meals_per_day?: number
+          notes?: string | null
+          optimal_temp_max?: number | null
+          optimal_temp_min?: number | null
+          species_id?: string
+          stage?: string
+          updated_at?: string
+          weight_max_g?: number
+          weight_min_g?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeding_rules_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "fish_species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fish_species: {
+        Row: {
+          created_at: string
+          default_cycle_days: number | null
+          default_growth_rate: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          scientific_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_cycle_days?: number | null
+          default_growth_rate?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          scientific_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_cycle_days?: number | null
+          default_growth_rate?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          scientific_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       health_records: {
         Row: {
@@ -1170,6 +1562,89 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      premium_library_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          external_url: string | null
+          file_path: string | null
+          id: string
+          is_published: boolean
+          item_type: string
+          plan_min: string
+          size_bytes: number | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          is_published?: boolean
+          item_type: string
+          plan_min?: string
+          size_bytes?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          external_url?: string | null
+          file_path?: string | null
+          id?: string
+          is_published?: boolean
+          item_type?: string
+          plan_min?: string
+          size_bytes?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      premium_library_views: {
+        Row: {
+          id: string
+          item_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_library_views_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "premium_library_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       production_cycles: {
         Row: {
