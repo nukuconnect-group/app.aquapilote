@@ -657,6 +657,9 @@ const ProphylaxieManagement = () => {
         <TabsContent value="diseases">
           <DiseaseManager />
         </TabsContent>
+        <TabsContent value="aquahealth">
+          <AquaHealthAI />
+        </TabsContent>
       </Tabs>
 
       {/* Génération de rapports */}
