@@ -69,7 +69,7 @@ const Welcome: React.FC = () => {
         {/* Titre et description */}
         <div className="space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
-            Bienvenue sur AQUA PILOT
+            Bienvenue sur AQUAPILOTE
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-xl mx-auto">
             Votre solution professionnelle de gestion aquacole intelligente
