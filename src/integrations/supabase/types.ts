@@ -678,66 +678,111 @@ export type Database = {
           avg_weight_g: number
           batch_id: string | null
           biomass_kg: number
+          calc_mode: string | null
           created_at: string
           cycle_days: number | null
           daily_ration_kg: number
+          density_fish_per_m2: number | null
+          density_kg_per_m3: number | null
+          expected_cost: number | null
+          expected_margin: number | null
+          expected_revenue: number | null
+          fcr: number | null
+          feed_price_per_kg: number | null
           feed_rate_pct: number
           fish_count: number
           id: string
+          infrastructure_id: string | null
+          infrastructure_name: string | null
+          infrastructure_type: string | null
+          meal_schedule: Json | null
           meals_per_day: number
           notes: string | null
           projected_final_weight_g: number | null
           projected_total_feed_kg: number | null
           ration_per_meal_kg: number
+          sale_price_per_kg: number | null
           species_id: string | null
           species_name: string | null
           stage: string | null
+          surface_m2: number | null
           unit_id: string | null
           user_id: string
+          volume_m3: number | null
           water_temp: number | null
         }
         Insert: {
           avg_weight_g: number
           batch_id?: string | null
           biomass_kg: number
+          calc_mode?: string | null
           created_at?: string
           cycle_days?: number | null
           daily_ration_kg: number
+          density_fish_per_m2?: number | null
+          density_kg_per_m3?: number | null
+          expected_cost?: number | null
+          expected_margin?: number | null
+          expected_revenue?: number | null
+          fcr?: number | null
+          feed_price_per_kg?: number | null
           feed_rate_pct: number
           fish_count: number
           id?: string
+          infrastructure_id?: string | null
+          infrastructure_name?: string | null
+          infrastructure_type?: string | null
+          meal_schedule?: Json | null
           meals_per_day: number
           notes?: string | null
           projected_final_weight_g?: number | null
           projected_total_feed_kg?: number | null
           ration_per_meal_kg: number
+          sale_price_per_kg?: number | null
           species_id?: string | null
           species_name?: string | null
           stage?: string | null
+          surface_m2?: number | null
           unit_id?: string | null
           user_id: string
+          volume_m3?: number | null
           water_temp?: number | null
         }
         Update: {
           avg_weight_g?: number
           batch_id?: string | null
           biomass_kg?: number
+          calc_mode?: string | null
           created_at?: string
           cycle_days?: number | null
           daily_ration_kg?: number
+          density_fish_per_m2?: number | null
+          density_kg_per_m3?: number | null
+          expected_cost?: number | null
+          expected_margin?: number | null
+          expected_revenue?: number | null
+          fcr?: number | null
+          feed_price_per_kg?: number | null
           feed_rate_pct?: number
           fish_count?: number
           id?: string
+          infrastructure_id?: string | null
+          infrastructure_name?: string | null
+          infrastructure_type?: string | null
+          meal_schedule?: Json | null
           meals_per_day?: number
           notes?: string | null
           projected_final_weight_g?: number | null
           projected_total_feed_kg?: number | null
           ration_per_meal_kg?: number
+          sale_price_per_kg?: number | null
           species_id?: string | null
           species_name?: string | null
           stage?: string | null
+          surface_m2?: number | null
           unit_id?: string | null
           user_id?: string
+          volume_m3?: number | null
           water_temp?: number | null
         }
         Relationships: [
@@ -1023,6 +1068,7 @@ export type Database = {
         Row: {
           created_at: string
           default_cycle_days: number | null
+          default_fcr: number | null
           default_growth_rate: number | null
           description: string | null
           id: string
@@ -1035,6 +1081,7 @@ export type Database = {
         Insert: {
           created_at?: string
           default_cycle_days?: number | null
+          default_fcr?: number | null
           default_growth_rate?: number | null
           description?: string | null
           id?: string
@@ -1047,6 +1094,7 @@ export type Database = {
         Update: {
           created_at?: string
           default_cycle_days?: number | null
+          default_fcr?: number | null
           default_growth_rate?: number | null
           description?: string | null
           id?: string

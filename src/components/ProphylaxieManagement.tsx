@@ -32,6 +32,7 @@ import IoTModeAnalysis from './prophylaxie/IoTModeAnalysis';
 import ReportGenerator from './prophylaxie/ReportGenerator';
 import DiseaseManager from './prophylaxie/DiseaseManager';
 import AquaHealthAI from './prophylaxie/AquaHealthAI';
+import CheptelSante from './prophylaxie/CheptelSante';
 
 interface Treatment {
   id: string;
@@ -424,7 +425,10 @@ const ProphylaxieManagement = () => {
 
       <Tabs defaultValue="calendar" className="space-y-4">
         <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-          <TabsList className="grid grid-cols-6 w-full min-w-[600px] sm:min-w-0">
+          <TabsList className="grid grid-cols-7 w-full min-w-[700px] sm:min-w-0">
+            <TabsTrigger value="cheptel" className="text-xs sm:text-sm px-1 sm:px-3">
+              Cheptel
+            </TabsTrigger>
             <TabsTrigger value="calendar" className="text-xs sm:text-sm px-1 sm:px-3">
               Calendrier
             </TabsTrigger>
@@ -450,6 +454,10 @@ const ProphylaxieManagement = () => {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="cheptel">
+          <CheptelSante />
+        </TabsContent>
 
         <TabsContent value="calendar" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
