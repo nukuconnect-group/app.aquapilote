@@ -2717,6 +2717,10 @@ export type Database = {
         Args: { _owner_id: string; _unit_id: string }
         Returns: boolean
       }
+      user_meets_plan: {
+        Args: { _plan_min: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
