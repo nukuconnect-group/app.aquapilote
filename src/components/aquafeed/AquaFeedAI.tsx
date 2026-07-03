@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { loadSpecies, loadRulesForSpecies, computeFeeding, computeAdvancedFeeding, FishSpecies, FeedingRule, FeedingResult, AdvancedFeedingResult, DENSITY_LIMITS } from '@/lib/feedingEngine';
 import ExportDropdown from '@/components/ExportDropdown';
+import AdvancedAquaFeedCalculator from './AdvancedAquaFeedCalculator';
 
 const AquaFeedAI: React.FC = () => {
   const { user } = useAuth();
