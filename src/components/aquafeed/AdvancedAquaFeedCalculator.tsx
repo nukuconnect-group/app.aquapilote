@@ -492,11 +492,23 @@ const ResultStat: React.FC<{ label: string; value: string; icon?: React.ReactNod
   </div>
 );
 
-const RecapRow: React.FC<{ label: string; value: string; bold?: boolean }> = ({ label, value, bold }) => (
+const RecapRow: React.FC<{ label: string; value: string; bold?: boolean; formula?: string }> = ({ label, value, bold, formula }) => (
   <tr className="border-b last:border-b-0">
     <td className="px-3 py-1.5 text-muted-foreground">{label}</td>
     <td className={`px-3 py-1.5 text-right ${bold ? 'font-semibold text-primary' : ''}`}>{value}</td>
+    <td className="px-3 py-1.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{formula ?? ''}</td>
   </tr>
+);
+
+const UnitsSummary: React.FC<{ items: string[] }> = ({ items }) => (
+  <div className="rounded-lg border bg-muted/30 p-3">
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1 mb-1">
+      <Ruler className="w-3 h-3" /> Résumé des unités utilisées
+    </p>
+    <ul className="text-xs text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+      {items.map((it, i) => <li key={i}>• {it}</li>)}
+    </ul>
+  </div>
 );
 
 const FormulaStep: React.FC<{ n: number; title: string; formula: string; calc: string }> = ({ n, title, formula, calc }) => (
