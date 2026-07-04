@@ -308,14 +308,18 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                     ))}
                     <div className="flex items-center gap-1">
                       <RadioGroupItem value="custom" id="bag-custom" />
-                      <Label htmlFor="bag-custom" className="text-xs cursor-pointer">Autre</Label>
+                      <Label htmlFor="bag-custom" className="text-xs cursor-pointer">Autre (kg)</Label>
                     </div>
                   </RadioGroup>
                   {(customBag !== '' && customBag !== 0) && (
-                    <Input type="number" min={1} className="mt-2" placeholder="Poids personnalisé (kg)"
-                      value={customBag}
-                      onChange={e => setCustomBag(e.target.value === '' ? '' : Number(e.target.value))} />
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input type="number" min={1} step="0.1" placeholder="Poids personnalisé"
+                        value={customBag}
+                        onChange={e => setCustomBag(e.target.value === '' ? '' : Number(e.target.value))} />
+                      <span className="text-xs text-muted-foreground">kg</span>
+                    </div>
                   )}
+                  <p className="text-[11px] text-muted-foreground mt-1">Choisissez un format standard ou saisissez votre propre poids de sac (kg).</p>
                 </div>
 
                 {exportOptions && (
@@ -326,11 +330,21 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
 
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2"><Calculator className="w-4 h-4" />Résultats & détail des calculs</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2"><Calculator className="w-4 h-4" />Résultats</CardTitle>
                 <CardDescription className="text-xs">Recalcul automatique à chaque modification d'un paramètre.</CardDescription>
               </CardHeader>
               <CardContent>
-                {!objectiveResult ? (
+                {objectiveErrors.length > 0 ? (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Paramètres invalides</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc pl-5 mt-1 space-y-0.5 text-sm">
+                        {objectiveErrors.map((e, i) => <li key={i}>{e}</li>)}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                ) : !objectiveResult ? (
                   <div className="text-center py-12 text-muted-foreground">Renseignez les paramètres pour voir le plan.</div>
                 ) : (
                   <div className="space-y-5">
@@ -346,60 +360,45 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                       <ResultStat label="Coût / kg produit" value={formatCurrency(Math.round(objectiveResult.totalCost / Math.max(1, objectiveResult.productionTargetKg)))} />
                     </div>
 
+                    {/* Résumé des unités */}
+                    <UnitsSummary items={[
+                      `Poids : g convertis en kg (÷ 1 000)`,
+                      `Biomasse & aliment : kg${objectiveResult.productionTargetKg >= 1000 ? ` (${(objectiveResult.productionTargetKg / 1000).toLocaleString('fr-FR')} t)` : ''}`,
+                      `Sacs : ${objectiveResult.bagWeight} kg / sac`,
+                      `Prix : ${formatCurrency(objectiveResult.feedPrice)} / kg`,
+                    ]} />
+
                     {/* Tableau récapitulatif */}
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif</p>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif (hypothèses, résultats & formules)</p>
                       <div className="border rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="text-xs text-muted-foreground">
+                              <th className="px-3 py-2 text-left font-medium">Paramètre</th>
+                              <th className="px-3 py-2 text-right font-medium">Valeur</th>
+                              <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Formule / Hypothèse</th>
+                            </tr>
+                          </thead>
                           <tbody>
                             <RecapRow label="Espèce" value={species === 'tilapia' ? 'Tilapia' : 'Clarias'} />
                             <RecapRow label="Infrastructure" value={INFRA_LABELS[infra]} />
-                            <RecapRow label="Objectif de production" value={`${objectiveResult.productionTargetKg} kg (${(objectiveResult.productionTargetKg / 1000).toLocaleString('fr-FR')} t)`} />
-                            <RecapRow label="Poids moyen final visé" value={`${finalWeight} g (${objectiveResult.finalWeightKg} kg)`} />
-                            <RecapRow label="Poids moyen initial alevin" value={`${initialWeight} g (${objectiveResult.initialWeightKg} kg)`} />
-                            <RecapRow label="Taux de survie" value={`${objectiveResult.survivalRate} %`} />
-                            <RecapRow label="IC (FCR)" value={String(objectiveResult.fcr)} />
+                            <RecapRow label="Objectif de production" value={`${objectiveResult.productionTargetKg} kg (${(objectiveResult.productionTargetKg / 1000).toLocaleString('fr-FR')} t)`} formula="Donnée saisie" />
+                            <RecapRow label="Poids moyen final visé" value={`${finalWeight} g (${objectiveResult.finalWeightKg} kg)`} formula="g ÷ 1 000 = kg" />
+                            <RecapRow label="Poids moyen initial (alevin)" value={`${initialWeight} g (${objectiveResult.initialWeightKg} kg)`} formula="g ÷ 1 000 = kg" />
+                            <RecapRow label="Taux de survie" value={`${objectiveResult.survivalRate} %`} formula="Hypothèse (1-100 %)" />
+                            <RecapRow label="IC (FCR)" value={String(objectiveResult.fcr)} formula="Hypothèse (kg aliment / kg gain)" />
                             <RecapRow label="Prix aliment / kg" value={formatCurrency(objectiveResult.feedPrice)} />
                             <RecapRow label="Poids du sac" value={`${objectiveResult.bagWeight} kg`} />
-                            <RecapRow label="Poissons à récolter" value={objectiveResult.fishToHarvest.toLocaleString('fr-FR')} bold />
-                            <RecapRow label="Alevins à empoissonner" value={objectiveResult.fingerlings.toLocaleString('fr-FR')} bold />
-                            <RecapRow label="Biomasse initiale" value={`${objectiveResult.initialBiomass} kg`} />
-                            <RecapRow label="Gain de biomasse" value={`${objectiveResult.biomassGain} kg`} />
-                            <RecapRow label="Quantité totale d'aliment" value={`${objectiveResult.totalFeedKg} kg`} bold />
-                            <RecapRow label="Coût total de l'alimentation" value={formatCurrency(objectiveResult.totalCost)} bold />
-                            <RecapRow label="Nombre de sacs à acheter" value={`${objectiveResult.bagsNeeded} sacs de ${objectiveResult.bagWeight} kg`} bold />
+                            <RecapRow label="Poissons à récolter" value={objectiveResult.fishToHarvest.toLocaleString('fr-FR')} bold formula="Objectif (kg) ÷ Poids final (kg)" />
+                            <RecapRow label="Alevins à empoissonner" value={objectiveResult.fingerlings.toLocaleString('fr-FR')} bold formula="Poissons à récolter × 100 ÷ Survie (%)" />
+                            <RecapRow label="Biomasse initiale" value={`${objectiveResult.initialBiomass} kg`} formula="Nb alevins × Poids initial (kg)" />
+                            <RecapRow label="Gain de biomasse" value={`${objectiveResult.biomassGain} kg`} formula="Objectif − Biomasse initiale" />
+                            <RecapRow label="Quantité totale d'aliment" value={`${objectiveResult.totalFeedKg} kg`} bold formula="Gain de biomasse × IC" />
+                            <RecapRow label="Coût total de l'alimentation" value={formatCurrency(objectiveResult.totalCost)} bold formula="Aliment (kg) × Prix / kg" />
+                            <RecapRow label="Nombre de sacs à acheter" value={`${objectiveResult.bagsNeeded} sacs de ${objectiveResult.bagWeight} kg`} bold formula="⌈ Aliment ÷ Poids du sac ⌉" />
                           </tbody>
                         </table>
-                      </div>
-                    </div>
-
-                    {/* Détail des calculs */}
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                        <Info className="w-3 h-3" /> Détail des calculs & formules
-                      </p>
-                      <div className="space-y-2 text-sm">
-                        <FormulaStep n={1} title="Nombre de poissons à récolter"
-                          formula="Objectif (kg) ÷ Poids final (kg)"
-                          calc={`${objectiveResult.productionTargetKg} ÷ ${objectiveResult.finalWeightKg} = ${objectiveResult.fishToHarvest.toLocaleString('fr-FR')} poissons`} />
-                        <FormulaStep n={2} title="Nombre d'alevins à stocker"
-                          formula="Poissons à récolter × 100 ÷ Taux de survie (%)"
-                          calc={`${objectiveResult.fishToHarvest.toLocaleString('fr-FR')} × 100 ÷ ${objectiveResult.survivalRate} = ${objectiveResult.fingerlings.toLocaleString('fr-FR')} alevins`} />
-                        <FormulaStep n={3} title="Biomasse initiale"
-                          formula="Nombre d'alevins × Poids initial (kg)"
-                          calc={`${objectiveResult.fingerlings.toLocaleString('fr-FR')} × ${objectiveResult.initialWeightKg} = ${objectiveResult.initialBiomass} kg`} />
-                        <FormulaStep n={4} title="Gain de biomasse"
-                          formula="Objectif − Biomasse initiale"
-                          calc={`${objectiveResult.productionTargetKg} − ${objectiveResult.initialBiomass} = ${objectiveResult.biomassGain} kg`} />
-                        <FormulaStep n={5} title="Quantité totale d'aliment"
-                          formula="Gain de biomasse × IC"
-                          calc={`${objectiveResult.biomassGain} × ${objectiveResult.fcr} = ${objectiveResult.totalFeedKg} kg`} />
-                        <FormulaStep n={6} title="Coût total de l'alimentation"
-                          formula="Quantité d'aliment × Prix / kg"
-                          calc={`${objectiveResult.totalFeedKg} × ${formatCurrency(objectiveResult.feedPrice)} = ${formatCurrency(objectiveResult.totalCost)}`} />
-                        <FormulaStep n={7} title="Nombre de sacs à acheter"
-                          formula="⌈ Quantité d'aliment ÷ Poids du sac ⌉"
-                          calc={`⌈ ${objectiveResult.totalFeedKg} ÷ ${objectiveResult.bagWeight} ⌉ = ${objectiveResult.bagsNeeded} sacs`} />
                       </div>
                     </div>
                   </div>
