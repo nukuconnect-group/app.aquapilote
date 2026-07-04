@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Target, Utensils, Fish, Wallet, Package, Info } from 'lucide-react';
+import { Calculator, Target, Utensils, Fish, Wallet, Package, Info, AlertTriangle, Ruler } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ExportDropdown from '@/components/ExportDropdown';
 
@@ -76,9 +77,36 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
   const [dFeedPrice, setDFeedPrice] = useState<number>(650);
   const [dBagWeight, setDBagWeight] = useState<number>(25);
 
+  // ---------- Validation stricte ----------
+  const objectiveErrors = useMemo(() => {
+    const errs: string[] = [];
+    const bag = typeof customBag === 'number' && customBag > 0 ? customBag : bagWeight;
+    if (!(productionTarget > 0)) errs.push("L'objectif de production doit être supérieur à 0 kg.");
+    if (!(finalWeight > 0)) errs.push('Le poids moyen final doit être supérieur à 0 g.');
+    if (!(initialWeight > 0)) errs.push("Le poids moyen de l'alevin doit être supérieur à 0 g.");
+    if (finalWeight > 0 && initialWeight > 0 && initialWeight >= finalWeight) {
+      errs.push('Le poids alevin doit être inférieur au poids final visé.');
+    }
+    if (!(survivalRate >= 1 && survivalRate <= 100)) errs.push('Le taux de survie doit être compris entre 1 % et 100 %.');
+    if (!(fcr > 0)) errs.push("L'IC (indice de conversion) doit être supérieur à 0.");
+    if (!(feedPrice > 0)) errs.push("Le prix de l'aliment doit être supérieur à 0.");
+    if (!(bag > 0)) errs.push('Le poids du sac doit être supérieur à 0 kg.');
+    return errs;
+  }, [productionTarget, finalWeight, initialWeight, survivalRate, fcr, feedPrice, bagWeight, customBag]);
+
+  const dailyErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (!(dFishCount > 0)) errs.push('Le nombre de poissons doit être supérieur à 0.');
+    if (!(dAvgWeight > 0)) errs.push('Le poids moyen individuel doit être supérieur à 0 g.');
+    if (!(dFeedRate > 0 && dFeedRate <= 20)) errs.push("Le % d'alimentation doit être compris entre 0 et 20 %.");
+    if (!(dFeedPrice > 0)) errs.push("Le prix de l'aliment doit être supérieur à 0.");
+    if (!(dBagWeight > 0)) errs.push('Le poids du sac doit être supérieur à 0 kg.');
+    return errs;
+  }, [dFishCount, dAvgWeight, dFeedRate, dFeedPrice, dBagWeight]);
+
   const objectiveResult: ObjectiveResult | null = useMemo(() => {
     const bag = typeof customBag === 'number' && customBag > 0 ? customBag : bagWeight;
-    if (productionTarget <= 0 || finalWeight <= 0 || initialWeight <= 0 || survivalRate <= 0 || fcr <= 0 || bag <= 0) return null;
+    if (objectiveErrors.length > 0) return null;
     const finalKg = finalWeight / 1000;
     const initialKg = initialWeight / 1000;
     const fishToHarvest = productionTarget / finalKg;
@@ -104,10 +132,10 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       totalCost: Math.round(totalCost),
       bagsNeeded,
     };
-  }, [productionTarget, finalWeight, initialWeight, survivalRate, fcr, feedPrice, bagWeight, customBag]);
+  }, [productionTarget, finalWeight, initialWeight, survivalRate, fcr, feedPrice, bagWeight, customBag, objectiveErrors]);
 
   const dailyResult: DailyResult | null = useMemo(() => {
-    if (dFishCount <= 0 || dAvgWeight <= 0 || dFeedRate <= 0 || dBagWeight <= 0) return null;
+    if (dailyErrors.length > 0) return null;
     const biomassKg = (dFishCount * dAvgWeight) / 1000;
     const dailyRationKg = biomassKg * (dFeedRate / 100);
     const monthlyRationKg = dailyRationKg * 30;
@@ -123,7 +151,7 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       cost: Math.round(cost),
       bagsPerMonth,
     };
-  }, [dFishCount, dAvgWeight, dFeedRate, dFeedPrice, dBagWeight]);
+  }, [dFishCount, dAvgWeight, dFeedRate, dFeedPrice, dBagWeight, dailyErrors]);
 
   const exportOptions = useMemo(() => {
     if (!objectiveResult) return null;
