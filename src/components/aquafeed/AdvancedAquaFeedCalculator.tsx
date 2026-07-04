@@ -465,15 +465,29 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                   <div>
                     <Label>Poids sac (kg)</Label>
                     <Input type="number" min={1} value={dBagWeight} onChange={e => setDBagWeight(Number(e.target.value))} />
+                    <p className="text-[11px] text-muted-foreground mt-1">Ex. 15, 25, 50 kg — ou votre propre format.</p>
                   </div>
                 </div>
+                {dailyExportOptions && (
+                  <ExportDropdown options={dailyExportOptions} label="Exporter le plan" className="w-full" />
+                )}
               </CardContent>
             </Card>
 
             <Card className="lg:col-span-2">
               <CardHeader><CardTitle className="text-base">Résultat journalier & mensuel</CardTitle></CardHeader>
               <CardContent>
-                {!dailyResult ? (
+                {dailyErrors.length > 0 ? (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Paramètres invalides</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc pl-5 mt-1 space-y-0.5 text-sm">
+                        {dailyErrors.map((e, i) => <li key={i}>{e}</li>)}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                ) : !dailyResult ? (
                   <div className="text-center py-12 text-muted-foreground">Renseignez les paramètres.</div>
                 ) : (
                   <div className="space-y-4">
@@ -485,23 +499,36 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                       <ResultStat label="Coût / mois" value={formatCurrency(dailyResult.cost)} highlight />
                       <ResultStat label="Sacs / mois" value={`${dailyResult.bagsPerMonth} sacs`} />
                     </div>
+                    <UnitsSummary items={[
+                      `Poids individuel : g → kg (÷ 1 000)`,
+                      `Biomasse & rations : kg`,
+                      `Sacs : ${dBagWeight} kg / sac`,
+                      `Prix : ${formatCurrency(dFeedPrice)} / kg`,
+                    ]} />
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                        <Info className="w-3 h-3" /> Formules
-                      </p>
-                      <div className="space-y-2 text-sm">
-                        <FormulaStep n={1} title="Biomasse totale"
-                          formula="Nombre de poissons × Poids moyen (kg)"
-                          calc={`${dailyResult.fishCount} × ${(dailyResult.avgWeightG / 1000)} = ${dailyResult.biomassKg} kg`} />
-                        <FormulaStep n={2} title="Ration journalière"
-                          formula="Biomasse × % d'alimentation"
-                          calc={`${dailyResult.biomassKg} × ${dailyResult.feedRatePct}% = ${dailyResult.dailyRationKg} kg/j`} />
-                        <FormulaStep n={3} title="Coût mensuel"
-                          formula="Ration/jour × 30 × Prix/kg"
-                          calc={`${dailyResult.dailyRationKg} × 30 × ${formatCurrency(dFeedPrice)} = ${formatCurrency(dailyResult.cost)}`} />
-                        <FormulaStep n={4} title="Nombre de sacs / mois"
-                          formula="⌈ Ration mensuelle ÷ Poids du sac ⌉"
-                          calc={`⌈ ${dailyResult.monthlyRationKg} ÷ ${dBagWeight} ⌉ = ${dailyResult.bagsPerMonth} sacs`} />
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif (hypothèses, résultats & formules)</p>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="text-xs text-muted-foreground">
+                              <th className="px-3 py-2 text-left font-medium">Paramètre</th>
+                              <th className="px-3 py-2 text-right font-medium">Valeur</th>
+                              <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Formule / Hypothèse</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <RecapRow label="Nombre de poissons" value={dailyResult.fishCount.toLocaleString('fr-FR')} formula="Donnée saisie" />
+                            <RecapRow label="Poids moyen individuel" value={`${dailyResult.avgWeightG} g (${(dailyResult.avgWeightG / 1000)} kg)`} formula="g ÷ 1 000 = kg" />
+                            <RecapRow label="% d'alimentation" value={`${dailyResult.feedRatePct} %`} formula="Hypothèse (alevin 8-10 %, juvénile 4-6 %, grossissement 2-3 %)" />
+                            <RecapRow label="Prix aliment / kg" value={formatCurrency(dFeedPrice)} />
+                            <RecapRow label="Poids du sac" value={`${dBagWeight} kg`} />
+                            <RecapRow label="Biomasse totale" value={`${dailyResult.biomassKg} kg`} bold formula="Nb poissons × Poids moyen (kg)" />
+                            <RecapRow label="Ration journalière" value={`${dailyResult.dailyRationKg} kg/j`} bold formula="Biomasse × % d'alimentation" />
+                            <RecapRow label="Ration mensuelle" value={`${dailyResult.monthlyRationKg} kg`} formula="Ration/jour × 30" />
+                            <RecapRow label="Coût mensuel" value={formatCurrency(dailyResult.cost)} bold formula="Ration mensuelle × Prix / kg" />
+                            <RecapRow label="Sacs / mois" value={`${dailyResult.bagsPerMonth} sacs de ${dBagWeight} kg`} bold formula="⌈ Ration mensuelle ÷ Poids du sac ⌉" />
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
