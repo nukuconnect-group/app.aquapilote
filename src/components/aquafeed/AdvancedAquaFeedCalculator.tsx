@@ -190,6 +190,36 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     };
   }, [objectiveResult, species, infra, finalWeight, initialWeight, formatCurrency, activeUnit]);
 
+  const dailyExportOptions = useMemo(() => {
+    if (!dailyResult) return null;
+    const d = dailyResult;
+    const rows = [
+      { label: 'Nombre de poissons', value: d.fishCount.toLocaleString('fr-FR'), formula: 'Donnée saisie' },
+      { label: 'Poids moyen individuel', value: `${d.avgWeightG} g (${(d.avgWeightG / 1000)} kg)`, formula: 'g ÷ 1 000 = kg' },
+      { label: "% d'alimentation appliqué", value: `${d.feedRatePct} %`, formula: 'Hypothèse' },
+      { label: 'Prix aliment / kg', value: formatCurrency(dFeedPrice), formula: '' },
+      { label: 'Poids du sac', value: `${dBagWeight} kg`, formula: '' },
+      { label: '── RÉSULTATS ──', value: '', formula: '' },
+      { label: 'Biomasse totale', value: `${d.biomassKg} kg`, formula: 'Nb poissons × Poids moyen (kg)' },
+      { label: 'Ration journalière', value: `${d.dailyRationKg} kg/j`, formula: "Biomasse × % d'alimentation" },
+      { label: 'Ration mensuelle', value: `${d.monthlyRationKg} kg`, formula: 'Ration/jour × 30' },
+      { label: 'Coût mensuel', value: formatCurrency(d.cost), formula: 'Ration mensuelle × Prix / kg' },
+      { label: 'Sacs / mois', value: `${d.bagsPerMonth} sacs de ${dBagWeight} kg`, formula: '⌈ Ration mensuelle ÷ Poids du sac ⌉' },
+    ];
+    return {
+      title: 'AquaFeed AI — Ration journalière',
+      subtitle: `${d.fishCount.toLocaleString('fr-FR')} poissons · ${d.avgWeightG} g/pce · ${d.feedRatePct} %`,
+      filename: `aquafeed-ration-${new Date().toISOString().slice(0, 10)}`,
+      unitName: activeUnit?.name,
+      columns: [
+        { key: 'label', label: 'Paramètre' },
+        { key: 'value', label: 'Valeur' },
+        { key: 'formula', label: 'Formule' },
+      ],
+      data: rows,
+    };
+  }, [dailyResult, dFeedPrice, dBagWeight, formatCurrency, activeUnit]);
+
   return (
     <div className="space-y-4">
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
