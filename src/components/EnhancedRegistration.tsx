@@ -499,6 +499,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             </div>
           </div>
         </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
