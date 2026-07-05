@@ -472,6 +472,48 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                   </div>
                 </div>
 
+                {/* Type d'exploitation */}
+                <div className="pt-2">
+                  <Label className="text-sm font-semibold text-slate-700">
+                    Type d'exploitation <span className="text-pink-500">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    {[
+                      { v: 'moyenne', label: 'Moyenne exploitation', desc: 'Ferme familiale ou artisanale' },
+                      { v: 'semi_industriel', label: 'Semi-industriel', desc: 'Production organisée à échelle moyenne' },
+                      { v: 'industriel', label: 'Industriel', desc: 'Grande production intensive' },
+                    ].map(opt => {
+                      const active = formData.exploitationType === opt.v;
+                      return (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => handleInputChange('exploitationType', opt.v)}
+                          className={`text-left rounded-xl border p-3 transition-all ${active ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                        >
+                          <div className="text-sm font-semibold text-slate-800">{opt.label}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{opt.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Besoin de capteurs IoT */}
+                <div className="pt-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 transition-colors">
+                    <Checkbox
+                      checked={formData.needsSensors}
+                      onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">J'ai besoin de capteurs IoT</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Cochez si vous souhaitez équiper votre ferme de capteurs (température, pH, oxygène…). Notre équipe pourra vous accompagner.</div>
+                    </div>
+                  </label>
+                </div>
+
                 {/* Bouton Valider */}
                 <Button
                   type="submit"
