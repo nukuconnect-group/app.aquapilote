@@ -298,18 +298,36 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
-        {/* Fond dégradé bleu → magenta animé */}
-        <div className="fixed inset-0 z-0" style={{
-          background: 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 30%, #8b5cf6 65%, #ec4899 100%)',
-        }} />
-        {/* Texture lignes décoratives */}
-        <div className="fixed inset-0 z-[1] opacity-20 pointer-events-none"
-             style={{
-               backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)',
-             }} />
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
+        {/* Image à gauche (desktop) */}
+        <div
+          className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
+          style={{
+            backgroundImage: `url(${aquacultureCagesDesktop})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.75)',
+          }}
+        />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 bg-gradient-to-br from-slate-900/70 via-blue-900/50 to-cyan-900/60 z-[1]" />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] pointer-events-none">
+          <div className="absolute bottom-16 left-[8%] right-[8%] text-white/95">
+            <h2 className="text-3xl xl:text-4xl font-bold tracking-tight">Rejoignez AquaPilote</h2>
+            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
+          </div>
+        </div>
+        {/* Bandeau mobile */}
+        <div
+          className="md:hidden fixed inset-x-0 top-0 h-32 z-0"
+          style={{
+            backgroundImage: `url(${fishColumnsMobile})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
 
-        <div className="relative z-10 w-[95%] max-w-xl mx-auto my-auto">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start md:items-center justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
+         <div className="w-full max-w-xl mt-24 md:mt-0">
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
               {/* Logo / titre */}
