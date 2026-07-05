@@ -157,24 +157,22 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     if (!objectiveResult) return null;
     const r = objectiveResult;
     const rows = [
-      { label: 'Espèce', value: species === 'tilapia' ? 'Tilapia' : 'Clarias', formula: '' },
-      { label: 'Infrastructure', value: INFRA_LABELS[infra], formula: '' },
-      { label: '── HYPOTHÈSES ──', value: '', formula: '' },
-      { label: 'Objectif de production', value: `${r.productionTargetKg} kg (${(r.productionTargetKg / 1000).toLocaleString('fr-FR')} t)`, formula: '' },
-      { label: 'Poids moyen final', value: `${finalWeight} g (${r.finalWeightKg} kg)`, formula: '' },
-      { label: "Poids moyen initial (alevin)", value: `${initialWeight} g (${r.initialWeightKg} kg)`, formula: '' },
-      { label: 'Taux de survie', value: `${r.survivalRate} %`, formula: '' },
-      { label: 'IC (Indice de Conversion)', value: String(r.fcr), formula: '' },
-      { label: 'Prix aliment / kg', value: formatCurrency(r.feedPrice), formula: '' },
-      { label: 'Poids du sac', value: `${r.bagWeight} kg`, formula: '' },
-      { label: '── RÉSULTATS ──', value: '', formula: '' },
-      { label: 'Poissons à récolter', value: `${r.fishToHarvest.toLocaleString('fr-FR')} poissons`, formula: 'Objectif (kg) ÷ Poids final (kg)' },
-      { label: 'Alevins à empoissonner', value: `${r.fingerlings.toLocaleString('fr-FR')} alevins`, formula: 'Poissons à récolter × 100 ÷ Survie (%)' },
-      { label: 'Biomasse initiale', value: `${r.initialBiomass} kg`, formula: "Nb alevins × Poids initial (kg)" },
-      { label: 'Gain de biomasse', value: `${r.biomassGain} kg`, formula: 'Objectif − Biomasse initiale' },
-      { label: "Quantité totale d'aliment", value: `${r.totalFeedKg} kg`, formula: 'Gain de biomasse × IC' },
-      { label: "Coût total de l'alimentation", value: formatCurrency(r.totalCost), formula: "Aliment (kg) × Prix / kg" },
-      { label: 'Nombre de sacs à acheter', value: `${r.bagsNeeded} sacs de ${r.bagWeight} kg`, formula: '⌈ Aliment ÷ Poids du sac ⌉' },
+      { label: 'Espèce', value: species === 'tilapia' ? 'Tilapia' : 'Clarias' },
+      { label: 'Infrastructure', value: INFRA_LABELS[infra] },
+      { label: 'Objectif de production', value: `${r.productionTargetKg} kg` },
+      { label: 'Poids moyen final', value: `${finalWeight} g` },
+      { label: 'Poids moyen initial (alevin)', value: `${initialWeight} g` },
+      { label: 'Taux de survie', value: `${r.survivalRate} %` },
+      { label: 'IC (Indice de Conversion)', value: String(r.fcr) },
+      { label: 'Prix aliment / kg', value: formatCurrency(r.feedPrice) },
+      { label: 'Poids du sac', value: `${r.bagWeight} kg` },
+      { label: 'Poissons à récolter', value: `${r.fishToHarvest.toLocaleString('fr-FR')} poissons` },
+      { label: 'Alevins à empoissonner', value: `${r.fingerlings.toLocaleString('fr-FR')} alevins` },
+      { label: 'Biomasse initiale', value: `${r.initialBiomass} kg` },
+      { label: 'Gain de biomasse', value: `${r.biomassGain} kg` },
+      { label: "Quantité totale d'aliment", value: `${r.totalFeedKg} kg` },
+      { label: "Coût total de l'alimentation", value: formatCurrency(r.totalCost) },
+      { label: 'Nombre de sacs à acheter', value: `${r.bagsNeeded} sacs de ${r.bagWeight} kg` },
     ];
     return {
       title: 'AquaFeed AI — Plan de production',
@@ -184,7 +182,6 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       columns: [
         { key: 'label', label: 'Paramètre' },
         { key: 'value', label: 'Valeur' },
-        { key: 'formula', label: 'Formule' },
       ],
       data: rows,
     };
@@ -194,17 +191,16 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     if (!dailyResult) return null;
     const d = dailyResult;
     const rows = [
-      { label: 'Nombre de poissons', value: d.fishCount.toLocaleString('fr-FR'), formula: 'Donnée saisie' },
-      { label: 'Poids moyen individuel', value: `${d.avgWeightG} g (${(d.avgWeightG / 1000)} kg)`, formula: 'g ÷ 1 000 = kg' },
-      { label: "% d'alimentation appliqué", value: `${d.feedRatePct} %`, formula: 'Hypothèse' },
-      { label: 'Prix aliment / kg', value: formatCurrency(dFeedPrice), formula: '' },
-      { label: 'Poids du sac', value: `${dBagWeight} kg`, formula: '' },
-      { label: '── RÉSULTATS ──', value: '', formula: '' },
-      { label: 'Biomasse totale', value: `${d.biomassKg} kg`, formula: 'Nb poissons × Poids moyen (kg)' },
-      { label: 'Ration journalière', value: `${d.dailyRationKg} kg/j`, formula: "Biomasse × % d'alimentation" },
-      { label: 'Ration mensuelle', value: `${d.monthlyRationKg} kg`, formula: 'Ration/jour × 30' },
-      { label: 'Coût mensuel', value: formatCurrency(d.cost), formula: 'Ration mensuelle × Prix / kg' },
-      { label: 'Sacs / mois', value: `${d.bagsPerMonth} sacs de ${dBagWeight} kg`, formula: '⌈ Ration mensuelle ÷ Poids du sac ⌉' },
+      { label: 'Nombre de poissons', value: d.fishCount.toLocaleString('fr-FR') },
+      { label: 'Poids moyen individuel', value: `${d.avgWeightG} g` },
+      { label: "% d'alimentation appliqué", value: `${d.feedRatePct} %` },
+      { label: 'Prix aliment / kg', value: formatCurrency(dFeedPrice) },
+      { label: 'Poids du sac', value: `${dBagWeight} kg` },
+      { label: 'Biomasse totale', value: `${d.biomassKg} kg` },
+      { label: 'Ration journalière', value: `${d.dailyRationKg} kg/j` },
+      { label: 'Ration mensuelle', value: `${d.monthlyRationKg} kg` },
+      { label: 'Coût mensuel', value: formatCurrency(d.cost) },
+      { label: 'Sacs / mois', value: `${d.bagsPerMonth} sacs de ${dBagWeight} kg` },
     ];
     return {
       title: 'AquaFeed AI — Ration journalière',
@@ -214,7 +210,6 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       columns: [
         { key: 'label', label: 'Paramètre' },
         { key: 'value', label: 'Valeur' },
-        { key: 'formula', label: 'Formule' },
       ],
       data: rows,
     };
