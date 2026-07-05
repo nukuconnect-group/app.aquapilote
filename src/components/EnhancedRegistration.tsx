@@ -88,6 +88,8 @@ interface FormData {
   hasMarketing: boolean;
   hasAlgaeCulture: boolean;
   otherActivities: string;
+  exploitationType: '' | 'moyenne' | 'semi_industriel' | 'industriel';
+  needsSensors: boolean;
 }
 
 const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
@@ -116,7 +118,9 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     hasProcessing: false,
     hasMarketing: false,
     hasAlgaeCulture: false,
-    otherActivities: ''
+    otherActivities: '',
+    exploitationType: '',
+    needsSensors: false
   });
 
   // Detect location on mount
@@ -229,7 +233,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       formData.countryCode &&
       formData.companyName.trim().length >= 2 &&
       formData.location.trim().length >= 2 &&
-      formData.productionUnits.length > 0
+      formData.productionUnits.length > 0 &&
+      formData.exploitationType !== ''
     );
   };
 
@@ -245,7 +250,16 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     }
     try {
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      const result = await register(fullName, formData.email.trim().toLowerCase(), formData.password, selectedPlan || 'trial');
+      const result = await register(
+        fullName,
+        formData.email.trim().toLowerCase(),
+        formData.password,
+        selectedPlan || 'trial',
+        {
+          exploitation_type: formData.exploitationType || undefined,
+          needs_sensors: formData.needsSensors,
+        }
+      );
       if (result.success) {
         toast({
           title: '✅ Compte créé avec succès',
