@@ -695,9 +695,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               </form>
             </>
           )}
-            </div>
-          </div>
-        </div>
+             </div>
+           </div>
+         </div>
+         </div>
       </DialogContent>
     </Dialog>
   );
