@@ -282,19 +282,19 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
-        {/* Background images */}
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50 dark:bg-slate-950">
+        {/* Split-screen : image à gauche (desktop), formulaire à droite */}
         <div 
-          className="hidden md:block fixed inset-0 w-full h-full z-0"
+          className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
           style={{ 
             backgroundImage: `url(${aquacultureCagesDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.7)',
+            filter: 'brightness(0.75)',
           }}
         />
         <div 
-          className="md:hidden fixed inset-0 w-full h-full z-0"
+          className="md:hidden fixed inset-x-0 top-0 h-40 z-0"
           style={{ 
             backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
@@ -303,21 +303,26 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           }}
         />
         
-        <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-cyan-900/70 z-[1]" />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 bg-gradient-to-br from-slate-900/70 via-blue-900/50 to-cyan-900/60 z-[1]" />
+        <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" />
         
-        <div className="fixed inset-0 z-[2] overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        <div className="fixed inset-0 z-[2] overflow-hidden pointer-events-none hidden md:block">
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] overflow-hidden pointer-events-none">
           <Fish className="absolute top-20 left-[10%] w-8 h-8 text-white/10 animate-bounce" style={{ animationDuration: '3s' }} />
           <Waves className="absolute top-40 right-[15%] w-10 h-10 text-white/10 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }} />
           <Fish className="absolute bottom-32 left-[20%] w-6 h-6 text-white/10 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
+          <div className="absolute bottom-16 left-[8%] right-[8%] text-white/95">
+            <h2 className="text-3xl xl:text-4xl font-bold tracking-tight">AquaPilote</h2>
+            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Pilotez votre pisciculture en toute simplicité. Suivi cheptel, IoT, comptabilité et IA.</p>
+          </div>
         </div>
         
-        <div className="relative z-10 w-[95%] max-w-[440px] mx-auto my-auto">
+        <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-4 py-6 md:px-10 md:py-10 overflow-y-auto">
+         <div className="w-full max-w-[440px]">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
             <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-teal-500" />
             
@@ -690,9 +695,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
               </form>
             </>
           )}
-            </div>
-          </div>
-        </div>
+             </div>
+           </div>
+         </div>
+         </div>
       </DialogContent>
     </Dialog>
   );

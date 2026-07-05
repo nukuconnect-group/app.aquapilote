@@ -157,24 +157,22 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     if (!objectiveResult) return null;
     const r = objectiveResult;
     const rows = [
-      { label: 'Espèce', value: species === 'tilapia' ? 'Tilapia' : 'Clarias', formula: '' },
-      { label: 'Infrastructure', value: INFRA_LABELS[infra], formula: '' },
-      { label: '── HYPOTHÈSES ──', value: '', formula: '' },
-      { label: 'Objectif de production', value: `${r.productionTargetKg} kg (${(r.productionTargetKg / 1000).toLocaleString('fr-FR')} t)`, formula: '' },
-      { label: 'Poids moyen final', value: `${finalWeight} g (${r.finalWeightKg} kg)`, formula: '' },
-      { label: "Poids moyen initial (alevin)", value: `${initialWeight} g (${r.initialWeightKg} kg)`, formula: '' },
-      { label: 'Taux de survie', value: `${r.survivalRate} %`, formula: '' },
-      { label: 'IC (Indice de Conversion)', value: String(r.fcr), formula: '' },
-      { label: 'Prix aliment / kg', value: formatCurrency(r.feedPrice), formula: '' },
-      { label: 'Poids du sac', value: `${r.bagWeight} kg`, formula: '' },
-      { label: '── RÉSULTATS ──', value: '', formula: '' },
-      { label: 'Poissons à récolter', value: `${r.fishToHarvest.toLocaleString('fr-FR')} poissons`, formula: 'Objectif (kg) ÷ Poids final (kg)' },
-      { label: 'Alevins à empoissonner', value: `${r.fingerlings.toLocaleString('fr-FR')} alevins`, formula: 'Poissons à récolter × 100 ÷ Survie (%)' },
-      { label: 'Biomasse initiale', value: `${r.initialBiomass} kg`, formula: "Nb alevins × Poids initial (kg)" },
-      { label: 'Gain de biomasse', value: `${r.biomassGain} kg`, formula: 'Objectif − Biomasse initiale' },
-      { label: "Quantité totale d'aliment", value: `${r.totalFeedKg} kg`, formula: 'Gain de biomasse × IC' },
-      { label: "Coût total de l'alimentation", value: formatCurrency(r.totalCost), formula: "Aliment (kg) × Prix / kg" },
-      { label: 'Nombre de sacs à acheter', value: `${r.bagsNeeded} sacs de ${r.bagWeight} kg`, formula: '⌈ Aliment ÷ Poids du sac ⌉' },
+      { label: 'Espèce', value: species === 'tilapia' ? 'Tilapia' : 'Clarias' },
+      { label: 'Infrastructure', value: INFRA_LABELS[infra] },
+      { label: 'Objectif de production', value: `${r.productionTargetKg} kg` },
+      { label: 'Poids moyen final', value: `${finalWeight} g` },
+      { label: 'Poids moyen initial (alevin)', value: `${initialWeight} g` },
+      { label: 'Taux de survie', value: `${r.survivalRate} %` },
+      { label: 'IC (Indice de Conversion)', value: String(r.fcr) },
+      { label: 'Prix aliment / kg', value: formatCurrency(r.feedPrice) },
+      { label: 'Poids du sac', value: `${r.bagWeight} kg` },
+      { label: 'Poissons à récolter', value: `${r.fishToHarvest.toLocaleString('fr-FR')} poissons` },
+      { label: 'Alevins à empoissonner', value: `${r.fingerlings.toLocaleString('fr-FR')} alevins` },
+      { label: 'Biomasse initiale', value: `${r.initialBiomass} kg` },
+      { label: 'Gain de biomasse', value: `${r.biomassGain} kg` },
+      { label: "Quantité totale d'aliment", value: `${r.totalFeedKg} kg` },
+      { label: "Coût total de l'alimentation", value: formatCurrency(r.totalCost) },
+      { label: 'Nombre de sacs à acheter', value: `${r.bagsNeeded} sacs de ${r.bagWeight} kg` },
     ];
     return {
       title: 'AquaFeed AI — Plan de production',
@@ -184,7 +182,6 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       columns: [
         { key: 'label', label: 'Paramètre' },
         { key: 'value', label: 'Valeur' },
-        { key: 'formula', label: 'Formule' },
       ],
       data: rows,
     };
@@ -194,17 +191,16 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     if (!dailyResult) return null;
     const d = dailyResult;
     const rows = [
-      { label: 'Nombre de poissons', value: d.fishCount.toLocaleString('fr-FR'), formula: 'Donnée saisie' },
-      { label: 'Poids moyen individuel', value: `${d.avgWeightG} g (${(d.avgWeightG / 1000)} kg)`, formula: 'g ÷ 1 000 = kg' },
-      { label: "% d'alimentation appliqué", value: `${d.feedRatePct} %`, formula: 'Hypothèse' },
-      { label: 'Prix aliment / kg', value: formatCurrency(dFeedPrice), formula: '' },
-      { label: 'Poids du sac', value: `${dBagWeight} kg`, formula: '' },
-      { label: '── RÉSULTATS ──', value: '', formula: '' },
-      { label: 'Biomasse totale', value: `${d.biomassKg} kg`, formula: 'Nb poissons × Poids moyen (kg)' },
-      { label: 'Ration journalière', value: `${d.dailyRationKg} kg/j`, formula: "Biomasse × % d'alimentation" },
-      { label: 'Ration mensuelle', value: `${d.monthlyRationKg} kg`, formula: 'Ration/jour × 30' },
-      { label: 'Coût mensuel', value: formatCurrency(d.cost), formula: 'Ration mensuelle × Prix / kg' },
-      { label: 'Sacs / mois', value: `${d.bagsPerMonth} sacs de ${dBagWeight} kg`, formula: '⌈ Ration mensuelle ÷ Poids du sac ⌉' },
+      { label: 'Nombre de poissons', value: d.fishCount.toLocaleString('fr-FR') },
+      { label: 'Poids moyen individuel', value: `${d.avgWeightG} g` },
+      { label: "% d'alimentation appliqué", value: `${d.feedRatePct} %` },
+      { label: 'Prix aliment / kg', value: formatCurrency(dFeedPrice) },
+      { label: 'Poids du sac', value: `${dBagWeight} kg` },
+      { label: 'Biomasse totale', value: `${d.biomassKg} kg` },
+      { label: 'Ration journalière', value: `${d.dailyRationKg} kg/j` },
+      { label: 'Ration mensuelle', value: `${d.monthlyRationKg} kg` },
+      { label: 'Coût mensuel', value: formatCurrency(d.cost) },
+      { label: 'Sacs / mois', value: `${d.bagsPerMonth} sacs de ${dBagWeight} kg` },
     ];
     return {
       title: 'AquaFeed AI — Ration journalière',
@@ -214,7 +210,6 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
       columns: [
         { key: 'label', label: 'Paramètre' },
         { key: 'value', label: 'Valeur' },
-        { key: 'formula', label: 'Formule' },
       ],
       data: rows,
     };
@@ -400,33 +395,32 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
 
                     {/* Tableau récapitulatif */}
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif (hypothèses, résultats & formules)</p>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif des résultats</p>
                       <div className="border rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50">
                             <tr className="text-xs text-muted-foreground">
                               <th className="px-3 py-2 text-left font-medium">Paramètre</th>
                               <th className="px-3 py-2 text-right font-medium">Valeur</th>
-                              <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Formule / Hypothèse</th>
                             </tr>
                           </thead>
                           <tbody>
                             <RecapRow label="Espèce" value={species === 'tilapia' ? 'Tilapia' : 'Clarias'} />
                             <RecapRow label="Infrastructure" value={INFRA_LABELS[infra]} />
-                            <RecapRow label="Objectif de production" value={`${objectiveResult.productionTargetKg} kg (${(objectiveResult.productionTargetKg / 1000).toLocaleString('fr-FR')} t)`} formula="Donnée saisie" />
-                            <RecapRow label="Poids moyen final visé" value={`${finalWeight} g (${objectiveResult.finalWeightKg} kg)`} formula="g ÷ 1 000 = kg" />
-                            <RecapRow label="Poids moyen initial (alevin)" value={`${initialWeight} g (${objectiveResult.initialWeightKg} kg)`} formula="g ÷ 1 000 = kg" />
-                            <RecapRow label="Taux de survie" value={`${objectiveResult.survivalRate} %`} formula="Hypothèse (1-100 %)" />
-                            <RecapRow label="IC (FCR)" value={String(objectiveResult.fcr)} formula="Hypothèse (kg aliment / kg gain)" />
+                            <RecapRow label="Objectif de production" value={`${objectiveResult.productionTargetKg} kg`} />
+                            <RecapRow label="Poids moyen final visé" value={`${finalWeight} g`} />
+                            <RecapRow label="Poids moyen initial (alevin)" value={`${initialWeight} g`} />
+                            <RecapRow label="Taux de survie" value={`${objectiveResult.survivalRate} %`} />
+                            <RecapRow label="IC (FCR)" value={String(objectiveResult.fcr)} />
                             <RecapRow label="Prix aliment / kg" value={formatCurrency(objectiveResult.feedPrice)} />
                             <RecapRow label="Poids du sac" value={`${objectiveResult.bagWeight} kg`} />
-                            <RecapRow label="Poissons à récolter" value={objectiveResult.fishToHarvest.toLocaleString('fr-FR')} bold formula="Objectif (kg) ÷ Poids final (kg)" />
-                            <RecapRow label="Alevins à empoissonner" value={objectiveResult.fingerlings.toLocaleString('fr-FR')} bold formula="Poissons à récolter × 100 ÷ Survie (%)" />
-                            <RecapRow label="Biomasse initiale" value={`${objectiveResult.initialBiomass} kg`} formula="Nb alevins × Poids initial (kg)" />
-                            <RecapRow label="Gain de biomasse" value={`${objectiveResult.biomassGain} kg`} formula="Objectif − Biomasse initiale" />
-                            <RecapRow label="Quantité totale d'aliment" value={`${objectiveResult.totalFeedKg} kg`} bold formula="Gain de biomasse × IC" />
-                            <RecapRow label="Coût total de l'alimentation" value={formatCurrency(objectiveResult.totalCost)} bold formula="Aliment (kg) × Prix / kg" />
-                            <RecapRow label="Nombre de sacs à acheter" value={`${objectiveResult.bagsNeeded} sacs de ${objectiveResult.bagWeight} kg`} bold formula="⌈ Aliment ÷ Poids du sac ⌉" />
+                            <RecapRow label="Poissons à récolter" value={objectiveResult.fishToHarvest.toLocaleString('fr-FR')} bold />
+                            <RecapRow label="Alevins à empoissonner" value={objectiveResult.fingerlings.toLocaleString('fr-FR')} bold />
+                            <RecapRow label="Biomasse initiale" value={`${objectiveResult.initialBiomass} kg`} />
+                            <RecapRow label="Gain de biomasse" value={`${objectiveResult.biomassGain} kg`} />
+                            <RecapRow label="Quantité totale d'aliment" value={`${objectiveResult.totalFeedKg} kg`} bold />
+                            <RecapRow label="Coût total de l'alimentation" value={formatCurrency(objectiveResult.totalCost)} bold />
+                            <RecapRow label="Nombre de sacs à acheter" value={`${objectiveResult.bagsNeeded} sacs de ${objectiveResult.bagWeight} kg`} bold />
                           </tbody>
                         </table>
                       </div>
@@ -506,27 +500,26 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                       `Prix : ${formatCurrency(dFeedPrice)} / kg`,
                     ]} />
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif (hypothèses, résultats & formules)</p>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Tableau récapitulatif des résultats</p>
                       <div className="border rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50">
                             <tr className="text-xs text-muted-foreground">
                               <th className="px-3 py-2 text-left font-medium">Paramètre</th>
                               <th className="px-3 py-2 text-right font-medium">Valeur</th>
-                              <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Formule / Hypothèse</th>
                             </tr>
                           </thead>
                           <tbody>
-                            <RecapRow label="Nombre de poissons" value={dailyResult.fishCount.toLocaleString('fr-FR')} formula="Donnée saisie" />
-                            <RecapRow label="Poids moyen individuel" value={`${dailyResult.avgWeightG} g (${(dailyResult.avgWeightG / 1000)} kg)`} formula="g ÷ 1 000 = kg" />
-                            <RecapRow label="% d'alimentation" value={`${dailyResult.feedRatePct} %`} formula="Hypothèse (alevin 8-10 %, juvénile 4-6 %, grossissement 2-3 %)" />
+                            <RecapRow label="Nombre de poissons" value={dailyResult.fishCount.toLocaleString('fr-FR')} />
+                            <RecapRow label="Poids moyen individuel" value={`${dailyResult.avgWeightG} g`} />
+                            <RecapRow label="% d'alimentation" value={`${dailyResult.feedRatePct} %`} />
                             <RecapRow label="Prix aliment / kg" value={formatCurrency(dFeedPrice)} />
                             <RecapRow label="Poids du sac" value={`${dBagWeight} kg`} />
-                            <RecapRow label="Biomasse totale" value={`${dailyResult.biomassKg} kg`} bold formula="Nb poissons × Poids moyen (kg)" />
-                            <RecapRow label="Ration journalière" value={`${dailyResult.dailyRationKg} kg/j`} bold formula="Biomasse × % d'alimentation" />
-                            <RecapRow label="Ration mensuelle" value={`${dailyResult.monthlyRationKg} kg`} formula="Ration/jour × 30" />
-                            <RecapRow label="Coût mensuel" value={formatCurrency(dailyResult.cost)} bold formula="Ration mensuelle × Prix / kg" />
-                            <RecapRow label="Sacs / mois" value={`${dailyResult.bagsPerMonth} sacs de ${dBagWeight} kg`} bold formula="⌈ Ration mensuelle ÷ Poids du sac ⌉" />
+                            <RecapRow label="Biomasse totale" value={`${dailyResult.biomassKg} kg`} bold />
+                            <RecapRow label="Ration journalière" value={`${dailyResult.dailyRationKg} kg/j`} bold />
+                            <RecapRow label="Ration mensuelle" value={`${dailyResult.monthlyRationKg} kg`} />
+                            <RecapRow label="Coût mensuel" value={formatCurrency(dailyResult.cost)} bold />
+                            <RecapRow label="Sacs / mois" value={`${dailyResult.bagsPerMonth} sacs de ${dBagWeight} kg`} bold />
                           </tbody>
                         </table>
                       </div>

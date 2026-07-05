@@ -88,6 +88,8 @@ interface FormData {
   hasMarketing: boolean;
   hasAlgaeCulture: boolean;
   otherActivities: string;
+  exploitationType: '' | 'moyenne' | 'semi_industriel' | 'industriel';
+  needsSensors: boolean;
 }
 
 const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
@@ -116,7 +118,9 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     hasProcessing: false,
     hasMarketing: false,
     hasAlgaeCulture: false,
-    otherActivities: ''
+    otherActivities: '',
+    exploitationType: '',
+    needsSensors: false
   });
 
   // Detect location on mount
@@ -229,7 +233,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       formData.countryCode &&
       formData.companyName.trim().length >= 2 &&
       formData.location.trim().length >= 2 &&
-      formData.productionUnits.length > 0
+      formData.productionUnits.length > 0 &&
+      formData.exploitationType !== ''
     );
   };
 
@@ -245,7 +250,16 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     }
     try {
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      const result = await register(fullName, formData.email.trim().toLowerCase(), formData.password, selectedPlan || 'trial');
+      const result = await register(
+        fullName,
+        formData.email.trim().toLowerCase(),
+        formData.password,
+        selectedPlan || 'trial',
+        {
+          exploitation_type: formData.exploitationType || undefined,
+          needs_sensors: formData.needsSensors,
+        }
+      );
       if (result.success) {
         toast({
           title: '✅ Compte créé avec succès',
@@ -284,18 +298,36 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-center justify-center">
-        {/* Fond dégradé bleu → magenta animé */}
-        <div className="fixed inset-0 z-0" style={{
-          background: 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 30%, #8b5cf6 65%, #ec4899 100%)',
-        }} />
-        {/* Texture lignes décoratives */}
-        <div className="fixed inset-0 z-[1] opacity-20 pointer-events-none"
-             style={{
-               backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)',
-             }} />
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
+        {/* Image à gauche (desktop) */}
+        <div
+          className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
+          style={{
+            backgroundImage: `url(${aquacultureCagesDesktop})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.75)',
+          }}
+        />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 bg-gradient-to-br from-slate-900/70 via-blue-900/50 to-cyan-900/60 z-[1]" />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] pointer-events-none">
+          <div className="absolute bottom-16 left-[8%] right-[8%] text-white/95">
+            <h2 className="text-3xl xl:text-4xl font-bold tracking-tight">Rejoignez AquaPilote</h2>
+            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
+          </div>
+        </div>
+        {/* Bandeau mobile */}
+        <div
+          className="md:hidden fixed inset-x-0 top-0 h-32 z-0"
+          style={{
+            backgroundImage: `url(${fishColumnsMobile})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
 
-        <div className="relative z-10 w-[95%] max-w-xl mx-auto my-auto">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start md:items-center justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
+         <div className="w-full max-w-xl mt-24 md:mt-0">
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
               {/* Logo / titre */}
@@ -440,6 +472,48 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                   </div>
                 </div>
 
+                {/* Type d'exploitation */}
+                <div className="pt-2">
+                  <Label className="text-sm font-semibold text-slate-700">
+                    Type d'exploitation <span className="text-pink-500">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    {[
+                      { v: 'moyenne', label: 'Moyenne exploitation', desc: 'Ferme familiale ou artisanale' },
+                      { v: 'semi_industriel', label: 'Semi-industriel', desc: 'Production organisée à échelle moyenne' },
+                      { v: 'industriel', label: 'Industriel', desc: 'Grande production intensive' },
+                    ].map(opt => {
+                      const active = formData.exploitationType === opt.v;
+                      return (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => handleInputChange('exploitationType', opt.v)}
+                          className={`text-left rounded-xl border p-3 transition-all ${active ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                        >
+                          <div className="text-sm font-semibold text-slate-800">{opt.label}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{opt.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Besoin de capteurs IoT */}
+                <div className="pt-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 transition-colors">
+                    <Checkbox
+                      checked={formData.needsSensors}
+                      onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">J'ai besoin de capteurs IoT</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Cochez si vous souhaitez équiper votre ferme de capteurs (température, pH, oxygène…). Notre équipe pourra vous accompagner.</div>
+                    </div>
+                  </label>
+                </div>
+
                 {/* Bouton Valider */}
                 <Button
                   type="submit"
@@ -466,6 +540,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
               </form>
             </div>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

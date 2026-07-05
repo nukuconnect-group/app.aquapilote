@@ -1819,10 +1819,13 @@ export type Database = {
           country_code: string | null
           created_at: string
           email: string
+          exploitation_type: string | null
           full_name: string | null
           id: string
           is_activated: boolean
           is_suspended: boolean | null
+          needs_sensors: boolean
+          sensors_banner_dismissed_at: string | null
           suspended_at: string | null
           suspension_reason: string | null
           updated_at: string
@@ -1840,10 +1843,13 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           email: string
+          exploitation_type?: string | null
           full_name?: string | null
           id: string
           is_activated?: boolean
           is_suspended?: boolean | null
+          needs_sensors?: boolean
+          sensors_banner_dismissed_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           updated_at?: string
@@ -1861,10 +1867,13 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           email?: string
+          exploitation_type?: string | null
           full_name?: string | null
           id?: string
           is_activated?: boolean
           is_suspended?: boolean | null
+          needs_sensors?: boolean
+          sensors_banner_dismissed_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           updated_at?: string

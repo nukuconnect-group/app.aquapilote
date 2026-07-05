@@ -9,6 +9,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineDataManager from '@/components/OfflineDataManager';
 import IntelligentDashboard from '@/components/IntelligentDashboard';
 import ModernDashboard from '@/components/ModernDashboard';
+import SensorsCTABanner from '@/components/dashboard/SensorsCTABanner';
 import AdminDashboard from '@/components/AdminDashboard';
 import IoTControlCenter from '@/components/IoTControlCenter';
 import ProductionUnitsManagement from '@/components/ProductionUnitsManagement';
@@ -237,6 +238,7 @@ const Dashboard: React.FC = () => {
         return (
           <>
             {renderTeamMemberWelcome()}
+            <SensorsCTABanner onNavigate={handleTabChange} />
             <ModernDashboard onNavigate={handleTabChange} canAccessModule={(id) => canAccessTab(id)} />
           </>
         );
