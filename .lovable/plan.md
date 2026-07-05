@@ -1,105 +1,92 @@
-# Plan d'évolution AquaPilote
 
-Ce plan ajoute 3 nouveaux modules majeurs (AquaFeed AI, AquaHealth AI, Bibliothèque Premium), une base de données aquacole administrable, et étend le dashboard + l'administration. Tout respecte le RBAC existant (`APP_MODULE_PERMISSIONS`, `useTeamMemberAccess`), la charte UI (shadcn + tokens sémantiques) et la structure de routage par `?module=` du Dashboard.
+## 1. Refonte pages Connexion / Inscription (split-screen responsive)
 
-C'est un chantier important. Je propose de le livrer en **4 phases** pour garder chaque étape vérifiable et stable. Vous pourrez valider/itérer après chaque phase.
+- Créer `src/pages/AuthLayout.tsx` : layout 2 colonnes (image à gauche, formulaire à droite) inspiré de l'image fournie.
+  - Desktop : image plein hauteur à gauche (50%), formulaire à droite (50%) avec scroll interne.
+  - Mobile : image en bandeau supérieur (h-40) ou masquée, formulaire plein écran.
+  - Onglets « Connexion / Inscription » en haut du panneau droit (pill toggle).
+  - Placeholder image (`src/assets/auth-hero.jpg` existant ou dégradé stylisé aquaculture) en attendant votre upload.
+- Remplacer `src/pages/Auth.tsx` par ce layout. Les composants `LoginDialog` et `EnhancedRegistration` sont refactorés en formulaires **inline** (pas en Dialog) via nouveaux composants :
+  - `src/components/auth/LoginForm.tsx` (extrait de LoginDialog)
+  - `src/components/auth/RegisterForm.tsx` (extrait de EnhancedRegistration)
+  - `LoginDialog` et `EnhancedRegistration` restent pour usages ailleurs, mais délèguent aux formulaires.
+- Conserver : Google OAuth, MFA, parrainage, mot de passe oublié, suggestions de noms régionales, glassmorphism.
 
----
+## 2. Nouveaux champs d'inscription
 
-## Phase 1 — Fondations base de données + Admin
+Ajouter dans `RegisterForm` (étape « Profil ») :
 
-### Nouvelles tables Supabase (toutes avec RLS + GRANT)
+- **Type d'exploitation** (radio card 3 choix, obligatoire) :
+  - `moyenne` — Moyenne exploitation
+  - `semi_industriel` — Semi-industriel
+  - `industriel` — Industriel
+- **Besoin de capteurs IoT** : checkbox unique (défaut : décoché) « J'ai besoin de capteurs pour ma ferme ».
 
-- `fish_species` — espèces (nom, nom scientifique, image, notes)
-- `feeding_rules` — règles de nourrissage administrables
-  - espèce, stade (alevin/juvénile/grossissement/géniteur), poids_min_g, poids_max_g, taux_pct_biomasse, nb_repas, température_opt
-- `aqua_diseases` — maladies (nom, catégorie bact/parasit/fong/viral, description, causes, facteurs, gravité, taux_mortalité, prévention, images[], documents[])
-- `disease_symptoms` — catalogue des symptômes (clé, label, description)
-- `disease_symptom_map` — table de liaison maladie ↔ symptôme avec poids (0-1) pour le scoring
-- `disease_treatments` — traitements (maladie_id, nom, principe actif, dosage, durée, voie d'administration, mesures eau, isolement bool, suivi)
-- `aqua_diagnoses` — historique des diagnostics utilisateur (user_id, unit_id, batch_id, symptômes[], résultats jsonb, créé_le)
-- `feed_calculations` — historique des calculs ration (user_id, espèce, nb_poissons, poids_moy, biomasse, ration, nb_repas, ration/repas, projection cycle)
-- `premium_library_items` — bibliothèque (titre, catégorie, type [pdf/video/sop/guide/fiche/webinar], fichier_url, thumb, plan_min [free/standard/premium/enterprise], description, tags[])
-- `premium_library_views` — statistiques de consultation (item_id, user_id, viewed_at)
+Sauvegarde dans `profiles` via metadata puis synchro à l'activation.
 
-### Rôle admin & seed
+### Migration DB
 
-- Réutilise `has_role(auth.uid(),'admin')` pour toutes les politiques d'écriture.
-- Lecture : `authenticated` pour les catalogues (espèces, maladies, symptômes, règles, traitements). Bibliothèque filtrée par plan (fonction SQL `user_plan(uid)` lue depuis `subscriptions`).
-- Seed initial : ~12 espèces (Tilapia, Clarias, Carpe, Hétérotis, Capitaine, etc.), règles de base (Tilapia/Clarias par stade), 10 maladies listées avec symptômes/traitements de référence, ~15 symptômes.
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS exploitation_type text
+    CHECK (exploitation_type IN ('moyenne','semi_industriel','industriel')),
+  ADD COLUMN IF NOT EXISTS needs_sensors boolean NOT NULL DEFAULT false;
+```
 
-### Module Administration étendu
+Mise à jour `handle_new_user()` : lire `exploitation_type` et `needs_sensors` depuis `raw_user_meta_data` et les insérer dans `profiles`.
 
-Nouvel onglet "Référentiel aquacole" dans `AdminDashboard` avec sous-onglets CRUD :
-- Espèces, Règles de nourrissage, Symptômes, Maladies (+ liaison symptômes), Traitements, Bibliothèque Premium.
+## 3. Bannière capteurs dans le dashboard
 
----
+- Nouveau composant `src/components/dashboard/SensorsCTABanner.tsx` : affiche si `profile.needs_sensors === true` ET `dismissed_at` non défini.
+  - CTA « Découvrir les capteurs IoT » → route `/dashboard/iot` (ou modal contact).
+  - Bouton fermer → stocke `sensors_banner_dismissed_at` (colonne à ajouter).
 
-## Phase 2 — Module AquaFeed AI
+Migration complémentaire :
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS sensors_banner_dismissed_at timestamptz;
+```
 
-- Ajout dans `APP_MODULE_PERMISSIONS` : `{ id: 'aquafeed', label: 'AquaFeed AI', tabIds: ['aquafeed'] }`.
-- Route `?module=aquafeed` dans `Dashboard.tsx`, item de navigation (sidebar + mobile menu) sous "Production & Élevage".
-- Composant `src/components/aquafeed/AquaFeedAI.tsx` :
-  - Formulaire : espèce (select depuis `fish_species`), nb poissons, poids moyen (g), température eau (optionnel), stade auto-détecté depuis poids.
-  - Moteur de calcul (utilitaire `src/lib/feedingEngine.ts`) :
-    - biomasse = nb × poids_moy
-    - taux = lookup `feeding_rules` (espèce + plage poids) → fallback courbe par défaut
-    - ration/j = biomasse × taux%
-    - nb_repas et ration/repas issus de la règle
-    - projection : courbe de croissance simple (modèle exponentiel paramétrable par espèce), prévision poids/biomasse à J+cycle, consommation cumulée
-  - Affichage : carte résultat, tableau récapitulatif, graphique Recharts (courbe croissance + cumul aliment), bouton "Enregistrer le calcul" → `feed_calculations`.
-  - Onglet "Historique" : liste filtrable, ré-ouverture d'un calcul.
-- Bouton "Créer plan de nourrissage" pré-rempli vers `FeedingPlanScheduler`.
+Injection dans `src/pages/Dashboard.tsx` en haut du contenu.
 
----
+## 4. AquaFeed IA — Avancé (IC)
 
-## Phase 3 — AquaHealth AI + Recommandations
+Fichier : `src/components/aquafeed/AdvancedAquaFeedCalculator.tsx`.
 
-- Sous-module dans `ProphylaxieManagement` : nouvel onglet "AquaHealth AI" (composant `src/components/prophylaxie/AquaHealthAI.tsx`).
-- Formulaire : checkboxes générées depuis `disease_symptoms` + champ "Autres", sélection lot/unité optionnelle, paramètres eau si dispo.
-- Moteur de diagnostic (`src/lib/diseaseDiagnosis.ts`) :
-  - Score par maladie = Σ(poids des symptômes cochés présents dans `disease_symptom_map`) / Σ(poids totaux maladie) ; bonus si paramètres eau hors seuils correspondants.
-  - Sortie classée : top 3 maladies probables, niveau de risque (faible/moyen/élevé/critique), causes, facteurs.
-- Panneau "Recommandations" généré depuis `disease_treatments` lié à la maladie n°1 :
-  - actions urgentes, isolement, paramètres eau à vérifier, traitement + dosage + durée, suivi post-traitement, mesures préventives.
-- Enregistrement automatique dans `aqua_diagnoses` (historique consultable).
-- Bouton "Créer une intervention sanitaire" pré-remplit le formulaire existant `health_records`.
-- Architecture évolutive : interface `DiagnosisProvider` (impl. locale `RuleBasedProvider`, futur `AIProvider` via edge function) — un seul point à brancher plus tard pour ajouter Mistral/Lovable AI.
+- **Retirer complètement** la colonne « Formule » et toute mention d'hypothèses ou d'étapes de calcul dans les tableaux et les cartes de résultat. N'afficher que les valeurs finales (label + résultat).
+- **Résumé unités** conservé en tête de résultat (déjà présent), reformulé : « Unités utilisées : masse en kg, effectifs en unités, coût en F CFA ».
+- **Validations strictes** (déjà partielles) : renforcer messages :
+  - Survie : `1 ≤ x ≤ 100` — « Le taux de survie doit être compris entre 1 et 100 %. »
+  - Poids initial/final : `> 0` et `initial < final`.
+  - IC : `> 0`.
+  - Prix aliment : `> 0`.
+  - Poids sac : `> 0`.
+  Bloquer les résultats + toast si invalide.
+- **Sac personnalisable** : ajouter option « Personnalisé » avec input numérique (kg), stocké dans state. Presets : 15, 25, 40, 50 kg.
+- **Export PDF pro** : réécrire l'export PDF (jsPDF + jspdf-autotable, déjà dépendances via ExportDropdown) avec :
+  - En-tête : logo AquaPilote (asset existant), titre « Rapport AquaFeed IA — Calcul <Mode> », date, utilisateur.
+  - Section « Paramètres saisis » (espèce, infra, IC, survie, poids, prix, sac).
+  - Section « Résultats » (tableau sans formules).
+  - Pied de page paginé.
+  - Bouton dédié « Télécharger PDF » à côté de l'ExportDropdown pour rendre l'action visible.
 
----
+## 5. Tests manuels (documentés en commentaires)
 
-## Phase 4 — Bibliothèque Premium + Dashboard + Polish
+Deux jeux d'exemples ajoutés en commentaires du composant :
 
-### Bibliothèque Premium
-- Module `library` dans `APP_MODULE_PERMISSIONS`, route `?module=library`.
-- Composant `src/components/library/PremiumLibrary.tsx` : grille de cartes par catégorie, filtres (type, tag, recherche), preview PDF/vidéo, téléchargement sécurisé via URL signée (bucket privé `premium-library` créé via `storage_create_bucket`).
-- Garde d'accès : compare `plan_min` de l'item au plan utilisateur (`subscriptions`) ; sinon CTA "Passer au plan supérieur".
-- Tracking : insert dans `premium_library_views` à l'ouverture.
-- Admin upload via CRUD Phase 1 (drag & drop fichier + thumbnail).
+- **Tilapia** : objectif 1000 kg, poids final 400 g, alevin 5 g, survie 85 %, IC 1.6, prix 850 F/kg, sac 25 kg.
+- **Clarias** : objectif 2000 kg, poids final 800 g, alevin 3 g, survie 75 %, IC 1.2, prix 900 F/kg, sac 50 kg.
 
-### Dashboard
-Ajouts dans `ModernDashboard` (cartes en bas, masquées si modules non autorisés) :
-- Nb diagnostics (30j), top 3 maladies détectées, consommation aliment estimée (somme `feed_calculations`), biomasse totale (sum livestock), croissance moyenne (delta poids vs J-30), nb documents Premium consultés.
+Vérifier arrondis (sacs = ceil).
 
-### Responsive & cohérence
-- Toutes les nouvelles pages : grilles `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`, tableaux dans `ResponsiveTable`, dialogues plein-écran sur mobile.
-- Utilisation systématique des tokens sémantiques (pas de `bg-white`, `text-black`).
-- i18n : ajout des clés dans `src/i18n/locales/fr/navigation.ts` + en + autres langues (libellés modules + dashboard).
+## Fichiers touchés
 
----
+- Créés : `src/pages/AuthLayout.tsx` (remplace Auth), `src/components/auth/LoginForm.tsx`, `src/components/auth/RegisterForm.tsx`, `src/components/dashboard/SensorsCTABanner.tsx`.
+- Édités : `src/pages/Auth.tsx`, `src/components/LoginDialog.tsx`, `src/components/EnhancedRegistration.tsx`, `src/components/aquafeed/AdvancedAquaFeedCalculator.tsx`, `src/pages/Dashboard.tsx`.
+- Migration : `profiles.exploitation_type`, `profiles.needs_sensors`, `profiles.sensors_banner_dismissed_at`, MAJ `handle_new_user()`.
 
-## Détails techniques
+## Hors périmètre (à confirmer avant d'aller plus loin)
 
-- **Migrations** : une migration par phase (4 migrations), chacune avec `CREATE TABLE` + `GRANT SELECT,INSERT,UPDATE,DELETE TO authenticated`, `GRANT ALL TO service_role`, `ENABLE RLS`, policies (lecture authenticated, écriture admin via `has_role`).
-- **RBAC** : 3 nouveaux IDs de module dans `moduleAccess.ts` (`aquafeed`, `aquahealth` virtuel rattaché à `health`, `library`). `aquahealth` reste sous l'onglet `health` donc pas de nouvelle permission séparée — accessible à quiconque a `health`.
-- **Edge functions** : aucune nouvelle requise en Phase 1-4 ; la Phase 3 prépare l'interface pour brancher une edge function `aqua-health-ai` (Lovable AI) en option future, sans bloquer la livraison.
-- **Storage** : nouveau bucket privé `premium-library` (Phase 4), bucket public `disease-images` pour les visuels maladies (Phase 1).
-- **Sécurité** : aucun secret exposé côté client. Toutes les écritures admin protégées par `has_role(auth.uid(),'admin')`. URLs signées 5 min pour les téléchargements Premium.
-
----
-
-## Livraison proposée
-
-Je commence par la **Phase 1** (migrations + admin CRUD + seed) dès votre validation. Si vous préférez un ordre différent (ex : démarrer par AquaFeed AI), dites-le moi.
-
-Voulez-vous que je lance la Phase 1 maintenant ?
+- Envoi d'un email/notif à l'équipe pour les demandes capteurs.
+- Restrictions de features selon `exploitation_type` (aucune pour l'instant, juste stockage).
+- Nouvelle image hero réelle (placeholder en attendant votre upload).
