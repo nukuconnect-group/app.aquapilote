@@ -43,7 +43,7 @@ interface AuthContextType {
   cancelMFALogin: () => void;
   mfaChallenge: MFAChallenge | null;
   logout: () => void;
-  register: (name: string, email: string, password: string, subscriptionPlan?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, subscriptionPlan?: string, extra?: { exploitation_type?: string; needs_sensors?: boolean }) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
