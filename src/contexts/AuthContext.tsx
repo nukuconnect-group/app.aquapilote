@@ -524,7 +524,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.signOut();
   };
 
-  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial'): Promise<{ success: boolean; error?: string }> => {
+  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial', extra?: { exploitation_type?: string; needs_sensors?: boolean }): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     // Validation basique
@@ -582,7 +582,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emailRedirectTo: redirectUrl,
           data: {
             full_name: name.trim(),
-            subscription_plan: subscriptionPlan
+            subscription_plan: subscriptionPlan,
+            exploitation_type: extra?.exploitation_type,
+            needs_sensors: extra?.needs_sensors ?? false
           }
         }
       });
