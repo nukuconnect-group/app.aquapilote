@@ -12,9 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
-import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
+import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -304,7 +304,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         <div
           className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
           style={{
-            backgroundImage: `url(${aquacultureCagesDesktop})`,
+            backgroundImage: `url(${registerBgAsset.url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.75)',
