@@ -9,9 +9,9 @@ import { Eye, EyeOff, Loader2, Shield, AlertTriangle, Key, Mail, Lock, User, Fis
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
-import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 import aquaPilotLogo from '@/assets/aquapilote-logo.png';
+import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -287,7 +287,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         <div 
           className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
           style={{ 
-            backgroundImage: `url(${aquacultureCagesDesktop})`,
+            backgroundImage: `url(${loginBgAsset.url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.7)',

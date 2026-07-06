@@ -12,9 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
-import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
+import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -299,12 +299,12 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen min-h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
         {/* Image à gauche (desktop) */}
         <div
           className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
           style={{
-            backgroundImage: `url(${aquacultureCagesDesktop})`,
+            backgroundImage: `url(${registerBgAsset.url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'brightness(0.75)',
@@ -327,7 +327,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           }}
         />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start md:items-center justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto bg-slate-50">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto bg-slate-50">
          <div className="w-full max-w-xl mt-24 md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
