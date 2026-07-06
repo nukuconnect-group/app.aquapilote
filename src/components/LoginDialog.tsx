@@ -488,12 +488,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   <div className="flex items-center justify-center mb-4">
                     <img 
                       src={aquaPilotLogo} 
-                      alt="AQUA PILOT Logo" 
-                      className="h-20 sm:h-24 w-auto object-contain drop-shadow-lg"
+                      alt="AquaPilote" 
+                      className="h-20 sm:h-24 w-auto object-contain"
                     />
                   </div>
                   
-                  <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 bg-clip-text text-transparent">
+                  <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                     {showResetPassword ? t('reset_password') : isRegistering ? t('create_account') : t('welcome_back')}
                   </DialogTitle>
                   
@@ -624,7 +624,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 {/* Submit button */}
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 hover:from-cyan-700 hover:via-blue-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 group"
                   disabled={isLoading}
                 >
                   {isLoading ? (
