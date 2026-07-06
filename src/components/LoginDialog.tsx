@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSettings } from '@/contexts/SettingsContext';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-main.png';
+import aquaPilotLogo from '@/assets/aquapilote-logo.png';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -290,7 +290,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
             backgroundImage: `url(${aquacultureCagesDesktop})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.75)',
+            filter: 'brightness(0.7)',
           }}
         />
         <div 
@@ -303,28 +303,25 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           }}
         />
         
-        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 bg-gradient-to-br from-slate-900/70 via-blue-900/50 to-cyan-900/60 z-[1]" />
+        <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 bg-gradient-to-br from-slate-900/70 via-blue-900/55 to-blue-900/60 z-[1]" />
         <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" />
         
         <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
         </div>
 
         <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] overflow-hidden pointer-events-none">
-          <Fish className="absolute top-20 left-[10%] w-8 h-8 text-white/10 animate-bounce" style={{ animationDuration: '3s' }} />
-          <Waves className="absolute top-40 right-[15%] w-10 h-10 text-white/10 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }} />
-          <Fish className="absolute bottom-32 left-[20%] w-6 h-6 text-white/10 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
           <div className="absolute bottom-16 left-[8%] right-[8%] text-white/95">
-            <h2 className="text-3xl xl:text-4xl font-bold tracking-tight">AquaPilote</h2>
-            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Pilotez votre pisciculture en toute simplicité. Suivi cheptel, IoT, comptabilité et IA.</p>
+            <h2 className="text-3xl xl:text-4xl font-semibold tracking-tight">AquaPilote</h2>
+            <p className="mt-2 text-sm xl:text-base text-white/75 max-w-md leading-relaxed">Pilotez votre pisciculture en toute simplicité. Suivi cheptel, IoT, comptabilité et IA.</p>
           </div>
         </div>
         
         <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-4 py-6 md:px-10 md:py-10 overflow-y-auto">
          <div className="w-full max-w-[440px]">
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-teal-500" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 dark:border-slate-800 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
             
             <div className="p-6 sm:p-8 overflow-y-auto max-h-[85vh]">
               {/* MFA Verification Screen */}
@@ -491,12 +488,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                   <div className="flex items-center justify-center mb-4">
                     <img 
                       src={aquaPilotLogo} 
-                      alt="AQUA PILOT Logo" 
-                      className="h-20 sm:h-24 w-auto object-contain drop-shadow-lg"
+                      alt="AquaPilote" 
+                      className="h-20 sm:h-24 w-auto object-contain"
                     />
                   </div>
                   
-                  <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 bg-clip-text text-transparent">
+                  <DialogTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                     {showResetPassword ? t('reset_password') : isRegistering ? t('create_account') : t('welcome_back')}
                   </DialogTitle>
                   
@@ -627,7 +624,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                 {/* Submit button */}
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 hover:from-cyan-700 hover:via-blue-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 group"
                   disabled={isLoading}
                 >
                   {isLoading ? (

@@ -7,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Building, Users, Fish, Loader2, UserPlus, ChevronLeft, ChevronRight, Waves, User as UserIcon, Mail, Phone, MapPin, Layers, Hexagon } from 'lucide-react';
+import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
 import aquacultureCagesDesktop from '@/assets/aquaculture-cages-desktop.jpg';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
+import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -298,7 +299,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
+      <DialogContent hideClose className="!max-w-none w-screen min-h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
         {/* Image à gauche (desktop) */}
         <div
           className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
@@ -326,17 +327,19 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           }}
         />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start md:items-center justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start md:items-center justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto bg-slate-50">
          <div className="w-full max-w-xl mt-24 md:mt-0">
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
+            <div className="p-6 sm:p-8">
               {/* Logo / titre */}
               <div className="text-center mb-6">
-                <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center shadow-md mb-3">
-                  <Waves className="w-8 h-8 text-white" />
-                </div>
+                <img
+                  src={aquapiloteLogo}
+                  alt="AquaPilote"
+                  className="mx-auto h-20 w-auto object-contain mb-2"
+                />
                 <DialogTitle className="text-2xl font-semibold text-slate-800">
-                  Créer votre compte !
+                  Créer votre compte
                 </DialogTitle>
                 <DialogDescription className="sr-only">
                   Formulaire d'inscription AquaPilote
@@ -403,7 +406,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </FieldWithIcon>
 
                 {/* Nom de la ferme */}
-                <FieldWithIcon icon={<Layers className="w-4 h-4" />} required>
+                <FieldWithIcon icon={<Building2 className="w-4 h-4" />} required>
                   <Input
                     placeholder="Nom de la ferme"
                     value={formData.companyName}
@@ -425,7 +428,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </FieldWithIcon>
 
                 {/* Mot de passe */}
-                <FieldWithIcon icon={<Hexagon className="w-4 h-4" />} required>
+                <FieldWithIcon icon={<KeyRound className="w-4 h-4" />} required>
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Mot de passe (min. 8 caractères)"
@@ -441,7 +444,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </FieldWithIcon>
 
                 {/* Confirmation */}
-                <FieldWithIcon icon={<Hexagon className="w-4 h-4" />} required>
+                <FieldWithIcon icon={<KeyRound className="w-4 h-4" />} required>
                   <Input
                     type="password" placeholder="Confirmer le mot de passe"
                     value={formData.confirmPassword}
@@ -456,7 +459,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
                 {/* Type d'élevage */}
                 <div className="pt-2">
-                  <Label className="text-sm font-semibold text-slate-700">
+                  <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Fish className="w-4 h-4 text-blue-500" />
                     Type d'élevage <span className="text-pink-500">*</span>
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
@@ -474,7 +478,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
                 {/* Type d'exploitation */}
                 <div className="pt-2">
-                  <Label className="text-sm font-semibold text-slate-700">
+                  <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Factory className="w-4 h-4 text-blue-500" />
                     Type d'exploitation <span className="text-pink-500">*</span>
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
@@ -501,15 +506,18 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
                 {/* Besoin de capteurs IoT */}
                 <div className="pt-2">
-                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 transition-colors">
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors">
                     <Checkbox
                       checked={formData.needsSensors}
                       onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
                       className="mt-0.5"
                     />
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800">J'ai besoin de capteurs IoT</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Cochez si vous souhaitez équiper votre ferme de capteurs (température, pH, oxygène…). Notre équipe pourra vous accompagner.</div>
+                    <div className="flex items-start gap-2 flex-1">
+                      <Radio className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">J'ai besoin de capteurs IoT</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">Cochez si vous souhaitez équiper votre ferme de capteurs (température, pH, oxygène…). Notre équipe pourra vous accompagner.</div>
+                      </div>
                     </div>
                   </label>
                 </div>
