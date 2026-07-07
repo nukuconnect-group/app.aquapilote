@@ -317,18 +317,21 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
           </div>
         </div>
-        {/* Bandeau mobile */}
+        {/* Bandeau mobile — image des poissons floutée avec dégradé, cohérente avec la Connexion */}
         <div
-          className="md:hidden fixed inset-x-0 top-0 h-32 z-0"
+          className="md:hidden fixed inset-x-0 top-0 h-44 z-0"
           style={{
-            backgroundImage: `url(${fishColumnsMobile})`,
+            backgroundImage: `url(${registerBgAsset.url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            filter: 'brightness(0.85)',
           }}
+          aria-hidden="true"
         />
+        <div className="md:hidden fixed inset-x-0 top-0 h-44 bg-gradient-to-b from-slate-900/40 via-blue-900/20 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
 
         <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto bg-slate-50">
-         <div className="w-full max-w-xl mt-24 md:mt-0">
+         <div className="w-full max-w-xl mt-32 md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
               {/* Logo / titre */}
