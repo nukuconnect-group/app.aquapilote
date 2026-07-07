@@ -371,85 +371,85 @@ const ModernDashboard: React.FC<ModernDashboardProps> = ({ onNavigate, canAccess
       {/* KPIs — 4 cartes principales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {/* Fermes */}
-        {canViewUnits && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewUnits && <Card className="relative overflow-hidden border-l-4 border-l-indigo-500 border-y-border/60 border-r-border/60 bg-gradient-to-br from-indigo-50 via-white to-indigo-50/40 dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Fermes</p>
-                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{units.length}</p>
+                <p className="text-[10px] sm:text-xs text-indigo-700 dark:text-indigo-300 font-semibold uppercase tracking-wide truncate">Fermes</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight text-slate-900 dark:text-white">{units.length}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-md bg-primary/10 text-primary shrink-0">
+              <div className="p-1.5 sm:p-2 rounded-md bg-indigo-500 text-white shadow-sm shrink-0">
                 <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 truncate">{units.filter((u) => u.isActive).length} actives</p>
-            <div className="mt-2 grid grid-cols-1 gap-1 text-[10px] text-muted-foreground">
+            <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-1 truncate font-medium">{units.filter((u) => u.isActive).length} actives</p>
+            <div className="mt-2 grid grid-cols-1 gap-1 text-[10px]">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate">Active</span>
-                <span className="font-medium text-foreground truncate">{activeUnit?.name || 'Globale'}</span>
+                <span className="truncate text-slate-500 dark:text-slate-400">Active</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{activeUnit?.name || 'Globale'}</span>
               </div>
             </div>
           </CardContent>
         </Card>}
         {/* Cycles actifs */}
-        {canViewProduction && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewProduction && <Card className="relative overflow-hidden border-l-4 border-l-sky-500 border-y-border/60 border-r-border/60 bg-gradient-to-br from-sky-50 via-white to-sky-50/40 dark:from-sky-950/40 dark:via-slate-900 dark:to-sky-950/20 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Cycles actifs</p>
-                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{activeCycles}</p>
+                <p className="text-[10px] sm:text-xs text-sky-700 dark:text-sky-300 font-semibold uppercase tracking-wide truncate">Cycles actifs</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight text-slate-900 dark:text-white">{activeCycles}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-md bg-sky-500/10 text-sky-600 shrink-0">
+              <div className="p-1.5 sm:p-2 rounded-md bg-sky-500 text-white shadow-sm shrink-0">
                 <Factory className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 truncate">{cycles.length} cycles total</p>
-            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+            <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-1 truncate font-medium">{cycles.length} cycles total</p>
+            <div className="mt-2 rounded-md border border-sky-200/70 dark:border-sky-800/60 bg-white/70 dark:bg-slate-900/40 p-1.5 text-[10px]">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-muted-foreground">Effectifs</span>
-                <span className="font-semibold text-foreground">{totalStock.toLocaleString()}</span>
+                <span className="text-slate-500 dark:text-slate-400">Effectifs</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{totalStock.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
         </Card>}
         {/* Biomasse */}
-        {canViewProduction && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {canViewProduction && <Card className="relative overflow-hidden border-l-4 border-l-emerald-500 border-y-border/60 border-r-border/60 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 dark:from-emerald-950/40 dark:via-slate-900 dark:to-emerald-950/20 hover:shadow-md transition-shadow">
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Biomasse</p>
-                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{totalBiomassKg.toFixed(1)}<span className="text-[10px] sm:text-xs font-medium text-muted-foreground ml-1">kg</span></p>
+                <p className="text-[10px] sm:text-xs text-emerald-700 dark:text-emerald-300 font-semibold uppercase tracking-wide truncate">Biomasse</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight text-slate-900 dark:text-white">{totalBiomassKg.toFixed(1)}<span className="text-[10px] sm:text-xs font-medium text-emerald-700 dark:text-emerald-300 ml-1">kg</span></p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-md bg-emerald-500/10 text-emerald-600 shrink-0">
+              <div className="p-1.5 sm:p-2 rounded-md bg-emerald-500 text-white shadow-sm shrink-0">
                 <Fish className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 truncate">Estimée en cours</p>
-            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+            <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-1 truncate font-medium">Estimée en cours</p>
+            <div className="mt-2 rounded-md border border-emerald-200/70 dark:border-emerald-800/60 bg-white/70 dark:bg-slate-900/40 p-1.5 text-[10px]">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-muted-foreground">Survie</span>
-                <span className="font-semibold text-foreground">{survivalRate}%</span>
+                <span className="text-slate-500 dark:text-slate-400">Survie</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{survivalRate}%</span>
               </div>
             </div>
           </CardContent>
         </Card>}
         {/* Alertes */}
-        {(canViewAlerts || canViewFeeding) && <Card className="relative overflow-hidden border-border/60 hover:shadow-md transition-shadow">
+        {(canViewAlerts || canViewFeeding) && <Card className={`relative overflow-hidden border-l-4 border-y-border/60 border-r-border/60 hover:shadow-md transition-shadow ${criticalAlerts > 0 ? 'border-l-red-500 bg-gradient-to-br from-red-50 via-white to-red-50/40 dark:from-red-950/40 dark:via-slate-900 dark:to-red-950/20' : 'border-l-emerald-500 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 dark:from-emerald-950/40 dark:via-slate-900 dark:to-emerald-950/20'}`}>
           <CardContent className="p-2.5 sm:p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">Alertes</p>
-                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight">{criticalAlerts}</p>
+                <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wide truncate ${criticalAlerts > 0 ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300'}`}>Alertes</p>
+                <p className="text-lg sm:text-2xl font-bold mt-0.5 tracking-tight leading-tight text-slate-900 dark:text-white">{criticalAlerts}</p>
               </div>
-              <div className={`p-1.5 sm:p-2 rounded-md shrink-0 ${criticalAlerts > 0 ? 'bg-red-500/10 text-red-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+              <div className={`p-1.5 sm:p-2 rounded-md shadow-sm shrink-0 text-white ${criticalAlerts > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}>
                 <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 truncate">24 dernières heures</p>
-            <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-1.5 text-[10px]">
+            <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-1 truncate font-medium">24 dernières heures</p>
+            <div className={`mt-2 rounded-md border p-1.5 text-[10px] bg-white/70 dark:bg-slate-900/40 ${criticalAlerts > 0 ? 'border-red-200/70 dark:border-red-800/60' : 'border-emerald-200/70 dark:border-emerald-800/60'}`}>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-muted-foreground">Stocks bas</span>
-                <span className="font-semibold text-foreground">{lowFeedAlerts}</span>
+                <span className="text-slate-500 dark:text-slate-400">Stocks bas</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{lowFeedAlerts}</span>
               </div>
             </div>
           </CardContent>
