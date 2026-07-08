@@ -237,15 +237,26 @@ serve(async (req) => {
       try {
         const resend = new Resend(resendApiKey);
         await resend.emails.send({
-          from: "AquaPilote <onboarding@resend.dev>",
+          from: "AquaPilote <noreply@aquapilote.com>",
           to: [cleanEmail],
-          subject: "Bienvenue sur AquaPilote - Vos identifiants",
-          html: `<div style="font-family:Arial;max-width:600px;margin:auto;padding:20px">
-            <h2>Bienvenue ${cleanName}!</h2>
-            <p>Votre compte AquaPilote a été créé.</p>
-            <p><strong>Email:</strong> ${cleanEmail}<br><strong>Mot de passe:</strong> ${password}</p>
-            <p><a href="${loginUrl}" style="background:#0ea5e9;color:white;padding:10px 20px;text-decoration:none;border-radius:6px">Se connecter</a></p>
-          </div>`,
+          subject: "👥 Bienvenue dans votre équipe AquaPilote",
+          html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+            <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.05)">
+              <div style="background:linear-gradient(135deg,#0f172a 0%,#0369a1 100%);padding:32px 24px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700">🐟 AquaPilote</h1>
+              </div>
+              <div style="padding:32px 28px;color:#0f172a">
+                <h2 style="margin:0 0 16px">Bienvenue ${cleanName} 👋</h2>
+                <p style="color:#334155;line-height:1.6">Un administrateur vous a ajouté(e) à son équipe sur AquaPilote. Voici vos identifiants&nbsp;:</p>
+                <table style="width:100%;border-collapse:collapse;margin-top:12px">
+                  <tr><td style="padding:10px;background:#f8fafc;border-radius:6px 0 0 6px"><strong>Email</strong></td><td style="padding:10px;background:#f8fafc;border-radius:0 6px 6px 0"><code>${cleanEmail}</code></td></tr>
+                  <tr><td style="padding:10px"><strong>Mot de passe temporaire</strong></td><td style="padding:10px"><code>${password}</code></td></tr>
+                </table>
+                <p style="margin-top:14px;color:#b45309;font-size:13px">⚠️ Modifiez votre mot de passe après la première connexion.</p>
+                <div style="text-align:center;margin:28px 0"><a href="${loginUrl}" style="background:#0ea5e9;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Se connecter</a></div>
+              </div>
+              <div style="background:#f8fafc;padding:16px 24px;text-align:center;color:#64748b;font-size:12px;border-top:1px solid #e2e8f0">AquaPilote · <a href="https://app.aquapilote.com" style="color:#0ea5e9;text-decoration:none">app.aquapilote.com</a></div>
+            </div></body></html>`,
         });
         emailSent = true;
       } catch (e: any) {
