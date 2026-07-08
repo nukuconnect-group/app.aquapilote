@@ -248,13 +248,27 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
     <div className="space-y-4">
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" />
-            Calculateur professionnel Tilapia / Clarias
-          </CardTitle>
-          <CardDescription>
-            Deux modes de calcul : à partir d'un <strong>objectif de production</strong> ou à partir de la <strong>biomasse et ration journalière</strong>.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                Calculateur professionnel Tilapia / Clarias
+              </CardTitle>
+              <CardDescription>
+                Vos saisies sont <strong>automatiquement conservées</strong> et retrouvées à votre retour. Utilisez « Vider » pour repartir de zéro.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetAll}
+              className="shrink-0 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40 dark:hover:bg-red-950/30"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Vider les calculs
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
