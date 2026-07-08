@@ -249,12 +249,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           onClose();
           navigate('/dashboard', { replace: true });
         } else if ((result as any).pendingActivation) {
-          toast({
-            title: '⏳ Compte en attente d\'activation',
-            description: 'Votre compte a bien été créé mais doit être activé par un administrateur. Vous recevrez une notification dès l\'activation.',
-            variant: 'default',
-            duration: 8000,
-          });
+          setPendingActivation({ email: formData.email.trim() });
         } else {
           toast({
             title: `❌ ${t('login_error')}`,
