@@ -720,6 +720,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
          </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
