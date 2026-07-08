@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Target, Utensils, Fish, Wallet, Package, Info, AlertTriangle, Ruler } from 'lucide-react';
+import { Calculator, Target, Utensils, Fish, Wallet, Package, Info, AlertTriangle, Ruler, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ExportDropdown from '@/components/ExportDropdown';
@@ -58,24 +58,53 @@ interface DailyResult {
 const AdvancedAquaFeedCalculator: React.FC = () => {
   const { formatCurrency, activeUnit } = useProductionUnits();
 
-  // Mode 1: production objective
-  const [species, setSpecies] = useState<Species>('tilapia');
-  const [infra, setInfra] = useState<InfraType>('bassin_beton');
-  const [productionTarget, setProductionTarget] = useState<number>(5000); // kg
-  const [finalWeight, setFinalWeight] = useState<number>(500); // g
-  const [initialWeight, setInitialWeight] = useState<number>(5); // g
-  const [survivalRate, setSurvivalRate] = useState<number>(90); // %
-  const [fcr, setFcr] = useState<number>(1.5);
-  const [feedPrice, setFeedPrice] = useState<number>(650);
-  const [bagWeight, setBagWeight] = useState<number>(25);
-  const [customBag, setCustomBag] = useState<number | ''>('');
+  const STORAGE_KEY = `aquafeed_calc_${activeUnit?.id ?? 'global'}`;
+  const initial = (() => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+
+  // Mode 1: production objective — plus de valeurs de démo, tout part à 0/vide
+  const [species, setSpecies] = useState<Species>(initial?.species ?? 'tilapia');
+  const [infra, setInfra] = useState<InfraType>(initial?.infra ?? 'bassin_beton');
+  const [productionTarget, setProductionTarget] = useState<number>(initial?.productionTarget ?? 0);
+  const [finalWeight, setFinalWeight] = useState<number>(initial?.finalWeight ?? 0);
+  const [initialWeight, setInitialWeight] = useState<number>(initial?.initialWeight ?? 0);
+  const [survivalRate, setSurvivalRate] = useState<number>(initial?.survivalRate ?? 0);
+  const [fcr, setFcr] = useState<number>(initial?.fcr ?? 0);
+  const [feedPrice, setFeedPrice] = useState<number>(initial?.feedPrice ?? 0);
+  const [bagWeight, setBagWeight] = useState<number>(initial?.bagWeight ?? 25);
+  const [customBag, setCustomBag] = useState<number | ''>(initial?.customBag ?? '');
 
   // Mode 2: daily ration from biomass
-  const [dFishCount, setDFishCount] = useState<number>(1000);
-  const [dAvgWeight, setDAvgWeight] = useState<number>(200); // g
-  const [dFeedRate, setDFeedRate] = useState<number>(3); // %
-  const [dFeedPrice, setDFeedPrice] = useState<number>(650);
-  const [dBagWeight, setDBagWeight] = useState<number>(25);
+  const [dFishCount, setDFishCount] = useState<number>(initial?.dFishCount ?? 0);
+  const [dAvgWeight, setDAvgWeight] = useState<number>(initial?.dAvgWeight ?? 0);
+  const [dFeedRate, setDFeedRate] = useState<number>(initial?.dFeedRate ?? 0);
+  const [dFeedPrice, setDFeedPrice] = useState<number>(initial?.dFeedPrice ?? 0);
+  const [dBagWeight, setDBagWeight] = useState<number>(initial?.dBagWeight ?? 25);
+
+  // Auto-sauvegarde locale à chaque changement, restauration au retour
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        species, infra, productionTarget, finalWeight, initialWeight, survivalRate,
+        fcr, feedPrice, bagWeight, customBag,
+        dFishCount, dAvgWeight, dFeedRate, dFeedPrice, dBagWeight,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch { /* quota / private mode */ }
+  }, [STORAGE_KEY, species, infra, productionTarget, finalWeight, initialWeight, survivalRate, fcr, feedPrice, bagWeight, customBag, dFishCount, dAvgWeight, dFeedRate, dFeedPrice, dBagWeight]);
+
+  const resetAll = () => {
+    setSpecies('tilapia');
+    setInfra('bassin_beton');
+    setProductionTarget(0); setFinalWeight(0); setInitialWeight(0);
+    setSurvivalRate(0); setFcr(0); setFeedPrice(0); setBagWeight(25); setCustomBag('');
+    setDFishCount(0); setDAvgWeight(0); setDFeedRate(0); setDFeedPrice(0); setDBagWeight(25);
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+  };
 
   // ---------- Validation stricte ----------
   const objectiveErrors = useMemo(() => {
