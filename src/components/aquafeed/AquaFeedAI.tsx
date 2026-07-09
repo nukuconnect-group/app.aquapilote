@@ -330,7 +330,22 @@ const AquaFeedAI: React.FC = () => {
 
         <TabsContent value="history">
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="w-4 h-4" />Calculs récents</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <CardTitle className="text-base flex items-center gap-2"><TrendingUp className="w-4 h-4" />Calculs récents</CardTitle>
+                {history.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearHistory}
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    Vider l'historique
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
             <CardContent>
               {history.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">Aucun calcul enregistré.</div>
