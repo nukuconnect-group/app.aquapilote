@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Fish, Sparkles, History, Save, TrendingUp, AlertTriangle, Gauge, Wallet, Utensils, Sliders } from 'lucide-react';
+import { Calculator, Fish, Sparkles, History, Save, TrendingUp, AlertTriangle, Gauge, Wallet, Utensils, Sliders, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,8 +22,8 @@ const AquaFeedAI: React.FC = () => {
   const [species, setSpecies] = useState<FishSpecies[]>([]);
   const [rules, setRules] = useState<FeedingRule[]>([]);
   const [speciesId, setSpeciesId] = useState<string>('');
-  const [fishCount, setFishCount] = useState<number>(1000);
-  const [avgWeight, setAvgWeight] = useState<number>(50);
+  const [fishCount, setFishCount] = useState<number>(0);
+  const [avgWeight, setAvgWeight] = useState<number>(0);
   const [waterTemp, setWaterTemp] = useState<number | ''>('');
   const [cycleDays, setCycleDays] = useState<number | ''>('');
   const [result, setResult] = useState<FeedingResult | null>(null);
@@ -81,7 +81,7 @@ const AquaFeedAI: React.FC = () => {
     setHistory(data ?? []);
   };
 
-  const handleCompute = () => {
+  const handleCompute = async () => {
     if (!speciesId || fishCount <= 0 || avgWeight <= 0) {
       toast({ title: 'Champs manquants', description: 'Sélectionnez une espèce et saisissez nombre + poids.', variant: 'destructive' });
       return;
@@ -92,9 +92,10 @@ const AquaFeedAI: React.FC = () => {
     });
     setResult(r);
     setAdvancedResult(null);
+    await autoSave(r, null);
   };
 
-  const handleComputeAdvanced = () => {
+  const handleComputeAdvanced = async () => {
     if (!speciesId || fishCount <= 0 || avgWeight <= 0) {
       toast({ title: 'Champs manquants', description: 'Sélectionnez une espèce et saisissez nombre + poids.', variant: 'destructive' });
       return;
@@ -117,12 +118,12 @@ const AquaFeedAI: React.FC = () => {
     if (r.warnings.length > 0) {
       toast({ title: 'Attention', description: r.warnings[0], variant: 'destructive' });
     }
+    await autoSave(r, r);
   };
 
-  const handleSave = async () => {
-    if (!result || !user?.id) return;
+  const autoSave = async (r: FeedingResult, adv: AdvancedFeedingResult | null) => {
+    if (!r || !user?.id) return;
     setLoading(true);
-    const adv = advancedResult;
     const { error } = await supabase.from('feed_calculations').insert({
       user_id: user.id,
       unit_id: activeUnit?.id ?? null,
@@ -130,16 +131,16 @@ const AquaFeedAI: React.FC = () => {
       species_name: currentSpecies?.name ?? null,
       fish_count: fishCount,
       avg_weight_g: avgWeight,
-      biomass_kg: result.biomass_kg,
-      stage: result.stage,
-      feed_rate_pct: result.feed_rate_pct,
-      daily_ration_kg: result.daily_ration_kg,
-      meals_per_day: result.meals_per_day,
-      ration_per_meal_kg: result.ration_per_meal_kg,
+      biomass_kg: r.biomass_kg,
+      stage: r.stage,
+      feed_rate_pct: r.feed_rate_pct,
+      daily_ration_kg: r.daily_ration_kg,
+      meals_per_day: r.meals_per_day,
+      ration_per_meal_kg: r.ration_per_meal_kg,
       water_temp: typeof waterTemp === 'number' ? waterTemp : null,
       cycle_days: typeof cycleDays === 'number' ? cycleDays : (currentSpecies?.default_cycle_days ?? null),
-      projected_final_weight_g: result.projected_final_weight_g,
-      projected_total_feed_kg: result.projected_total_feed_kg,
+      projected_final_weight_g: r.projected_final_weight_g,
+      projected_total_feed_kg: r.projected_total_feed_kg,
       calc_mode: adv ? 'advanced' : 'basic',
       infrastructure_id: selectedInfra?.id ?? null,
       infrastructure_name: selectedInfra?.name ?? null,
@@ -157,10 +158,21 @@ const AquaFeedAI: React.FC = () => {
       meal_schedule: (adv?.meal_schedule ?? null) as any,
     } as any);
     setLoading(false);
+    if (error) toast({ title: 'Erreur sauvegarde', description: error.message, variant: 'destructive' });
+    else {
+      toast({ title: '✅ Ajouté à l\'historique', description: 'Votre calcul est conservé dans l\'onglet Historique.' });
+      loadHistory();
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!user?.id) return;
+    if (!window.confirm('Vider tout l\'historique de vos calculs AquaFeed ? Cette action est irréversible.')) return;
+    const { error } = await supabase.from('feed_calculations').delete().eq('user_id', user.id);
     if (error) toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
     else {
-      toast({ title: 'Calcul enregistré', description: 'Historique mis à jour.' });
-      loadHistory();
+      toast({ title: 'Historique vidé', description: 'Tous vos calculs ont été supprimés.' });
+      setHistory([]);
     }
   };
 
@@ -267,8 +279,7 @@ const AquaFeedAI: React.FC = () => {
                       value={cycleDays} onChange={e => setCycleDays(e.target.value === '' ? '' : Number(e.target.value))} />
                   </div>
                 </div>
-                <Button className="w-full" onClick={handleCompute}><Calculator className="w-4 h-4 mr-2" />Calculer</Button>
-                {result && <Button variant="outline" className="w-full" onClick={handleSave} disabled={loading}><Save className="w-4 h-4 mr-2" />Enregistrer</Button>}
+                <Button className="w-full" onClick={handleCompute} disabled={loading}><Calculator className="w-4 h-4 mr-2" />Calculer et enregistrer</Button>
                 {result && exportOptions && (
                   <ExportDropdown options={exportOptions} label="Exporter" className="w-full" />
                 )}
