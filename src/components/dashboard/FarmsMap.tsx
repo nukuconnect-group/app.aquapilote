@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, AlertTriangle, CheckCircle2, Activity } from 'lucide-react';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+import { supabase } from '@/integrations/supabase/client';
 
 declare global {
   interface Window {
@@ -44,9 +45,36 @@ const FarmsMap: React.FC = () => {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
 
-  const browserKey = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
+  const managedKey = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   const trackingId = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
+
+  // Sur les domaines Lovable, la clé gérée fonctionne. Sur un domaine custom,
+  // on récupère la clé personnalisée (stockée en secret GOOGLE_API_KEY) via
+  // l'edge function get-maps-key.
+  useEffect(() => {
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isLovableHost = /(lovable\.app|lovableproject\.com|localhost|127\.0\.0\.1)$/i.test(host);
+    if (isLovableHost && managedKey) {
+      setResolvedKey(managedKey);
+      return;
+    }
+    // Domaine custom : essayer la clé serveur
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (error) throw error;
+        const k = (data as any)?.key;
+        if (k) setResolvedKey(k);
+        else if (managedKey) setResolvedKey(managedKey);
+        else setLoadError('Clé Google Maps manquante');
+      } catch {
+        if (managedKey) setResolvedKey(managedKey);
+        else setLoadError('Clé Google Maps manquante');
+      }
+    })();
+  }, [managedKey]);
 
   // Default center: West Africa (Lomé, Togo)
   const center = { lat: 6.1725, lng: 1.2314 };
@@ -68,10 +96,7 @@ const FarmsMap: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!browserKey) {
-      setLoadError('Clé Google Maps manquante');
-      return;
-    }
+    if (!resolvedKey) return;
 
     const init = async () => {
       if (!mapRef.current || !window.google?.maps?.importLibrary) return;
@@ -132,13 +157,13 @@ const FarmsMap: React.FC = () => {
     const script = document.createElement('script');
     script.id = 'gmaps-aquapilote';
     script.async = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${browserKey}&loading=async&callback=__initAquapiloteMap${
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${resolvedKey}&loading=async&callback=__initAquapiloteMap${
       trackingId ? `&channel=${trackingId}` : ''
     }`;
     script.onerror = () => setLoadError('Échec du chargement de Google Maps');
     document.head.appendChild(script);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [browserKey, units.length]);
+  }, [resolvedKey, units.length]);
 
   const counts = {
     normal: markers.filter((m) => m.status === 'normal').length,
