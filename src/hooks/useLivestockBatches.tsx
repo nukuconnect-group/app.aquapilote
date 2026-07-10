@@ -167,7 +167,7 @@ export const useLivestockBatches = (unitId?: string) => {
       console.error('Error creating batch:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer le lot de poissons',
+        description: error?.message || 'Impossible de créer le lot de poissons',
         variant: 'destructive'
       });
       throw error;
@@ -193,7 +193,7 @@ export const useLivestockBatches = (unitId?: string) => {
       console.error('Error updating batch:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour le lot',
+        description: error?.message || 'Impossible de mettre à jour le lot',
         variant: 'destructive'
       });
       throw error;
