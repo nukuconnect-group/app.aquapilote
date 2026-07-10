@@ -1120,14 +1120,14 @@ const LivestockManagement = () => {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                 <div className="flex justify-end gap-2">
+                   <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                     Annuler
                   </Button>
-                  <Button variant="secondary" onClick={() => handleAddBatch(true)}>
+                  <Button type="button" variant="secondary" onClick={() => handleAddBatch(true)}>
                     Enregistrer et nouveau
                   </Button>
-                  <Button onClick={() => handleAddBatch(false)}>
+                  <Button type="button" onClick={() => handleAddBatch(false)}>
                     Ajouter le lot
                   </Button>
                 </div>
