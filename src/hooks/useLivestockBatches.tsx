@@ -145,9 +145,12 @@ export const useLivestockBatches = (unitId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Strip client-only fields not present in DB schema
+      const { attached_infrastructure_id, ...safeBatch } = batch as any;
+
       const { data, error } = await supabase
         .from('livestock_batches')
-        .insert([{ ...batch, user_id: user.id }])
+        .insert([{ ...safeBatch, user_id: user.id }])
         .select()
         .single();
 
