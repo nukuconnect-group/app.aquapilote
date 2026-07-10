@@ -465,7 +465,16 @@ const LivestockManagement = () => {
     if (!formData.species || !formData.quantity || !formData.unitId) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
+        description: "Renseignez l'espèce, la quantité et l'unité de production.",
+        variant: "destructive"
+      });
+      return;
+    }
+    const selectedUnitCheck = units.find(u => u.id === formData.unitId);
+    if (!selectedUnitCheck) {
+      toast({
+        title: "Unité introuvable",
+        description: "L'unité sélectionnée est invalide. Rechargez la page et réessayez.",
         variant: "destructive"
       });
       return;
