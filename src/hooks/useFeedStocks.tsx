@@ -134,7 +134,7 @@ export const useFeedStocks = (unitId?: string) => {
       console.error('Error updating feed stock:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour le stock',
+        description: error?.message || 'Impossible de mettre à jour le stock',
         variant: 'destructive',
       });
       throw error;
