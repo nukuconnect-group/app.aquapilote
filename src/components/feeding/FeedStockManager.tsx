@@ -154,7 +154,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
       const stockData = {
         unit_id: unitId,
         custom_name: newStock.custom_name,
-        feed_type: newStock.feed_type,
+        feed_type: newStock.feed_type || newStock.custom_name || 'autre',
         quantity: newStock.quantity,
         unit: newStock.unit,
         expiration_date: newStock.expiration_date || undefined,
