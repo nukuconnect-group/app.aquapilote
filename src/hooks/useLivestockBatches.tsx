@@ -145,9 +145,12 @@ export const useLivestockBatches = (unitId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Strip client-only fields not present in DB schema
+      const { attached_infrastructure_id, ...safeBatch } = batch as any;
+
       const { data, error } = await supabase
         .from('livestock_batches')
-        .insert([{ ...batch, user_id: user.id }])
+        .insert([{ ...safeBatch, user_id: user.id }])
         .select()
         .single();
 
@@ -167,7 +170,7 @@ export const useLivestockBatches = (unitId?: string) => {
       console.error('Error creating batch:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer le lot de poissons',
+        description: error?.message || 'Impossible de créer le lot de poissons',
         variant: 'destructive'
       });
       throw error;
@@ -176,9 +179,13 @@ export const useLivestockBatches = (unitId?: string) => {
 
   const updateBatch = async (id: string, updates: Partial<LivestockBatch>) => {
     try {
+      // Strip client-only fields not present in the DB schema
+      const { attached_infrastructure_id, unit_name, ...safeUpdates } = updates as any;
+      const payload: any = { ...safeUpdates };
+      if (unit_name !== undefined) payload.unit_name = unit_name;
       const { error } = await supabase
         .from('livestock_batches')
-        .update(updates)
+        .update(payload)
         .eq('id', id);
 
       if (error) throw error;
@@ -193,7 +200,7 @@ export const useLivestockBatches = (unitId?: string) => {
       console.error('Error updating batch:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour le lot',
+        description: error?.message || 'Impossible de mettre à jour le lot',
         variant: 'destructive'
       });
       throw error;

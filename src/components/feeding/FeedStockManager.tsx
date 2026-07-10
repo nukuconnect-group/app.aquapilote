@@ -104,6 +104,22 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
 
   const handleSaveStock = async () => {
     try {
+      if (!unitId) {
+        toast({
+          title: 'Unité manquante',
+          description: 'Sélectionnez d\'abord une unité de production active.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!newStock.feed_type && !newStock.custom_name) {
+        toast({
+          title: 'Type d\'aliment requis',
+          description: 'Choisissez un type d\'aliment ou saisissez un nom personnalisé.',
+          variant: 'destructive',
+        });
+        return;
+      }
       // Validation cohérence sacs ↔ kg
       const bags = newStock.bag_count || 0;
       const kgPerBag = newStock.kg_per_bag || 0;
@@ -138,7 +154,7 @@ const FeedStockManager = ({ unitId, onStockUpdate }: FeedStockManagerProps) => {
       const stockData = {
         unit_id: unitId,
         custom_name: newStock.custom_name,
-        feed_type: newStock.feed_type,
+        feed_type: newStock.feed_type || newStock.custom_name || 'autre',
         quantity: newStock.quantity,
         unit: newStock.unit,
         expiration_date: newStock.expiration_date || undefined,

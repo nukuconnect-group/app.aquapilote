@@ -299,7 +299,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50">
+      <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-transparent md:bg-slate-50">
         {/* Image à gauche (desktop) */}
         <div
           className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-0"
@@ -319,19 +319,18 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         </div>
         {/* Bandeau mobile — même image poissons que la Connexion */}
         <div
-          className="md:hidden fixed inset-x-0 top-0 h-40 z-0"
+          className="md:hidden fixed inset-x-0 top-0 h-48 z-0"
           style={{
             backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.7)',
           }}
           aria-hidden="true"
         />
-        <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
+        <div className="md:hidden fixed inset-x-0 top-0 h-48 bg-gradient-to-b from-slate-900/20 via-slate-900/10 to-slate-50 z-[1]" aria-hidden="true" />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto bg-slate-50">
-         <div className="w-full max-w-xl mt-32 md:mt-0">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
+         <div className="w-full max-w-xl mt-40 md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
               {/* Logo / titre */}
@@ -466,18 +465,18 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                     <Fish className="w-4 h-4 text-blue-500" />
                     Type d'élevage <span className="text-pink-500">*</span>
                   </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-2">
                      {breedingTypes.map(type => (
-                       <label key={type} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 rounded-md px-2 py-1.5 transition-colors">
+                       <label key={type} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 rounded-md px-2 py-1 transition-colors">
                          <Checkbox
                            checked={formData.productionUnits.includes(type)}
                            onCheckedChange={(checked) => toggleBreedingType(type, checked === true)}
-                           className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                           className="h-4 w-4 rounded-[3px] border border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                          />
                          <span>{type}</span>
                        </label>
                      ))}
-                  </div>
+                   </div>
                 </div>
 
                 {/* Type d'exploitation */}
@@ -510,11 +509,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
                 {/* Besoin de capteurs IoT */}
                 <div className="pt-2">
-                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors">
+                   <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors">
                      <Checkbox
                        checked={formData.needsSensors}
                        onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
-                       className="mt-0.5 h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                       className="h-4 w-4 rounded-[3px] border border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                      />
                     <div className="flex items-start gap-2 flex-1">
                       <Radio className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />

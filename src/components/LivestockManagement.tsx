@@ -465,7 +465,16 @@ const LivestockManagement = () => {
     if (!formData.species || !formData.quantity || !formData.unitId) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
+        description: "Renseignez l'espèce, la quantité et l'unité de production.",
+        variant: "destructive"
+      });
+      return;
+    }
+    const selectedUnitCheck = units.find(u => u.id === formData.unitId);
+    if (!selectedUnitCheck) {
+      toast({
+        title: "Unité introuvable",
+        description: "L'unité sélectionnée est invalide. Rechargez la page et réessayez.",
         variant: "destructive"
       });
       return;
@@ -1120,14 +1129,14 @@ const LivestockManagement = () => {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowAddForm(false)}>
+                 <div className="flex justify-end gap-2">
+                   <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                     Annuler
                   </Button>
-                  <Button variant="secondary" onClick={() => handleAddBatch(true)}>
+                  <Button type="button" variant="secondary" onClick={() => handleAddBatch(true)}>
                     Enregistrer et nouveau
                   </Button>
-                  <Button onClick={() => handleAddBatch(false)}>
+                  <Button type="button" onClick={() => handleAddBatch(false)}>
                     Ajouter le lot
                   </Button>
                 </div>
