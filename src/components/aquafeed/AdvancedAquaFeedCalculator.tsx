@@ -310,7 +310,7 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
 
                 <div>
                   <Label>Objectif de production (kg)</Label>
-                  <Input type="number" min={0} value={productionTarget}
+                  <Input type="number" min={0} placeholder="0" value={productionTarget || ''}
                     onChange={e => setProductionTarget(Number(e.target.value))} />
                   <p className="text-[11px] text-muted-foreground mt-1">= {(productionTarget / 1000).toLocaleString('fr-FR')} tonnes</p>
                 </div>
@@ -318,19 +318,19 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label>Poids final (g)</Label>
-                    <Input type="number" min={0} value={finalWeight}
+                    <Input type="number" min={0} placeholder="0" value={finalWeight || ''}
                       onChange={e => setFinalWeight(Number(e.target.value))} />
                   </div>
                   <div>
                     <Label>Poids alevin (g)</Label>
-                    <Input type="number" min={0} value={initialWeight}
+                    <Input type="number" min={0} placeholder="0" value={initialWeight || ''}
                       onChange={e => setInitialWeight(Number(e.target.value))} />
                   </div>
                 </div>
 
                 <div>
                   <Label>Taux de survie (%)</Label>
-                  <Input type="number" min={1} max={100} value={survivalRate}
+                  <Input type="number" min={1} max={100} placeholder="0" value={survivalRate || ''}
                     onChange={e => setSurvivalRate(Number(e.target.value))} />
                 </div>
 
@@ -344,13 +344,13 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
                         onClick={() => setFcr(v)}>{v}</Button>
                     ))}
                   </div>
-                  <Input type="number" step="0.01" min={0.1} value={fcr}
+                  <Input type="number" step="0.01" min={0.1} placeholder="0" value={fcr || ''}
                     onChange={e => setFcr(Number(e.target.value))} />
                 </div>
 
                 <div>
                   <Label>Prix aliment / kg</Label>
-                  <Input type="number" min={0} value={feedPrice}
+                  <Input type="number" min={0} placeholder="0" value={feedPrice || ''}
                     onChange={e => setFeedPrice(Number(e.target.value))} />
                 </div>
 
@@ -483,25 +483,25 @@ const AdvancedAquaFeedCalculator: React.FC = () => {
               <CardContent className="space-y-3">
                 <div>
                   <Label>Nombre de poissons</Label>
-                  <Input type="number" min={0} value={dFishCount} onChange={e => setDFishCount(Number(e.target.value))} />
+                  <Input type="number" min={0} placeholder="0" value={dFishCount || ''} onChange={e => setDFishCount(Number(e.target.value))} />
                 </div>
                 <div>
                   <Label>Poids moyen individuel (g)</Label>
-                  <Input type="number" min={0} value={dAvgWeight} onChange={e => setDAvgWeight(Number(e.target.value))} />
+                  <Input type="number" min={0} placeholder="0" value={dAvgWeight || ''} onChange={e => setDAvgWeight(Number(e.target.value))} />
                 </div>
                 <div>
                   <Label>% d'alimentation appliqué</Label>
-                  <Input type="number" step="0.1" min={0} value={dFeedRate} onChange={e => setDFeedRate(Number(e.target.value))} />
+                  <Input type="number" step="0.1" min={0} placeholder="0" value={dFeedRate || ''} onChange={e => setDFeedRate(Number(e.target.value))} />
                   <p className="text-[11px] text-muted-foreground mt-1">Ex. alevins 8-10%, juvéniles 4-6%, grossissement 2-3%.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label>Prix aliment/kg</Label>
-                    <Input type="number" min={0} value={dFeedPrice} onChange={e => setDFeedPrice(Number(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={dFeedPrice || ''} onChange={e => setDFeedPrice(Number(e.target.value))} />
                   </div>
                   <div>
                     <Label>Poids sac (kg)</Label>
-                    <Input type="number" min={1} value={dBagWeight} onChange={e => setDBagWeight(Number(e.target.value))} />
+                    <Input type="number" min={1} placeholder="25" value={dBagWeight || ''} onChange={e => setDBagWeight(Number(e.target.value))} />
                     <p className="text-[11px] text-muted-foreground mt-1">Ex. 15, 25, 50 kg — ou votre propre format.</p>
                   </div>
                 </div>
