@@ -160,7 +160,10 @@ const MainLayout = () => {
           </div>
           
           {/* Main Content avec padding-top pour compenser le header fixe */}
-          <main className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-20 md:pb-6 pt-[3rem] md:pt-14 lg:pt-16">
+          <main
+            className="flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 pb-32 md:pb-6 pt-[3rem] md:pt-14 lg:pt-16"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8rem)' }}
+          >
             <div className="w-full max-w-none">
               {renderContent()}
             </div>
