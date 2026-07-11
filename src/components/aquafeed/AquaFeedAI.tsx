@@ -262,11 +262,11 @@ const AquaFeedAI: React.FC = () => {
                 </div>
                 <div>
                   <Label>Nombre de poissons</Label>
-                  <Input type="number" min={1} value={fishCount} onChange={e => setFishCount(Number(e.target.value))} />
+                  <Input type="number" min={1} placeholder="0" value={fishCount || ''} onChange={e => setFishCount(Number(e.target.value))} />
                 </div>
                 <div>
                   <Label>Poids moyen (g)</Label>
-                  <Input type="number" min={0} value={avgWeight} onChange={e => setAvgWeight(Number(e.target.value))} />
+                  <Input type="number" min={0} placeholder="0" value={avgWeight || ''} onChange={e => setAvgWeight(Number(e.target.value))} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
