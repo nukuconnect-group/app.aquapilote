@@ -1,0 +1,74 @@
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/clientConfig';
+import { useAuth } from '@/contexts/AuthContext';
+
+export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'suspended' | 'cancelled';
+
+export interface CurrentSubscription {
+  id: string;
+  plan: string;
+  status: SubscriptionStatus;
+  start_date: string;
+  end_date: string;
+  days_remaining: number;
+  total_days: number;
+  isTrial: boolean;
+  isExpired: boolean;
+  isActive: boolean;
+}
+
+const PLAN_LABELS: Record<string, string> = {
+  trial_discovery: 'Pack Découverte',
+  annual_basic: 'Annuel Basic',
+  annual_pro: 'Annuel Pro',
+  annual_enterprise: 'Annuel Enterprise',
+  monthly: 'Mensuel',
+  annual: 'Annuel',
+};
+
+export const getPlanLabel = (plan: string) => PLAN_LABELS[plan] || plan;
+
+export const useCurrentSubscription = () => {
+  const { user, isDemoMode } = useAuth();
+  const [subscription, setSubscription] = useState<CurrentSubscription | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!user || isDemoMode) {
+      setSubscription(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.rpc('get_current_subscription', {
+      _user_id: user.id,
+    });
+    if (error || !data || (data as any[]).length === 0) {
+      setSubscription(null);
+    } else {
+      const s: any = (data as any[])[0];
+      const start = new Date(s.start_date);
+      const end = new Date(s.end_date);
+      const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
+      setSubscription({
+        id: s.id,
+        plan: s.plan,
+        status: s.status,
+        start_date: s.start_date,
+        end_date: s.end_date,
+        days_remaining: s.days_remaining ?? 0,
+        total_days: totalDays,
+        isTrial: s.status === 'trial',
+        isExpired: s.status === 'expired' || s.status === 'cancelled' || s.status === 'suspended',
+        isActive: s.status === 'active' || s.status === 'trial',
+      });
+    }
+    setLoading(false);
+  }, [user?.id, isDemoMode]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { subscription, loading, reload: load };
+};

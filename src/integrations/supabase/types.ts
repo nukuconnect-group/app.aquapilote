@@ -2756,6 +2756,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_outdated_subscriptions: {
+        Args: never
+        Returns: {
+          expired_count: number
+        }[]
+      }
+      extend_subscription: {
+        Args: { _days: number; _subscription_id: string }
+        Returns: undefined
+      }
+      get_current_subscription: {
+        Args: { _user_id: string }
+        Returns: {
+          days_remaining: number
+          end_date: string
+          id: string
+          plan: string
+          start_date: string
+          status: string
+        }[]
+      }
       get_team_member_owner_by_user_id: {
         Args: { user_uuid: string }
         Returns: string
