@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginDialog from '@/components/LoginDialog';
 import EnhancedRegistration from '@/components/EnhancedRegistration';
 
 /**
  * Page d'authentification
- * Redirige automatiquement vers /dashboard si l'utilisateur est déjà connecté
+ * Redirige automatiquement vers /dashboard si l'utilisateur est déjà connecté.
+ * Supporte /auth?mode=register pour partager directement le lien d'inscription.
  */
 const Auth: React.FC = () => {
-  const [showEnhancedRegister, setShowEnhancedRegister] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialRegister = searchParams.get('mode') === 'register';
+  const [showEnhancedRegister, setShowEnhancedRegister] = useState(initialRegister);
   const { user, isLoading, isDemoMode } = useAuth();
   const navigate = useNavigate();
 
@@ -17,11 +20,17 @@ const Auth: React.FC = () => {
   useEffect(() => {
     if (!isLoading && (user || isDemoMode)) {
       navigate('/dashboard', { replace: true });
-    } else if (!isLoading && !user && !isDemoMode) {
-      // S'assurer que la page reste sur /auth si pas connecté
-      setShowEnhancedRegister(false);
     }
   }, [user, isLoading, isDemoMode, navigate]);
+
+  // Sync URL with current mode so links are shareable
+  useEffect(() => {
+    if (showEnhancedRegister && searchParams.get('mode') !== 'register') {
+      setSearchParams({ mode: 'register' }, { replace: true });
+    } else if (!showEnhancedRegister && searchParams.get('mode')) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [showEnhancedRegister]);
 
   const handleLogin = () => {
     setShowEnhancedRegister(false);

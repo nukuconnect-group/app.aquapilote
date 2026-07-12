@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.get-maps-key]
 verify_jwt = false
+
+[functions.subscription-lifecycle]
+verify_jwt = false
+
+[functions.subscription-reminders]
+verify_jwt = false

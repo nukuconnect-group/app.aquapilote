@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { CreditCard, Plus, Pause, Play, Ban, Trash2, CheckCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Plus, Pause, Play, Ban, Trash2, CheckCircle, Loader2, Clock, History, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,12 +38,14 @@ interface SubscriptionsPanelProps {
 }
 
 const PLANS = [
+  { value: 'trial_discovery', label: 'Pack Découverte (30j)' },
   { value: 'annual_basic', label: 'Annuel - Basic' },
   { value: 'annual_pro', label: 'Annuel - Pro' },
   { value: 'annual_enterprise', label: 'Annuel - Enterprise' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
+  trial: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
   active: 'bg-green-500/10 text-green-700 dark:text-green-400',
   suspended: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
   cancelled: 'bg-red-500/10 text-red-700 dark:text-red-400',
@@ -57,6 +59,7 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'active' | 'history'>('all');
 
   const [form, setForm] = useState({
     userId: '',
@@ -163,6 +166,22 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
     load();
   };
 
+  const extendTrial = async (id: string, days: number) => {
+    const { error } = await supabase.rpc('extend_subscription', { _subscription_id: id, _days: days });
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: `+${days} jours ajoutés à l'abonnement` });
+    load();
+  };
+
+  const displayedSubs = subs.filter((s) => {
+    if (historyFilter === 'active') return s.status === 'active' || s.status === 'trial';
+    if (historyFilter === 'history') return s.status === 'expired' || s.status === 'cancelled';
+    return true;
+  });
+
   return (
     <div className="space-y-4">
       <Card>
@@ -170,16 +189,29 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
           <CardTitle className="flex items-center gap-2 text-lg">
             <CreditCard className="w-5 h-5 text-primary" /> Abonnements entreprises
           </CardTitle>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
-            <Plus className="w-4 h-4 mr-2" /> Attribuer un abonnement
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select value={historyFilter} onValueChange={(v: any) => setHistoryFilter(v)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <Filter className="w-3.5 h-3.5 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="active">Actifs & Essais</SelectItem>
+                <SelectItem value="history">Historique</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setDialogOpen(true)} size="sm">
+              <Plus className="w-4 h-4 mr-2" /> Attribuer
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mr-2" /> Chargement...
             </div>
-          ) : subs.length === 0 ? (
+          ) : displayedSubs.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
               Aucun abonnement attribué pour le moment.
             </p>
@@ -197,7 +229,7 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subs.map((s) => {
+                  {displayedSubs.map((s) => {
                     const u = usersById.get(s.user_id);
                     return (
                       <TableRow key={s.id}>
@@ -221,6 +253,11 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
                           </span>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
+                          {s.status === 'trial' && (
+                            <Button size="sm" variant="outline" title="Prolonger l'essai de 15 jours" onClick={() => extendTrial(s.id, 15)}>
+                              <Clock className="w-3.5 h-3.5 mr-1" /> +15j
+                            </Button>
+                          )}
                           {s.status === 'active' ? (
                             <Button size="icon" variant="ghost" title="Suspendre" onClick={() => updateStatus(s.id, 'suspended', s.user_id)}>
                               <Pause className="w-4 h-4 text-orange-500" />
