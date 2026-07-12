@@ -38,6 +38,8 @@ import SupportModule from '@/components/SupportModule';
 import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
+import TrialStatusCard from '@/components/subscription/TrialStatusCard';
+import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -279,7 +281,12 @@ const Dashboard: React.FC = () => {
                   <Loader2 className="w-6 h-6 animate-spin mr-2" />
                   Chargement des permissions…
                 </div>
-              ) : renderContent()}
+              ) : (
+                <>
+                  <TrialStatusCard />
+                  <SubscriptionGuard>{renderContent()}</SubscriptionGuard>
+                </>
+              )}
             </div>
           </main>
         </div>
