@@ -361,17 +361,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Vérifier que le compte est activé par un admin
-        const { data: profileCheck } = await supabase
-          .from('profiles')
-          .select('is_activated')
-          .eq('id', data.user.id)
-          .maybeSingle();
-        if (profileCheck && profileCheck.is_activated === false) {
-          await supabase.auth.signOut();
-          setIsLoading(false);
-          return { success: false, pendingActivation: true };
-        }
+        // Les comptes sont activés automatiquement à l'inscription.
+        // (Aucun blocage d'activation manuelle par un administrateur.)
 
         // No MFA required - complete login
         clearDemoData();
