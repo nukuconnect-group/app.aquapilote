@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
-import { UserCheck, Clock, Mail } from 'lucide-react';
+import { UserCheck, Clock, Mail, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -80,6 +80,12 @@ export const PendingActivations: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-3 flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
+          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <span>
+            Depuis la mise à jour SaaS, <strong>tous les nouveaux comptes sont activés automatiquement</strong> et reçoivent un essai gratuit de 30 jours. Cette liste ne devrait normalement pas contenir de comptes.
+          </span>
+        </div>
         {loading ? (
           <p className="text-muted-foreground text-sm">Chargement…</p>
         ) : pending.length === 0 ? (
