@@ -1,92 +1,107 @@
+# Refonte Inscription & Système d'Abonnement SaaS
 
-## 1. Refonte pages Connexion / Inscription (split-screen responsive)
+## 1. Correctifs UI page Auth (mobile)
 
-- Créer `src/pages/AuthLayout.tsx` : layout 2 colonnes (image à gauche, formulaire à droite) inspiré de l'image fournie.
-  - Desktop : image plein hauteur à gauche (50%), formulaire à droite (50%) avec scroll interne.
-  - Mobile : image en bandeau supérieur (h-40) ou masquée, formulaire plein écran.
-  - Onglets « Connexion / Inscription » en haut du panneau droit (pill toggle).
-  - Placeholder image (`src/assets/auth-hero.jpg` existant ou dégradé stylisé aquaculture) en attendant votre upload.
-- Remplacer `src/pages/Auth.tsx` par ce layout. Les composants `LoginDialog` et `EnhancedRegistration` sont refactorés en formulaires **inline** (pas en Dialog) via nouveaux composants :
-  - `src/components/auth/LoginForm.tsx` (extrait de LoginDialog)
-  - `src/components/auth/RegisterForm.tsx` (extrait de EnhancedRegistration)
-  - `LoginDialog` et `EnhancedRegistration` restent pour usages ailleurs, mais délèguent aux formulaires.
-- Conserver : Google OAuth, MFA, parrainage, mot de passe oublié, suggestions de noms régionales, glassmorphism.
+- **Page Inscription mobile** : utiliser la même image de fond (poissons) que la page Connexion, sur toute la surface (pas seulement une bande en haut). Supprimer les bordures/ombres noires sur les côtés — fond entièrement blanc/transparent cohérent avec Connexion.
+- **Partage des pages** : rendre `/auth` (connexion) et `/auth?mode=register` (inscription) accessibles via URL directe pour permettre le partage de liens.
 
-## 2. Nouveaux champs d'inscription
+## 2. Suppression activation manuelle
 
-Ajouter dans `RegisterForm` (étape « Profil ») :
+- Retirer l'obligation d'activation par l'admin.
+- Modifier le trigger `handle_new_user` : `is_activated = true` par défaut.
+- Retirer le blocage `is_activated` dans `AuthContext` (login autorisé immédiatement).
+- Le composant `PendingActivations` reste disponible en admin mais devient une vue historique (comptes non-vérifiés email).
 
-- **Type d'exploitation** (radio card 3 choix, obligatoire) :
-  - `moyenne` — Moyenne exploitation
-  - `semi_industriel` — Semi-industriel
-  - `industriel` — Industriel
-- **Besoin de capteurs IoT** : checkbox unique (défaut : décoché) « J'ai besoin de capteurs pour ma ferme ».
+## 3. Confirmation e-mail Supabase
 
-Sauvegarde dans `profiles` via metadata puis synchro à l'activation.
+- Activer `email_confirm` dans Supabase Auth (via config.toml).
+- Après inscription : afficher un écran "Un e-mail de confirmation a été envoyé à votre adresse".
+- Utiliser les templates auth existants (Lovable Emails déjà configuré via `auth-email-hook`).
+- L'utilisateur peut se connecter avant vérification, mais un bandeau non-bloquant l'invite à confirmer.
 
-### Migration DB
+## 4. Pack Découverte 30 jours automatique
 
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS exploitation_type text
-    CHECK (exploitation_type IN ('moyenne','semi_industriel','industriel')),
-  ADD COLUMN IF NOT EXISTS needs_sensors boolean NOT NULL DEFAULT false;
-```
+- Étendre le trigger `handle_new_user` : créer automatiquement une ligne dans `subscriptions` :
+  - `plan = 'trial_discovery'`
+  - `status = 'trial'`
+  - `start_date = now()`, `end_date = now() + 30 days`
+  - `price = 0`
+- Ajouter la valeur `'trial'` au statut si nécessaire.
 
-Mise à jour `handle_new_user()` : lire `exploitation_type` et `needs_sensors` depuis `raw_user_meta_data` et les insérer dans `profiles`.
+## 5. Widget Trial sur Dashboard
 
-## 3. Bannière capteurs dans le dashboard
+- Nouveau composant `TrialStatusCard` affiché en haut du Dashboard :
+  - Nom du pack actuel
+  - Jours restants (compteur)
+  - Barre de progression (0→30j)
+  - CTA "Passer à un plan payant" quand < 7j
+- Hook `useCurrentSubscription()` qui lit la ligne active de `subscriptions`.
 
-- Nouveau composant `src/components/dashboard/SensorsCTABanner.tsx` : affiche si `profile.needs_sensors === true` ET `dismissed_at` non défini.
-  - CTA « Découvrir les capteurs IoT » → route `/dashboard/iot` (ou modal contact).
-  - Bouton fermer → stocke `sensors_banner_dismissed_at` (colonne à ajouter).
+## 6. Statuts d'abonnement automatiques
 
-Migration complémentaire :
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS sensors_banner_dismissed_at timestamptz;
-```
+- Étendre la table `subscriptions` (déjà existante) — statuts supportés : `trial`, `active`, `expired`, `suspended`, `cancelled`.
+- Cron job quotidien (edge function `subscription-lifecycle`) qui :
+  - Passe `trial`/`active` → `expired` quand `end_date < now()`.
+  - Suspend le profil (`is_suspended = true`) à l'expiration.
 
-Injection dans `src/pages/Dashboard.tsx` en haut du contenu.
+## 7. Notifications & e-mails de rappel
 
-## 4. AquaFeed IA — Avancé (IC)
+- Edge function `subscription-reminders` (planifiée quotidiennement via pg_cron) :
+  - J-7, J-3, J-0 avant `end_date`.
+  - Crée une notification in-app + envoie e-mail via `send-notification-email` (Resend déjà configuré).
+- Nouveaux kinds : `trial_expiring_7`, `trial_expiring_3`, `trial_expired`.
 
-Fichier : `src/components/aquafeed/AdvancedAquaFeedCalculator.tsx`.
+## 8. Blocage à expiration
 
-- **Retirer complètement** la colonne « Formule » et toute mention d'hypothèses ou d'étapes de calcul dans les tableaux et les cartes de résultat. N'afficher que les valeurs finales (label + résultat).
-- **Résumé unités** conservé en tête de résultat (déjà présent), reformulé : « Unités utilisées : masse en kg, effectifs en unités, coût en F CFA ».
-- **Validations strictes** (déjà partielles) : renforcer messages :
-  - Survie : `1 ≤ x ≤ 100` — « Le taux de survie doit être compris entre 1 et 100 %. »
-  - Poids initial/final : `> 0` et `initial < final`.
-  - IC : `> 0`.
-  - Prix aliment : `> 0`.
-  - Poids sac : `> 0`.
-  Bloquer les résultats + toast si invalide.
-- **Sac personnalisable** : ajouter option « Personnalisé » avec input numérique (kg), stocké dans state. Presets : 15, 25, 40, 50 kg.
-- **Export PDF pro** : réécrire l'export PDF (jsPDF + jspdf-autotable, déjà dépendances via ExportDropdown) avec :
-  - En-tête : logo AquaPilote (asset existant), titre « Rapport AquaFeed IA — Calcul <Mode> », date, utilisateur.
-  - Section « Paramètres saisis » (espèce, infra, IC, survie, poids, prix, sac).
-  - Section « Résultats » (tableau sans formules).
-  - Pied de page paginé.
-  - Bouton dédié « Télécharger PDF » à côté de l'ExportDropdown pour rendre l'action visible.
+- Composant `SubscriptionGuard` (wrap le Dashboard) :
+  - Si `status = 'expired'` : afficher écran "Votre essai est terminé" + redirection vers `/subscription`.
+  - Données conservées (aucune suppression).
+- Modules critiques restent lisibles en lecture seule ; écritures bloquées côté RLS via `user_meets_plan`.
 
-## 5. Tests manuels (documentés en commentaires)
+## 9. Page "Abonnements et Tarification"
 
-Deux jeux d'exemples ajoutés en commentaires du composant :
+- Nouvelle route `/subscription` (protégée) rendant `SubscriptionPlans.tsx` (composant déjà présent) modernisée :
+  - Cartes de packs (Découverte gratuit, Standard, Premium, Enterprise).
+  - Prix mensuel/annuel, features, CTA "Choisir ce plan".
+  - Design cohérent avec le thème glassmorphism.
 
-- **Tilapia** : objectif 1000 kg, poids final 400 g, alevin 5 g, survie 85 %, IC 1.6, prix 850 F/kg, sac 25 kg.
-- **Clarias** : objectif 2000 kg, poids final 800 g, alevin 3 g, survie 75 %, IC 1.2, prix 900 F/kg, sac 50 kg.
+## 10. Admin — gestion des abonnements
 
-Vérifier arrondis (sacs = ceil).
+Étendre `SubscriptionsPanel.tsx` existant :
+- **Modifier** un abonnement (plan, dates, prix).
+- **Prolonger l'essai** : bouton "+15j / +30j" sur les lignes `trial`.
+- **Activer/Suspendre** : boutons existants conservés.
+- **Historique** : nouvelle Tab "Historique" affichant toutes les lignes (y compris expirées/annulées) avec filtres date + utilisateur.
 
-## Fichiers touchés
+## 11. Migration DB
 
-- Créés : `src/pages/AuthLayout.tsx` (remplace Auth), `src/components/auth/LoginForm.tsx`, `src/components/auth/RegisterForm.tsx`, `src/components/dashboard/SensorsCTABanner.tsx`.
-- Édités : `src/pages/Auth.tsx`, `src/components/LoginDialog.tsx`, `src/components/EnhancedRegistration.tsx`, `src/components/aquafeed/AdvancedAquaFeedCalculator.tsx`, `src/pages/Dashboard.tsx`.
-- Migration : `profiles.exploitation_type`, `profiles.needs_sensors`, `profiles.sensors_banner_dismissed_at`, MAJ `handle_new_user()`.
+- Trigger `handle_new_user` mis à jour : `is_activated = true` + insertion abonnement trial 30j.
+- Nouvelle fonction `check_subscription_active(user_id)` pour RLS des modules payants.
+- Aucune nouvelle table (utilise `subscriptions` existant).
 
-## Hors périmètre (à confirmer avant d'aller plus loin)
+---
 
-- Envoi d'un email/notif à l'équipe pour les demandes capteurs.
-- Restrictions de features selon `exploitation_type` (aucune pour l'instant, juste stockage).
-- Nouvelle image hero réelle (placeholder en attendant votre upload).
+## Détails techniques
+
+**Fichiers créés :**
+- `src/components/subscription/TrialStatusCard.tsx`
+- `src/components/subscription/SubscriptionGuard.tsx`
+- `src/hooks/useCurrentSubscription.tsx`
+- `src/pages/SubscriptionPage.tsx`
+- `supabase/functions/subscription-lifecycle/index.ts`
+- `supabase/functions/subscription-reminders/index.ts`
+
+**Fichiers modifiés :**
+- `src/components/EnhancedRegistration.tsx` (image fond mobile identique Connexion)
+- `src/pages/Auth.tsx` (support `?mode=register` pour partage)
+- `src/contexts/AuthContext.tsx` (retirer blocage `is_activated`)
+- `src/components/admin/SubscriptionsPanel.tsx` (modifier/prolonger/historique)
+- `src/components/admin/PendingActivations.tsx` (adapter en vue historique)
+- `src/components/Dashboard.tsx` (intégrer `TrialStatusCard`)
+- `src/App.tsx` (route `/subscription`)
+
+**Migrations SQL :**
+1. Mettre à jour `handle_new_user()` pour `is_activated = true` + insertion trial.
+2. Cron `pg_cron` pour appeler `subscription-lifecycle` et `subscription-reminders` chaque jour à 06:00 UTC.
+
+**Templates e-mail :** utiliser les templates auth Lovable existants pour la vérification e-mail ; les rappels d'expiration passent par `send-notification-email` (Resend).
