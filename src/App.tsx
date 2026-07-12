@@ -16,6 +16,7 @@ import OnboardingFlow from '@/pages/OnboardingFlow';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
+import SubscriptionPage from '@/pages/SubscriptionPage';
 import { useIOSDetection } from '@/hooks/useIOSDetection';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { useAnonymousVisitTracking } from '@/hooks/useAnonymousVisitTracking';
@@ -56,6 +57,20 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } 
         />
+
+        {/* Page d'abonnements */}
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <SubscriptionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Alias inscription pour partage */}
+        <Route path="/register" element={<Navigate to="/auth?mode=register" replace />} />
+        <Route path="/signup" element={<Navigate to="/auth?mode=register" replace />} />
         
         {/* Page 404 */}
         <Route path="/404" element={<NotFound />} />
