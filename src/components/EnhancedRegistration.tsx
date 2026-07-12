@@ -12,9 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
-import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
+import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -264,7 +264,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
       if (result.success) {
         toast({
           title: '✅ Compte créé avec succès',
-          description: 'Votre compte a été créé et est en attente d\'activation par un administrateur. Vous recevrez une notification dès qu\'il sera activé.',
+          description: '📧 Un e-mail de confirmation vous a été envoyé. Vérifiez votre boîte de réception (et les spams). Votre compte est actif : votre essai gratuit de 30 jours démarre maintenant.',
           duration: 10000,
         });
         onSwitchToLogin();
