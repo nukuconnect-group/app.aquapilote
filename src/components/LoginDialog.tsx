@@ -276,31 +276,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
 
   return (
     <>
-    {pendingActivation && (
-      <Dialog open={true} onOpenChange={() => { /* bloquant */ }}>
-        <DialogContent hideClose className="max-w-md">
-          <DialogHeader>
-            <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-2">
-              <Clock className="w-7 h-7 text-amber-600 dark:text-amber-300" />
-            </div>
-            <DialogTitle className="text-center">Compte en attente d'activation</DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              Votre compte <strong>{pendingActivation.email}</strong> a bien été créé mais doit être <strong>activé par un administrateur AquaPilote</strong> avant que vous puissiez vous connecter.
-              <br /><br />
-              Vous recevrez un <strong>email de confirmation</strong> dès que votre compte sera activé.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2 pt-2">
-            <Button onClick={() => setPendingActivation(null)} className="w-full">
-              J'ai compris
-            </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              Pensez à vérifier vos emails (y compris les spams).
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )}
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-slate-50 dark:bg-slate-950">
         {/* Split-screen : image à gauche (desktop), formulaire à droite */}
