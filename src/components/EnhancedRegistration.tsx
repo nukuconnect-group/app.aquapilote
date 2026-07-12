@@ -317,20 +317,20 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
           </div>
         </div>
-        {/* Bandeau mobile — même image poissons que la Connexion */}
+        {/* Fond mobile plein écran — MÊME image que la page Connexion, avec voile blanc pour éviter les ombres noires */}
         <div
-          className="md:hidden fixed inset-x-0 top-0 h-28 z-0 bg-white"
+          className="md:hidden fixed inset-0 z-0 bg-white"
           style={{
-            backgroundImage: `url(${fishColumnsMobile})`,
+            backgroundImage: `url(${loginBgAsset.url})`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center top',
+            backgroundPosition: 'center',
           }}
           aria-hidden="true"
         />
-        <div className="md:hidden fixed inset-x-0 top-0 h-28 bg-gradient-to-b from-transparent via-white/40 to-white z-[1]" aria-hidden="true" />
+        <div className="md:hidden fixed inset-0 bg-white/85 backdrop-blur-[2px] z-[1]" aria-hidden="true" />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-6 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
-         <div className="w-full max-w-xl mt-20 md:mt-0">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-4 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
+         <div className="w-full max-w-xl mt-2 md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
               {/* Logo / titre */}
