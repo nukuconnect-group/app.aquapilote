@@ -35,7 +35,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   const [mfaCode, setMfaCode] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
   const [mfaError, setMfaError] = useState<string | null>(null);
-  const [pendingActivation, setPendingActivation] = useState<{ email: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -191,8 +190,9 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         const result = await register(name, email, password, selectedPlan || 'trial');
         if (result.success) {
           toast({
-            title: `✅ ${t('registration_success')}`,
-            description: t('check_email_confirm'),
+            title: `✅ ${t('registration_success') || 'Compte créé avec succès'}`,
+            description: '📧 Un e-mail de confirmation vous a été envoyé. Votre essai gratuit de 30 jours a démarré.',
+            duration: 10000,
           });
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onToggleMode();
@@ -248,8 +248,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           setFormData({ name: '', email: '', password: '', confirmPassword: '' });
           onClose();
           navigate('/dashboard', { replace: true });
-        } else if ((result as any).pendingActivation) {
-          setPendingActivation({ email: formData.email.trim() });
         } else {
           toast({
             title: `❌ ${t('login_error')}`,
