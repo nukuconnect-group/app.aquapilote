@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
