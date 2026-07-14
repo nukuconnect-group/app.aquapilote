@@ -1414,6 +1414,15 @@ const AdminDashboard = () => {
         onUserAdded={loadUsers}
       />
 
+      {manageUnitsFor && (
+        <ManageUserUnitsDialog
+          open={!!manageUnitsFor}
+          onOpenChange={(v) => !v && setManageUnitsFor(null)}
+          userId={manageUnitsFor.id}
+          userName={manageUnitsFor.name}
+        />
+      )}
+
       {/* Dialog pour attribuer un pays par défaut */}
       <Dialog open={defaultCountryDialogOpen} onOpenChange={setDefaultCountryDialogOpen}>
         <DialogContent>
