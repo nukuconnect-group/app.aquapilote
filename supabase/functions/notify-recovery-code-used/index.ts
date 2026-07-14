@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 interface NotifyRequest {
-  userEmail: string;
+  userEmail?: string; // ignored; retained for backwards compat
   userName?: string;
   remainingCodes: number;
   ipAddress?: string;
@@ -53,7 +53,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { userEmail, userName, remainingCodes, ipAddress, userAgent }: NotifyRequest = await req.json();
+    const { userName, remainingCodes, ipAddress, userAgent }: NotifyRequest = await req.json();
+
+    // Fixes OPEN_ENDPOINTS: recovery_email_target
+    // Never trust userEmail from the request body — always resolve the caller's
+    // own verified email from their authenticated profile.
+    const adminClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("email")
+      .eq("id", user.id)
+      .maybeSingle();
+    const userEmail = profile?.email || user.email;
+    if (!userEmail) {
+      return new Response(
+        JSON.stringify({ error: "no_recipient" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log(`notify-recovery-code-used: Sending notification to ${userEmail}`);
 

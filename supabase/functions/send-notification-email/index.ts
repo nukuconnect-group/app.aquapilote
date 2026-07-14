@@ -78,6 +78,50 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // ---- Authentication guard (fixes OPEN_ENDPOINTS: open_send_email) ----
+    // Accept either:
+    //   (a) X-Internal-Secret header equal to CRON_SECRET_TOKEN (trusted server-to-server calls)
+    //   (b) Valid end-user JWT in Authorization header (constrained to caller's own email)
+    const cronToken = Deno.env.get("CRON_SECRET_TOKEN");
+    const internalSecret = req.headers.get("x-internal-secret") || "";
+    const isInternal = !!cronToken && internalSecret === cronToken;
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    let callerUserId: string | null = null;
+    let callerIsAdmin = false;
+    let callerEmail: string | null = null;
+
+    if (!isInternal) {
+      const authHeader = req.headers.get("Authorization") || "";
+      const jwt = authHeader.replace(/^Bearer\s+/i, "");
+      if (!jwt) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
+      if (userErr || !userData?.user) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerUserId = userData.user.id;
+      callerEmail = userData.user.email ?? null;
+      const { data: roleRow } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerUserId)
+        .eq("role", "admin")
+        .maybeSingle();
+      callerIsAdmin = !!roleRow;
+    }
+
     const payload = (await req.json()) as Payload;
     if (!payload?.kind) {
       return new Response(JSON.stringify({ error: "kind required" }), {
@@ -86,20 +130,37 @@ serve(async (req) => {
       });
     }
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Non-admin external callers cannot pick arbitrary kinds or recipients.
+    const adminOnlyKinds: EmailKind[] = ["new_signup_admin", "team_member_invited"];
+    if (!isInternal && !callerIsAdmin && adminOnlyKinds.includes(payload.kind)) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Resolve recipient(s) if not provided
-    let recipients: string[] = payload.to ? [payload.to] : [];
-    if (!recipients.length && payload.user_id) {
+    // Resolve recipient(s). Never trust payload.to from an untrusted caller.
+    let recipients: string[] = [];
+    if (isInternal || callerIsAdmin) {
+      // Trusted callers may target a specific user_id or explicit `to`.
+      if (payload.to) recipients = [payload.to];
+      if (!recipients.length && payload.user_id) {
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("email")
+          .eq("id", payload.user_id)
+          .maybeSingle();
+        if (prof?.email) recipients = [prof.email];
+      }
+    } else {
+      // End users can only email themselves; ignore payload.to and payload.user_id.
       const { data: prof } = await admin
         .from("profiles")
         .select("email")
-        .eq("id", payload.user_id)
+        .eq("id", callerUserId!)
         .maybeSingle();
-      if (prof?.email) recipients = [prof.email];
+      const target = prof?.email || callerEmail;
+      if (target) recipients = [target];
     }
 
     let subject = payload.title || "Notification AquaPilote";
