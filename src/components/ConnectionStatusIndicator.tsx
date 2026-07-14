@@ -15,9 +15,10 @@ interface ConnectionState {
 
 interface ConnectionStatusIndicatorProps {
   showTextOnMobile?: boolean;
+  detailed?: boolean;
 }
 
-export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({ showTextOnMobile = false }) => {
+export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({ showTextOnMobile = false, detailed = false }) => {
   const { t } = useSettings();
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     network: 'connected',
@@ -162,6 +163,39 @@ export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps>
   };
 
   return (
+    detailed ? (
+      <div className="flex items-center justify-between gap-3 w-full">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={cn("transition-colors", getStatusColor())}>
+            {getStatusIcon()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{getStatusText()}</p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {connectionState.network === 'disconnected'
+                ? t('network_disconnected')
+                : connectionState.database === 'connected'
+                ? `${t('last_sync')}: ${connectionState.lastSync ? connectionState.lastSync.toLocaleTimeString() : '—'}`
+                : connectionState.database === 'connecting'
+                ? t('database_connecting')
+                : t('database_error')}
+            </p>
+          </div>
+        </div>
+        <span className={cn(
+          "text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0",
+          connectionState.network === 'disconnected'
+            ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+            : connectionState.database === 'connected'
+            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+            : connectionState.database === 'error'
+            ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
+            : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+        )}>
+          {connectionState.network === 'connected' && connectionState.database === 'connected' ? '● Sync' : '○'}
+        </span>
+      </div>
+    ) : (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -179,5 +213,6 @@ export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+    )
   );
 };
