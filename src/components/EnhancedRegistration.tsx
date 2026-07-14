@@ -279,12 +279,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         }
       );
       if (result.success) {
-        toast({
-          title: '✅ Compte créé avec succès',
-          description: '📧 Un e-mail de confirmation vous a été envoyé. Vérifiez votre boîte de réception (et les spams). Votre compte est actif : votre essai gratuit de 30 jours démarre maintenant.',
-          duration: 10000,
-        });
-        onSwitchToLogin();
+        setShowConfirmEmailDialog(true);
       } else {
         toast({ title: '❌ Erreur d\'inscription', description: result.error || 'Une erreur est survenue', variant: 'destructive' });
       }
