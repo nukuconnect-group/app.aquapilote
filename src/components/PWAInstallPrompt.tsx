@@ -23,7 +23,11 @@ const PWAInstallPrompt: React.FC = () => {
     const checkIfInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isInWebAppiOS = (window.navigator as any).standalone;
-      setIsInstalled(isStandalone || isInWebAppiOS);
+      const installed = isStandalone || isInWebAppiOS;
+      if (installed) {
+        try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
+      }
+      setIsInstalled(installed || localStorage.getItem('aqua-pwa-installed') === 'true');
     };
 
     checkIfInstalled();
@@ -47,6 +51,7 @@ const PWAInstallPrompt: React.FC = () => {
     // Écouter l'installation réussie
     const handleAppInstalled = () => {
       console.log('PWA was installed');
+      try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
@@ -126,7 +131,11 @@ const PWAInstallPrompt: React.FC = () => {
   // - L'app n'est pas déjà installée
   // - Le prompt n'a pas été dismissé cette session
   // - showInstallPrompt est true
-  if (isInstalled || sessionStorage.getItem('pwa-install-dismissed') === 'true') {
+  if (
+    isInstalled ||
+    localStorage.getItem('aqua-pwa-installed') === 'true' ||
+    sessionStorage.getItem('pwa-install-dismissed') === 'true'
+  ) {
     return null;
   }
 
