@@ -660,7 +660,9 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-10">
+        {/* Sub-navigation is rendered in the left sidebar (AppSidebar). Keep the
+            Tabs wrapper for content switching but hide the inline TabsList. */}
+        <TabsList className="hidden">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
