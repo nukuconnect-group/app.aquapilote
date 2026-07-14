@@ -512,6 +512,10 @@ const HRManagement = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="contracts">
+          <EmploymentContractsManager employees={filteredEmployees} />
+        </TabsContent>
+
         <TabsContent value="payroll">
           <Card>
             <CardHeader>
