@@ -571,6 +571,44 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={showConfirmEmailDialog} onOpenChange={() => { /* bloquant */ }}>
+      <DialogContent hideClose className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <MailCheck className="w-5 h-5 text-blue-600" />
+            Confirmez votre adresse e-mail
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 pt-2 space-y-3">
+            <span className="block">
+              Un e-mail de confirmation a été envoyé à
+              <span className="font-semibold text-slate-900"> {confirmedEmail}</span>.
+            </span>
+            <span className="block">
+              👉 Ouvrez votre boîte de réception (et vérifiez les <strong>spams</strong>),
+              puis cliquez sur le lien pour <strong>confirmer votre adresse e-mail</strong>.
+            </span>
+            <span className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 text-amber-800">
+              <ShieldAlert className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Après confirmation de votre e-mail, un <strong>administrateur</strong>
+                {' '}vérifiera puis <strong>activera votre compte</strong> avant votre
+                première connexion.
+              </span>
+            </span>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            className="w-full"
+            onClick={() => { setShowConfirmEmailDialog(false); onSwitchToLogin(); }}
+          >
+            J'ai compris
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
