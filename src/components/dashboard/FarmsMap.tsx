@@ -141,7 +141,10 @@ const FarmsMap: React.FC = () => {
       if (!mapRef.current || !window.google?.maps?.importLibrary) return;
       try {
         const { Map, InfoWindow } = (await window.google.maps.importLibrary('maps')) as any;
-        const { Marker } = (await window.google.maps.importLibrary('marker')) as any;
+        const Marker = window.google.maps.Marker;
+        if (!Marker) {
+          throw new Error('google.maps.Marker indisponible après chargement de Maps JavaScript API');
+        }
       const map = new Map(mapRef.current, {
         center,
         zoom: 7,
