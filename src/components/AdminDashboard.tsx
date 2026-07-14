@@ -650,7 +650,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-9">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-10">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -660,6 +660,11 @@ const AdminDashboard = () => {
             <UserPlus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Activations</span>
             <span className="sm:hidden">Act.</span>
+          </TabsTrigger>
+          <TabsTrigger value="registrations">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Inscriptions</span>
+            <span className="sm:hidden">Insc.</span>
           </TabsTrigger>
           <TabsTrigger value="users">
             <Users className="w-4 h-4 mr-2" />
@@ -900,6 +905,9 @@ const AdminDashboard = () => {
 
         <TabsContent value="activations" className="space-y-4">
           <PendingActivations />
+        </TabsContent>
+        <TabsContent value="registrations" className="space-y-4">
+          <RegistrationsPanel />
         </TabsContent>
         <TabsContent value="users" className="space-y-4">
           <Card>
