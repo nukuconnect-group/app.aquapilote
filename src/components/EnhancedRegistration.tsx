@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio } from 'lucide-react';
+import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio, ChevronsUpDown, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -16,6 +18,7 @@ import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
+import { ALL_COUNTRIES } from '@/lib/allCountries';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
