@@ -478,7 +478,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                            <Checkbox
                              checked={active}
                              onCheckedChange={(checked) => toggleBreedingType(type, checked === true)}
-                             className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                            className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                            />
                            <span className="font-medium">{type}</span>
                          </label>
@@ -521,7 +521,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                      <Checkbox
                        checked={formData.needsSensors}
                        onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
-                       className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                       className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                      />
                     <div className="flex items-start gap-2 flex-1">
                       <Radio className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />

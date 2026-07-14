@@ -392,17 +392,17 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
             <div className="space-y-3">
               <label htmlFor="email-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-sm">{t('email_notifications')}</span>
-                <Checkbox id="email-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+                <Checkbox id="email-notif" defaultChecked className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2" />
               </label>
 
               <label htmlFor="push-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-sm">{t('push_notifications')}</span>
-                <Checkbox id="push-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+                <Checkbox id="push-notif" defaultChecked className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2" />
               </label>
 
               <label htmlFor="alerts-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-sm">{t('system_alerts')}</span>
-                <Checkbox id="alerts-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+                <Checkbox id="alerts-notif" defaultChecked className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2" />
               </label>
             </div>
           </div>
