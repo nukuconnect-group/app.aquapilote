@@ -22,10 +22,10 @@ interface Plan {
 const PLANS: Plan[] = [
   {
     id: 'trial_discovery',
-    name: 'Pack Découverte',
+    name: 'Essai gratuit (1 mois)',
     price: '0 F CFA',
-    duration: '30 jours offerts',
-    description: 'Essai gratuit pour découvrir AquaPilote',
+    duration: '1 mois offert',
+    description: 'Vous êtes en mode essai gratuit pour 1 mois',
     icon: Sparkles,
     gradient: 'from-sky-500/10 to-blue-500/5',
     features: [
