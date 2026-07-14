@@ -60,9 +60,21 @@ const PWAInstallPrompt: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Fallback pour les navigateurs qui ne déclenchent pas
+    // `beforeinstallprompt` (Safari desktop/iOS, Firefox, certains
+    // navigateurs embarqués). On affiche quand même une bannière avec
+    // les instructions manuelles au bout de ~8 secondes.
+    const fallbackTimer = window.setTimeout(() => {
+      if (isInstalled) return;
+      if (localStorage.getItem('aqua-pwa-installed') === 'true') return;
+      if (sessionStorage.getItem('pwa-install-dismissed') === 'true') return;
+      setShowInstallPrompt(true);
+    }, 8000);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.clearTimeout(fallbackTimer);
     };
   }, [isInstalled]);
 

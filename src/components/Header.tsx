@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,6 +82,17 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
     setSearchQuery(v);
     broadcastSearch(v);
   };
+
+  // Vider le champ lorsque l'overlay de résultats se ferme (Échap / clic
+  // en dehors / navigation vers un module).
+  useEffect(() => {
+    const close = () => {
+      setSearchQuery('');
+      setMobileSearchOpen(false);
+    };
+    window.addEventListener('app:search:close', close);
+    return () => window.removeEventListener('app:search:close', close);
+  }, []);
 
   return <>
     <header className="bg-sidebar md:bg-emerald-800 h-12 lg:h-14 w-full max-w-none shadow-md m-0 p-0 border-0">
