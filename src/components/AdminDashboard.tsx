@@ -931,6 +931,9 @@ const AdminDashboard = () => {
           <RegistrationsPanel />
         </TabsContent>
         <TabsContent value="users" className="space-y-4">
+          <TeamMembersOverviewPanel
+            owners={users.map((u) => ({ id: u.id, email: u.email, full_name: u.full_name }))}
+          />
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
