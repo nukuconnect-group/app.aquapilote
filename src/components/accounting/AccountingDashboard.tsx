@@ -3,23 +3,192 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calculator, DollarSign, CreditCard, AlertTriangle, Calendar, Users, ShoppingCart, Utensils, FileText } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useFinancialSummary } from '@/hooks/useFinancialSummary';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
+
+// Palette sobre "cabinet comptable"
+const CHART_COLORS = {
+  revenue: '#0f766e',   // teal-700
+  expenses: '#b91c1c',  // red-700
+  profit: '#1d4ed8',    // blue-700
+  salaries: '#7c3aed',  // violet-600
+  sales: '#059669',     // emerald-600
+  purchases: '#dc2626', // red-600
+  grid: 'hsl(var(--border))',
+  axis: 'hsl(var(--muted-foreground))',
+};
 
 const AccountingDashboard = () => {
   const { formatCurrency, t } = useSettings();
   const { activeUnit } = useProductionUnits();
   const summary = useFinancialSummary(activeUnit?.id);
-  
+
   const profitMargin = summary.totalRevenue > 0 
     ? (summary.netBalance / summary.totalRevenue * 100).toFixed(1) 
     : '0';
 
+  const hasFinancialActivity = summary.monthlyData.some(m => m.revenue > 0 || m.expenses > 0);
+  const hasSalesActivity = summary.monthlyData.some(m => m.sales > 0 || m.purchases > 0);
+  const hasNoData = summary.totalRevenue === 0 && summary.totalExpenses === 0;
+
+  // Enrichissement des données mensuelles avec la marge en %
+  const enrichedMonthly = summary.monthlyData.map((m: any) => ({
+    ...m,
+    margin: m.revenue > 0 ? Number(((m.profit / m.revenue) * 100).toFixed(1)) : 0,
+    cashflow: (m.sales || 0) - (m.purchases || 0) - (m.salaries || 0),
+  }));
+
+  const chartTooltipStyle = {
+    backgroundColor: 'hsl(var(--card))',
+    border: '1px solid hsl(var(--border))',
+    borderRadius: '8px',
+    fontSize: '12px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+  };
+
   return (
     <div className="space-y-6">
-      {/* KPIs principaux */}
+      {/* ===== 1. GRAPHIQUES PRO EN TÊTE ===== */}
+      {hasNoData ? (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center">
+            <Calculator className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h4 className="font-semibold mb-1">Aucune donnée financière</h4>
+            <p className="text-sm text-muted-foreground">
+              Enregistrez des ventes, achats et employés pour voir apparaître vos indicateurs comptables.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Graphique principal : évolution CA / Charges / Résultat + marge % */}
+          {hasFinancialActivity && (
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Compte de résultat — 6 derniers mois
+                  </CardTitle>
+                  <Badge variant={summary.netBalance >= 0 ? 'default' : 'destructive'} className="text-xs">
+                    Marge nette : {profitMargin}%
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={320}>
+                  <ComposedChart data={enrichedMonthly}>
+                    <defs>
+                      <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CHART_COLORS.revenue} stopOpacity={0.35} />
+                        <stop offset="95%" stopColor={CHART_COLORS.revenue} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CHART_COLORS.expenses} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={CHART_COLORS.expenses} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
+                    <XAxis dataKey="month" stroke={CHART_COLORS.axis} fontSize={11} />
+                    <YAxis
+                      yAxisId="left"
+                      stroke={CHART_COLORS.axis}
+                      fontSize={11}
+                      tickFormatter={(v) => formatCurrency(v).replace(/\s/g, '')}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke={CHART_COLORS.profit}
+                      fontSize={11}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value: number, name: string) =>
+                        name === 'Marge %' ? [`${value}%`, name] : [formatCurrency(value), name]
+                      }
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Area yAxisId="left" type="monotone" dataKey="revenue" stroke={CHART_COLORS.revenue} strokeWidth={2} fill="url(#gradRev)" name="Chiffre d'affaires" />
+                    <Area yAxisId="left" type="monotone" dataKey="expenses" stroke={CHART_COLORS.expenses} strokeWidth={2} fill="url(#gradExp)" name="Charges" />
+                    <Line yAxisId="left" type="monotone" dataKey="profit" stroke={CHART_COLORS.profit} strokeWidth={2.5} dot={{ r: 3 }} name="Résultat net" />
+                    <Line yAxisId="right" type="monotone" dataKey="margin" stroke={CHART_COLORS.profit} strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Marge %" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Cash-flow mensuel */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  Flux de trésorerie mensuel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={enrichedMonthly}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
+                    <XAxis dataKey="month" stroke={CHART_COLORS.axis} fontSize={11} />
+                    <YAxis stroke={CHART_COLORS.axis} fontSize={11} tickFormatter={(v) => formatCurrency(v).replace(/\s/g, '')} />
+                    <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="sales" fill={CHART_COLORS.sales} name="Encaissements" radius={[3, 3, 0, 0]} stackId="in" />
+                    <Bar dataKey="purchases" fill={CHART_COLORS.purchases} name="Décaissements achats" radius={[3, 3, 0, 0]} stackId="out" />
+                    <Bar dataKey="salaries" fill={CHART_COLORS.salaries} name="Salaires" radius={[3, 3, 0, 0]} stackId="out" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Répartition des charges */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <PieChartIconInline />
+                  Répartition des charges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summary.expenseBreakdown.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-10">Aucune charge enregistrée</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={summary.expenseBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={85}
+                        paddingAngle={2}
+                        dataKey="value"
+                        label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                        fontSize={11}
+                      >
+                        {summary.expenseBreakdown.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} iconSize={8} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {/* ===== 2. KPIs CHIFFRÉS ===== */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -77,7 +246,7 @@ const AccountingDashboard = () => {
         </Card>
       </div>
 
-      {/* Détails financiers */}
+      {/* ===== 3. Détails financiers ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -136,7 +305,7 @@ const AccountingDashboard = () => {
         </Card>
       </div>
 
-      {/* Flux de trésorerie et alertes */}
+      {/* ===== 4. Flux détaillé, alertes, résumé ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
@@ -237,97 +406,16 @@ const AccountingDashboard = () => {
         </Card>
       </div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {summary.monthlyData.some(m => m.revenue > 0 || m.expenses > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Évolution financière (6 mois)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={summary.monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenus" />
-                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Dépenses" />
-                  <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Résultat" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {summary.expenseBreakdown.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Répartition des dépenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={summary.expenseBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {summary.expenseBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Graphique détaillé des ventes et achats */}
-      {summary.monthlyData.some(m => m.sales > 0 || m.purchases > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Détail mensuel: Ventes vs Achats vs Salaires</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={summary.monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Legend />
-                <Bar dataKey="sales" fill="#10b981" name="Ventes" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="purchases" fill="#ef4444" name="Achats" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="salaries" fill="#8b5cf6" name="Salaires" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Message si aucune donnée */}
-      {summary.totalRevenue === 0 && summary.totalExpenses === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="py-8 text-center">
-            <Calculator className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <h4 className="font-medium text-sm mb-1">Aucune donnée financière</h4>
-            <p className="text-xs text-muted-foreground">
-              Commencez à enregistrer des ventes, achats et employés pour voir les statistiques
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
+
+// Icône inline pour éviter un import supplémentaire
+const PieChartIconInline: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+    <path d="M22 12A10 10 0 0 0 12 2v10z" />
+  </svg>
+);
 
 export default AccountingDashboard;
