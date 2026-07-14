@@ -401,18 +401,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </FieldWithIcon>
 
                 {/* Pays */}
-                <FieldWithIcon icon={<MapPin className="w-4 h-4" />} required>
-                  <Select value={formData.countryCode} onValueChange={handleCountryChange}>
-                    <SelectTrigger className="border-0 shadow-none pl-7 h-11 rounded-full bg-transparent focus:ring-0">
-                      <SelectValue placeholder={isDetectingLocation ? 'Détection…' : 'Sélectionnez le pays de résidence'} />
-                    </SelectTrigger>
-                    <SelectContent className="z-[2000]">
-                      {countryOptions.map(c => (
-                        <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FieldWithIcon>
+                <CountryCombobox
+                  value={formData.countryCode}
+                  onChange={handleCountryChange}
+                  detecting={isDetectingLocation}
+                />
 
                 {/* Nom de la ferme */}
                 <FieldWithIcon icon={<Building2 className="w-4 h-4" />} required>
