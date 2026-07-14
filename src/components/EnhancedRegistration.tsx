@@ -331,8 +331,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         />
         <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-4 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
-         <div className="w-full max-w-xl mt-2 md:mt-0">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 pt-44 pb-6 md:pt-8 md:pb-8 md:px-10 overflow-y-auto md:bg-slate-50">
+         <div className="w-full max-w-xl md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
               {/* Logo / titre */}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, FileText } from 'lucide-react';
-import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
+import aquaPilotLogo from '@/assets/aquapilote-logo.png';
 interface PrivacyPolicyProps {
   onAccept: () => void;
 }
@@ -16,7 +16,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({
       <Card className="w-full max-w-2xl mx-auto shadow-2xl">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
-            <img src={aquaPilotLogo} alt="AQUA PILOT" className="w-16 h-16" />
+            <img src={aquaPilotLogo} alt="AquaPilote" className="h-16 w-auto object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <Shield className="w-6 h-6 text-aqua-600" />
@@ -68,12 +68,20 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({
             </div>
           </ScrollArea>
 
-          <div className="flex items-center space-x-2 p-4 bg-aqua-50 rounded-lg">
-            <Checkbox id="privacy-accept" checked={isAccepted} onCheckedChange={checked => setIsAccepted(checked === true)} />
-            <label htmlFor="privacy-accept" className="text-sm text-gray-700 cursor-pointer">
-              J'ai lu et j'accepte la politique de confidentialité d'AQUA PILOT
-            </label>
-          </div>
+          <label
+            htmlFor="privacy-accept"
+            className={`flex items-center gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${isAccepted ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30'}`}
+          >
+            <Checkbox
+              id="privacy-accept"
+              checked={isAccepted}
+              onCheckedChange={checked => setIsAccepted(checked === true)}
+              className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+            />
+            <span className="text-sm font-medium text-slate-700">
+              J'ai lu et j'accepte la politique de confidentialité d'AquaPilote
+            </span>
+          </label>
 
           <Button onClick={onAccept} disabled={!isAccepted} className="w-full bg-gradient-aqua text-white bg-zinc-800 hover:bg-zinc-700">
             <FileText className="w-4 h-4 mr-2" />
