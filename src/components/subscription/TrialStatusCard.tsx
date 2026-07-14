@@ -42,13 +42,17 @@ export const TrialStatusCard: React.FC = () => {
                   {status === 'trial' ? 'Essai gratuit' : status === 'active' ? 'Actif' : status === 'expired' ? 'Expiré' : status}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                <Clock className="w-3 h-3 shrink-0" />
                 {isExpired
                   ? `Votre abonnement a expiré`
-                  : days_remaining === 0
-                    ? `Dernier jour !`
-                    : `${days_remaining} jour${days_remaining > 1 ? 's' : ''} restant${days_remaining > 1 ? 's' : ''}`}
+                  : isTrial
+                    ? days_remaining === 0
+                      ? `Vous êtes en mode essai gratuit — dernier jour !`
+                      : `Vous êtes en mode essai gratuit — ${days_remaining} j restant${days_remaining > 1 ? 's' : ''}`
+                    : days_remaining === 0
+                      ? `Dernier jour !`
+                      : `${days_remaining} jour${days_remaining > 1 ? 's' : ''} restant${days_remaining > 1 ? 's' : ''}`}
               </p>
             </div>
           </div>
