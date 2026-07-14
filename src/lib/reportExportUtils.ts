@@ -181,83 +181,275 @@ export const exportToWord = (data: ReportData, filename: string) => {
 };
 
 /**
- * Génère un fichier PDF (via impression navigateur)
+ * Génère un PDF professionnel via jsPDF + autotable
+ * - Page de couverture avec logo/entreprise/période
+ * - Sommaire numéroté
+ * - Sections détaillées avec tables et résumés
+ * - En-tête et pied de page sur chaque page (n° de page, date, nom de l'entreprise)
+ * - Signature en dernière page
  */
-export const exportToPDF = (data: ReportData, filename: string) => {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Veuillez autoriser les popups pour générer le PDF');
-    return;
+export const exportToPDF = async (data: ReportData, filename: string) => {
+  const { default: jsPDF } = await import('jspdf');
+  const autoTable = (await import('jspdf-autotable')).default;
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+
+  // Charte couleurs "cabinet"
+  const brand: [number, number, number] = [30, 58, 95];       // #1e3a5f
+  const accent: [number, number, number] = [49, 130, 206];    // #3182ce
+  const soft: [number, number, number] = [247, 250, 252];     // #f7fafc
+  const grayText: [number, number, number] = [80, 90, 105];
+
+  const company = data.companyInfo;
+
+  /* ---------- PAGE DE COUVERTURE ---------- */
+  // Bande couleur haut
+  doc.setFillColor(...brand);
+  doc.rect(0, 0, pageWidth, 55, 'F');
+  doc.setFillColor(...accent);
+  doc.rect(0, 55, pageWidth, 3, 'F');
+
+  // Logo
+  if (company?.logoUrl) {
+    try {
+      // Try image only if it's a data URL or same-origin URL to avoid taint
+      doc.addImage(company.logoUrl, 'PNG', margin, 10, 32, 32);
+    } catch { /* ignore logo errors */ }
   }
 
-  // Générer l'en-tête entreprise HTML
-  const companyHeader = data.companyInfo ? generateCompanyHeaderHTML(data.companyInfo) : '';
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text(company?.name || 'AQUA PILOT', pageWidth - margin, 22, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  if (company?.address) doc.text(company.address.substring(0, 60), pageWidth - margin, 30, { align: 'right' });
+  if (company?.phone || company?.email) {
+    doc.text(`${company?.phone || ''}${company?.phone && company?.email ? ' · ' : ''}${company?.email || ''}`, pageWidth - margin, 36, { align: 'right' });
+  }
 
-  let htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>${escapeHtml(data.title)}</title>
-      <style>
-        @media print {
-          body { margin: 0; padding: 20px; }
-        }
-        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-        h1 { color: #1e3a5f; border-bottom: 3px solid #3182ce; padding-bottom: 15px; margin-bottom: 20px; }
-        h2 { color: #2c5282; margin-top: 30px; border-left: 4px solid #3182ce; padding-left: 10px; }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th, td { border: 1px solid #cbd5e0; padding: 12px; text-align: left; }
-        th { background-color: #3182ce; color: white; font-weight: bold; }
-        tr:nth-child(even) { background-color: #f7fafc; }
-        .summary-item { margin: 10px 0; padding: 8px; background-color: #f7fafc; border-radius: 4px; }
-        .summary-label { font-weight: bold; color: #2d3748; }
-        .summary-value { color: #3182ce; font-size: 1.1em; }
-        .header-info { color: #718096; margin-bottom: 8px; font-size: 0.95em; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #718096; font-size: 0.85em; text-align: center; }
-      </style>
-    </head>
-    <body>
-      ${companyHeader}
-      <h1>${escapeHtml(data.title)}</h1>
-      <p class="header-info"><strong>Période:</strong> ${escapeHtml(data.period)}</p>
-      <p class="header-info"><strong>Date de génération:</strong> ${escapeHtml(data.generatedAt)}</p>
-      ${data.unitName ? `<p class="header-info"><strong>Unité de production:</strong> ${escapeHtml(data.unitName)}</p>` : ''}
-  `;
+  // Titre du rapport (centré)
+  doc.setTextColor(...brand);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(26);
+  const titleLines = doc.splitTextToSize(data.title, pageWidth - margin * 2);
+  doc.text(titleLines, pageWidth / 2, 100, { align: 'center' });
 
-  data.sections.forEach(section => {
-    htmlContent += `<h2>${escapeHtml(section.title)}</h2>`;
-    
-    if (section.type === 'table' && section.headers && section.rows) {
-      htmlContent += '<table>';
-      htmlContent += '<tr>' + section.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
-      section.rows.forEach(row => {
-        htmlContent += '<tr>' + row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>';
+  // Ligne décorative
+  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.8);
+  doc.line(pageWidth / 2 - 30, 115, pageWidth / 2 + 30, 115);
+
+  // Bloc info
+  doc.setFillColor(...soft);
+  doc.roundedRect(margin + 20, 135, pageWidth - (margin + 20) * 2, 60, 3, 3, 'F');
+  doc.setTextColor(...brand);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('INFORMATIONS DU RAPPORT', pageWidth / 2, 148, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...grayText);
+
+  const info: [string, string][] = [
+    ['Période', data.period],
+    ['Date de génération', data.generatedAt],
+  ];
+  if (data.unitName) info.push(['Unité de production', data.unitName]);
+  if (company?.name) info.push(['Entité', company.name]);
+
+  info.forEach(([label, value], i) => {
+    const y = 160 + i * 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text(label + ' :', margin + 30, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(value).substring(0, 70), margin + 75, y);
+  });
+
+  // Pied de couverture
+  doc.setTextColor(...brand);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  doc.text(
+    'Document confidentiel - Généré automatiquement par AQUA PILOT',
+    pageWidth / 2,
+    pageHeight - 15,
+    { align: 'center' },
+  );
+
+  /* ---------- SOMMAIRE ---------- */
+  doc.addPage();
+  drawHeader(doc, data, brand, accent, pageWidth, margin);
+  let y = 45;
+  doc.setTextColor(...brand);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Sommaire', margin, y);
+  y += 4;
+  doc.setDrawColor(...accent);
+  doc.line(margin, y, margin + 40, y);
+  y += 10;
+
+  doc.setTextColor(...grayText);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  data.sections.forEach((section, idx) => {
+    const num = String(idx + 1).padStart(2, '0');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...brand);
+    doc.text(`${num}.`, margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...grayText);
+    doc.text(section.title, margin + 12, y);
+    // ligne pointillée
+    const dotsFrom = margin + 12 + doc.getTextWidth(section.title) + 3;
+    const dotsTo = pageWidth - margin - 15;
+    if (dotsTo > dotsFrom) {
+      let x = dotsFrom;
+      while (x < dotsTo) {
+        doc.circle(x, y - 1, 0.2, 'F');
+        x += 2;
+      }
+    }
+    y += 9;
+    if (y > pageHeight - 30) { doc.addPage(); drawHeader(doc, data, brand, accent, pageWidth, margin); y = 45; }
+  });
+
+  /* ---------- SECTIONS ---------- */
+  data.sections.forEach((section, idx) => {
+    doc.addPage();
+    drawHeader(doc, data, brand, accent, pageWidth, margin);
+
+    // Bandeau titre section
+    doc.setFillColor(...brand);
+    doc.roundedRect(margin, 40, pageWidth - margin * 2, 12, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text(`${String(idx + 1).padStart(2, '0')}. ${section.title}`, margin + 4, 48);
+
+    let cursorY = 60;
+
+    if (section.type === 'summary' && section.summary) {
+      // Grille de KPI 2 colonnes
+      const cardW = (pageWidth - margin * 2 - 6) / 2;
+      const cardH = 22;
+      section.summary.forEach((item, i) => {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const x = margin + col * (cardW + 6);
+        const yy = cursorY + row * (cardH + 6);
+        if (yy + cardH > pageHeight - 25) return; // safety
+        doc.setFillColor(...soft);
+        doc.roundedRect(x, yy, cardW, cardH, 2, 2, 'F');
+        doc.setDrawColor(...accent);
+        doc.setLineWidth(0.3);
+        doc.line(x, yy, x, yy + cardH);
+        doc.setTextColor(...grayText);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(String(item.label).substring(0, 40), x + 4, yy + 8);
+        doc.setTextColor(...brand);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.text(String(item.value).substring(0, 30), x + 4, yy + 17);
       });
-      htmlContent += '</table>';
-    } else if (section.type === 'summary' && section.summary) {
-      section.summary.forEach(item => {
-        htmlContent += `<div class="summary-item"><span class="summary-label">${escapeHtml(item.label)}:</span> <span class="summary-value">${escapeHtml(item.value)}</span></div>`;
+    } else if (section.type === 'table' && section.headers && section.rows) {
+      autoTable(doc, {
+        startY: cursorY,
+        head: [section.headers],
+        body: section.rows.map((r) => r.map((c) => String(c ?? ''))),
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3, textColor: grayText },
+        headStyles: { fillColor: brand, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'left' },
+        alternateRowStyles: { fillColor: soft },
+        margin: { left: margin, right: margin },
+        didDrawPage: () => drawHeader(doc, data, brand, accent, pageWidth, margin),
       });
     }
   });
 
-  htmlContent += `
-      <div class="footer">
-        <p>Rapport généré automatiquement par AquaPilot - ${escapeHtml(data.generatedAt)}</p>
-      </div>
-      <script>
-        window.onload = function() {
-          window.print();
-        }
-      </script>
-    </body>
-    </html>
-  `;
+  /* ---------- SIGNATURE (dernière page) ---------- */
+  doc.addPage();
+  drawHeader(doc, data, brand, accent, pageWidth, margin);
+  doc.setTextColor(...brand);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Validation et signature', margin, 55);
 
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+  doc.setTextColor(...grayText);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  const disclaimer =
+    "Le présent rapport a été généré automatiquement à partir des données enregistrées dans AQUA PILOT à la date indiquée. Il reflète l'état de l'exploitation sur la période sélectionnée et peut servir de pièce justificative interne, comptable ou administrative.";
+  const wrapped = doc.splitTextToSize(disclaimer, pageWidth - margin * 2);
+  doc.text(wrapped, margin, 68);
+
+  // Cadres signature
+  const boxY = 130;
+  const boxW = (pageWidth - margin * 2 - 10) / 2;
+  const boxH = 45;
+  ['Responsable d\'exploitation', 'Direction / Comptabilité'].forEach((label, i) => {
+    const x = margin + i * (boxW + 10);
+    doc.setDrawColor(...brand);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, boxY, boxW, boxH, 2, 2, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...brand);
+    doc.text(label, x + 3, boxY + 7);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...grayText);
+    doc.text('Nom :', x + 3, boxY + 20);
+    doc.text('Date :', x + 3, boxY + 30);
+    doc.text('Signature :', x + 3, boxY + 40);
+  });
+
+  /* ---------- NUMÉROTATION PIED DE PAGE ---------- */
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(...accent);
+    doc.setLineWidth(0.2);
+    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...grayText);
+    doc.text(company?.name || 'AQUA PILOT', margin, pageHeight - 6);
+    doc.text(data.generatedAt, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    doc.text(`Page ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
+  }
+
+  doc.save(`${filename}.pdf`);
 };
+
+function drawHeader(
+  doc: any,
+  data: ReportData,
+  brand: [number, number, number],
+  accent: [number, number, number],
+  pageWidth: number,
+  margin: number,
+) {
+  doc.setFillColor(...brand);
+  doc.rect(0, 0, pageWidth, 22, 'F');
+  doc.setFillColor(...accent);
+  doc.rect(0, 22, pageWidth, 1.2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(data.companyInfo?.name || 'AQUA PILOT', margin, 10);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(data.title.substring(0, 60), margin, 17);
+  doc.setFontSize(8);
+  doc.text(data.period, pageWidth - margin, 10, { align: 'right' });
+  if (data.unitName) doc.text(data.unitName.substring(0, 30), pageWidth - margin, 17, { align: 'right' });
+}
 
 /**
  * Télécharge un fichier
