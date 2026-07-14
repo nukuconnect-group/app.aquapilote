@@ -1,0 +1,3 @@
+CREATE POLICY "Admins can view all team members" ON public.team_members FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update all team members" ON public.team_members FOR UPDATE USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all subscriptions" ON public.subscriptions FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));

@@ -32,6 +32,8 @@ import PendingActivations from './admin/PendingActivations';
 import RegistrationsPanel from './admin/RegistrationsPanel';
 import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
 import AccessStatsPanel from './admin/AccessStatsPanel';
+import TeamMembersOverviewPanel from './admin/TeamMembersOverviewPanel';
+import FinanceOverviewPanel from './admin/FinanceOverviewPanel';
 
 interface UserProfile {
   id: string;
@@ -720,6 +722,9 @@ const AdminDashboard = () => {
           {/* Statistiques d'accès des abonnés */}
           <AccessStatsPanel />
 
+          {/* Vue financière globale */}
+          <FinanceOverviewPanel />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-6">
@@ -926,6 +931,9 @@ const AdminDashboard = () => {
           <RegistrationsPanel />
         </TabsContent>
         <TabsContent value="users" className="space-y-4">
+          <TeamMembersOverviewPanel
+            owners={users.map((u) => ({ id: u.id, email: u.email, full_name: u.full_name }))}
+          />
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1205,6 +1213,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="subscriptions" className="space-y-4">
+          <FinanceOverviewPanel />
           <SubscriptionsPanel
             users={users.map((u) => ({ id: u.id, email: u.email, full_name: u.full_name }))}
           />
