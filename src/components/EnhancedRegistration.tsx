@@ -331,7 +331,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         <div className="hidden md:block fixed inset-y-0 left-0 w-1/2 z-[2] pointer-events-none">
           <div className="absolute bottom-16 left-[8%] right-[8%] text-white/95">
             <h2 className="text-3xl xl:text-4xl font-bold tracking-tight">Rejoignez AquaPilote</h2>
-            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
+            <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre ferme d'aquaculture en toute simplicité.</p>
           </div>
         </div>
         {/* Fond mobile — bandeau image poissons en haut (identique à la page Connexion) */}
