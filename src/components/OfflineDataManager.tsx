@@ -22,6 +22,7 @@ import { fr, enUS } from 'date-fns/locale';
 import { useSettings } from '@/contexts/SettingsContext';
 import FileUploadManager from './FileUploadManager';
 import OfflineFilesSync from './OfflineFilesSync';
+import PWAInstallCard from './PWAInstallCard';
 
 export const OfflineDataManager = () => {
   const {
@@ -96,6 +97,9 @@ export const OfflineDataManager = () => {
           </div>
         </div>
       </div>
+
+      {/* Installation PWA */}
+      <PWAInstallCard />
 
       {/* Statistiques */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
