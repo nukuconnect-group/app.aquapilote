@@ -414,9 +414,9 @@ const ProductionUnitsManagement = () => {
           return (
           <Card key={unit.id} className={`${!unit.isActive ? 'opacity-60 border-gray-300' : 'border-l-4 border-l-purple-500'}`}>
             <CardHeader className="pb-2">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-16 h-16 rounded-lg" key={unit.photoUrl || unit.id}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                  <Avatar className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg shrink-0" key={unit.photoUrl || unit.id}>
                     <AvatarImage 
                       src={unit.photoUrl || ''} 
                       alt={unit.name}
@@ -426,19 +426,19 @@ const ProductionUnitsManagement = () => {
                       <Building className="w-6 h-6" />
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <CardTitle className="text-base sm:text-lg">{unit.name}</CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base sm:text-lg break-words leading-tight">{unit.name}</CardTitle>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       <Badge className={unit.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                         {unit.isActive ? t('active') : t('inactive')}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs max-w-full break-words">
                         {unitTypes.find(type => type.value === unit.type)?.label}
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end w-full sm:w-auto shrink-0">
                   <Button 
                     variant="ghost" 
                     size="sm"
