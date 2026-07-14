@@ -15,6 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
+import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -317,17 +318,18 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
           </div>
         </div>
-        {/* Fond mobile plein écran — MÊME image que la page Connexion, avec voile blanc pour éviter les ombres noires */}
+        {/* Fond mobile — bandeau image poissons en haut (identique à la page Connexion) */}
+        <div className="md:hidden fixed inset-0 z-0 bg-slate-50 dark:bg-slate-950" aria-hidden="true" />
         <div
-          className="md:hidden fixed inset-0 z-0 bg-white"
+          className="md:hidden fixed inset-x-0 top-0 h-40 z-0"
           style={{
-            backgroundImage: `url(${loginBgAsset.url})`,
+            backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
           aria-hidden="true"
         />
-        <div className="md:hidden fixed inset-0 bg-white/85 backdrop-blur-[2px] z-[1]" aria-hidden="true" />
+        <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
 
         <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-4 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
          <div className="w-full max-w-xl mt-2 md:mt-0">
