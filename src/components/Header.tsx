@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X } from 'lucide-react';
+import { Settings, LogOut, UserCircle, Sun, Moon, User, Globe, PanelLeft, Search, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import ProfileDialog from '@/components/ProfileDialog';
+import TrialStatusCard from '@/components/subscription/TrialStatusCard';
+import { useCurrentSubscription, getPlanLabel } from '@/hooks/useCurrentSubscription';
 import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator';
 import TaskAlertIndicator from '@/components/TaskAlertIndicator';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,6 +48,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
     toast
   } = useToast();
   const { theme, setTheme } = useTheme();
+  const { subscription } = useCurrentSubscription();
 
   const handleLogin = () => {
     if (!isAuthenticated) {
@@ -203,6 +205,17 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user?.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    {subscription && (
+                      <div className="mt-2 flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
+                        <Sparkles className="w-3 h-3 text-primary shrink-0" />
+                        <span className="text-[11px] font-medium leading-none truncate">
+                          {getPlanLabel(subscription.plan)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground leading-none ml-auto shrink-0">
+                          {subscription.isExpired ? 'expiré' : `${subscription.days_remaining} j`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -258,7 +271,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
 
     {/* Settings Sidebar */}
     <Sheet open={showSettings} onOpenChange={setShowSettings}>
-      <SheetContent side="right" className="w-full sm:w-[440px] overflow-y-auto">
+      <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto p-4 sm:p-6">
         <SheetHeader>
           <SheetTitle>{t('settings_profile')}</SheetTitle>
         </SheetHeader>
@@ -275,23 +288,20 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
           {isAuthenticated && user && (
             <div className="space-y-4">
               <h3 className="font-semibold text-sm">{t('profile')}</h3>
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <Avatar className="h-16 w-16">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg">
+                <Avatar className="h-14 w-14 sm:h-16 sm:w-16 shrink-0">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                     {user.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  {user.role && (
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {user.role}
-                    </Badge>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{user.name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
                 </div>
               </div>
+              {/* Statut d'abonnement / Essai gratuit */}
+              <TrialStatusCard />
             </div>
           )}
 
