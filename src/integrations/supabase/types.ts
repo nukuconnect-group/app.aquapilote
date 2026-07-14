@@ -673,6 +673,95 @@ export type Database = {
         }
         Relationships: []
       }
+      employment_contracts: {
+        Row: {
+          benefits: string | null
+          clauses: string | null
+          contract_type: string
+          created_at: string
+          currency: string
+          document_url: string | null
+          employee_id: string
+          end_date: string | null
+          gross_salary: number
+          id: string
+          job_title: string | null
+          notes: string | null
+          notice_period_days: number | null
+          reference: string | null
+          signed_at: string | null
+          signed_by_employee: string | null
+          signed_by_employer: string | null
+          start_date: string
+          status: string
+          trial_period_days: number | null
+          updated_at: string
+          user_id: string
+          weekly_hours: number | null
+          workplace: string | null
+        }
+        Insert: {
+          benefits?: string | null
+          clauses?: string | null
+          contract_type: string
+          created_at?: string
+          currency?: string
+          document_url?: string | null
+          employee_id: string
+          end_date?: string | null
+          gross_salary?: number
+          id?: string
+          job_title?: string | null
+          notes?: string | null
+          notice_period_days?: number | null
+          reference?: string | null
+          signed_at?: string | null
+          signed_by_employee?: string | null
+          signed_by_employer?: string | null
+          start_date: string
+          status?: string
+          trial_period_days?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_hours?: number | null
+          workplace?: string | null
+        }
+        Update: {
+          benefits?: string | null
+          clauses?: string | null
+          contract_type?: string
+          created_at?: string
+          currency?: string
+          document_url?: string | null
+          employee_id?: string
+          end_date?: string | null
+          gross_salary?: number
+          id?: string
+          job_title?: string | null
+          notes?: string | null
+          notice_period_days?: number | null
+          reference?: string | null
+          signed_at?: string | null
+          signed_by_employee?: string | null
+          signed_by_employer?: string | null
+          start_date?: string
+          status?: string
+          trial_period_days?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_hours?: number | null
+          workplace?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employment_contracts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_calculations: {
         Row: {
           avg_weight_g: number
