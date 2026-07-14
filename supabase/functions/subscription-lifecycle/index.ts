@@ -15,6 +15,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Scheduler auth (fixes OPEN_ENDPOINTS: open_sub_lifecycle)
+    const expectedToken = Deno.env.get("CRON_SECRET_TOKEN");
+    const authHeader = req.headers.get("Authorization") || "";
+    const provided = authHeader.replace(/^Bearer\s+/i, "");
+    if (!expectedToken || provided !== expectedToken) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
