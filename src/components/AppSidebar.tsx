@@ -1,5 +1,6 @@
 import React from 'react';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell, ArrowLeft, UserPlus, ClipboardList, CreditCard, Activity, Eye, AlertTriangle } from 'lucide-react';
 import { Sparkles, BookOpen } from 'lucide-react';
 import {
   Sidebar,
@@ -28,6 +29,98 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const { t, language } = useSettings();
   const { user } = useAuth();
   const { isTeamMember, teamMemberInfo, hasAccessToModule } = useTeamMemberAccess();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isAdminView = activeTab === 'admin';
+  const adminSection = searchParams.get('section') || 'overview';
+
+  const goToAdminSection = (section: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('module', 'admin');
+    next.set('section', section);
+    setSearchParams(next, { replace: true });
+  };
+
+  const exitAdmin = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('module');
+    next.delete('section');
+    setSearchParams(next, { replace: true });
+    onTabChange('dashboard');
+  };
+
+  const adminGroups = [
+    {
+      label: t('admin') || 'Administration',
+      items: [
+        { id: 'overview', label: "Vue d'ensemble", icon: BarChart3 },
+        { id: 'activations', label: 'Activations', icon: UserPlus },
+        { id: 'registrations', label: 'Inscriptions', icon: ClipboardList },
+        { id: 'users', label: 'Utilisateurs', icon: Users },
+        { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
+        { id: 'support', label: 'Support', icon: Headphones },
+        { id: 'database', label: 'Base de données', icon: Database },
+        { id: 'activity', label: 'Activités', icon: Activity },
+        { id: 'privacy', label: 'Confidentialité', icon: Eye },
+        { id: 'errors', label: 'Erreurs', icon: AlertTriangle },
+      ],
+    },
+  ];
+
+  if (isAdminView) {
+    return (
+      <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+        <SidebarContent className="overflow-y-auto">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    size="sm"
+                    onClick={exitAdmin}
+                    tooltip={open ? undefined : 'Retour'}
+                    className="text-white hover:bg-white/10 hover:text-white"
+                  >
+                    <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">Retour au tableau de bord</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          {adminGroups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel className="text-white/80 font-semibold tracking-wide uppercase text-[11px]">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = adminSection === item.id;
+                    return (
+                      <SidebarMenuItem key={item.id}>
+                        <SidebarMenuButton
+                          size="sm"
+                          onClick={() => goToAdminSection(item.id)}
+                          isActive={isActive}
+                          tooltip={open ? undefined : item.label}
+                          className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white"
+                        >
+                          <Icon className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
 
   // Verifier si un tab est accessible
   const isTabAllowed = (tabId: string): boolean => {
