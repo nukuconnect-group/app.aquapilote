@@ -47,7 +47,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           <div className="animate-fade-in">
             <img 
               src={aquaPilotLogo} 
-              alt="AQUA PILOT" 
+              alt="AQUAPILOTE" 
               className="w-40 h-40 mx-auto drop-shadow-2xl rounded-3xl animate-pulse"
             />
           </div>
@@ -62,7 +62,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         
         {/* Titre avec animation */}
         <h1 className="text-6xl font-bold text-white mb-4 tracking-wide animate-fade-in drop-shadow-lg">
-          AQUA PILOT
+          AQUAPILOTE
         </h1>
         
         <p className="text-2xl text-blue-100 font-medium mb-12 animate-fade-in">

@@ -223,7 +223,7 @@ export const exportToPDF = async (data: ReportData, filename: string) => {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text(company?.name || 'AQUA PILOT', pageWidth - margin, 22, { align: 'right' });
+  doc.text(company?.name || 'AQUAPILOTE', pageWidth - margin, 22, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   if (company?.address) doc.text(company.address.substring(0, 60), pageWidth - margin, 30, { align: 'right' });
@@ -274,7 +274,7 @@ export const exportToPDF = async (data: ReportData, filename: string) => {
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(9);
   doc.text(
-    'Document confidentiel - Généré automatiquement par AQUA PILOT',
+    'Document confidentiel - Généré automatiquement par AQUAPILOTE',
     pageWidth / 2,
     pageHeight - 15,
     { align: 'center' },
@@ -384,7 +384,7 @@ export const exportToPDF = async (data: ReportData, filename: string) => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   const disclaimer =
-    "Le présent rapport a été généré automatiquement à partir des données enregistrées dans AQUA PILOT à la date indiquée. Il reflète l'état de l'exploitation sur la période sélectionnée et peut servir de pièce justificative interne, comptable ou administrative.";
+    "Le présent rapport a été généré automatiquement à partir des données enregistrées dans AQUAPILOTE à la date indiquée. Il reflète l'état de l'exploitation sur la période sélectionnée et peut servir de pièce justificative interne, comptable ou administrative.";
   const wrapped = doc.splitTextToSize(disclaimer, pageWidth - margin * 2);
   doc.text(wrapped, margin, 68);
 
@@ -419,7 +419,7 @@ export const exportToPDF = async (data: ReportData, filename: string) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...grayText);
-    doc.text(company?.name || 'AQUA PILOT', margin, pageHeight - 6);
+    doc.text(company?.name || 'AQUAPILOTE', margin, pageHeight - 6);
     doc.text(data.generatedAt, pageWidth / 2, pageHeight - 6, { align: 'center' });
     doc.text(`Page ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
   }
@@ -442,7 +442,7 @@ function drawHeader(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(data.companyInfo?.name || 'AQUA PILOT', margin, 10);
+  doc.text(data.companyInfo?.name || 'AQUAPILOTE', margin, 10);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(data.title.substring(0, 60), margin, 17);

@@ -49,12 +49,13 @@ const Welcome: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-4">
       <div className="text-center space-y-8 max-w-2xl w-full">
-        {/* Logo AQUA PILOT avec fallback pour iOS */}
+        {/* Logo AQUAPILOTE avec fallback pour iOS */}
         <div className="flex justify-center mb-8">
           {!imageError ? (
             <img 
               src={aquaPilotLogo} 
-              alt="AQUA PILOT Logo" 
+              alt="AQUAPILOTE Logo" 
+
               className="h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 w-auto object-contain transition-opacity duration-300"
               onError={() => setImageError(true)}
               loading="eager"
