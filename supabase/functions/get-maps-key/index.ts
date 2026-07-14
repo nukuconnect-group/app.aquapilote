@@ -1,20 +1,34 @@
-// Public endpoint returning the custom Google Maps browser key for the app.
-// The key is stored server-side as GOOGLE_API_KEY. It is a browser API key
-// with HTTP referrer restrictions configured in Google Cloud Console, so
-// returning it to authorized origins is safe.
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+// Public endpoint returning the custom Google Maps browser key for the app.
+// Supabase functions.invoke uses POST by default, so CORS must explicitly
+// allow POST or the browser blocks the request before the key is returned.
+const responseHeaders = {
+  ...corsHeaders,
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 Deno.serve((req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: responseHeaders });
   }
+
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...responseHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   const key = Deno.env.get('GOOGLE_API_KEY') ?? '';
+  if (!key) {
+    return new Response(JSON.stringify({ error: 'GOOGLE_API_KEY is not configured' }), {
+      status: 500,
+      headers: { ...responseHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   return new Response(JSON.stringify({ key }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...responseHeaders, 'Content-Type': 'application/json' },
   });
 });
