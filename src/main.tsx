@@ -7,10 +7,24 @@ import { OfflineProvider } from './contexts/OfflineContext';
 console.log('🚀 AQUA PILOT - Application complète restaurée');
 
 // Enregistrement du Service Worker avec gestion améliorée des mises à jour
+const isPreviewHost = () => {
+  const h = window.location.hostname;
+  return (
+    h.startsWith('id-preview--') ||
+    h.startsWith('preview--') ||
+    h === 'lovableproject.com' ||
+    h.endsWith('.lovableproject.com') ||
+    h === 'lovableproject-dev.com' ||
+    h.endsWith('.lovableproject-dev.com') ||
+    h === 'beta.lovable.dev' ||
+    h.endsWith('.beta.lovable.dev') ||
+    window.self !== window.top
+  );
+};
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const isLovablePreview = /lovable\.app$/i.test(window.location.hostname);
-    if (isLovablePreview) {
+    if (isPreviewHost()) {
       console.info('ℹ️ Service Worker désactivé sur le preview Lovable pour éviter les erreurs de redirection.');
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         registrations.forEach((registration) => registration.unregister());
@@ -40,20 +54,23 @@ if ('serviceWorker' in navigator) {
           }
         });
         
-        // Vérifier les mises à jour périodiquement (toutes les 5 minutes)
+        // Vérifier les mises à jour périodiquement (toutes les 2 minutes)
         setInterval(() => {
           registration.update();
-        }, 5 * 60 * 1000);
+        }, 2 * 60 * 1000);
+
+        // Vérifier aussi lors du retour de focus / reconnexion
+        window.addEventListener('focus', () => registration.update());
+        window.addEventListener('online', () => registration.update());
       })
       .catch((error) => {
         console.error('❌ Erreur lors de l\'enregistrement du Service Worker:', error);
       });
   });
   
-  // Recharger la page si le contrôleur change — uniquement hors preview
-  // Lovable, sinon la désinscription du SW déclenche un reload qui peut
-  // interrompre la navigation entre modules.
-  if (!/lovable\.app$/i.test(window.location.hostname)) {
+  // Recharger automatiquement la page dès qu'un nouveau SW prend le contrôle,
+  // sauf sur les previews Lovable pour éviter les reloads en boucle.
+  if (!isPreviewHost()) {
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
