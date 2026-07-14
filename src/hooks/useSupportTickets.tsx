@@ -203,15 +203,30 @@ export const useSupportTickets = () => {
     // Channel for tickets changes
     const ticketsChannel = supabase
       .channel('support_tickets_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
-        fetchTickets();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'support_tickets' },
+        (payload) => {
+          fetchTickets();
+          if (
+            payload.eventType === 'INSERT' &&
+            user?.role === 'admin' &&
+            (payload.new as any)?.user_id !== user.id
+          ) {
+            const t = payload.new as any;
+            toast({
+              title: '🔔 Nouveau ticket de support',
+              description: `${t.user_name || t.user_email} : ${t.subject}`,
+            });
+          }
+        },
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(ticketsChannel);
     };
-  }, [user?.id, fetchTickets]);
+  }, [user?.id, user?.role, fetchTickets, toast]);
 
   // Separate channel for messages - instant updates
   const [currentTicketIdForRealtime, setCurrentTicketIdForRealtime] = useState<string | null>(null);
