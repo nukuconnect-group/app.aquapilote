@@ -217,7 +217,7 @@ const EmploymentContractsManager: React.FC<Props> = ({ employees }) => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text(companyInfo?.name || 'AQUA PILOT', m, 15);
+    doc.text(companyInfo?.name || 'AQUAPILOTE', m, 15);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     if (companyInfo?.address) doc.text(companyInfo.address.substring(0, 80), m, 22);
@@ -286,7 +286,7 @@ const EmploymentContractsManager: React.FC<Props> = ({ employees }) => {
     // Pied
     doc.setDrawColor(...accent); doc.line(m, ph - 12, pw - m, ph - 12);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 120, 120);
-    doc.text(`Contrat ${c.reference || ''} — ${companyInfo?.name || 'AQUA PILOT'}`, m, ph - 6);
+    doc.text(`Contrat ${c.reference || ''} — ${companyInfo?.name || 'AQUAPILOTE'}`, m, ph - 6);
     doc.text(`Page 1`, pw - m, ph - 6, { align: 'right' });
 
     doc.save(`contrat_${c.reference || c.id}.pdf`);

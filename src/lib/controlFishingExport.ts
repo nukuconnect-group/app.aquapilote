@@ -159,7 +159,7 @@ const generateDailyHTML = (options: ExportOptions): string => {
       <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimer / Télécharger PDF</button>
       
       <div class="header">
-        <div class="logo">🐟 AQUA PILOT</div>
+        <div class="logo">🐟 AQUAPILOTE</div>
         <h1 class="report-title">Fiche de Pêche de Contrôle</h1>
         <div class="report-date">${formatDate(date)}</div>
       </div>
@@ -264,8 +264,8 @@ const generateDailyHTML = (options: ExportOptions): string => {
       ` : ''}
 
       <div class="footer">
-        <p>Fiche générée par AQUA PILOT - ${new Date().toLocaleString('fr-FR')}</p>
-        <p>© ${new Date().getFullYear()} AQUA PILOT - Tous droits réservés</p>
+        <p>Fiche générée par AQUAPILOTE - ${new Date().toLocaleString('fr-FR')}</p>
+        <p>© ${new Date().getFullYear()} AQUAPILOTE - Tous droits réservés</p>
       </div>
     </body>
     </html>

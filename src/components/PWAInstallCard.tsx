@@ -30,7 +30,7 @@ const PLATFORM_STEPS: Record<Platform, { title: string; icon: React.ElementType;
       "Touchez le bouton \"Installer\" ci-dessus si disponible.",
       "Sinon, ouvrez le menu (⋮) en haut à droite du navigateur.",
       "Choisissez \"Installer l'application\" ou \"Ajouter à l'écran d'accueil\".",
-      "Confirmez. L'icône AQUA PILOT apparaît sur votre écran d'accueil.",
+      "Confirmez. L'icône AQUAPILOTE apparaît sur votre écran d'accueil.",
     ],
   },
   ios: {
@@ -49,7 +49,7 @@ const PLATFORM_STEPS: Record<Platform, { title: string; icon: React.ElementType;
     steps: [
       "Cliquez sur \"Installer\" ci-dessus si le bouton est actif.",
       "Sinon, cliquez sur l'icône d'installation ⊕ dans la barre d'adresse.",
-      "Ou ouvrez le menu (⋮) → \"Installer AQUA PILOT\".",
+      "Ou ouvrez le menu (⋮) → \"Installer AQUAPILOTE\".",
       "L'app s'ouvre dans sa propre fenêtre, comme un logiciel classique.",
     ],
   },
@@ -59,7 +59,7 @@ const PLATFORM_STEPS: Record<Platform, { title: string; icon: React.ElementType;
     steps: [
       "Ouvrez le menu \"Fichier\" de Safari.",
       "Choisissez \"Ajouter au Dock…\".",
-      "L'application AQUA PILOT sera disponible depuis votre Dock.",
+      "L'application AQUAPILOTE sera disponible depuis votre Dock.",
     ],
   },
   'desktop-firefox': {
@@ -104,7 +104,7 @@ const PWAInstallCard: React.FC = () => {
       try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
       setIsInstalled(true);
       setDeferredPrompt(null);
-      toast({ title: 'Application installée', description: 'AQUA PILOT est prête à être utilisée depuis votre écran d\'accueil.' });
+      toast({ title: 'Application installée', description: 'AQUAPILOTE est prête à être utilisée depuis votre écran d\'accueil.' });
     };
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
@@ -126,7 +126,7 @@ const PWAInstallCard: React.FC = () => {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
-        toast({ title: 'Installation lancée', description: 'AQUA PILOT s\'installe sur votre appareil.' });
+        toast({ title: 'Installation lancée', description: 'AQUAPILOTE s\'installe sur votre appareil.' });
       }
       setDeferredPrompt(null);
     } catch (err) {
@@ -144,7 +144,7 @@ const PWAInstallCard: React.FC = () => {
           <div className="min-w-0 flex-1">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Download className="w-5 h-5 text-primary" />
-              Installer AQUA PILOT sur votre appareil
+              Installer AQUAPILOTE sur votre appareil
             </CardTitle>
             <CardDescription className="mt-1">
               Un raccourci sur votre écran d'accueil, sans passer par le navigateur ni les stores.
@@ -163,7 +163,7 @@ const PWAInstallCard: React.FC = () => {
       <CardContent className="space-y-4">
         {isInstalled ? (
           <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-800">
-            L'application est déjà installée. Ouvrez-la depuis l'icône AQUA PILOT sur votre écran d'accueil ou dans votre menu d'applications.
+            L'application est déjà installée. Ouvrez-la depuis l'icône AQUAPILOTE sur votre écran d'accueil ou dans votre menu d'applications.
           </div>
         ) : (
           <>

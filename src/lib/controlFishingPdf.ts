@@ -50,7 +50,7 @@ export const generateControlFishingPdf = (options: PrintOptions) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Rapport Pêches de Contrôle - AQUA PILOT</title>
+      <title>Rapport Pêches de Contrôle - AQUAPILOTE</title>
       <style>
         * {
           box-sizing: border-box;
@@ -251,7 +251,7 @@ export const generateControlFishingPdf = (options: PrintOptions) => {
       <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimer / Télécharger PDF</button>
       
       <div class="header">
-        <div class="logo">🐟 AQUA PILOT</div>
+        <div class="logo">🐟 AQUAPILOTE</div>
         <div class="subtitle">Système de Gestion Aquacole</div>
         <h1 class="report-title">Rapport des Pêches de Contrôle</h1>
       </div>
@@ -362,8 +362,8 @@ export const generateControlFishingPdf = (options: PrintOptions) => {
       `}
 
       <div class="footer">
-        <p>Rapport généré automatiquement par AQUA PILOT - ${new Date().toLocaleString('fr-FR')}</p>
-        <p>© ${new Date().getFullYear()} AQUA PILOT - Tous droits réservés</p>
+        <p>Rapport généré automatiquement par AQUAPILOTE - ${new Date().toLocaleString('fr-FR')}</p>
+        <p>© ${new Date().getFullYear()} AQUAPILOTE - Tous droits réservés</p>
       </div>
     </body>
     </html>
