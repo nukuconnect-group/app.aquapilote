@@ -58,6 +58,9 @@ const AppContent: React.FC = () => {
           } 
         />
 
+        {/* Accès direct au tableau de bord admin */}
+        <Route path="/admin" element={<Navigate to="/dashboard?module=admin" replace />} />
+
         {/* Page d'abonnements */}
         <Route
           path="/subscription"
