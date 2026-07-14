@@ -30,6 +30,7 @@ import VisitsStatsPanel from './admin/VisitsStatsPanel';
 import SubscriptionsPanel from './admin/SubscriptionsPanel';
 import PendingActivations from './admin/PendingActivations';
 import RegistrationsPanel from './admin/RegistrationsPanel';
+import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
 
 interface UserProfile {
   id: string;
@@ -93,6 +94,7 @@ const AdminDashboard = () => {
   };
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
+  const [manageUnitsFor, setManageUnitsFor] = useState<{ id: string; name: string } | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [isAssigningCountry, setIsAssigningCountry] = useState(false);
   const [defaultCountryDialogOpen, setDefaultCountryDialogOpen] = useState(false);
@@ -1138,6 +1140,14 @@ const AdminDashboard = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => setManageUnitsFor({ id: user.id, name: user.full_name })}
+                                title="Gérer les unités"
+                              >
+                                <Building2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleResetPassword(user.id, user.email)}
                                 title="Réinitialiser le mot de passe"
                               >
@@ -1403,6 +1413,15 @@ const AdminDashboard = () => {
         onOpenChange={setIsAddUserDialogOpen}
         onUserAdded={loadUsers}
       />
+
+      {manageUnitsFor && (
+        <ManageUserUnitsDialog
+          open={!!manageUnitsFor}
+          onOpenChange={(v) => !v && setManageUnitsFor(null)}
+          userId={manageUnitsFor.id}
+          userName={manageUnitsFor.name}
+        />
+      )}
 
       {/* Dialog pour attribuer un pays par défaut */}
       <Dialog open={defaultCountryDialogOpen} onOpenChange={setDefaultCountryDialogOpen}>

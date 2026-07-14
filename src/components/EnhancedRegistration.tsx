@@ -9,10 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio, ChevronsUpDown, Check } from 'lucide-react';
+import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio, ChevronsUpDown, Check, MailCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
@@ -108,6 +108,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
+  const [showConfirmEmailDialog, setShowConfirmEmailDialog] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState('');
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -279,12 +281,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         }
       );
       if (result.success) {
-        toast({
-          title: '✅ Compte créé avec succès',
-          description: '📧 Un e-mail de confirmation vous a été envoyé. Vérifiez votre boîte de réception (et les spams). Votre compte est actif : votre essai gratuit de 30 jours démarre maintenant.',
-          duration: 10000,
-        });
-        onSwitchToLogin();
+        setConfirmedEmail(formData.email.trim().toLowerCase());
+        setShowConfirmEmailDialog(true);
       } else {
         toast({ title: '❌ Erreur d\'inscription', description: result.error || 'Une erreur est survenue', variant: 'destructive' });
       }
@@ -316,6 +314,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
 
   return (
+    <>
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-transparent md:bg-slate-50">
         {/* Image à gauche (desktop) */}
@@ -573,6 +572,44 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={showConfirmEmailDialog} onOpenChange={() => { /* bloquant */ }}>
+      <DialogContent hideClose className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <MailCheck className="w-5 h-5 text-blue-600" />
+            Confirmez votre adresse e-mail
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 pt-2 space-y-3">
+            <span className="block">
+              Un e-mail de confirmation a été envoyé à
+              <span className="font-semibold text-slate-900"> {confirmedEmail}</span>.
+            </span>
+            <span className="block">
+              👉 Ouvrez votre boîte de réception (et vérifiez les <strong>spams</strong>),
+              puis cliquez sur le lien pour <strong>confirmer votre adresse e-mail</strong>.
+            </span>
+            <span className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 text-amber-800">
+              <ShieldAlert className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>
+                Après confirmation de votre e-mail, un <strong>administrateur</strong>
+                {' '}vérifiera puis <strong>activera votre compte</strong> avant votre
+                première connexion.
+              </span>
+            </span>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            className="w-full"
+            onClick={() => { setShowConfirmEmailDialog(false); onSwitchToLogin(); }}
+          >
+            J'ai compris
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
