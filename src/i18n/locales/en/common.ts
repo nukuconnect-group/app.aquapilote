@@ -1,7 +1,7 @@
 // Common translations - English
 export const common = {
   // Header
-  app_title: 'AQUA PILOT',
+  app_title: 'AQUAPILOTE',
   app_subtitle: 'Intelligent Aquaculture Management',
   system_settings: 'System settings',
   notifications: 'Notifications',
