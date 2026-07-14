@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/clientConfig';
+import TrialStatusCard from '@/components/subscription/TrialStatusCard';
 
 interface ProfileDialogProps {
   isOpen: boolean;
@@ -189,6 +190,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({ isOpen, onClose }) => {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Statut d'abonnement / Essai gratuit */}
+          <TrialStatusCard />
+
           {/* Avatar */}
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
