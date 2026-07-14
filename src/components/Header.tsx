@@ -272,7 +272,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
 
     {/* Settings Sidebar */}
     <Sheet open={showSettings} onOpenChange={setShowSettings}>
-      <SheetContent side="right" className="w-full sm:w-[440px] overflow-y-auto">
+      <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto p-4 sm:p-6">
         <SheetHeader>
           <SheetTitle>{t('settings_profile')}</SheetTitle>
         </SheetHeader>
@@ -289,23 +289,20 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
           {isAuthenticated && user && (
             <div className="space-y-4">
               <h3 className="font-semibold text-sm">{t('profile')}</h3>
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <Avatar className="h-16 w-16">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg">
+                <Avatar className="h-14 w-14 sm:h-16 sm:w-16 shrink-0">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                     {user.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  {user.role && (
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {user.role}
-                    </Badge>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{user.name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
                 </div>
               </div>
+              {/* Statut d'abonnement / Essai gratuit */}
+              <TrialStatusCard />
             </div>
           )}
 
