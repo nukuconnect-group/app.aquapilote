@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard, ClipboardList } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ import SupportModule from './SupportModule';
 import VisitsStatsPanel from './admin/VisitsStatsPanel';
 import SubscriptionsPanel from './admin/SubscriptionsPanel';
 import PendingActivations from './admin/PendingActivations';
+import RegistrationsPanel from './admin/RegistrationsPanel';
 
 interface UserProfile {
   id: string;
@@ -649,7 +650,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-9">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-10">
           <TabsTrigger value="overview">
             <BarChart3 className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -659,6 +660,11 @@ const AdminDashboard = () => {
             <UserPlus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Activations</span>
             <span className="sm:hidden">Act.</span>
+          </TabsTrigger>
+          <TabsTrigger value="registrations">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Inscriptions</span>
+            <span className="sm:hidden">Insc.</span>
           </TabsTrigger>
           <TabsTrigger value="users">
             <Users className="w-4 h-4 mr-2" />
@@ -899,6 +905,9 @@ const AdminDashboard = () => {
 
         <TabsContent value="activations" className="space-y-4">
           <PendingActivations />
+        </TabsContent>
+        <TabsContent value="registrations" className="space-y-4">
+          <RegistrationsPanel />
         </TabsContent>
         <TabsContent value="users" className="space-y-4">
           <Card>

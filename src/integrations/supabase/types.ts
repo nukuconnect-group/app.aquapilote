@@ -1825,6 +1825,8 @@ export type Database = {
           is_activated: boolean
           is_suspended: boolean | null
           needs_sensors: boolean
+          phone: string | null
+          production_units: string[] | null
           sensors_banner_dismissed_at: string | null
           suspended_at: string | null
           suspension_reason: string | null
@@ -1849,6 +1851,8 @@ export type Database = {
           is_activated?: boolean
           is_suspended?: boolean | null
           needs_sensors?: boolean
+          phone?: string | null
+          production_units?: string[] | null
           sensors_banner_dismissed_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
@@ -1873,6 +1877,8 @@ export type Database = {
           is_activated?: boolean
           is_suspended?: boolean | null
           needs_sensors?: boolean
+          phone?: string | null
+          production_units?: string[] | null
           sensors_banner_dismissed_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null

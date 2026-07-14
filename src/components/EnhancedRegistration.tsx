@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio } from 'lucide-react';
+import { Eye, EyeOff, Fish, Loader2, User as UserIcon, Mail, Phone, MapPin, Building2, KeyRound, Factory, Radio, ChevronsUpDown, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -16,6 +18,7 @@ import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
 import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
+import { ALL_COUNTRIES } from '@/lib/allCountries';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -54,7 +57,9 @@ const countryOptions = [
 
 const getPhonePrefix = (countryCode: string): string => {
   const country = countryOptions.find(c => c.code === countryCode);
-  return country?.phonePrefix || '';
+  if (country?.phonePrefix) return country.phonePrefix;
+  const world = ALL_COUNTRIES.find(c => c.code === countryCode);
+  return world?.phonePrefix || '';
 };
 
 const getCountryFlag = (countryCode: string): string => {
@@ -198,12 +203,16 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
   
   const handleCountryChange = (countryCode: string) => {
-    const selectedCountry = countryOptions.find(c => c.code === countryCode);
+    const selectedCountry =
+      countryOptions.find(c => c.code === countryCode) ||
+      ALL_COUNTRIES.find(c => c.code === countryCode);
     const phonePrefix = getPhonePrefix(countryCode);
     
     setFormData(prev => {
       const currentPhone = prev.phone.trim();
-      const hasOnlyPrefix = countryOptions.some(c => c.phonePrefix && currentPhone === c.phonePrefix);
+      const hasOnlyPrefix =
+        countryOptions.some(c => c.phonePrefix && currentPhone === c.phonePrefix) ||
+        ALL_COUNTRIES.some(c => c.phonePrefix && currentPhone === c.phonePrefix);
       const isEmpty = !currentPhone;
       
       return {
@@ -260,6 +269,12 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         {
           exploitation_type: formData.exploitationType || undefined,
           needs_sensors: formData.needsSensors,
+          company_name: formData.companyName.trim() || undefined,
+          company_address: formData.location.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          country: formData.country || undefined,
+          country_code: formData.countryCode || undefined,
+          production_units: formData.productionUnits,
         }
       );
       if (result.success) {
@@ -321,7 +336,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         {/* Fond mobile — bandeau image poissons en haut (identique à la page Connexion) */}
         <div className="md:hidden fixed inset-0 z-0 bg-slate-50 dark:bg-slate-950" aria-hidden="true" />
         <div
-          className="md:hidden fixed inset-x-0 top-0 h-40 z-0"
+          className="md:hidden fixed inset-x-0 top-0 h-28 z-0"
           style={{
             backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
@@ -329,9 +344,9 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
           }}
           aria-hidden="true"
         />
-        <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
+        <div className="md:hidden fixed inset-x-0 top-0 h-28 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
 
-        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 pt-44 pb-6 md:pt-8 md:pb-8 md:px-10 overflow-y-auto md:bg-slate-50">
+        <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 pt-24 pb-6 md:pt-8 md:pb-8 md:px-10 overflow-y-auto md:bg-slate-50">
          <div className="w-full max-w-xl md:mt-0">
           <div className="bg-white rounded-2xl shadow-lg md:shadow-xl border border-slate-200/70 overflow-hidden">
             <div className="p-6 sm:p-8">
@@ -396,18 +411,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                 </FieldWithIcon>
 
                 {/* Pays */}
-                <FieldWithIcon icon={<MapPin className="w-4 h-4" />} required>
-                  <Select value={formData.countryCode} onValueChange={handleCountryChange}>
-                    <SelectTrigger className="border-0 shadow-none pl-7 h-11 rounded-full bg-transparent focus:ring-0">
-                      <SelectValue placeholder={isDetectingLocation ? 'Détection…' : 'Sélectionnez le pays de résidence'} />
-                    </SelectTrigger>
-                    <SelectContent className="z-[2000]">
-                      {countryOptions.map(c => (
-                        <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FieldWithIcon>
+                <CountryCombobox
+                  value={formData.countryCode}
+                  onChange={handleCountryChange}
+                  detecting={isDetectingLocation}
+                />
 
                 {/* Nom de la ferme */}
                 <FieldWithIcon icon={<Building2 className="w-4 h-4" />} required>
@@ -578,5 +586,62 @@ const FieldWithIcon: React.FC<{ icon: React.ReactNode; required?: boolean; child
     </div>
   </div>
 );
+
+// Searchable country combobox — full ISO list with search fallback when
+// auto-detection fails or returns an unexpected country.
+const CountryCombobox: React.FC<{
+  value: string;
+  onChange: (code: string) => void;
+  detecting?: boolean;
+}> = ({ value, onChange, detecting }) => {
+  const [open, setOpen] = useState(false);
+  const selected = ALL_COUNTRIES.find(c => c.code === value);
+  return (
+    <FieldWithIcon icon={<MapPin className="w-4 h-4" />} required>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between pl-7 pr-4 h-11 rounded-full bg-transparent text-left text-sm text-slate-700 focus:outline-none"
+          >
+            <span className={selected ? '' : 'text-slate-400'}>
+              {selected
+                ? `${selected.flag} ${selected.name}`
+                : detecting
+                  ? 'Détection…'
+                  : 'Sélectionnez le pays de résidence'}
+            </span>
+            <ChevronsUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[--radix-popover-trigger-width] z-[2000]" align="start">
+          <Command>
+            <CommandInput placeholder="Rechercher un pays…" />
+            <CommandList>
+              <CommandEmpty>Aucun pays trouvé.</CommandEmpty>
+              <CommandGroup>
+                {ALL_COUNTRIES.map(c => (
+                  <CommandItem
+                    key={c.code}
+                    value={`${c.name} ${c.code}`}
+                    onSelect={() => {
+                      onChange(c.code);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${value === c.code ? 'opacity-100' : 'opacity-0'}`} />
+                    <span className="mr-2">{c.flag}</span>
+                    <span className="flex-1">{c.name}</span>
+                    <span className="text-xs text-slate-400">{c.phonePrefix}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </FieldWithIcon>
+  );
+};
 
 export default EnhancedRegistration;
