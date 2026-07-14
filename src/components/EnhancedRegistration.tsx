@@ -108,6 +108,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
+  const [showConfirmEmailDialog, setShowConfirmEmailDialog] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState('');
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
