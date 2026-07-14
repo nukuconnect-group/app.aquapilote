@@ -280,7 +280,7 @@ const UnitReportGenerator = () => {
     }
   };
 
-  const handleExport = (format: 'pdf' | 'excel' | 'word' | 'csv') => {
+  const handleExport = async (format: 'pdf' | 'excel' | 'word' | 'csv') => {
     setIsGenerating(true);
     
     try {
@@ -289,7 +289,7 @@ const UnitReportGenerator = () => {
 
       switch (format) {
         case 'pdf':
-          exportToPDF(data, filename);
+          await exportToPDF(data, filename);
           break;
         case 'excel':
           exportToExcel(data, filename);
