@@ -577,4 +577,61 @@ const FieldWithIcon: React.FC<{ icon: React.ReactNode; required?: boolean; child
   </div>
 );
 
+// Searchable country combobox — full ISO list with search fallback when
+// auto-detection fails or returns an unexpected country.
+const CountryCombobox: React.FC<{
+  value: string;
+  onChange: (code: string) => void;
+  detecting?: boolean;
+}> = ({ value, onChange, detecting }) => {
+  const [open, setOpen] = useState(false);
+  const selected = ALL_COUNTRIES.find(c => c.code === value);
+  return (
+    <FieldWithIcon icon={<MapPin className="w-4 h-4" />} required>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between pl-7 pr-4 h-11 rounded-full bg-transparent text-left text-sm text-slate-700 focus:outline-none"
+          >
+            <span className={selected ? '' : 'text-slate-400'}>
+              {selected
+                ? `${selected.flag} ${selected.name}`
+                : detecting
+                  ? 'Détection…'
+                  : 'Sélectionnez le pays de résidence'}
+            </span>
+            <ChevronsUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[--radix-popover-trigger-width] z-[2000]" align="start">
+          <Command>
+            <CommandInput placeholder="Rechercher un pays…" />
+            <CommandList>
+              <CommandEmpty>Aucun pays trouvé.</CommandEmpty>
+              <CommandGroup>
+                {ALL_COUNTRIES.map(c => (
+                  <CommandItem
+                    key={c.code}
+                    value={`${c.name} ${c.code}`}
+                    onSelect={() => {
+                      onChange(c.code);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${value === c.code ? 'opacity-100' : 'opacity-0'}`} />
+                    <span className="mr-2">{c.flag}</span>
+                    <span className="flex-1">{c.name}</span>
+                    <span className="text-xs text-slate-400">{c.phonePrefix}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </FieldWithIcon>
+  );
+};
+
 export default EnhancedRegistration;
