@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { CreditCard, Plus, Pause, Play, Ban, Trash2, CheckCircle, Loader2, Clock, History, Filter } from 'lucide-react';
+import { CreditCard, Plus, Pause, Play, Ban, Trash2, CheckCircle, Loader2, Clock, History, Filter, FlaskConical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -176,6 +176,24 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
     load();
   };
 
+  const simulateExpiration = async (id: string, userId: string) => {
+    if (!confirm("Simuler l'expiration de cet abonnement ? L'utilisateur sera redirigé vers /subscription à sa prochaine navigation.")) return;
+    const yesterday = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd');
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ status: 'expired', end_date: yesterday })
+      .eq('id', id);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'Expiration simulée',
+      description: "L'abonnement est marqué comme expiré. Rechargez le dashboard pour voir la redirection.",
+    });
+    load();
+  };
+
   const displayedSubs = subs.filter((s) => {
     if (historyFilter === 'active') return s.status === 'active' || s.status === 'trial';
     if (historyFilter === 'history') return s.status === 'expired' || s.status === 'cancelled';
@@ -256,6 +274,11 @@ const SubscriptionsPanel: React.FC<SubscriptionsPanelProps> = ({ users }) => {
                           {s.status === 'trial' && (
                             <Button size="sm" variant="outline" title="Prolonger l'essai de 15 jours" onClick={() => extendTrial(s.id, 15)}>
                               <Clock className="w-3.5 h-3.5 mr-1" /> +15j
+                            </Button>
+                          )}
+                          {(s.status === 'trial' || s.status === 'active') && (
+                            <Button size="icon" variant="ghost" title="Simuler l'expiration (test)" onClick={() => simulateExpiration(s.id, s.user_id)}>
+                              <FlaskConical className="w-4 h-4 text-purple-500" />
                             </Button>
                           )}
                           {s.status === 'active' ? (
