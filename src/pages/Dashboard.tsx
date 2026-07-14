@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import MobileNavigation from '@/components/MobileNavigation';
 import MobileMenuModal from '@/components/MobileMenuModal';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import GlobalSearchResults from '@/components/GlobalSearchResults';
 import OfflineDataManager from '@/components/OfflineDataManager';
 import IntelligentDashboard from '@/components/IntelligentDashboard';
 import ModernDashboard from '@/components/ModernDashboard';
