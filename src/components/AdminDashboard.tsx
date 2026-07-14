@@ -31,6 +31,7 @@ import SubscriptionsPanel from './admin/SubscriptionsPanel';
 import PendingActivations from './admin/PendingActivations';
 import RegistrationsPanel from './admin/RegistrationsPanel';
 import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
+import AccessStatsPanel from './admin/AccessStatsPanel';
 
 interface UserProfile {
   id: string;
