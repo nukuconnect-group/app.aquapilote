@@ -271,16 +271,14 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
 
     {/* Settings Sidebar */}
     <Sheet open={showSettings} onOpenChange={setShowSettings}>
-      <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto p-4 sm:p-6">
+      <SheetContent side="right" className="w-[88%] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto p-4 sm:p-6">
         <SheetHeader>
           <SheetTitle>{t('settings_profile')}</SheetTitle>
         </SheetHeader>
         
         <div className="space-y-6 mt-6">
-          {/* Indicateur de connexion */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <ConnectionStatusIndicator showTextOnMobile />
-          </div>
+          {/* Statut d'abonnement / Essai gratuit */}
+          <TrialStatusCard />
 
           <Separator />
 
@@ -300,8 +298,10 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
                 </div>
               </div>
-              {/* Statut d'abonnement / Essai gratuit */}
-              <TrialStatusCard />
+              {/* Indicateur de connexion */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <ConnectionStatusIndicator showTextOnMobile />
+              </div>
             </div>
           )}
 
