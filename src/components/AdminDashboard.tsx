@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +83,14 @@ const AdminDashboard = () => {
   const [filterCountry, setFilterCountry] = useState<string>('all');
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('section') || 'overview';
+  const setActiveTab = (v: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('module', 'admin');
+    next.set('section', v);
+    setSearchParams(next, { replace: true });
+  };
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
