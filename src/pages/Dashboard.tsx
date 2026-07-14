@@ -301,6 +301,12 @@ const Dashboard: React.FC = () => {
 
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
+
+        {/* Résultats de recherche globale (module quick-nav) */}
+        <GlobalSearchResults
+          onNavigate={handleTabChange}
+          canAccessTab={(id) => canAccessTab(id)}
+        />
       </div>
     </SidebarProvider>
   );
