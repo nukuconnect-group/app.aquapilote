@@ -47,7 +47,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           <div className="animate-fade-in">
             <img 
               src={aquaPilotLogo} 
-              alt="AQUA PILOT" 
+              alt="AQUAPILOTE" 
               className="w-40 h-40 mx-auto drop-shadow-2xl rounded-3xl animate-pulse"
             />
           </div>
