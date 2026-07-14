@@ -300,7 +300,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
               </div>
               {/* Indicateur de connexion */}
               <div className="bg-muted/50 rounded-lg p-4">
-                <ConnectionStatusIndicator showTextOnMobile />
+                <ConnectionStatusIndicator detailed />
               </div>
             </div>
           )}
