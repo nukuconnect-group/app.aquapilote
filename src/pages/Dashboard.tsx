@@ -38,7 +38,6 @@ import SupportModule from '@/components/SupportModule';
 import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
-import TrialStatusCard from '@/components/subscription/TrialStatusCard';
 import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info, Loader2 } from 'lucide-react';
@@ -282,10 +281,7 @@ const Dashboard: React.FC = () => {
                   Chargement des permissions…
                 </div>
               ) : (
-                <>
-                  <TrialStatusCard />
-                  <SubscriptionGuard>{renderContent()}</SubscriptionGuard>
-                </>
+                <SubscriptionGuard>{renderContent()}</SubscriptionGuard>
               )}
             </div>
           </main>
