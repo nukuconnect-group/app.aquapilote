@@ -76,7 +76,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({
               id="privacy-accept"
               checked={isAccepted}
               onCheckedChange={checked => setIsAccepted(checked === true)}
-              className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+              className="h-5 w-5 shrink-0 aspect-square rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
             <span className="text-sm font-medium text-slate-700">
               J'ai lu et j'accepte la politique de confidentialité d'AquaPilote
