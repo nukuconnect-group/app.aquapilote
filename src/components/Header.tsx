@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoginDialog from '@/components/LoginDialog';
@@ -390,26 +390,20 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
             <h3 className="font-semibold text-sm">{t('notifications')}</h3>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label htmlFor="email-notif" className="text-sm cursor-pointer">
-                  {t('email_notifications')}
-                </Label>
-                <Switch id="email-notif" defaultChecked />
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label htmlFor="push-notif" className="text-sm cursor-pointer">
-                  {t('push_notifications')}
-                </Label>
-                <Switch id="push-notif" defaultChecked />
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label htmlFor="alerts-notif" className="text-sm cursor-pointer">
-                  {t('system_alerts')}
-                </Label>
-                <Switch id="alerts-notif" defaultChecked />
-              </div>
+              <label htmlFor="email-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <span className="text-sm">{t('email_notifications')}</span>
+                <Checkbox id="email-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+              </label>
+
+              <label htmlFor="push-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <span className="text-sm">{t('push_notifications')}</span>
+                <Checkbox id="push-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+              </label>
+
+              <label htmlFor="alerts-notif" className="flex items-center justify-between p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <span className="text-sm">{t('system_alerts')}</span>
+                <Checkbox id="alerts-notif" defaultChecked className="h-5 w-5 rounded-[4px] border-2" />
+              </label>
             </div>
           </div>
 
