@@ -186,7 +186,8 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     t('pre_grow_out') || 'Pré-grossissement', 
     t('nursery') || 'Nurserie', 
     t('reproduction') || 'Reproduction', 
-    t('preventive_quarantine') || 'Quarantaine'
+    t('preventive_quarantine') || 'Quarantaine',
+    t('shrimp_culture') || 'Crevette culture'
   ];
   
   const sectorOptions = [
@@ -302,6 +303,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
     'Pisciculture',
     'Commercialisation / Conservation',
     'Aquaculture d\'eau douce',
+    'Crevette culture',
   ];
 
   const toggleBreedingType = (value: string, checked: boolean) => {
