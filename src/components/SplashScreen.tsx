@@ -62,7 +62,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         
         {/* Titre avec animation */}
         <h1 className="text-6xl font-bold text-white mb-4 tracking-wide animate-fade-in drop-shadow-lg">
-          AQUA PILOT
+          AQUAPILOTE
         </h1>
         
         <p className="text-2xl text-blue-100 font-medium mb-12 animate-fade-in">
