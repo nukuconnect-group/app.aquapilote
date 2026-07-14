@@ -281,6 +281,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         }
       );
       if (result.success) {
+        setConfirmedEmail(formData.email.trim().toLowerCase());
         setShowConfirmEmailDialog(true);
       } else {
         toast({ title: '❌ Erreur d\'inscription', description: result.error || 'Une erreur est survenue', variant: 'destructive' });
