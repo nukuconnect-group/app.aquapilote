@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import LoginDialog from '@/components/LoginDialog';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import ProfileDialog from '@/components/ProfileDialog';
+import TrialStatusCard from '@/components/subscription/TrialStatusCard';
+import { useCurrentSubscription, getPlanLabel } from '@/hooks/useCurrentSubscription';
 import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator';
 import TaskAlertIndicator from '@/components/TaskAlertIndicator';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,6 +49,7 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
     toast
   } = useToast();
   const { theme, setTheme } = useTheme();
+  const { subscription } = useCurrentSubscription();
 
   const handleLogin = () => {
     if (!isAuthenticated) {
@@ -203,6 +206,17 @@ const Header = ({ onNavigate, onOpenMobileMenu }: { onNavigate?: (tab: string) =
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user?.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    {subscription && (
+                      <div className="mt-2 flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
+                        <Sparkles className="w-3 h-3 text-primary shrink-0" />
+                        <span className="text-[11px] font-medium leading-none truncate">
+                          {getPlanLabel(subscription.plan)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground leading-none ml-auto shrink-0">
+                          {subscription.isExpired ? 'expiré' : `${subscription.days_remaining} j`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
