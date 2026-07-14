@@ -203,12 +203,16 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
   
   const handleCountryChange = (countryCode: string) => {
-    const selectedCountry = countryOptions.find(c => c.code === countryCode);
+    const selectedCountry =
+      countryOptions.find(c => c.code === countryCode) ||
+      ALL_COUNTRIES.find(c => c.code === countryCode);
     const phonePrefix = getPhonePrefix(countryCode);
     
     setFormData(prev => {
       const currentPhone = prev.phone.trim();
-      const hasOnlyPrefix = countryOptions.some(c => c.phonePrefix && currentPhone === c.phonePrefix);
+      const hasOnlyPrefix =
+        countryOptions.some(c => c.phonePrefix && currentPhone === c.phonePrefix) ||
+        ALL_COUNTRIES.some(c => c.phonePrefix && currentPhone === c.phonePrefix);
       const isEmpty = !currentPhone;
       
       return {
@@ -265,6 +269,12 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
         {
           exploitation_type: formData.exploitationType || undefined,
           needs_sensors: formData.needsSensors,
+          company_name: formData.companyName.trim() || undefined,
+          company_address: formData.location.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
+          country: formData.country || undefined,
+          country_code: formData.countryCode || undefined,
+          production_units: formData.productionUnits,
         }
       );
       if (result.success) {
