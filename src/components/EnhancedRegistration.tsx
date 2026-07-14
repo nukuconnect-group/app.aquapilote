@@ -314,6 +314,7 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
   };
 
   return (
+    <>
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent hideClose className="!max-w-none w-screen h-screen p-0 overflow-hidden border-0 flex items-stretch justify-center md:justify-end bg-transparent md:bg-slate-50">
         {/* Image à gauche (desktop) */}
