@@ -57,7 +57,9 @@ const countryOptions = [
 
 const getPhonePrefix = (countryCode: string): string => {
   const country = countryOptions.find(c => c.code === countryCode);
-  return country?.phonePrefix || '';
+  if (country?.phonePrefix) return country.phonePrefix;
+  const world = ALL_COUNTRIES.find(c => c.code === countryCode);
+  return world?.phonePrefix || '';
 };
 
 const getCountryFlag = (countryCode: string): string => {
