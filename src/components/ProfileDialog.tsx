@@ -194,46 +194,37 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({ isOpen, onClose }) => {
           <TrialStatusCard />
 
           {/* Avatar */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <Avatar className="h-32 w-32">
-                <AvatarImage 
-                  src={avatarPreview || user.avatar} 
-                  alt={user.name} 
-                />
-                <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute bottom-0 right-0 rounded-full h-10 w-10"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Camera className="h-5 w-5" />
-                )}
-              </Button>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-            </div>
-            
-            <p className="text-sm text-muted-foreground text-center">
-              {t('click_camera_to_change')}
-              <br />
-              <span className="text-xs">JPG, PNG, WEBP (max 5MB)</span>
-            </p>
+          <div className="flex flex-col items-center gap-3">
+            <Avatar className="h-28 w-28 sm:h-32 sm:w-32 ring-2 ring-border">
+              <AvatarImage src={avatarPreview || user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="rounded-md"
+            >
+              {isUploading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('saving')}</>
+              ) : (
+                <><Camera className="mr-2 h-4 w-4" /> {t('click_camera_to_change')}</>
+              )}
+            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP (max 5MB)</p>
           </div>
 
           {/* Informations */}

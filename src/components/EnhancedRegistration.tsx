@@ -15,6 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import aquapiloteLogo from '@/assets/aquapilote-logo.png';
 import registerBgAsset from '@/assets/aquapilote-register-bg.png.asset.json';
 import loginBgAsset from '@/assets/aquapilote-login-bg.png.asset.json';
+import fishColumnsMobile from '@/assets/fish-columns-mobile.jpg';
 
 interface EnhancedRegistrationProps {
   onClose: () => void;
@@ -317,17 +318,18 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
             <p className="mt-2 text-sm xl:text-base text-white/80 max-w-md">Créez votre compte et pilotez votre pisciculture en toute simplicité.</p>
           </div>
         </div>
-        {/* Fond mobile plein écran — MÊME image que la page Connexion, avec voile blanc pour éviter les ombres noires */}
+        {/* Fond mobile — bandeau image poissons en haut (identique à la page Connexion) */}
+        <div className="md:hidden fixed inset-0 z-0 bg-slate-50 dark:bg-slate-950" aria-hidden="true" />
         <div
-          className="md:hidden fixed inset-0 z-0 bg-white"
+          className="md:hidden fixed inset-x-0 top-0 h-40 z-0"
           style={{
-            backgroundImage: `url(${loginBgAsset.url})`,
+            backgroundImage: `url(${fishColumnsMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
           aria-hidden="true"
         />
-        <div className="md:hidden fixed inset-0 bg-white/85 backdrop-blur-[2px] z-[1]" aria-hidden="true" />
+        <div className="md:hidden fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-900/40 to-slate-50 dark:to-slate-950 z-[1]" aria-hidden="true" />
 
         <div className="relative z-10 w-full md:w-1/2 flex items-start justify-center px-4 py-4 md:px-10 md:py-8 overflow-y-auto md:bg-slate-50">
          <div className="w-full max-w-xl mt-2 md:mt-0">
@@ -465,17 +467,23 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
                     <Fish className="w-4 h-4 text-blue-500" />
                     Type d'élevage <span className="text-pink-500">*</span>
                   </Label>
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-2">
-                     {breedingTypes.map(type => (
-                       <label key={type} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 rounded-md px-2 py-1 transition-colors">
-                         <Checkbox
-                           checked={formData.productionUnits.includes(type)}
-                           onCheckedChange={(checked) => toggleBreedingType(type, checked === true)}
-                           className="h-4 w-4 rounded-[3px] border border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                         />
-                         <span>{type}</span>
-                       </label>
-                     ))}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                     {breedingTypes.map(type => {
+                       const active = formData.productionUnits.includes(type);
+                       return (
+                         <label
+                           key={type}
+                           className={`flex items-center gap-3 text-sm rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${active ? 'border-blue-500 bg-blue-50 text-slate-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'}`}
+                         >
+                           <Checkbox
+                             checked={active}
+                             onCheckedChange={(checked) => toggleBreedingType(type, checked === true)}
+                             className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                           />
+                           <span className="font-medium">{type}</span>
+                         </label>
+                       );
+                     })}
                    </div>
                 </div>
 
@@ -509,11 +517,11 @@ const EnhancedRegistration: React.FC<EnhancedRegistrationProps> = ({
 
                 {/* Besoin de capteurs IoT */}
                 <div className="pt-2">
-                   <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors">
+                   <label className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${formData.needsSensors ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30'}`}>
                      <Checkbox
                        checked={formData.needsSensors}
                        onCheckedChange={(checked) => handleInputChange('needsSensors', checked === true)}
-                       className="h-4 w-4 rounded-[3px] border border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                       className="h-5 w-5 rounded-[4px] border-2 border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                      />
                     <div className="flex items-start gap-2 flex-1">
                       <Radio className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
