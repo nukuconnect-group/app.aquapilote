@@ -43,7 +43,16 @@ interface AuthContextType {
   cancelMFALogin: () => void;
   mfaChallenge: MFAChallenge | null;
   logout: () => void;
-  register: (name: string, email: string, password: string, subscriptionPlan?: string, extra?: { exploitation_type?: string; needs_sensors?: boolean }) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, subscriptionPlan?: string, extra?: {
+    exploitation_type?: string;
+    needs_sensors?: boolean;
+    company_name?: string;
+    company_address?: string;
+    phone?: string;
+    country?: string;
+    country_code?: string;
+    production_units?: string[];
+  }) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<boolean>;
   isLoading: boolean;
   hasSeenOnboarding: boolean;
@@ -515,7 +524,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.signOut();
   };
 
-  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial', extra?: { exploitation_type?: string; needs_sensors?: boolean }): Promise<{ success: boolean; error?: string }> => {
+  const register = async (name: string, email: string, password: string, subscriptionPlan: string = 'trial', extra?: {
+    exploitation_type?: string;
+    needs_sensors?: boolean;
+    company_name?: string;
+    company_address?: string;
+    phone?: string;
+    country?: string;
+    country_code?: string;
+    production_units?: string[];
+  }): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     // Validation basique
@@ -575,7 +593,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: name.trim(),
             subscription_plan: subscriptionPlan,
             exploitation_type: extra?.exploitation_type,
-            needs_sensors: extra?.needs_sensors ?? false
+            needs_sensors: extra?.needs_sensors ?? false,
+            company_name: extra?.company_name,
+            company_address: extra?.company_address,
+            phone: extra?.phone,
+            country: extra?.country,
+            country_code: extra?.country_code,
+            production_units: extra?.production_units ?? []
           }
         }
       });
