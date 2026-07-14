@@ -18,7 +18,7 @@ export interface CurrentSubscription {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  trial_discovery: 'Essai gratuit',
+  trial_discovery: 'Essai gratuit (1 mois)',
   annual_basic: 'Annuel Basic',
   annual_pro: 'Annuel Pro',
   annual_enterprise: 'Annuel Enterprise',
