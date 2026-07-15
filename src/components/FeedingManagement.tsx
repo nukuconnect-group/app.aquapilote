@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell, Download, User } from 'lucide-react';
+import { BarChart3, Plus, TrendingUp, Activity, Clock, AlertTriangle, Utensils, Printer, Mail, History, Package, Bell, Download, User, ClipboardList } from 'lucide-react';
 import SmartAlerts from './alerts/SmartAlerts';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import ProductionUnitSelector from './ProductionUnitSelector';
@@ -18,6 +18,7 @@ import FeedStockManager from './feeding/FeedStockManager';
 import FeedingChart from './feeding/FeedingChart';
 import FeedingPlanScheduler from './feeding/FeedingPlanScheduler';
 import FeedingAnalyticsDashboard from './feeding/FeedingAnalyticsDashboard';
+import FeedingSheetsManager from './feeding/FeedingSheetsManager';
 import { generateFeedingRecordHTML, printHTML } from '@/lib/feedingPrintUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useFeedStocks } from '@/hooks/useFeedStocks';
@@ -362,6 +363,11 @@ const FeedingManagement = () => {
               <span className="hidden sm:inline">Historique</span>
               <span className="sm:hidden">Hist.</span>
             </TabsTrigger>
+            <TabsTrigger value="sheets" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
+              <ClipboardList className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Fiches</span>
+              <span className="sm:hidden">Fiches</span>
+            </TabsTrigger>
             <TabsTrigger value="planning" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">
               <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Planification</span>
@@ -384,6 +390,10 @@ const FeedingManagement = () => {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="sheets" className="space-y-4">
+          <FeedingSheetsManager unitId={activeUnit.id} unitName={activeUnit.name} />
+        </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
           {/* Export button for feeding history */}

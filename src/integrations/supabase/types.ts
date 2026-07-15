@@ -1153,6 +1153,75 @@ export type Database = {
           },
         ]
       }
+      feeding_sheets: {
+        Row: {
+          created_at: string
+          cycle_id: string | null
+          days: string[]
+          end_date: string | null
+          feed_type: string
+          frequency: string
+          id: string
+          infrastructure_id: string | null
+          is_active: boolean
+          observations: string | null
+          period: string
+          quantity: number
+          responsible_name: string | null
+          start_date: string
+          time: string
+          title: string
+          unit: string
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id?: string | null
+          days?: string[]
+          end_date?: string | null
+          feed_type: string
+          frequency?: string
+          id?: string
+          infrastructure_id?: string | null
+          is_active?: boolean
+          observations?: string | null
+          period?: string
+          quantity?: number
+          responsible_name?: string | null
+          start_date?: string
+          time: string
+          title: string
+          unit?: string
+          unit_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string | null
+          days?: string[]
+          end_date?: string | null
+          feed_type?: string
+          frequency?: string
+          id?: string
+          infrastructure_id?: string | null
+          is_active?: boolean
+          observations?: string | null
+          period?: string
+          quantity?: number
+          responsible_name?: string | null
+          start_date?: string
+          time?: string
+          title?: string
+          unit?: string
+          unit_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fish_species: {
         Row: {
           created_at: string
@@ -1898,12 +1967,18 @@ export type Database = {
         Row: {
           avatar_url: string | null
           company_address: string | null
+          company_cif_nif: string | null
           company_email: string | null
+          company_legal_representative: string | null
           company_logo_url: string | null
           company_name: string | null
           company_phone: string | null
+          company_rccm: string | null
           company_registration_number: string | null
+          company_signature_url: string | null
+          company_stamp_url: string | null
           company_tax_id: string | null
+          company_website: string | null
           country: string | null
           country_code: string | null
           created_at: string
@@ -1924,12 +1999,18 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           company_address?: string | null
+          company_cif_nif?: string | null
           company_email?: string | null
+          company_legal_representative?: string | null
           company_logo_url?: string | null
           company_name?: string | null
           company_phone?: string | null
+          company_rccm?: string | null
           company_registration_number?: string | null
+          company_signature_url?: string | null
+          company_stamp_url?: string | null
           company_tax_id?: string | null
+          company_website?: string | null
           country?: string | null
           country_code?: string | null
           created_at?: string
@@ -1950,12 +2031,18 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           company_address?: string | null
+          company_cif_nif?: string | null
           company_email?: string | null
+          company_legal_representative?: string | null
           company_logo_url?: string | null
           company_name?: string | null
           company_phone?: string | null
+          company_rccm?: string | null
           company_registration_number?: string | null
+          company_signature_url?: string | null
+          company_stamp_url?: string | null
           company_tax_id?: string | null
+          company_website?: string | null
           country?: string | null
           country_code?: string | null
           created_at?: string
