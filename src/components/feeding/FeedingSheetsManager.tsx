@@ -71,7 +71,7 @@ const emptyForm = (unitId: string): Partial<FeedingSheet> => ({
 export default function FeedingSheetsManager({ unitId, unitName }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { infrastructures, getInfrastructuresByUnit } = useProductionUnits();
+  const { infrastructures } = useProductionUnits();
   const { companyInfo } = useSettings();
 
   const [sheets, setSheets] = useState<FeedingSheet[]>([]);
@@ -83,8 +83,8 @@ export default function FeedingSheetsManager({ unitId, unitName }: Props) {
   const [filterInfra, setFilterInfra] = useState<string>('all');
 
   const unitInfras = useMemo(
-    () => (getInfrastructuresByUnit ? getInfrastructuresByUnit(unitId) : infrastructures.filter((i: any) => i.unitId === unitId)),
-    [infrastructures, unitId, getInfrastructuresByUnit],
+    () => infrastructures.filter((i: any) => i.unitId === unitId),
+    [infrastructures, unitId],
   );
 
   const fetchSheets = async () => {
