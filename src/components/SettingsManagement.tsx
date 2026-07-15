@@ -1010,6 +1010,48 @@ const SettingsManagement = () => {
                   disabled={companyLocked}
                 />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm">CIF / NIF</Label>
+                  <Input
+                    value={companyInfo.cifNif}
+                    onChange={e => setCompanyInfo({ cifNif: e.target.value })}
+                    placeholder="CIF / NIF"
+                    className="mt-1.5"
+                    disabled={companyLocked}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">RCCM</Label>
+                  <Input
+                    value={companyInfo.rccm}
+                    onChange={e => setCompanyInfo({ rccm: e.target.value })}
+                    placeholder="Registre du commerce"
+                    className="mt-1.5"
+                    disabled={companyLocked}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{language === 'fr' ? 'Site web' : 'Website'}</Label>
+                  <Input
+                    value={companyInfo.website}
+                    onChange={e => setCompanyInfo({ website: e.target.value })}
+                    placeholder="https://..."
+                    className="mt-1.5"
+                    disabled={companyLocked}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{language === 'fr' ? 'Responsable légal' : 'Legal representative'}</Label>
+                  <Input
+                    value={companyInfo.legalRepresentative}
+                    onChange={e => setCompanyInfo({ legalRepresentative: e.target.value })}
+                    placeholder={language === 'fr' ? 'Nom du responsable légal' : 'Legal representative name'}
+                    className="mt-1.5"
+                    disabled={companyLocked}
+                  />
+                </div>
+              </div>
               {companyLocked && (
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
                   Les informations de l'entreprise sont définies par l'administrateur principal. Vous pouvez modifier votre nom et votre mot de passe dans la section <strong>Profil</strong>.
