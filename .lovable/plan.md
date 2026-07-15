@@ -1,61 +1,75 @@
-## Plan de refonte (7 lots, dans l'ordre validé)
 
-Chaque lot est livré et vérifié avant de passer au suivant. Je vous montre le résultat, vous validez, on enchaîne.
+# Plan des corrections et améliorations
 
----
+Voici le plan pour les 4 axes demandés. Je propose de traiter dans cet ordre car il y a des dépendances (les infos entreprise doivent être sauvegardées avant d'être utilisables dans PDF).
 
-### Lot 1 — Admin : statistiques abonnés + gestion utilisateurs avancée
-- Nouvelle carte "Statistiques d'accès" dans l'admin :
-  - Nombre total d'utilisateurs, actifs 7j / 30j, connectés aujourd'hui (via `user_sessions`)
-  - Répartition par plan d'abonnement (trial / basic / pro / enterprise)
-  - Graphique des inscriptions sur 30 jours
-- Refonte du sous-module "Utilisateurs" :
-  - Vue tableau responsive avec recherche + filtres (plan, statut, activé)
-  - Actions par ligne : voir profil, gérer unités (activer/désactiver, assigner à membres d'équipe), renvoyer email d'activation, envoyer lien de réinitialisation mot de passe, régénérer mot de passe temporaire, suspendre/réactiver
-  - Nouvelle edge function `admin-reset-user-password` (envoie lien Supabase `resetPasswordForEmail`)
-  - Nouvelle edge function `admin-regenerate-password` (génère un mot de passe temp + envoie par email)
+## 1. Module Comptabilité — ligne de chiffres avant les graphiques
 
-### Lot 2 — Comptabilité : graphiques pro d'abord
-- Réorganisation de `AccountingDashboard` : bandeau graphiques en tête (courbe CA/dépenses/marge sur 12 mois, camembert répartition dépenses, barres cash-flow mensuel, ratio de rentabilité), puis KPIs chiffrés, puis tableaux
-- Style "cabinet comptable" : palette sobre, légendes claires, tooltips détaillés
+Dans `AccountingDashboard.tsx`, ajouter une rangée de KPI cards en haut (avant les graphiques) affichant :
+- Chiffre d'affaires total
+- Total dépenses
+- Bénéfice net
+- Marge (%)
+- Trésorerie courante
 
-### Lot 3 — Responsive : cartes d'unités
-- Correction du débordement des noms d'unités sur mobile (`ProductionUnitsManagement` + `InfrastructureCard`) : `truncate`, `min-w-0`, grilles adaptatives, badges qui passent à la ligne
+Format horizontal, responsive (grid 2 cols mobile → 5 cols desktop), avec icônes et variations vs mois précédent.
 
-### Lot 4 — Support client temps réel
-- Activation de Realtime sur `support_messages` et `support_tickets`
-- Souscription live dans `SupportModule` et côté admin : nouveaux messages/tickets apparaissent instantanément, indicateur "en train d'écrire" simple, badge non-lus qui se met à jour
-- Notification toast à l'admin sur nouveau ticket
+## 2. Paramètres Entreprise — persistance complète
 
-### Lot 5 — RH : contrats de travail avancés
-- Nouvelle table `employment_contracts` (type CDI/CDD/stage/prestation, dates, salaire, période d'essai, clauses, statut, signature)
-- CRUD dans `HRManagement` avec formulaire multi-étapes
-- Génération PDF du contrat (mise en page pro, en-tête entreprise, articles)
-- Historique des contrats par employé, alertes fin de CDD
+**Problème :** les infos entreprise ne persistent pas correctement.
 
-### Lot 6 — Module hors-ligne : installer PWA
-- Bouton "Installer l'application" bien visible dans `OfflineDataManager`
-- Instructions par plateforme (Android/iOS/Desktop) quand `beforeinstallprompt` n'est pas dispo
-- Statut : "Installée" / "Non installée" détecté via `display-mode: standalone`
+**Actions :**
+- Étendre la table `profiles` (ou créer `company_settings`) avec tous les champs manquants : `logo_url`, `stamp_url`, `signature_url`, `cif_nif`, `rccm`, `website`, `legal_representative` (les champs `company_name`, `company_address`, `phone`, `email` existent déjà sur `profiles`).
+- Créer un hook `useCompanyInfo()` qui charge/sauvegarde ces infos depuis Supabase (plus de localStorage seul).
+- Refondre l'onglet Entreprise dans `SettingsManagement.tsx` : upload logo/cachet/signature vers bucket `company-logos` + affichage aperçu.
+- Mettre à jour `companyHeaderUtils.ts` pour inclure cachet + signature dans les PDF.
+- Brancher `useCompanyInfo` sur tous les générateurs de documents : rapports (`reportExportUtils.ts`), factures/reçus (`salesDocumentUtils.ts`), payslips (`payslipGenerator.ts`), fiches de pêche (`controlFishingPdf.ts`), exports alimentation (`feedingPrintUtils.ts`), etc.
 
-### Lot 7 — Rapports auto : PDF professionnels
-- Refonte du générateur (`reportExportUtils` + `UnitReportGenerator`) avec jsPDF + autotable :
-  - Page de couverture (logo entreprise, période, unité)
-  - Sommaire cliquable
-  - Sections : synthèse exécutive, indicateurs clés, graphiques (via html2canvas), tableaux détaillés, annexes
-  - En-tête/pied de page sur chaque page (n° page, date, entreprise)
-  - Signature et cachet en fin
-- 6 types de rapports : mensuel, cycle production, financier, cheptel, alimentation, sanitaire
+## 3. Mobile — défilement complet sur toutes les pages
 
----
+**Problème :** contenu coupé en bas sur mobile (hauteurs fixes / overflow-hidden mal placés).
 
-### Détails techniques
+**Actions :**
+- Auditer `MainLayout.tsx` et corriger les containers avec `h-screen` / `overflow-hidden` non compensés par `pb-safe`.
+- Ajouter un padding-bottom systémique (`pb-24 md:pb-8`) sur les conteneurs de module pour tenir compte de la barre de navigation mobile fixe.
+- Vérifier `MobileNavigation.tsx` : hauteur réservée dans le layout via `env(safe-area-inset-bottom)`.
+- Passer en revue les modules signalés : Comptabilité, RH, Alimentation, Rapports, Ventes, Achats — s'assurer que chaque page racine utilise `min-h-screen` + scroll natif et pas de `overflow-hidden` global.
 
-- Chaque edge function admin vérifie `has_role(auth.uid(), 'admin')` avant exécution
-- Realtime : `ALTER PUBLICATION supabase_realtime ADD TABLE public.support_messages, public.support_tickets` + politiques RLS déjà en place
-- Contrats : RLS `user_id = auth.uid()` + accès team members via `is_team_member_of`
-- PDF : réutilise `companyHeaderUtils` existant pour la charte
+## 4. Module Alimentation — Fiches d'alimentation
 
----
+Nouvelle sous-section "Fiches d'alimentation" dans `FeedingManagement.tsx` :
 
-**Question rapide avant de démarrer le Lot 1 :** je démarre maintenant sur le Lot 1 (Admin) ? Ou vous préférez que je regroupe Lot 3 (responsive unités — rapide, ~15 min) avec le Lot 1 pour livrer les deux ensemble ?
+**Modèle de données** (nouvelle table `feeding_sheets`) :
+- `unit_id`, `infrastructure_id`, `title`, `period` (matin/midi/soir), `time`, `feed_type`, `quantity`, `unit`, `responsible_name`, `notes`, `frequency` (daily/weekly/monthly), `days[]`, `is_active`, `start_date`, `end_date`
+
+**UI :**
+- Liste des fiches par infrastructure avec filtres
+- Formulaire de création/édition
+- Génération auto de programme journalier/hebdo/mensuel (vue calendrier ou tableau)
+- Bouton Imprimer / Export PDF (via `feedingPrintUtils.ts` étendu)
+- Bouton Partager (WhatsApp/Email lien)
+- Validation d'une distribution → crée un `feeding_record` lié à la fiche
+- Historique des distributions par fiche
+- Design mobile-first
+
+**RLS :** policies user-scoped standard + accès team_members via `team_member_has_unit_access`.
+
+## Détails techniques
+
+- Une seule migration pour : extension `profiles` (colonnes manquantes) + nouvelle table `feeding_sheets` + GRANTs + RLS.
+- Hook réutilisable `useCompanyInfo()` avec cache React Query pour éviter refetch.
+- Uploads (logo/cachet/signature) vers bucket `company-logos` (public existant).
+- PDFs : refactor de `generateCompanyHeaderHTML` pour accepter cachet + signature en pied de page.
+
+## Ordre d'implémentation
+
+1. Migration DB (profils étendus + `feeding_sheets`)
+2. Hook `useCompanyInfo` + refonte onglet Entreprise
+3. Branchement infos entreprise dans tous les générateurs PDF
+4. KPI cards Comptabilité
+5. Fix scroll mobile global
+6. Module Fiches d'alimentation (UI + génération + PDF + partage)
+
+## Confirmation
+
+C'est un chantier substantiel (~15-20 fichiers modifiés/créés). Confirmez-vous ce plan, ou souhaitez-vous que je priorise un axe en particulier d'abord (ex: Paramètres Entreprise seul, ou Alimentation seul) ?
