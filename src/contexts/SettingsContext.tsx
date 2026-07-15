@@ -128,7 +128,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Charger les informations de l'entreprise (isolées par utilisateur)
       supabase.auth
         .getSession()
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           const uid = data.session?.user?.id ?? null;
           setCompanyInfoUserId(uid);
 
@@ -139,6 +139,47 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               setCompanyInfoState({ ...defaultCompanyInfo, ...JSON.parse(savedCompanyInfo) });
             } catch {
               console.error('Error parsing company info');
+            }
+          }
+
+          // Load authoritative company info from Supabase profile
+          if (uid) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('company_name, company_address, company_phone, company_email, company_logo_url, company_registration_number, company_tax_id, company_stamp_url, company_signature_url, company_cif_nif, company_rccm, company_website, company_legal_representative')
+                .eq('id', uid)
+                .maybeSingle();
+              if (profile) {
+                const remote: CompanyInfo = {
+                  ...defaultCompanyInfo,
+                  name: profile.company_name || '',
+                  address: profile.company_address || '',
+                  phone: profile.company_phone || '',
+                  email: profile.company_email || '',
+                  logoUrl: profile.company_logo_url || '',
+                  registrationNumber: profile.company_registration_number || '',
+                  taxId: profile.company_tax_id || '',
+                  stampUrl: (profile as any).company_stamp_url || '',
+                  signatureUrl: (profile as any).company_signature_url || '',
+                  cifNif: (profile as any).company_cif_nif || '',
+                  rccm: (profile as any).company_rccm || '',
+                  website: (profile as any).company_website || '',
+                  legalRepresentative: (profile as any).company_legal_representative || '',
+                };
+                // Merge, remote takes priority for non-empty fields
+                setCompanyInfoState(prev => {
+                  const merged: CompanyInfo = { ...prev };
+                  (Object.keys(remote) as (keyof CompanyInfo)[]).forEach(k => {
+                    const v = remote[k];
+                    if (v !== '' && v !== null && v !== undefined) (merged as any)[k] = v;
+                  });
+                  try { localStorage.setItem(scopedKey, JSON.stringify(merged)); } catch {}
+                  return merged;
+                });
+              }
+            } catch (e) {
+              console.warn('Could not load company info from profile:', e);
             }
           }
         })
@@ -260,6 +301,33 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error('Error saving company info:', error);
     }
     setCompanyInfoState(newInfo);
+
+    // Persist text fields to Supabase profile (async, non-blocking)
+    if (companyInfoUserId) {
+      const dbPatch: Record<string, any> = {};
+      if ('name' in info) dbPatch.company_name = info.name || null;
+      if ('address' in info) dbPatch.company_address = info.address || null;
+      if ('phone' in info) dbPatch.company_phone = info.phone || null;
+      if ('email' in info) dbPatch.company_email = info.email || null;
+      if ('logoUrl' in info) dbPatch.company_logo_url = info.logoUrl || null;
+      if ('registrationNumber' in info) dbPatch.company_registration_number = info.registrationNumber || null;
+      if ('taxId' in info) dbPatch.company_tax_id = info.taxId || null;
+      if ('stampUrl' in info) dbPatch.company_stamp_url = info.stampUrl || null;
+      if ('signatureUrl' in info) dbPatch.company_signature_url = info.signatureUrl || null;
+      if ('cifNif' in info) dbPatch.company_cif_nif = info.cifNif || null;
+      if ('rccm' in info) dbPatch.company_rccm = info.rccm || null;
+      if ('website' in info) dbPatch.company_website = info.website || null;
+      if ('legalRepresentative' in info) dbPatch.company_legal_representative = info.legalRepresentative || null;
+      if (Object.keys(dbPatch).length > 0) {
+        supabase
+          .from('profiles')
+          .update(dbPatch as any)
+          .eq('id', companyInfoUserId)
+          .then(({ error }) => {
+            if (error) console.warn('Company info profile persist failed:', error.message);
+          });
+      }
+    }
   };
 
   const t = (key: string): string => {
