@@ -14,6 +14,10 @@ export interface CompanyInfo {
   stampUrl: string;
   signatureUrl: string;
   hideStampOnDocuments?: boolean;
+  cifNif: string;
+  rccm: string;
+  website: string;
+  legalRepresentative: string;
 }
 
 interface SettingsContextType {
@@ -50,6 +54,10 @@ const defaultCompanyInfo: CompanyInfo = {
   stampUrl: '',
   signatureUrl: '',
   hideStampOnDocuments: false,
+  cifNif: '',
+  rccm: '',
+  website: '',
+  legalRepresentative: '',
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
