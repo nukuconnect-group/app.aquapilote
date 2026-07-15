@@ -50,7 +50,62 @@ const AccountingDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* ===== 1. GRAPHIQUES PRO EN TÊTE ===== */}
+      {/* ===== 1. LIGNE DES CHIFFRES CLÉS (en tête) ===== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              <Badge className="bg-green-100 text-green-800 text-[10px] sm:text-xs">Revenus</Badge>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold break-words">{formatCurrency(summary.totalRevenue)}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Chiffre d'affaires</p>
+            <p className="text-[10px] sm:text-xs text-green-600 mt-1">
+              {summary.confirmedSales} ventes confirmées
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <TrendingDown className="h-5 w-5 text-red-600" />
+              <Badge className="bg-red-100 text-red-800 text-[10px] sm:text-xs">Dépenses</Badge>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold break-words">{formatCurrency(summary.totalExpenses)}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Charges totales</p>
+            <p className="text-[10px] sm:text-xs text-red-600 mt-1">
+              {summary.purchasesCount} achats reçus
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Calculator className="h-5 w-5 text-blue-600" />
+              <Badge className={`text-[10px] sm:text-xs ${summary.netBalance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {profitMargin}%
+              </Badge>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold break-words">{formatCurrency(summary.netBalance)}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Résultat net</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="h-5 w-5 text-purple-600" />
+              <Badge className="bg-purple-100 text-purple-800 text-[10px] sm:text-xs">RH</Badge>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold break-words">{formatCurrency(summary.totalSalaries)}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Masse salariale</p>
+            <p className="text-[10px] sm:text-xs text-purple-600 mt-1">
+              {summary.employeesCount} employés actifs
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ===== 2. GRAPHIQUES PRO ===== */}
       {hasNoData ? (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center">
@@ -187,64 +242,6 @@ const AccountingDashboard = () => {
           </div>
         </>
       )}
-
-      {/* ===== 2. KPIs CHIFFRÉS ===== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              <Badge className="bg-green-100 text-green-800">Revenus</Badge>
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalRevenue)}</p>
-            <p className="text-sm text-muted-foreground">Chiffre d'affaires</p>
-            <p className="text-xs text-green-600 mt-1">
-              {summary.confirmedSales} ventes confirmées
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingDown className="h-5 w-5 text-red-600" />
-              <Badge className="bg-red-100 text-red-800">Dépenses</Badge>
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalExpenses)}</p>
-            <p className="text-sm text-muted-foreground">Charges totales</p>
-            <p className="text-xs text-red-600 mt-1">
-              {summary.purchasesCount} achats reçus
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Calculator className="h-5 w-5 text-blue-600" />
-              <Badge className={`${summary.netBalance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                {profitMargin}%
-              </Badge>
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(summary.netBalance)}</p>
-            <p className="text-sm text-muted-foreground">Résultat net</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="h-5 w-5 text-purple-600" />
-              <Badge className="bg-purple-100 text-purple-800">RH</Badge>
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalSalaries)}</p>
-            <p className="text-sm text-muted-foreground">Masse salariale</p>
-            <p className="text-xs text-purple-600 mt-1">
-              {summary.employeesCount} employés actifs
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* ===== 3. Détails financiers ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
