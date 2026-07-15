@@ -10,6 +10,13 @@ export interface CompanyInfoForPrint {
   logoUrl?: string;
   registrationNumber?: string;
   taxId?: string;
+  stampUrl?: string;
+  signatureUrl?: string;
+  cifNif?: string;
+  rccm?: string;
+  website?: string;
+  legalRepresentative?: string;
+  hideStampOnDocuments?: boolean;
 }
 
 /**
@@ -19,6 +26,14 @@ export const generateCompanyHeaderHTML = (companyInfo: CompanyInfoForPrint): str
   if (!companyInfo.name) {
     return '';
   }
+
+  const idLine: string[] = [];
+  if (companyInfo.registrationNumber) idLine.push(`N° Reg: ${companyInfo.registrationNumber}`);
+  if (companyInfo.rccm) idLine.push(`RCCM: ${companyInfo.rccm}`);
+  if (companyInfo.cifNif) idLine.push(`CIF/NIF: ${companyInfo.cifNif}`);
+  if (companyInfo.taxId) idLine.push(`ID Fiscal: ${companyInfo.taxId}`);
+  if (companyInfo.website) idLine.push(`Web: ${companyInfo.website}`);
+  if (companyInfo.legalRepresentative) idLine.push(`Resp.: ${companyInfo.legalRepresentative}`);
 
   return `
     <div style="margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 8px; border-left: 4px solid #2563eb;">
@@ -36,13 +51,37 @@ export const generateCompanyHeaderHTML = (companyInfo: CompanyInfoForPrint): str
             ${companyInfo.phone && companyInfo.email ? ' | ' : ''}
             ${companyInfo.email ? `<span>Email: ${companyInfo.email}</span>` : ''}
           </div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-            ${companyInfo.registrationNumber ? `<span>N° Reg: ${companyInfo.registrationNumber}</span>` : ''}
-            ${companyInfo.registrationNumber && companyInfo.taxId ? ' | ' : ''}
-            ${companyInfo.taxId ? `<span>ID Fiscal: ${companyInfo.taxId}</span>` : ''}
-          </div>
+          ${idLine.length ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${idLine.join(' | ')}</div>` : ''}
         </div>
       </div>
+    </div>
+  `;
+};
+
+/**
+ * Génère un pied de page avec cachet et signature pour les documents officiels
+ */
+export const generateCompanyFooterHTML = (companyInfo: CompanyInfoForPrint): string => {
+  const showStamp = companyInfo.stampUrl && !companyInfo.hideStampOnDocuments;
+  if (!showStamp && !companyInfo.signatureUrl) return '';
+  return `
+    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px;">
+      ${companyInfo.signatureUrl ? `
+        <div style="text-align: center; flex: 1;">
+          <img src="${companyInfo.signatureUrl}" alt="Signature" style="max-height: 80px; max-width: 200px; object-fit: contain;" />
+          <div style="border-top: 1px solid #94a3b8; margin-top: 4px; padding-top: 4px; font-size: 11px; color: #64748b;">
+            Signature${companyInfo.legalRepresentative ? ' - ' + companyInfo.legalRepresentative : ''}
+          </div>
+        </div>
+      ` : '<div style="flex:1;"></div>'}
+      ${showStamp ? `
+        <div style="text-align: center; flex: 1;">
+          <img src="${companyInfo.stampUrl}" alt="Cachet" style="max-height: 100px; max-width: 200px; object-fit: contain;" />
+          <div style="border-top: 1px solid #94a3b8; margin-top: 4px; padding-top: 4px; font-size: 11px; color: #64748b;">
+            Cachet de l'entreprise
+          </div>
+        </div>
+      ` : '<div style="flex:1;"></div>'}
     </div>
   `;
 };
