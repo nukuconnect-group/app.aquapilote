@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X } from 'lucide-react';
+import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -164,6 +164,8 @@ const AquaAssistantModule = () => {
   const [showUnitSelector, setShowUnitSelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   // Charge les messages de la conversation active depuis Supabase
@@ -211,11 +213,26 @@ const AquaAssistantModule = () => {
   const { records: healthRecords } = useHealthRecords(undefined, selectedUnitId || undefined);
   const { records: feedingRecords } = useFeedingRecords();
 
+  // Auto-scroll robuste : cible le viewport interne de Radix ScrollArea
+  // ET utilise scrollIntoView sur une ancre en bas pour couvrir tous les cas
+  // (streaming, changement de conversation, réponses longues, mobile).
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    const scrollToBottom = () => {
+      // 1) Radix ScrollArea : viewport réel
+      const viewport = scrollRef.current?.querySelector(
+        '[data-radix-scroll-area-viewport]'
+      ) as HTMLElement | null;
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+      // 2) Ancre : garantie même quand le contenu grandit en streaming
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+    // Deux passes : immédiat + après paint pour laisser le DOM se stabiliser
+    scrollToBottom();
+    const raf = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(raf);
+  }, [messages, isLoading]);
 
   const currentLang = languages.find(l => l.id === selectedLanguage);
   
@@ -614,9 +631,32 @@ const AquaAssistantModule = () => {
       )}
 
       {/* Chat area */}
-      <Card className="min-h-[400px] flex flex-col">
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <Card
+        className={
+          isFullscreen
+            ? 'fixed inset-0 z-[80] flex flex-col rounded-none border-0 m-0'
+            : 'flex flex-col h-[70vh] min-h-[500px] md:min-h-[600px]'
+        }
+      >
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <MessageCircle className="w-4 h-4 text-primary" />
+            <span>Conversation</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setIsFullscreen((v) => !v)}
+            title={isFullscreen ? 'Réduire' : 'Agrandir'}
+            aria-label={isFullscreen ? 'Réduire la fenêtre du chat' : 'Agrandir la fenêtre du chat'}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </Button>
+        </div>
+        <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+          <ScrollArea className="flex-1 p-4 min-h-0" ref={scrollRef}>
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <div
@@ -653,6 +693,8 @@ const AquaAssistantModule = () => {
                   </div>
                 </div>
               )}
+              {/* Ancre pour l'auto-scroll : toujours en bas */}
+              <div ref={messagesEndRef} aria-hidden="true" />
             </div>
           </ScrollArea>
 

@@ -282,7 +282,14 @@ const Dashboard: React.FC = () => {
                   Chargement des permissions…
                 </div>
               ) : (
-                <SubscriptionGuard>{renderContent()}</SubscriptionGuard>
+                <SubscriptionGuard>
+                  {/* key={activeTab} force le remontage du module courant à chaque
+                      changement d'onglet : évite les états bloqués et les données
+                      résiduelles de l'ancien module qui persistaient après navigation. */}
+                  <div key={activeTab} className="w-full">
+                    {renderContent()}
+                  </div>
+                </SubscriptionGuard>
               )}
             </div>
           </main>
