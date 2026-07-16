@@ -164,6 +164,8 @@ const AquaAssistantModule = () => {
   const [showUnitSelector, setShowUnitSelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   // Charge les messages de la conversation active depuis Supabase
@@ -211,11 +213,26 @@ const AquaAssistantModule = () => {
   const { records: healthRecords } = useHealthRecords(undefined, selectedUnitId || undefined);
   const { records: feedingRecords } = useFeedingRecords();
 
+  // Auto-scroll robuste : cible le viewport interne de Radix ScrollArea
+  // ET utilise scrollIntoView sur une ancre en bas pour couvrir tous les cas
+  // (streaming, changement de conversation, réponses longues, mobile).
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    const scrollToBottom = () => {
+      // 1) Radix ScrollArea : viewport réel
+      const viewport = scrollRef.current?.querySelector(
+        '[data-radix-scroll-area-viewport]'
+      ) as HTMLElement | null;
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+      // 2) Ancre : garantie même quand le contenu grandit en streaming
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+    // Deux passes : immédiat + après paint pour laisser le DOM se stabiliser
+    scrollToBottom();
+    const raf = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(raf);
+  }, [messages, isLoading]);
 
   const currentLang = languages.find(l => l.id === selectedLanguage);
   
