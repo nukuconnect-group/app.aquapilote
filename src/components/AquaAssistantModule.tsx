@@ -639,6 +639,14 @@ const AquaAssistantModule = () => {
             ? 'fixed inset-0 z-[80] flex flex-col rounded-none border-0 m-0'
             : 'flex flex-col h-[70vh] min-h-[500px] md:min-h-[600px]'
         }
+        style={
+          isFullscreen
+            ? {
+                paddingTop: 'env(safe-area-inset-top)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+              }
+            : undefined
+        }
       >
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
           <div className="flex items-center gap-2 text-sm font-medium">
