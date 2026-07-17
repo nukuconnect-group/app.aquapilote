@@ -30,6 +30,7 @@ import VisitsStatsPanel from './admin/VisitsStatsPanel';
 import SubscriptionsPanel from './admin/SubscriptionsPanel';
 import PendingActivations from './admin/PendingActivations';
 import RegistrationsPanel from './admin/RegistrationsPanel';
+import EmailStatusPanel from './admin/EmailStatusPanel';
 import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
 import AccessStatsPanel from './admin/AccessStatsPanel';
 import TeamMembersOverviewPanel from './admin/TeamMembersOverviewPanel';
@@ -926,6 +927,9 @@ const AdminDashboard = () => {
 
         <TabsContent value="activations" className="space-y-4">
           <PendingActivations />
+        </TabsContent>
+        <TabsContent value="emails" className="space-y-4">
+          <EmailStatusPanel />
         </TabsContent>
         <TabsContent value="registrations" className="space-y-4">
           <RegistrationsPanel />
