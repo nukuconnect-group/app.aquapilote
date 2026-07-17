@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell, ArrowLeft, UserPlus, ClipboardList, CreditCard, Activity, Eye, AlertTriangle } from 'lucide-react';
+import { Home, Building2, Wrench, Utensils, Heart, Package, Calendar, Users, FileText, Settings, Beef, Calculator, UserCheck, ShoppingCart, Wifi, ShoppingBag, Truck, UserCog, Database, Shield, MessageCircle, Headphones, BarChart3, Bell, ArrowLeft, UserPlus, ClipboardList, CreditCard, Activity, Eye, AlertTriangle, Mail } from 'lucide-react';
 import { Sparkles, BookOpen } from 'lucide-react';
 import {
   Sidebar,
@@ -55,6 +55,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       items: [
         { id: 'overview', label: "Vue d'ensemble", icon: BarChart3 },
         { id: 'activations', label: 'Activations', icon: UserPlus },
+        { id: 'emails', label: 'Emails', icon: Mail },
         { id: 'registrations', label: 'Inscriptions', icon: ClipboardList },
         { id: 'users', label: 'Utilisateurs', icon: Users },
         { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
