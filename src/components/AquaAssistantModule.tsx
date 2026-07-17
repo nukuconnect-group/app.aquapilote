@@ -481,10 +481,24 @@ const AquaAssistantModule = () => {
   const currentUnit = units.find(u => u.id === selectedUnitId);
 
   return (
-    <div className="space-y-4">
+    <div
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-[80] flex flex-col gap-3 bg-background p-3 sm:p-4 overflow-y-auto'
+          : 'space-y-4'
+      }
+      style={
+        isFullscreen
+          ? {
+              paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
+            }
+          : undefined
+      }
+    >
       {/* Header */}
-      <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4 sm:p-6 text-white">
+      <Card className="shrink-0">
+        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4 sm:p-6 text-white rounded-t-xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
@@ -495,7 +509,18 @@ const AquaAssistantModule = () => {
                 <p className="text-sm text-white/80">Expert aquacole IA - Données en temps réel</p>
               </div>
             </div>
-            <Button
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsFullscreen((v) => !v)}
+                className="flex items-center gap-2"
+                title={isFullscreen ? 'Réduire' : 'Agrandir'}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isFullscreen ? 'Réduire' : 'Agrandir'}</span>
+              </Button>
+              <Button
               variant="secondary"
               size="sm"
               onClick={() => setShowPremiumModal(true)}
@@ -508,7 +533,7 @@ const AquaAssistantModule = () => {
               variant="secondary"
               size="sm"
               onClick={() => setShowHistory(true)}
-              className="ml-2 flex items-center gap-2"
+              className="flex items-center gap-2"
               title="Historique des conversations"
             >
               <History className="w-4 h-4" />
@@ -519,6 +544,7 @@ const AquaAssistantModule = () => {
                 </Badge>
               )}
             </Button>
+            </div>
           </div>
 
           {/* Selectors */}
@@ -536,7 +562,7 @@ const AquaAssistantModule = () => {
               </button>
               
               {showUnitSelector && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-lg shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto border">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover text-popover-foreground rounded-lg shadow-xl z-[90] max-h-60 overflow-y-auto border">
                   <button
                     onClick={() => { setSelectedUnitId(null); setShowUnitSelector(false); }}
                     className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${!selectedUnitId ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
@@ -567,7 +593,7 @@ const AquaAssistantModule = () => {
               </button>
               
               {showLanguageSelector && (
-                <div className="absolute top-full right-0 mt-1 bg-card rounded-lg shadow-lg overflow-hidden z-10 min-w-[160px] max-h-64 overflow-y-auto border">
+                <div className="absolute top-full right-0 mt-1 bg-popover text-popover-foreground rounded-lg shadow-xl z-[90] min-w-[180px] max-h-72 overflow-y-auto border">
                   {languages.map(lang => (
                     <button
                       key={lang.id}
@@ -636,16 +662,8 @@ const AquaAssistantModule = () => {
       <Card
         className={
           isFullscreen
-            ? 'fixed inset-0 z-[80] flex flex-col rounded-none border-0 m-0'
+            ? 'flex flex-col flex-1 min-h-0'
             : 'flex flex-col h-[70vh] min-h-[500px] md:min-h-[600px]'
-        }
-        style={
-          isFullscreen
-            ? {
-                paddingTop: 'env(safe-area-inset-top)',
-                paddingBottom: 'env(safe-area-inset-bottom)',
-              }
-            : undefined
         }
       >
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
@@ -715,7 +733,7 @@ const AquaAssistantModule = () => {
           </ScrollArea>
 
           {/* Input area */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t bg-background sticky bottom-0">
             <div className="flex gap-2">
               <Button
                 variant={isListening ? 'destructive' : 'outline'}
