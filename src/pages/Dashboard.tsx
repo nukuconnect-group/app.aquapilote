@@ -40,6 +40,7 @@ import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
+import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -98,6 +99,24 @@ const Dashboard: React.FC = () => {
     const fallback = getFirstAllowedTab();
     if (fallback !== activeTab) commitTabChange(fallback);
   }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
+
+  // Sécurité anti-blocage : à chaque changement de module, on nettoie les
+ // résidus de dialogues Radix qui laissent parfois `pointer-events:none`
+ // sur <body> ou un overlay orphelin (ce qui fige l'interface après une
+ // création d'unité / d'infrastructure / de lot). Idempotent et sans effet
+ // si aucun résidu n'est présent.
+  useEffect(() => {
+    const body = document.body;
+    if (body.style.pointerEvents === 'none') body.style.pointerEvents = '';
+    body.style.overflow = '';
+    body.removeAttribute('data-scroll-locked');
+    document
+      .querySelectorAll<HTMLElement>('[data-radix-focus-guard], [data-radix-dismissable-layer]')
+      .forEach((el) => {
+        // Un overlay resté ouvert bloque tous les clics du contenu principal.
+        if (el.getAttribute('data-state') === 'closed') el.remove();
+      });
+  }, [activeTab]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
@@ -285,10 +304,14 @@ const Dashboard: React.FC = () => {
                 <SubscriptionGuard>
                   {/* key={activeTab} force le remontage du module courant à chaque
                       changement d'onglet : évite les états bloqués et les données
-                      résiduelles de l'ancien module qui persistaient après navigation. */}
-                  <div key={activeTab} className="w-full">
-                    {renderContent()}
-                  </div>
+                      résiduelles de l'ancien module qui persistaient après navigation.
+                      ModuleErrorBoundary isole les crashs d'un module : les autres
+                      restent accessibles depuis le menu. */}
+                  <ModuleErrorBoundary resetKey={activeTab}>
+                    <div key={activeTab} className="w-full">
+                      {renderContent()}
+                    </div>
+                  </ModuleErrorBoundary>
                 </SubscriptionGuard>
               )}
             </div>
