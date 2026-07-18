@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { OfflineProvider } from './contexts/OfflineContext';
+import { installDiagnostics } from './lib/appRecovery';
 
 console.log('🚀 AQUA PILOT - Application complète restaurée');
+installDiagnostics();
 
 // Enregistrement du Service Worker avec gestion améliorée des mises à jour
 const isPreviewHost = () => {

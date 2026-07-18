@@ -40,10 +40,12 @@ import AquaAssistant from '@/components/AquaAssistant';
 import AquaAssistantModule from '@/components/AquaAssistantModule';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
+import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { APP_MODULE_PERMISSIONS, hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
+import { cleanupBlockingOverlays, recordDiagnostic, requestDataRefresh } from '@/lib/appRecovery';
 
 /**
  * Page principale du dashboard
@@ -57,6 +59,7 @@ const Dashboard: React.FC = () => {
   // qui faisaient revenir l'utilisateur au tableau de bord après un clic.
   const activeTab = moduleParamToTabId(searchParams.get('module'));
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [moduleResetKey, setModuleResetKey] = useState(0);
   const { isTeamMember, teamMemberInfo, isLoading: isLoadingAccess, hasAccessToModule, getAllowedModulesList } = useTeamMemberAccess();
 
   const getFirstAllowedTab = () => {
@@ -74,6 +77,7 @@ const Dashboard: React.FC = () => {
   const commitTabChange = (tab: string) => {
     const nextParams = tab === 'dashboard' ? '' : tab;
     if ((searchParams.get('module') || '') === nextParams) return;
+    recordDiagnostic('navigation', 'tab change requested', { from: activeTab, to: tab });
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
   };
 
@@ -98,6 +102,40 @@ const Dashboard: React.FC = () => {
     const fallback = getFirstAllowedTab();
     if (fallback !== activeTab) commitTabChange(fallback);
   }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
+
+  // Sécurité anti-blocage : à chaque changement de module, on nettoie les
+ // résidus de dialogues Radix qui laissent parfois `pointer-events:none`
+ // sur <body> ou un overlay orphelin (ce qui fige l'interface après une
+ // création d'unité / d'infrastructure / de lot). Idempotent et sans effet
+ // si aucun résidu n'est présent.
+  useEffect(() => {
+    cleanupBlockingOverlays(`module-change:${activeTab}`);
+    setModuleResetKey((key) => key + 1);
+    requestDataRefresh(`module-change:${activeTab}`);
+
+    const raf = requestAnimationFrame(() => cleanupBlockingOverlays(`module-change-raf:${activeTab}`));
+    const delayed = window.setTimeout(() => cleanupBlockingOverlays(`module-change-delayed:${activeTab}`), 350);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(delayed);
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const bodyBlocked = document.body.style.pointerEvents === 'none';
+      const loadingText = document.querySelector('[data-module-content]')?.textContent?.toLowerCase() || '';
+      const seemsStuckLoading = loadingText.includes('chargement') && loadingText.length < 180;
+
+      if (bodyBlocked || seemsStuckLoading) {
+        recordDiagnostic('watchdog', 'controlled module reset', { activeTab, bodyBlocked, seemsStuckLoading });
+        cleanupBlockingOverlays(`watchdog:${activeTab}`);
+        requestDataRefresh(`watchdog:${activeTab}`);
+        setModuleResetKey((key) => key + 1);
+      }
+    }, 4500);
+    return () => window.clearTimeout(timeout);
+  }, [activeTab, moduleResetKey]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
@@ -285,10 +323,22 @@ const Dashboard: React.FC = () => {
                 <SubscriptionGuard>
                   {/* key={activeTab} force le remontage du module courant à chaque
                       changement d'onglet : évite les états bloqués et les données
-                      résiduelles de l'ancien module qui persistaient après navigation. */}
-                  <div key={activeTab} className="w-full">
-                    {renderContent()}
-                  </div>
+                      résiduelles de l'ancien module qui persistaient après navigation.
+                      ModuleErrorBoundary isole les crashs d'un module : les autres
+                      restent accessibles depuis le menu. */}
+                  <ModuleErrorBoundary
+                    resetKey={`${activeTab}-${moduleResetKey}`}
+                    moduleLabel={activeTab}
+                    onRecover={() => {
+                      cleanupBlockingOverlays(`manual-recover:${activeTab}`);
+                      requestDataRefresh(`manual-recover:${activeTab}`);
+                      setModuleResetKey((key) => key + 1);
+                    }}
+                  >
+                    <div key={`${activeTab}-${moduleResetKey}`} className="w-full" data-module-content={activeTab}>
+                      {renderContent()}
+                    </div>
+                  </ModuleErrorBoundary>
                 </SubscriptionGuard>
               )}
             </div>
