@@ -408,34 +408,34 @@ const ProductionUnitsManagement = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:gap-5">
+      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
         {filteredUnits.map(unit => {
           const unitRatio = unit.capacity > 0 ? Math.min(100, Math.round((unit.currentStock / unit.capacity) * 100)) : 0;
           return (
-          <Card key={unit.id} className={`overflow-hidden transition-shadow hover:shadow-md ${!unit.isActive ? 'opacity-60 border-border' : 'border-l-4 border-l-primary'}`}>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-3 min-w-0 h-full">
+          <Card key={unit.id} className={`${!unit.isActive ? 'opacity-60 border-gray-300' : 'border-l-4 border-l-purple-500'}`}>
+            <CardHeader className="pb-2">
+              <div className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-start gap-3 min-w-0 w-full">
-                  <Avatar className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg shrink-0 ring-1 ring-border" key={unit.photoUrl || unit.id}>
+                  <Avatar className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg shrink-0" key={unit.photoUrl || unit.id}>
                     <AvatarImage 
                       src={unit.photoUrl || ''} 
                       alt={unit.name}
                       className="object-cover"
                     />
-                    <AvatarFallback className="rounded-lg bg-primary/10 text-primary">
+                    <AvatarFallback className="rounded-lg bg-purple-100 text-purple-600">
                       <Building className="w-6 h-6" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <CardTitle
-                      className="text-base sm:text-lg leading-tight break-words hyphens-auto whitespace-normal"
+                      className="text-base sm:text-lg leading-tight break-words hyphens-auto"
                       style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                       title={unit.name}
                     >
                       {unit.name}
                     </CardTitle>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <Badge variant={unit.isActive ? 'default' : 'secondary'}>
+                      <Badge className={unit.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                         {unit.isActive ? t('active') : t('inactive')}
                       </Badge>
                       <Badge variant="outline" className="text-xs max-w-full break-words">
@@ -444,7 +444,7 @@ const ProductionUnitsManagement = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end w-full border-t pt-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end w-full border-t pt-2">
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -496,27 +496,27 @@ const ProductionUnitsManagement = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2 text-sm">
-                <div className="rounded-md bg-muted/50 p-2 min-w-0">
-                   <span className="block text-muted-foreground text-xs">{t('capacity')}</span>
-                  <span className="block font-medium break-words">{unit.capacity.toLocaleString()}</span>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
+                <div>
+                   <span className="text-gray-600">{t('capacity')}:</span>
+                  <span className="ml-1 font-medium">{unit.capacity.toLocaleString()}</span>
                 </div>
-                <div className="rounded-md bg-muted/50 p-2 min-w-0">
-                  <span className="block text-muted-foreground text-xs">{t('stock')}</span>
-                  <span className="block font-medium break-words">{unit.currentStock.toLocaleString()}</span>
+                <div>
+                  <span className="text-gray-600">{t('stock')}:</span>
+                  <span className="ml-1 font-medium">{unit.currentStock.toLocaleString()}</span>
                 </div>
-                <div className="rounded-md bg-muted/50 p-2 min-w-0">
-                  <span className="block text-muted-foreground text-xs">Occupation</span>
-                  <span className="block font-medium">{unit.capacity > 0 ? ((unit.currentStock / unit.capacity) * 100).toFixed(1) : '0.0'}%</span>
+                <div>
+                  <span className="text-gray-600">%:</span>
+                  <span className="ml-1 font-medium">{((unit.currentStock / unit.capacity) * 100).toFixed(1)}%</span>
                 </div>
-                <div className="rounded-md bg-muted/50 p-2 min-w-0">
-                  <span className="block text-muted-foreground text-xs">{t('manager_label')}</span>
-                  <span className="block font-medium break-words">{unit.manager || '—'}</span>
+                <div>
+                  <span className="text-gray-600">{t('manager_label')}:</span>
+                  <span className="ml-1 font-medium">{unit.manager}</span>
                 </div>
               </div>
               {unit.description && (
-                <div className="mt-3 p-2 bg-muted/50 rounded-md text-xs sm:text-sm break-words">
+                <div className="mt-3 p-2 bg-gray-50 rounded text-xs sm:text-sm">
                   <strong>{t('description')}:</strong> {unit.description}
                 </div>
               )}

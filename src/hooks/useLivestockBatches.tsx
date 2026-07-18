@@ -6,7 +6,6 @@ import { offlineStorage } from '@/lib/offlineStorage';
 import { notificationHelpers } from '@/lib/notificationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDemoData } from '@/lib/demoData';
-import { cleanupBlockingOverlays, emitDataMutation, recordHookState, requestDataRefresh } from '@/lib/appRecovery';
 
 export interface LivestockBatch {
   id: string;
@@ -131,10 +130,6 @@ export const useLivestockBatches = (unitId?: string) => {
     }
   }, [isReady, isAuthenticated, isOffline, unitId, toast, cacheKey, isDemoMode]);
 
-  useEffect(() => {
-    recordHookState('useLivestockBatches', { unitId: unitId ?? null, batches: batches.length, loading, isOffline });
-  }, [unitId, batches.length, loading, isOffline]);
-
   const createBatch = async (batch: Omit<LivestockBatch, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     // Mode démonstration : ne rien faire (ou simuler)
     if (isDemoMode) {
@@ -170,9 +165,6 @@ export const useLivestockBatches = (unitId?: string) => {
       await notificationHelpers.livestockBatchAdded(user.id, batch.species, batch.quantity, batch.unit_name);
 
       await fetchBatches();
-      cleanupBlockingOverlays('batch-created');
-      emitDataMutation({ table: 'livestock_batches', action: 'create', id: data.id, module: 'livestock' });
-      requestDataRefresh('batch-created', ['livestock_batches', 'unit_infrastructures']);
       return data;
     } catch (error: any) {
       console.error('Error creating batch:', error);
@@ -204,9 +196,6 @@ export const useLivestockBatches = (unitId?: string) => {
       });
 
       await fetchBatches();
-      cleanupBlockingOverlays('batch-updated');
-      emitDataMutation({ table: 'livestock_batches', action: 'update', id, module: 'livestock' });
-      requestDataRefresh('batch-updated', ['livestock_batches', 'unit_infrastructures']);
     } catch (error: any) {
       console.error('Error updating batch:', error);
       toast({
@@ -233,9 +222,6 @@ export const useLivestockBatches = (unitId?: string) => {
       });
 
       await fetchBatches();
-      cleanupBlockingOverlays('batch-deleted');
-      emitDataMutation({ table: 'livestock_batches', action: 'delete', id, module: 'livestock' });
-      requestDataRefresh('batch-deleted', ['livestock_batches', 'unit_infrastructures']);
     } catch (error: any) {
       console.error('Error deleting batch:', error);
       toast({
