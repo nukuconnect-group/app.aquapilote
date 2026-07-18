@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/clientConfig';
+import { cleanupBlockingOverlays, emitDataMutation, recordHookState } from '@/lib/appRecovery';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -377,9 +378,11 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
         }));
         
         setUnits(convertedUnits);
-        if (convertedUnits.length > 0 && !activeUnit) {
-          setActiveUnit(convertedUnits[0]);
-        }
+        setActiveUnit((current) => {
+          if (!convertedUnits.length) return null;
+          if (!current) return convertedUnits[0];
+          return convertedUnits.find((unit) => unit.id === current.id) ?? convertedUnits[0];
+        });
       }
     } catch (err) {
       console.error('Error loading units:', err);
@@ -693,6 +696,48 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
     }
   }, [isDemoMode, isAuthenticated, user?.id, fetchUnitsFromDB, fetchInfrastructuresFromDB, fetchEquipmentFromDB, fetchPurchasesFromDB, fetchTransactionsFromDB, fetchDepreciableAssetsFromDB]);
 
+  const refreshCoreData = useCallback(async (reason = 'manual') => {
+    cleanupBlockingOverlays(`context-refresh:${reason}`);
+    if (isDemoMode || !isAuthenticated || !user?.id) return;
+    await Promise.allSettled([
+      fetchUnitsFromDB(),
+      fetchInfrastructuresFromDB(),
+      fetchEquipmentFromDB(),
+      fetchPurchasesFromDB(),
+      fetchTransactionsFromDB(),
+      fetchDepreciableAssetsFromDB(),
+    ]);
+  }, [
+    isDemoMode,
+    isAuthenticated,
+    user?.id,
+    fetchUnitsFromDB,
+    fetchInfrastructuresFromDB,
+    fetchEquipmentFromDB,
+    fetchPurchasesFromDB,
+    fetchTransactionsFromDB,
+    fetchDepreciableAssetsFromDB,
+  ]);
+
+  useEffect(() => {
+    const handleRefresh = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      void refreshCoreData(detail?.reason || detail?.table || 'event');
+    };
+    window.addEventListener('aqua:data-refresh', handleRefresh);
+    return () => window.removeEventListener('aqua:data-refresh', handleRefresh);
+  }, [refreshCoreData]);
+
+  useEffect(() => {
+    recordHookState('ProductionUnitsContext', {
+      units: units.length,
+      infrastructures: infrastructures.length,
+      activeUnit: activeUnit?.id ?? null,
+      isLoadingUnits,
+      isAuthenticated,
+    });
+  }, [units.length, infrastructures.length, activeUnit?.id, isLoadingUnits, isAuthenticated]);
+
   const formatCurrency = (amount: number): string => {
     const currencySymbols = {
       'XOF': 'FCFA',
@@ -781,6 +826,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       };
       
       setUnits(prev => [newUnit, ...prev]);
+      emitDataMutation({ table: 'production_units', action: 'create', id: data.id, module: 'units' });
+      await refreshCoreData('unit-created');
     } catch (err) {
       console.error('Error adding unit:', err);
     }
@@ -820,6 +867,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       setUnits(units.map(unit => 
         unit.id === id ? { ...unit, ...updates } : unit
       ));
+      emitDataMutation({ table: 'production_units', action: 'update', id, module: 'units' });
+      await refreshCoreData('unit-updated');
     } catch (err) {
       console.error('Error updating unit:', err);
     }
@@ -851,6 +900,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       setInfrastructures(infrastructures.filter(inf => inf.unitId !== id));
       setEquipment(equipment.filter(eq => eq.unitId !== id));
       setCycles(cycles.filter(cy => cy.unitId !== id));
+      emitDataMutation({ table: 'production_units', action: 'delete', id, module: 'units' });
+      await refreshCoreData('unit-deleted');
     } catch (err) {
       console.error('Error deleting unit:', err);
     }
@@ -901,6 +952,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
         specifications: data.specifications,
       };
       setInfrastructures([newInfrastructure, ...infrastructures]);
+      emitDataMutation({ table: 'unit_infrastructures', action: 'create', id: data.id, module: 'infrastructures' });
+      await refreshCoreData('infrastructure-created');
     } catch (err) {
       console.error('Error adding infrastructure:', err);
     }
@@ -934,6 +987,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       setInfrastructures(infrastructures.map(inf => 
         inf.id === id ? { ...inf, ...updates } : inf
       ));
+      emitDataMutation({ table: 'unit_infrastructures', action: 'update', id, module: 'infrastructures' });
+      await refreshCoreData('infrastructure-updated');
     } catch (err) {
       console.error('Error updating infrastructure:', err);
     }
@@ -954,6 +1009,8 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
       if (error) throw error;
 
       setInfrastructures(infrastructures.filter(inf => inf.id !== id));
+      emitDataMutation({ table: 'unit_infrastructures', action: 'delete', id, module: 'infrastructures' });
+      await refreshCoreData('infrastructure-deleted');
     } catch (err) {
       console.error('Error deleting infrastructure:', err);
     }
