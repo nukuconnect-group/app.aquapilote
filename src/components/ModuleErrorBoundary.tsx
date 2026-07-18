@@ -8,6 +8,7 @@ interface Props {
   /** Any value that identifies the current module. Changing it resets the boundary. */
   resetKey?: string | number;
   moduleLabel?: string;
+  onRecover?: () => void;
 }
 
 interface State {
@@ -39,6 +40,7 @@ class ModuleErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
+    this.props.onRecover?.();
     this.setState({ hasError: false, error: null });
   };
 
