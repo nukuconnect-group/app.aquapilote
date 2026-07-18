@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -44,6 +44,12 @@ class ModuleErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  private handleReloadModule = () => {
+    this.props.onRecover?.();
+    window.dispatchEvent(new CustomEvent('aqua:data-refresh', { detail: { reason: 'module-error-boundary' } }));
+    this.setState({ hasError: false, error: null });
+  };
+
   public render() {
     if (this.state.hasError) {
       return (
@@ -64,10 +70,16 @@ class ModuleErrorBoundary extends Component<Props, State> {
                   {this.state.error.message}
                 </div>
               )}
-              <Button size="sm" onClick={this.handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Réessayer
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={this.handleReset}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Réinitialiser
+                </Button>
+                <Button size="sm" variant="outline" onClick={this.handleReloadModule}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Recharger le module
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
