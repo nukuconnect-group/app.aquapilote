@@ -111,7 +111,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     cleanupBlockingOverlays(`module-change:${activeTab}`);
     setModuleResetKey((key) => key + 1);
-    requestDataRefresh(`module-change:${activeTab}`);
 
     const raf = requestAnimationFrame(() => cleanupBlockingOverlays(`module-change-raf:${activeTab}`));
     const delayed = window.setTimeout(() => cleanupBlockingOverlays(`module-change-delayed:${activeTab}`), 350);

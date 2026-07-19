@@ -132,28 +132,38 @@ export const installDiagnostics = () => {
 export const cleanupBlockingOverlays = (reason = 'manual') => {
   if (typeof document === 'undefined') return 0;
   const body = document.body;
-  body.style.pointerEvents = '';
-  body.style.overflow = '';
-  body.removeAttribute('data-scroll-locked');
+  const html = document.documentElement;
+  const hadBodyLock =
+    body.style.pointerEvents === 'none' ||
+    body.style.overflow === 'hidden' ||
+    body.hasAttribute('data-scroll-locked') ||
+    html.style.pointerEvents === 'none' ||
+    html.style.overflow === 'hidden' ||
+    html.hasAttribute('data-scroll-locked');
 
-  const selectors = [
-    '[data-radix-focus-guard]',
-    '[data-radix-dismissable-layer]',
-    '[data-radix-popper-content-wrapper]',
-  ];
-  let removed = 0;
-  document.querySelectorAll<HTMLElement>(selectors.join(',')).forEach((el) => {
-    el.remove();
-    removed += 1;
+  // Never remove or hide Radix/React portal nodes here. React still owns those
+  // DOM nodes; manual DOM mutations can make Radix/React try to unmount a node
+  // that is no longer in its expected parent and throw `removeChild`.
+  [body, html].forEach((node) => {
+    node.style.pointerEvents = '';
+    node.style.overflow = '';
+    node.removeAttribute('data-scroll-locked');
   });
-  if (removed > 0) recordDiagnostic('overlay-cleanup', reason, { removed });
-  return removed;
+
+  const portalCount = document.querySelectorAll(
+    '[data-radix-focus-guard], [data-radix-dismissable-layer], [data-radix-popper-content-wrapper]'
+  ).length;
+
+  if (hadBodyLock || portalCount > 0) {
+    recordDiagnostic('overlay-cleanup', reason, { bodyLockCleared: hadBodyLock, portalCount, removed: 0 });
+  }
+
+  return hadBodyLock ? 1 : 0;
 };
 
 export const emitDataMutation = (detail: { table: string; action: 'create' | 'update' | 'delete'; id?: string; module?: string }) => {
   recordDiagnostic('mutation', `${detail.table}:${detail.action}`, detail);
   window.dispatchEvent(new CustomEvent('aqua:data-mutated', { detail }));
-  window.dispatchEvent(new CustomEvent('aqua:data-refresh', { detail }));
 };
 
 export const requestDataRefresh = (reason: string, tables: string[] = []) => {
