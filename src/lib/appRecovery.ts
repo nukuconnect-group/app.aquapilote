@@ -164,7 +164,6 @@ export const cleanupBlockingOverlays = (reason = 'manual') => {
 export const emitDataMutation = (detail: { table: string; action: 'create' | 'update' | 'delete'; id?: string; module?: string }) => {
   recordDiagnostic('mutation', `${detail.table}:${detail.action}`, detail);
   window.dispatchEvent(new CustomEvent('aqua:data-mutated', { detail }));
-  window.dispatchEvent(new CustomEvent('aqua:data-refresh', { detail }));
 };
 
 export const requestDataRefresh = (reason: string, tables: string[] = []) => {
