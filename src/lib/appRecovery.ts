@@ -143,7 +143,7 @@ export const cleanupBlockingOverlays = (reason = 'manual') => {
   ];
   let removed = 0;
   document.querySelectorAll<HTMLElement>(selectors.join(',')).forEach((el) => {
-    el.remove();
+    el.style.display = "none"; el.style.pointerEvents = "none"; el.setAttribute("data-cleaned-up", "true");
     removed += 1;
   });
   if (removed > 0) recordDiagnostic('overlay-cleanup', reason, { removed });
