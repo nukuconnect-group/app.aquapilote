@@ -132,17 +132,23 @@ export const installDiagnostics = () => {
 export const cleanupBlockingOverlays = (reason = 'manual') => {
   if (typeof document === 'undefined') return 0;
   const body = document.body;
+  const html = document.documentElement;
   const hadBodyLock =
     body.style.pointerEvents === 'none' ||
     body.style.overflow === 'hidden' ||
-    body.hasAttribute('data-scroll-locked');
+    body.hasAttribute('data-scroll-locked') ||
+    html.style.pointerEvents === 'none' ||
+    html.style.overflow === 'hidden' ||
+    html.hasAttribute('data-scroll-locked');
 
   // Never remove or hide Radix/React portal nodes here. React still owns those
   // DOM nodes; manual DOM mutations can make Radix/React try to unmount a node
   // that is no longer in its expected parent and throw `removeChild`.
-  body.style.pointerEvents = '';
-  body.style.overflow = '';
-  body.removeAttribute('data-scroll-locked');
+  [body, html].forEach((node) => {
+    node.style.pointerEvents = '';
+    node.style.overflow = '';
+    node.removeAttribute('data-scroll-locked');
+  });
 
   const portalCount = document.querySelectorAll(
     '[data-radix-focus-guard], [data-radix-dismissable-layer], [data-radix-popper-content-wrapper]'
