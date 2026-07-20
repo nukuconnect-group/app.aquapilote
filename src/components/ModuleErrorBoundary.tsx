@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { recordClientError } from '@/lib/appRecovery';
 
 interface Props {
   children: ReactNode;
@@ -31,6 +32,10 @@ class ModuleErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ModuleErrorBoundary] module crashed:', error, info);
+    recordClientError('module-error-boundary', error, {
+      moduleLabel: this.props.moduleLabel,
+      componentStack: info.componentStack,
+    });
   }
 
   public componentDidUpdate(prev: Props) {

@@ -4,8 +4,20 @@ import { X } from "lucide-react"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { isRouteTransitionActive, recordDiagnostic } from "@/lib/appRecovery"
 
-const Sheet = SheetPrimitive.Root
+const Sheet = ({ onOpenChange, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => (
+  <SheetPrimitive.Root
+    onOpenChange={(open) => {
+      if (!open && isRouteTransitionActive()) {
+        recordDiagnostic('transition', 'sheet close ignored during route transition');
+        return;
+      }
+      onOpenChange?.(open);
+    }}
+    {...props}
+  />
+)
 
 const SheetTrigger = SheetPrimitive.Trigger
 
