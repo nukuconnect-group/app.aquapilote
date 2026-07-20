@@ -3,8 +3,20 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { isRouteTransitionActive, recordDiagnostic } from "@/lib/appRecovery"
 
-const Dialog = DialogPrimitive.Root
+const Dialog = ({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) => (
+  <DialogPrimitive.Root
+    onOpenChange={(open) => {
+      if (!open && isRouteTransitionActive()) {
+        recordDiagnostic('transition', 'dialog close ignored during route transition');
+        return;
+      }
+      onOpenChange?.(open);
+    }}
+    {...props}
+  />
+)
 
 const DialogTrigger = DialogPrimitive.Trigger
 
