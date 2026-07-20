@@ -85,6 +85,7 @@ const Dashboard: React.FC = () => {
     const nextParams = tab === 'dashboard' ? '' : tab;
     if ((searchParams.get('module') || '') === nextParams) return;
     beginRouteTransition(activeTab, tab);
+    setModuleResetKey((key) => key + 1);
     recordDiagnostic('navigation', 'tab change requested', { from: activeTab, to: tab });
     window.dispatchEvent(new CustomEvent('aqua:close-transient-ui', { detail: { from: activeTab, to: tab } }));
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
@@ -100,6 +101,7 @@ const Dashboard: React.FC = () => {
             delay,
             href: window.location.href,
           });
+          completeRouteTransition(urlModule);
           cleanupBlockingOverlays(`module-mismatch:${urlModule}`);
           setModuleResetKey((key) => key + 1);
         }
