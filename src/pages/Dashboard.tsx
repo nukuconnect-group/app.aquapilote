@@ -45,7 +45,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Building2, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { APP_MODULE_PERMISSIONS, hasAssignedModule, moduleParamToTabId } from '@/lib/moduleAccess';
-import { cleanupBlockingOverlays, recordDiagnostic, requestDataRefresh } from '@/lib/appRecovery';
+import {
+  beginRouteTransition,
+  cleanupBlockingOverlays,
+  completeRouteTransition,
+  isRouteTransitionActive,
+  recordDiagnostic,
+  requestDataRefresh,
+} from '@/lib/appRecovery';
 
 /**
  * Page principale du dashboard
@@ -77,8 +84,29 @@ const Dashboard: React.FC = () => {
   const commitTabChange = (tab: string) => {
     const nextParams = tab === 'dashboard' ? '' : tab;
     if ((searchParams.get('module') || '') === nextParams) return;
+    beginRouteTransition(activeTab, tab);
     recordDiagnostic('navigation', 'tab change requested', { from: activeTab, to: tab });
+    window.dispatchEvent(new CustomEvent('aqua:close-transient-ui', { detail: { from: activeTab, to: tab } }));
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
+
+    const verifyNotFrozen = (delay: number) => {
+      window.setTimeout(() => {
+        const urlModule = moduleParamToTabId(new URLSearchParams(window.location.search).get('module'));
+        const renderedModule = document.querySelector('[data-module-content]')?.getAttribute('data-module-content');
+        if (renderedModule && renderedModule !== urlModule) {
+          recordDiagnostic('watchdog', 'module mismatch after navigation', {
+            expected: urlModule,
+            rendered: renderedModule,
+            delay,
+            href: window.location.href,
+          });
+          cleanupBlockingOverlays(`module-mismatch:${urlModule}`);
+          setModuleResetKey((key) => key + 1);
+        }
+      }, delay);
+    };
+    verifyNotFrozen(650);
+    verifyNotFrozen(1400);
   };
 
   const handleTabChange = (tab: string) => {
@@ -109,11 +137,15 @@ const Dashboard: React.FC = () => {
  // création d'unité / d'infrastructure / de lot). Idempotent et sans effet
  // si aucun résidu n'est présent.
   useEffect(() => {
-    cleanupBlockingOverlays(`module-change:${activeTab}`);
     setModuleResetKey((key) => key + 1);
 
-    const raf = requestAnimationFrame(() => cleanupBlockingOverlays(`module-change-raf:${activeTab}`));
-    const delayed = window.setTimeout(() => cleanupBlockingOverlays(`module-change-delayed:${activeTab}`), 350);
+    const raf = requestAnimationFrame(() => {
+      completeRouteTransition(activeTab);
+      cleanupBlockingOverlays(`module-change-raf:${activeTab}`);
+    });
+    const delayed = window.setTimeout(() => {
+      if (!isRouteTransitionActive()) cleanupBlockingOverlays(`module-change-delayed:${activeTab}`);
+    }, 350);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(delayed);
@@ -129,7 +161,6 @@ const Dashboard: React.FC = () => {
       if (bodyBlocked || seemsStuckLoading) {
         recordDiagnostic('watchdog', 'controlled module reset', { activeTab, bodyBlocked, seemsStuckLoading });
         cleanupBlockingOverlays(`watchdog:${activeTab}`);
-        requestDataRefresh(`watchdog:${activeTab}`);
         setModuleResetKey((key) => key + 1);
       }
     }, 4500);
