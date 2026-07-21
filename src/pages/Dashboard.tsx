@@ -49,6 +49,7 @@ import {
   beginRouteTransition,
   cleanupBlockingOverlays,
   completeRouteTransition,
+  hasOpenTransientOverlay,
   isRouteTransitionActive,
   recordDiagnostic,
   requestDataRefresh,
@@ -85,7 +86,6 @@ const Dashboard: React.FC = () => {
     const nextParams = tab === 'dashboard' ? '' : tab;
     if ((searchParams.get('module') || '') === nextParams) return;
     beginRouteTransition(activeTab, tab);
-    setModuleResetKey((key) => key + 1);
     recordDiagnostic('navigation', 'tab change requested', { from: activeTab, to: tab });
     window.dispatchEvent(new CustomEvent('aqua:close-transient-ui', { detail: { from: activeTab, to: tab } }));
     setSearchParams(tab === 'dashboard' ? {} : { module: tab }, { replace: true });
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
       window.setTimeout(() => {
         const urlModule = moduleParamToTabId(new URLSearchParams(window.location.search).get('module'));
         const renderedModule = document.querySelector('[data-module-content]')?.getAttribute('data-module-content');
-        if (renderedModule && renderedModule !== urlModule) {
+        if (renderedModule && renderedModule !== urlModule && !hasOpenTransientOverlay()) {
           recordDiagnostic('watchdog', 'module mismatch after navigation', {
             expected: urlModule,
             rendered: renderedModule,
@@ -133,14 +133,11 @@ const Dashboard: React.FC = () => {
     if (fallback !== activeTab) commitTabChange(fallback);
   }, [isTeamMember, teamMemberInfo, activeTab, isLoadingAccess, hasAccessToModule]);
 
-  // Sécurité anti-blocage : à chaque changement de module, on nettoie les
- // résidus de dialogues Radix qui laissent parfois `pointer-events:none`
- // sur <body> ou un overlay orphelin (ce qui fige l'interface après une
- // création d'unité / d'infrastructure / de lot). Idempotent et sans effet
- // si aucun résidu n'est présent.
+  // Sécurité anti-blocage : à chaque changement de module, on termine la
+  // transition et on libère uniquement les anciens verrous de page orphelins.
+  // Le nettoyage ignore les Dialog/Sheet/Select Radix réellement ouverts afin
+  // de ne plus démonter un formulaire pendant la saisie.
   useEffect(() => {
-    setModuleResetKey((key) => key + 1);
-
     const raf = requestAnimationFrame(() => {
       completeRouteTransition(activeTab);
       cleanupBlockingOverlays(`module-change-raf:${activeTab}`);
@@ -160,14 +157,16 @@ const Dashboard: React.FC = () => {
       const loadingText = document.querySelector('[data-module-content]')?.textContent?.toLowerCase() || '';
       const seemsStuckLoading = loadingText.includes('chargement') && loadingText.length < 180;
 
-      if (bodyBlocked || seemsStuckLoading) {
+      const overlayOpen = hasOpenTransientOverlay();
+
+      if (!overlayOpen && (bodyBlocked || seemsStuckLoading)) {
         recordDiagnostic('watchdog', 'controlled module reset', { activeTab, bodyBlocked, seemsStuckLoading });
         cleanupBlockingOverlays(`watchdog:${activeTab}`);
         setModuleResetKey((key) => key + 1);
       }
     }, 4500);
     return () => window.clearTimeout(timeout);
-  }, [activeTab, moduleResetKey]);
+  }, [activeTab]);
 
   const renderTeamMemberWelcome = () => {
     if (!isTeamMember || !teamMemberInfo) return null;
