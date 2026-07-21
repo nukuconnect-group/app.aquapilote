@@ -188,16 +188,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
     }
   };
 
-  const dialogContent = (
-    <DialogContent
-      hideClose
-      className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto"
-      onInteractOutside={(event) => event.preventDefault()}
-    >
-      <DialogHeader>
-        <DialogTitle>{infrastructure ? 'Modifier l\'infrastructure' : 'Nouvelle Infrastructure'}</DialogTitle>
-      </DialogHeader>
-      
+  const formFields = (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm">Nom de l'infrastructure</Label>
@@ -413,12 +404,24 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
           </Button>
         </div>
       </div>
+  );
+
+  const dialogContent = (
+    <DialogContent
+      hideClose
+      className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto"
+      onInteractOutside={(event) => event.preventDefault()}
+    >
+      <DialogHeader>
+        <DialogTitle>{infrastructure ? 'Modifier l\'infrastructure' : 'Nouvelle Infrastructure'}</DialogTitle>
+      </DialogHeader>
+      {formFields}
     </DialogContent>
   );
 
-  // If it's being used within another dialog (like in InfrastructureCard), don't wrap in Dialog
+  // If it's being used within another dialog (like in InfrastructureCard), don't nest Radix DialogContent.
   if (infrastructure && onClose) {
-    return dialogContent;
+    return formFields;
   }
 
   // For new infrastructure creation, wrap in Dialog with trigger
