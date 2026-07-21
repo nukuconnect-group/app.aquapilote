@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/clientConfig';
-import { cleanupBlockingOverlays, emitDataMutation, recordHookState } from '@/lib/appRecovery';
+import { emitDataMutation, recordHookState } from '@/lib/appRecovery';
 
 export type ProductionUnitType = 
   | 'ecloserie' 
@@ -697,7 +697,6 @@ export const ProductionUnitsProvider = ({ children }: { children: ReactNode }) =
   }, [isDemoMode, isAuthenticated, user?.id, fetchUnitsFromDB, fetchInfrastructuresFromDB, fetchEquipmentFromDB, fetchPurchasesFromDB, fetchTransactionsFromDB, fetchDepreciableAssetsFromDB]);
 
   const refreshCoreData = useCallback(async (reason = 'manual') => {
-    cleanupBlockingOverlays(`context-refresh:${reason}`);
     if (isDemoMode || !isAuthenticated || !user?.id) return;
     await Promise.allSettled([
       fetchUnitsFromDB(),

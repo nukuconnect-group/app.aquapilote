@@ -79,16 +79,29 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const isE2EDemoMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('e2eDemo') === '1';
+  const createDemoUser = (): User => ({
+    id: 'demo-user',
+    name: 'Utilisateur Démo',
+    email: 'demo@aquapilot.com',
+    role: 'user',
+    notifications: {
+      email: true,
+      desktop: true,
+      sms: false
+    }
+  });
+
+  const [user, setUser] = useState<User | null>(() => isE2EDemoMode ? createDemoUser() : null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isE2EDemoMode);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
     // Initialiser depuis localStorage
     return localStorage.getItem('aqua_pilot_onboarding') === 'true';
   });
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<string | null>(null);
   const [hasSelectedPlan, setHasSelectedPlan] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(isE2EDemoMode);
   const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
 
   // Fetch user profile and roles from Supabase
@@ -181,13 +194,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setIsLoading(false);
             }
           }, 0);
-        } else {
+        } else if (!isDemoMode) {
           setUser(null);
           setIsLoading(false);
         }
 
         // Gérer les événements spécifiques
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' && !isDemoMode) {
           setUser(null);
           setSession(null);
           setIsDemoMode(false);
@@ -708,19 +721,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialiser les données fictives
     initializeDemoData();
     
-    // Créer un utilisateur démonstration
-    const demoUser: User = {
-      id: 'demo-user',
-      name: 'Utilisateur Démo',
-      email: 'demo@aquapilot.com',
-      role: 'user',
-      notifications: {
-        email: true,
-        desktop: true,
-        sms: false
-      }
-    };
-    setUser(demoUser);
+    setUser(createDemoUser());
   };
 
   const exitDemoMode = () => {

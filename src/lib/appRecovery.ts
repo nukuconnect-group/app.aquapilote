@@ -163,6 +163,20 @@ export const isRouteTransitionActive = () => {
   return true;
 };
 
+const OPEN_TRANSIENT_OVERLAY_SELECTOR = [
+  '[role="dialog"][data-state="open"]',
+  '[role="alertdialog"][data-state="open"]',
+  '[role="listbox"][data-state="open"]',
+  '[role="menu"][data-state="open"]',
+  '[data-radix-popper-content-wrapper]',
+  '[data-state="open"][data-side]',
+].join(', ');
+
+export const hasOpenTransientOverlay = () => {
+  if (typeof document === 'undefined') return false;
+  return Boolean(document.querySelector(OPEN_TRANSIENT_OVERLAY_SELECTOR));
+};
+
 export const installDiagnostics = () => {
   if (typeof window === 'undefined' || window.__AQUA_DIAGNOSTICS_INSTALLED__) return;
   window.__AQUA_DIAGNOSTICS_INSTALLED__ = true;
@@ -247,6 +261,12 @@ export const cleanupBlockingOverlays = (reason = 'manual') => {
     recordDiagnostic('overlay-cleanup', `skipped-during-transition:${reason}`, getRouteSnapshot());
     return 0;
   }
+
+  if (hasOpenTransientOverlay()) {
+    recordDiagnostic('overlay-cleanup', `skipped-active-overlay:${reason}`, getRouteSnapshot());
+    return 0;
+  }
+
   const body = document.body;
   const html = document.documentElement;
   const hadBodyLock =
