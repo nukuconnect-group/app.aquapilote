@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,9 +35,9 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
     description: ''
   });
 
-  const [newInfrastructure, setNewInfrastructure] = useState({
+  const createEmptyInfrastructure = (unitId = units[0]?.id || '') => ({
     name: '',
-    unitId: units.length > 0 ? units[0].id : '',
+    unitId,
     type: '',
     customTypeName: '',
     capacity: 0,
@@ -52,6 +52,8 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
       oxygenLevel: ''
     }
   });
+
+  const [newInfrastructure, setNewInfrastructure] = useState(createEmptyInfrastructure);
 
   // Initialize form with existing infrastructure data if editing
   useEffect(() => {
@@ -75,6 +77,19 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
       });
     }
   }, [infrastructure]);
+
+  useEffect(() => {
+    if (!infrastructure && !newInfrastructure.unitId && units[0]?.id) {
+      setNewInfrastructure(prev => ({ ...prev, unitId: units[0].id }));
+    }
+  }, [infrastructure, newInfrastructure.unitId, units]);
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (open && !infrastructure && !newInfrastructure.unitId && units[0]?.id) {
+      setNewInfrastructure(prev => ({ ...prev, unitId: units[0].id }));
+    }
+    setShowDialog(open);
+  };
 
   const predefinedTypes = [
     { value: 'bassin_incubation', label: 'Bassin d\'incubation' },
@@ -162,23 +177,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
       onSave?.(infrastructure ? { ...infrastructure, ...infrastructurePayload } : infrastructurePayload);
 
       if (!infrastructure) {
-        setNewInfrastructure({
-          name: '',
-          unitId: units.length > 0 ? units[0].id : '',
-          type: '',
-          customTypeName: '',
-          capacity: 0,
-          status: 'active',
-          suggestedBatchId: '',
-          specifications: {
-            volume: '',
-            profondeur: '',
-            materiau: '',
-            temperature: '',
-            ph: '',
-            oxygenLevel: ''
-          }
-        });
+        setNewInfrastructure(createEmptyInfrastructure());
       }
 
       setShowDialog(false);
@@ -190,7 +189,11 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
   };
 
   const dialogContent = (
-    <DialogContent className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto">
+    <DialogContent
+      hideClose
+      className="max-w-full sm:max-w-3xl mx-2 max-h-[90vh] overflow-y-auto"
+      onInteractOutside={(event) => event.preventDefault()}
+    >
       <DialogHeader>
         <DialogTitle>{infrastructure ? 'Modifier l\'infrastructure' : 'Nouvelle Infrastructure'}</DialogTitle>
       </DialogHeader>
@@ -420,7 +423,7 @@ const InfrastructureForm = ({ onSave, infrastructure, onClose, trigger }: Infras
 
   // For new infrastructure creation, wrap in Dialog with trigger
   return (
-    <Dialog open={showDialog} onOpenChange={setShowDialog}>
+    <Dialog open={showDialog} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button className="text-sm">

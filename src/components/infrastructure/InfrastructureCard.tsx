@@ -24,7 +24,13 @@ interface InfrastructureCardProps {
 }
 
 const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
-  const { infrastructures, setInfrastructures, activeUnit, deleteInfrastructure: deleteUnitInfrastructure } = useProductionUnits();
+  const {
+    infrastructures,
+    setInfrastructures,
+    activeUnit,
+    deleteInfrastructure: deleteUnitInfrastructure,
+    updateInfrastructure: updateUnitInfrastructure,
+  } = useProductionUnits();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -203,6 +209,15 @@ const InfrastructureCard = ({ infrastructure }: InfrastructureCardProps) => {
       if (cycleInfra && newBatch) {
         await updateInfrastructure(cycleInfra.id, {
           livestock_batch_id: newBatch.id
+        });
+      }
+
+      if (newBatch) {
+        await updateUnitInfrastructure(infrastructure.id, {
+          specifications: {
+            ...(infrastructure.specifications || {}),
+            attachedBatchId: newBatch.id,
+          },
         });
       }
 
