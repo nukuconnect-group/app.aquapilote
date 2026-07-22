@@ -202,6 +202,9 @@ export const useSales = () => {
         });
       }
 
+      // Force refresh pour garantir la synchronisation avec la base
+      fetchSales();
+
       return newSale;
     } catch (err) {
       console.error('Error adding sale:', err);

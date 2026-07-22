@@ -484,7 +484,7 @@ const AquaAssistantModule = () => {
     <div
       className={
         isFullscreen
-          ? 'fixed inset-0 z-[80] flex flex-col gap-3 bg-background p-3 sm:p-4 overflow-y-auto'
+          ? 'fixed inset-0 z-[80] flex flex-col gap-3 bg-background p-3 sm:p-4 overflow-hidden'
           : 'space-y-4'
       }
       style={
