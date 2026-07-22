@@ -3,6 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
   'https://aqua-pilote.lovable.app',
+  'https://aqua001.lovable.app',
+  'https://app.aquapilote.com',
+  'https://aquapilote.com',
+  'https://www.aquapilote.com',
   'http://localhost:8080',
   'http://localhost:5173',
 ];
@@ -14,6 +18,8 @@ const isAllowedOrigin = (origin: string | null): boolean => {
   if (/^https:\/\/.*--0fc17be6-2fd0-43fb-ab5d-d4fda8d4767c\.lovable\.app$/.test(origin)) return true;
   // Allow all *.lovable.app published domains
   if (/^https:\/\/.*\.lovable\.app$/.test(origin)) return true;
+  // Allow all *.aquapilote.com (production custom domain)
+  if (/^https:\/\/([a-z0-9-]+\.)*aquapilote\.com$/.test(origin)) return true;
   return false;
 };
 
