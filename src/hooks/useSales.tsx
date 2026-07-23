@@ -185,21 +185,26 @@ export const useSales = () => {
 
       setSales(prev => [newSale, ...prev]);
 
-      // Create revenue transaction in accounting
+      // Create revenue transaction in accounting (best-effort — ne doit pas
+      // masquer le succès de l'enregistrement de la vente si la compta échoue)
       if (sale.status === 'confirmed' || sale.status === 'paid') {
-        await addTransaction({
-          date: sale.date,
-          type: 'revenue',
-          category: 'Vente de poissons',
-          description: `Vente à ${sale.clientName}`,
-          amount: sale.totalAmount,
-          currency: 'XOF',
-          paymentMethod: sale.paymentMethod,
-          client: sale.clientName,
-          status: sale.status === 'paid' ? 'confirmed' : 'pending',
-          unitId: sale.unitId,
-          unitName: activeUnit?.name
-        });
+        try {
+          await addTransaction({
+            date: sale.date,
+            type: 'revenue',
+            category: 'Vente de poissons',
+            description: `Vente à ${sale.clientName}`,
+            amount: sale.totalAmount,
+            currency: 'XOF',
+            paymentMethod: sale.paymentMethod,
+            client: sale.clientName,
+            status: sale.status === 'paid' ? 'confirmed' : 'pending',
+            unitId: sale.unitId,
+            unitName: activeUnit?.name
+          });
+        } catch (txErr) {
+          console.error('Sale saved but accounting transaction failed:', txErr);
+        }
       }
 
       // Force refresh pour garantir la synchronisation avec la base
@@ -211,6 +216,26 @@ export const useSales = () => {
       return null;
     }
   };
+
+  // Synchronisation temps réel : rafraîchit la liste dès qu'une vente est
+  // ajoutée/modifiée/supprimée côté base (autre onglet, autre membre équipe, etc.)
+  useEffect(() => {
+    if (isDemoMode || !user?.id) return;
+    const channel = supabase
+      .channel(`sales-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sales' },
+        () => { fetchSales(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sale_items' },
+        () => { fetchSales(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isDemoMode, user?.id, fetchSales]);
 
   const updateSale = async (id: string, updates: Partial<Sale>) => {
     const sale = sales.find(s => s.id === id);
