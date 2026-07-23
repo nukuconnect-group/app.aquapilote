@@ -102,6 +102,17 @@ export const useEmployees = () => {
     fetchEmployees();
   }, [fetchEmployees]);
 
+  // Synchronisation temps réel
+  useEffect(() => {
+    if (isDemoMode || !user?.id) return;
+    const channel = supabase
+      .channel(`employees-realtime-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => fetchEmployees())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pay_slips' }, () => fetchEmployees())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isDemoMode, user?.id, fetchEmployees]);
+
   const filteredEmployees = useMemo(() => {
     if (!activeUnit?.id) return employees;
     return employees.filter(e => e.unitId === activeUnit.id);

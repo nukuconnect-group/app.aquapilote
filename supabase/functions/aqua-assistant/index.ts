@@ -217,7 +217,7 @@ serve(async (req) => {
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Erreur de l'assistant. Réessaie." }), {
+      return new Response(JSON.stringify({ error: `Erreur assistant (${response.status}): ${errorText.slice(0, 200)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
