@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { getDemoData } from '@/lib/demoData';
+import { emitDataMutation } from '@/lib/appRecovery';
 
 const RETRYABLE_SALE_ERROR_CODES = new Set(['23505', '40001', '40P01', '57014']);
 
@@ -171,6 +172,7 @@ export const useSales = () => {
       const newSale: Sale = mapSaleRow(saleData, sale.products);
 
       setSales(prev => [newSale, ...prev.filter((existing) => existing.id !== newSale.id)]);
+      emitDataMutation({ table: 'sales', action: 'create', id: newSale.id, module: 'sales' });
 
       // Create revenue transaction in accounting (best-effort — ne doit pas
       // masquer le succès de l'enregistrement de la vente si la compta échoue)
@@ -231,6 +233,7 @@ export const useSales = () => {
     if (isDemoMode) {
       const updatedSale = { ...sale, ...updates };
       setSales(prev => prev.map(s => s.id === id ? updatedSale : s));
+      emitDataMutation({ table: 'sales', action: 'update', id, module: 'sales' });
 
       // If status changed to confirmed or paid and wasn't before, create transaction
       const wasNotConfirmed = sale.status !== 'confirmed' && sale.status !== 'paid';
@@ -311,6 +314,7 @@ export const useSales = () => {
   const deleteSale = async (id: string) => {
     if (isDemoMode) {
       setSales(prev => prev.filter(s => s.id !== id));
+      emitDataMutation({ table: 'sales', action: 'delete', id, module: 'sales' });
       return true;
     }
     if (!user?.id) return false;
