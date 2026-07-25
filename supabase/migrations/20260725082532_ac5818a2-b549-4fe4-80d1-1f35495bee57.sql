@@ -1,0 +1,4 @@
+REVOKE EXECUTE ON FUNCTION public.create_sale_idempotent(text, text, date, text, text, numeric, text, text, text, date, boolean, numeric, text, text, text, numeric, jsonb) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_sale_idempotent(text, text, date, text, text, numeric, text, text, text, date, boolean, numeric, text, text, text, numeric, jsonb) FROM anon;
+GRANT EXECUTE ON FUNCTION public.create_sale_idempotent(text, text, date, text, text, numeric, text, text, text, date, boolean, numeric, text, text, text, numeric, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_sale_idempotent(text, text, date, text, text, numeric, text, text, text, date, boolean, numeric, text, text, text, numeric, jsonb) TO service_role;
