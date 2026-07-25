@@ -113,6 +113,7 @@ export const LogsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase
         .from('activity_logs')
         .insert({
+          user_id: user.id,
           user_name: user.name,
           action,
           module,

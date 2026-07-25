@@ -43,6 +43,8 @@ interface ReceiptPreviewProps {
   data: ReceiptData;
   onConfirm?: () => void;
   showConfirmButton?: boolean;
+  confirmDisabled?: boolean;
+  confirmLabel?: string;
   initialAction?: 'download' | 'print' | null;
   onInitialActionComplete?: () => void;
 }
@@ -53,6 +55,8 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   data,
   onConfirm,
   showConfirmButton = false,
+  confirmDisabled = false,
+  confirmLabel = 'Confirmer et enregistrer',
   initialAction = null,
   onInitialActionComplete,
 }) => {
@@ -378,9 +382,9 @@ const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
             Imprimer
           </Button>
           {showConfirmButton && onConfirm && (
-            <Button onClick={onConfirm} className="w-full text-sm sm:w-auto">
+            <Button onClick={onConfirm} disabled={confirmDisabled} className="w-full text-sm sm:w-auto">
               <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-              Confirmer et enregistrer
+              {confirmLabel}
             </Button>
           )}
         </div>
