@@ -4,6 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProductionUnits } from '@/contexts/ProductionUnitsContext';
 import { getDemoData } from '@/lib/demoData';
 
+const RETRYABLE_SALE_ERROR_CODES = new Set(['23505', '40001', '40P01', '57014']);
+
+const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
 export interface SaleItem {
   name: string;
   quantity: number;
@@ -13,6 +17,7 @@ export interface SaleItem {
 
 export interface Sale {
   id: string;
+  clientRequestId?: string;
   date: string;
   clientName: string;
   clientContact: string;
@@ -30,6 +35,34 @@ export interface Sale {
   documentNumber?: string;
   taxRate?: number;
 }
+
+const mapSaleRow = (s: any, fallbackProducts: SaleItem[] = []): Sale => ({
+  id: s.id,
+  clientRequestId: s.client_request_id || undefined,
+  date: s.date,
+  clientName: s.client_name,
+  clientContact: s.client_contact || '',
+  unitId: s.unit_id,
+  products: Array.isArray(s.sale_items)
+    ? s.sale_items.map((item: any) => ({
+        name: item.name,
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.unit_price) || 0,
+        total: Number(item.total) || 0,
+      }))
+    : fallbackProducts,
+  totalAmount: Number(s.total_amount) || 0,
+  status: s.status as Sale['status'],
+  paymentMethod: s.payment_method || '',
+  notes: s.notes || '',
+  dueDate: s.due_date || undefined,
+  isCredit: s.is_credit || false,
+  paidAmount: Number(s.paid_amount) || 0,
+  paymentTerms: s.payment_terms || undefined,
+  documentType: (s.document_type as 'receipt' | 'invoice' | 'proforma') || 'receipt',
+  documentNumber: s.document_number || undefined,
+  taxRate: Number(s.tax_rate) || 0,
+});
 
 export const useSales = () => {
   const { isDemoMode, user, isAuthenticated } = useAuth();
@@ -70,30 +103,7 @@ export const useSales = () => {
 
       if (error) throw error;
 
-      setSales((data || []).map((s: any) => ({
-        id: s.id,
-        date: s.date,
-        clientName: s.client_name,
-        clientContact: s.client_contact || '',
-        unitId: s.unit_id,
-        products: (s.sale_items || []).map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          total: item.total
-        })),
-        totalAmount: s.total_amount,
-        status: s.status as Sale['status'],
-        paymentMethod: s.payment_method || '',
-        notes: s.notes || '',
-        dueDate: s.due_date || undefined,
-        isCredit: s.is_credit || false,
-        paidAmount: s.paid_amount || 0,
-        paymentTerms: s.payment_terms || undefined,
-        documentType: (s.document_type as 'receipt' | 'invoice' | 'proforma') || 'receipt',
-        documentNumber: s.document_number || undefined,
-        taxRate: typeof s.tax_rate === 'number' ? s.tax_rate : Number(s.tax_rate) || 0
-      })));
+      setSales((data || []).map((s: any) => mapSaleRow(s)));
     } catch (err) {
       console.error('Error fetching sales:', err);
     } finally {
@@ -118,72 +128,49 @@ export const useSales = () => {
     }
     if (!user?.id) return null;
 
+    const clientRequestId = sale.clientRequestId || `sale-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
     try {
-      // Insert the sale
-      const { data: saleData, error: saleError } = await supabase
-        .from('sales')
-        .insert({
-          user_id: user.id,
-          unit_id: sale.unitId,
-          date: sale.date,
-          client_name: sale.clientName,
-          client_contact: sale.clientContact,
-          total_amount: sale.totalAmount,
-          status: sale.status,
-          payment_method: sale.paymentMethod,
-          notes: sale.notes,
-          due_date: sale.dueDate || null,
-          is_credit: sale.isCredit || false,
-          paid_amount: sale.paidAmount || 0,
-          payment_terms: sale.paymentTerms || null,
-          document_type: sale.documentType || 'receipt',
-          document_number: sale.documentNumber || null,
-          tax_rate: sale.taxRate ?? 0
-        })
-        .select()
-        .single();
+      let saleData: any = null;
+      let lastError: any = null;
 
-      if (saleError) throw saleError;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const { data, error } = await (supabase as any).rpc('create_sale_idempotent', {
+          _client_request_id: clientRequestId,
+          _unit_id: sale.unitId,
+          _date: sale.date,
+          _client_name: sale.clientName,
+          _client_contact: sale.clientContact || null,
+          _total_amount: sale.totalAmount,
+          _status: sale.status,
+          _payment_method: sale.paymentMethod || null,
+          _notes: sale.notes || null,
+          _due_date: sale.dueDate || null,
+          _is_credit: sale.isCredit || false,
+          _paid_amount: sale.paidAmount || 0,
+          _payment_terms: sale.paymentTerms || null,
+          _document_type: sale.documentType || 'receipt',
+          _document_number: sale.documentNumber || null,
+          _tax_rate: sale.taxRate ?? 0,
+          _items: sale.products,
+        });
 
-      // Insert sale items
-      if (sale.products.length > 0) {
-        const itemsToInsert = sale.products.map(item => ({
-          user_id: user.id,
-          sale_id: saleData.id,
-          name: item.name,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          total: item.total
-        }));
+        if (!error) {
+          saleData = Array.isArray(data) ? data[0] : data;
+          break;
+        }
 
-        const { error: itemsError } = await supabase
-          .from('sale_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) throw itemsError;
+        lastError = error;
+        if (!RETRYABLE_SALE_ERROR_CODES.has(error.code) || attempt === 2) break;
+        await wait(300 * (attempt + 1));
       }
 
-      const newSale: Sale = {
-        id: saleData.id,
-        date: saleData.date,
-        clientName: saleData.client_name,
-        clientContact: saleData.client_contact || '',
-        unitId: saleData.unit_id,
-        products: sale.products,
-        totalAmount: saleData.total_amount,
-        status: saleData.status as Sale['status'],
-        paymentMethod: saleData.payment_method || '',
-        notes: saleData.notes || '',
-        dueDate: saleData.due_date || undefined,
-        isCredit: saleData.is_credit || false,
-        paidAmount: saleData.paid_amount || 0,
-        paymentTerms: saleData.payment_terms || undefined,
-        documentType: (saleData.document_type as 'receipt' | 'invoice' | 'proforma') || 'receipt',
-        documentNumber: saleData.document_number || undefined,
-        taxRate: typeof saleData.tax_rate === 'number' ? saleData.tax_rate : Number(saleData.tax_rate) || 0
-      };
+      if (lastError && !saleData) throw lastError;
+      if (!saleData) throw new Error('Vente non enregistrée');
 
-      setSales(prev => [newSale, ...prev]);
+      const newSale: Sale = mapSaleRow(saleData, sale.products);
+
+      setSales(prev => [newSale, ...prev.filter((existing) => existing.id !== newSale.id)]);
 
       // Create revenue transaction in accounting (best-effort — ne doit pas
       // masquer le succès de l'enregistrement de la vente si la compta échoue)
@@ -208,7 +195,7 @@ export const useSales = () => {
       }
 
       // Force refresh pour garantir la synchronisation avec la base
-      fetchSales();
+      await fetchSales();
 
       return newSale;
     } catch (err) {

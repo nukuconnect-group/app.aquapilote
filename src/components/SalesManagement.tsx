@@ -73,6 +73,7 @@ const SalesManagement = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [pdfInitialAction, setPdfInitialAction] = useState<'download' | 'print' | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [isSavingSale, setIsSavingSale] = useState(false);
 
   const [newSale, setNewSale] = useState<SaleFormState>(createEmptySale(activeUnit?.id || ''));
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -224,71 +225,82 @@ const SalesManagement = () => {
   };
 
   const handleConfirmSale = async () => {
+    if (isSavingSale) return;
     if (!validateCurrentDraft()) return;
 
+    setIsSavingSale(true);
     const totalAmount = newSale.products.reduce((sum, product) => sum + (product.quantity * product.unitPrice), 0);
     const taxRate = isBillingDocument(newSale.documentType) ? (newSale.taxRate || 0) : 0;
-    const documentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
+    const previewDocumentNumber = previewReceiptData?.number || generateNextDocumentNumber(sales, newSale.documentType);
     const finalAmount = totalAmount + totalAmount * (taxRate / 100);
-    
     const isBilling = isBillingDocument(newSale.documentType);
-    const result = await addSale({
-      date: new Date().toISOString().split('T')[0],
-      clientName: newSale.clientName,
-      clientContact: newSale.clientContact,
-      unitId: newSale.unitId,
-      products: newSale.products.map(p => ({
-        ...p,
-        total: p.quantity * p.unitPrice
-      })),
-      totalAmount: finalAmount,
-      // Les factures / proformas restent toujours en attente jusqu'à
-      // ce qu'elles soient marquées comme payées manuellement.
-      status: isBilling
-        ? 'pending'
-        : (newSale.isCredit ? 'confirmed' : 'paid'),
-      paymentMethod: newSale.paymentMethod,
-      notes: newSale.legalMentions || newSale.notes,
-      isCredit: newSale.isCredit,
-      dueDate: isBilling ? (newSale.dueDate || undefined) : undefined,
-      paymentTerms: newSale.paymentTerms || undefined,
-      paidAmount: isBilling
-        ? 0
-        : (newSale.isCredit ? 0 : finalAmount),
-      documentType: newSale.documentType,
-      documentNumber,
-      taxRate,
-    });
+    const clientRequestId = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    if (result) {
-      const label = newSale.documentType === 'invoice' ? 'Facture' : newSale.documentType === 'proforma' ? 'Proforma' : 'Reçu';
-      await auditDocumentAction(`${label} créé`, `${documentNumber} créé pour ${newSale.clientName}`, 'success');
-      toast({ title: `${label} enregistré`, description: `${documentNumber} créé avec succès` });
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await createNotification({
-          userId: user.id,
-          title: `${label} créé`,
-          message: `${documentNumber} pour ${newSale.clientName} - ${formatCurrency(finalAmount)}`,
-          type: 'success',
-          module: 'Ventes',
-          isCritical: false,
-          metadata: {
-            clientName: newSale.clientName,
-            totalAmount: finalAmount,
-            paymentMethod: newSale.paymentMethod,
-            documentNumber,
-            documentType: newSale.documentType,
-          }
-        });
+    try {
+      const result = await addSale({
+        clientRequestId,
+        date: new Date().toISOString().split('T')[0],
+        clientName: newSale.clientName,
+        clientContact: newSale.clientContact,
+        unitId: newSale.unitId,
+        products: newSale.products.map(p => ({
+          ...p,
+          total: p.quantity * p.unitPrice
+        })),
+        totalAmount: finalAmount,
+        // Les factures / proformas restent toujours en attente jusqu'à
+        // ce qu'elles soient marquées comme payées manuellement.
+        status: isBilling
+          ? 'pending'
+          : (newSale.isCredit ? 'confirmed' : 'paid'),
+        paymentMethod: newSale.paymentMethod,
+        notes: newSale.legalMentions || newSale.notes,
+        isCredit: newSale.isCredit,
+        dueDate: isBilling ? (newSale.dueDate || undefined) : undefined,
+        paymentTerms: newSale.paymentTerms || undefined,
+        paidAmount: isBilling
+          ? 0
+          : (newSale.isCredit ? 0 : finalAmount),
+        documentType: newSale.documentType,
+        documentNumber: previewDocumentNumber,
+        taxRate,
+      });
+
+      if (result) {
+        const savedDocumentNumber = result.documentNumber || previewDocumentNumber;
+        const label = newSale.documentType === 'invoice' ? 'Facture' : newSale.documentType === 'proforma' ? 'Proforma' : 'Reçu';
+        await auditDocumentAction(`${label} créé`, `${savedDocumentNumber} créé pour ${newSale.clientName}`, 'success');
+        toast({ title: `${label} enregistré`, description: `${savedDocumentNumber} créé avec succès` });
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await createNotification({
+            userId: user.id,
+            title: `${label} créé`,
+            message: `${savedDocumentNumber} pour ${newSale.clientName} - ${formatCurrency(finalAmount)}`,
+            type: 'success',
+            module: 'Ventes',
+            isCritical: false,
+            metadata: {
+              clientName: newSale.clientName,
+              totalAmount: finalAmount,
+              paymentMethod: newSale.paymentMethod,
+              documentNumber: savedDocumentNumber,
+              documentType: newSale.documentType,
+            }
+          });
+        }
+
+        setNewSale(createEmptySale(activeUnit?.id || ''));
+        setValidationErrors([]);
+        setShowSaleDialog(false);
+        setShowReceiptPreview(false);
+      } else {
+        toast({ title: 'Vente non enregistrée', description: 'Veuillez vérifier la connexion puis réessayer.', variant: 'destructive' });
       }
+    } finally {
+      setIsSavingSale(false);
     }
-    
-    setNewSale(createEmptySale(activeUnit?.id || ''));
-    setValidationErrors([]);
-    setShowSaleDialog(false);
-    setShowReceiptPreview(false);
   };
 
   const addProduct = () => {
@@ -1460,6 +1472,8 @@ const SalesManagement = () => {
           data={previewReceiptData}
           onConfirm={viewingSaleReceipt ? undefined : handleConfirmSale}
           showConfirmButton={!viewingSaleReceipt && validationErrors.length === 0}
+          confirmDisabled={isSavingSale}
+          confirmLabel={isSavingSale ? 'Enregistrement...' : 'Confirmer et enregistrer'}
           initialAction={pdfInitialAction}
           onInitialActionComplete={() => setPdfInitialAction(null)}
         />

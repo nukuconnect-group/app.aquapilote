@@ -14,6 +14,40 @@ const SCANNER_ELEMENT_ID = 'barcode-scanner-region';
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }) => {
   const scannerRef = useRef<any>(null);
   const mountedRef = useRef(false);
+  const runningRef = useRef(false);
+
+  const safeClear = (scanner: any) => {
+    try {
+      scanner?.clear?.();
+    } catch {
+      // html5-qrcode can throw when the camera was already released.
+    }
+  };
+
+  const safeStopScanner = (scanner: any) => {
+    if (!scanner) return;
+    const clear = () => {
+      runningRef.current = false;
+      safeClear(scanner);
+      if (scannerRef.current === scanner) scannerRef.current = null;
+    };
+
+    if (!runningRef.current) {
+      clear();
+      return;
+    }
+
+    try {
+      const stopResult = scanner.stop?.();
+      if (stopResult && typeof stopResult.then === 'function') {
+        stopResult.then(clear).catch(clear);
+      } else {
+        clear();
+      }
+    } catch {
+      clear();
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -34,13 +68,17 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
           (decodedText: string) => {
             if (!mountedRef.current) return;
             onScan(decodedText);
-            scanner.stop().then(() => scanner.clear()).catch(() => undefined);
+            safeStopScanner(scanner);
             onClose();
           },
           () => undefined,
         );
+        runningRef.current = true;
       } catch (err) {
-        console.error('Scanner error:', err);
+        runningRef.current = false;
+        safeClear(scannerRef.current);
+        scannerRef.current = null;
+        if (mountedRef.current) console.error('Scanner error:', err);
       }
     })();
 
@@ -48,10 +86,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
       cancelled = true;
       mountedRef.current = false;
       const scanner = scannerRef.current;
-      if (scanner) {
-        scanner.stop().then(() => scanner.clear()).catch(() => undefined);
-        scannerRef.current = null;
-      }
+      safeStopScanner(scanner);
     };
   }, [open, onClose, onScan]);
 
