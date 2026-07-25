@@ -2322,6 +2322,7 @@ export type Database = {
         Row: {
           client_contact: string | null
           client_name: string
+          client_request_id: string | null
           created_at: string
           date: string
           document_number: string | null
@@ -2343,6 +2344,7 @@ export type Database = {
         Insert: {
           client_contact?: string | null
           client_name: string
+          client_request_id?: string | null
           created_at?: string
           date?: string
           document_number?: string | null
@@ -2364,6 +2366,7 @@ export type Database = {
         Update: {
           client_contact?: string | null
           client_name?: string
+          client_request_id?: string | null
           created_at?: string
           date?: string
           document_number?: string | null
@@ -2938,6 +2941,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sale_idempotent: {
+        Args: {
+          _client_contact: string
+          _client_name: string
+          _client_request_id: string
+          _date: string
+          _document_number: string
+          _document_type: string
+          _due_date: string
+          _is_credit: boolean
+          _items: Json
+          _notes: string
+          _paid_amount: number
+          _payment_method: string
+          _payment_terms: string
+          _status: string
+          _tax_rate: number
+          _total_amount: number
+          _unit_id: string
+        }
+        Returns: {
+          client_contact: string
+          client_name: string
+          created_at: string
+          date: string
+          document_number: string
+          document_type: string
+          due_date: string
+          id: string
+          is_credit: boolean
+          notes: string
+          paid_amount: number
+          payment_method: string
+          payment_terms: string
+          sale_items: Json
+          status: string
+          tax_rate: number
+          total_amount: number
+          unit_id: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       expire_outdated_subscriptions: {
         Args: never
         Returns: {
