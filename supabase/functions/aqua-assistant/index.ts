@@ -130,8 +130,22 @@ serve(async (req) => {
       });
     }
 
+    // Drop empty assistant placeholders (client often appends an empty
+    // assistant message before streaming). This avoids false 400s.
+    const cleanedMessages = messages.filter(
+      (m: any) => m && typeof m === 'object' && typeof m.content === 'string' && m.content.trim().length > 0
+    );
+
+    if (cleanedMessages.length === 0) {
+      console.error("No non-empty messages after cleanup");
+      return new Response(JSON.stringify({ error: "Aucun message à traiter" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Validate message structure and content length
-    for (const msg of messages) {
+    for (const msg of cleanedMessages) {
       if (!msg || typeof msg !== 'object') {
         console.error("Invalid message object:", msg);
         return new Response(JSON.stringify({ error: "Format de message invalide" }), {
@@ -196,7 +210,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: fullSystemPrompt },
-          ...messages,
+          ...cleanedMessages,
         ],
         stream: true,
       }),
