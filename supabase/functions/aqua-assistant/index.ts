@@ -210,7 +210,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: fullSystemPrompt },
-          ...messages,
+          ...cleanedMessages,
         ],
         stream: true,
       }),
