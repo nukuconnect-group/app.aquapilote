@@ -11,7 +11,22 @@ const sseBody = (text: string) =>
     '',
   ].join('\n');
 
+// Session Supabase factice : le mode démo E2E n'ouvre pas de session,
+// or le chat exige un jeton avant d'appeler l'edge function.
+const FAKE_SESSION = {
+  access_token: 'e2e-fake-access-token',
+  refresh_token: 'e2e-fake-refresh-token',
+  token_type: 'bearer',
+  expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  user: { id: 'demo-user', email: 'demo@aquapilot.com', aud: 'authenticated', role: 'authenticated' },
+};
+
 const openChat = async (page: Page) => {
+  await page.addInitScript(
+    ([key, session]) => window.localStorage.setItem(key as string, session as string),
+    ['sb-hhsvraqchtqqgaezhnzn-auth-token', JSON.stringify(FAKE_SESSION)] as const,
+  );
   await page.goto(CHAT_URL);
   await expect(page.locator('[data-chat-input]').first()).toBeVisible();
 };
