@@ -1,0 +1,139 @@
+import { expect, test, type Page } from '@playwright/test';
+
+const CHAT_URL = '/dashboard?e2eDemo=1&module=aqua-assistant';
+const FUNCTION_URL = '**/functions/v1/aqua-assistant';
+
+const sseBody = (text: string) =>
+  [
+    `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}`,
+    '',
+    'data: [DONE]',
+    '',
+  ].join('\n');
+
+const openChat = async (page: Page) => {
+  await page.goto(CHAT_URL);
+  await expect(page.locator('[data-chat-input]').first()).toBeVisible();
+};
+
+const input = (page: Page) => page.locator('[data-chat-input]').first();
+const sendButton = (page: Page) => page.locator('[data-chat-send]').first();
+const errorPanel = (page: Page) => page.locator('[data-chat-error]').first();
+
+test.describe('Aqua Assistant — robustesse du chat', () => {
+  test('un message vide n\u2019est jamais envoyé au serveur', async ({ page }) => {
+    let calls = 0;
+    await page.route(FUNCTION_URL, async (route) => {
+      calls += 1;
+      await route.fulfill({ status: 200, body: sseBody('ok') });
+    });
+
+    await openChat(page);
+
+    // Bouton cliqué sans saisie
+    await sendButton(page).click();
+    await expect(errorPanel(page)).toHaveAttribute('data-chat-error', 'validation');
+    await expect(errorPanel(page)).toContainText(/vide/i);
+
+    // Uniquement des espaces + touche Entrée
+    await input(page).fill('     ');
+    await input(page).press('Enter');
+    await expect(errorPanel(page)).toHaveAttribute('data-chat-error', 'validation');
+
+    await page.waitForTimeout(500);
+    expect(calls).toBe(0);
+  });
+
+  test('le panneau d\u2019erreur affiche request_id et route, puis la conversation reprend', async ({ page }) => {
+    let calls = 0;
+    await page.route(FUNCTION_URL, async (route) => {
+      calls += 1;
+      if (calls === 1) {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Panne simulée du service IA' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: sseBody('Réponse de reprise'),
+      });
+    });
+
+    await openChat(page);
+    await input(page).fill('Combien nourrir mes poissons ?');
+    await sendButton(page).click();
+
+    const panel = errorPanel(page);
+    await expect(panel).toBeVisible({ timeout: 15_000 });
+    await expect(panel).toContainText('Panne simulée du service IA');
+
+    // Diagnostic : identifiant de requête + route
+    await expect(panel.locator('[data-chat-request-id]')).toContainText(/^req_/);
+    await expect(panel.locator('[data-chat-route]')).toContainText('/dashboard');
+    await expect(panel).toContainText(/tentative 1\/4/);
+
+    // Backoff progressif : le bouton est temporairement désactivé
+    const retry = panel.getByRole('button', { name: /Réessayer/ });
+    await expect(retry).toBeDisabled();
+    await expect(retry).toContainText(/Réessayer dans \d+s/);
+
+    // Puis réessai possible, la conversation reprend normalement
+    await expect(retry).toBeEnabled({ timeout: 15_000 });
+    await retry.click();
+
+    await expect(page.locator('body')).toContainText('Réponse de reprise', { timeout: 20_000 });
+    await expect(errorPanel(page)).toHaveCount(0);
+    expect(calls).toBe(2);
+  });
+
+  test('le réessai s\u2019arrête après le nombre maximum de tentatives', async ({ page }) => {
+    await page.route(FUNCTION_URL, (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Service indisponible' }),
+      }),
+    );
+
+    await openChat(page);
+    await input(page).fill('Test des tentatives');
+    await sendButton(page).click();
+
+    const panel = errorPanel(page);
+    await expect(panel).toBeVisible({ timeout: 15_000 });
+
+    for (let attempt = 1; attempt < 4; attempt++) {
+      const retry = panel.getByRole('button', { name: /Réessayer/ });
+      await expect(retry).toBeEnabled({ timeout: 30_000 });
+      await retry.click();
+      await expect(panel).toContainText(new RegExp(`tentative ${attempt + 1}/4`), { timeout: 20_000 });
+    }
+
+    await expect(panel).toContainText(/Nombre maximum de tentatives atteint/);
+    await expect(panel.getByRole('button', { name: /Réessayer/ })).toHaveCount(0);
+  });
+
+  test('la limite de débit client bloque les envois rapprochés', async ({ page }) => {
+    let calls = 0;
+    await page.route(FUNCTION_URL, async (route) => {
+      calls += 1;
+      await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sseBody('ok') });
+    });
+
+    await openChat(page);
+    await input(page).fill('Premier message');
+    await sendButton(page).click();
+    await expect(page.locator('body')).toContainText('ok', { timeout: 20_000 });
+
+    await input(page).fill('Deuxième message immédiat');
+    await sendButton(page).click();
+
+    await expect(errorPanel(page)).toHaveAttribute('data-chat-error', 'rate_limit');
+    await expect(errorPanel(page)).toContainText(/trop rapide|Patientez/i);
+    expect(calls).toBe(1);
+  });
+});
