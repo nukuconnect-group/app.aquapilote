@@ -60,7 +60,11 @@ export const CHAT_MIN_INTERVAL_MS = 2000;
 export const CHAT_WINDOW_MS = 60000;
 export const CHAT_MAX_PER_WINDOW = 12;
 
-export type RateLimitVerdict = { allowed: true } | { allowed: false; retryAfterMs: number; reason: 'cooldown' | 'quota' };
+export interface RateLimitVerdict {
+  allowed: boolean;
+  retryAfterMs: number;
+  reason: 'cooldown' | 'quota' | 'ok';
+}
 
 export const createChatRateLimiter = () => {
   let sentAt: number[] = [];
@@ -75,7 +79,7 @@ export const createChatRateLimiter = () => {
       if (sentAt.length >= CHAT_MAX_PER_WINDOW) {
         return { allowed: false, retryAfterMs: CHAT_WINDOW_MS - (now - sentAt[0]), reason: 'quota' };
       }
-      return { allowed: true };
+      return { allowed: true, retryAfterMs: 0, reason: 'ok' };
     },
     record(now = Date.now()) {
       sentAt.push(now);
@@ -86,7 +90,7 @@ export const createChatRateLimiter = () => {
   };
 };
 
-export const rateLimitMessage = (verdict: Extract<RateLimitVerdict, { allowed: false }>) => {
+export const rateLimitMessage = (verdict: RateLimitVerdict) => {
   const seconds = Math.max(1, Math.ceil(verdict.retryAfterMs / 1000));
   return verdict.reason === 'cooldown'
     ? `Envoi trop rapide. Patientez ${seconds} s avant le prochain message.`
