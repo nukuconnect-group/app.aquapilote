@@ -120,6 +120,7 @@ const AdminDashboard = () => {
 
   const purgeErrorLogs = async () => {
     setIsPurgingErrors(true);
+    setIsPurgingErrors(true);
     try {
       const { error } = await supabase
         .from('activity_logs')
