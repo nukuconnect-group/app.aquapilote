@@ -181,6 +181,8 @@ const AquaAssistant = () => {
   };
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatError, setChatError] = useState<ChatError | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(activeUnit?.id || null);
