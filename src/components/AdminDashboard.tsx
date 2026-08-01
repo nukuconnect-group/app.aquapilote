@@ -120,7 +120,6 @@ const AdminDashboard = () => {
 
   const purgeErrorLogs = async () => {
     setIsPurgingErrors(true);
-    setIsPurgingErrors(true);
     try {
       const { error } = await supabase
         .from('activity_logs')
@@ -139,6 +138,30 @@ const AdminDashboard = () => {
     } finally {
       setIsPurgingErrors(false);
     }
+  };
+
+  const ERROR_LOG_COLUMNS: ExportColumn<(typeof logs)[number]>[] = [
+    { header: 'Date', value: (l) => format(new Date(l.timestamp), 'dd/MM/yyyy HH:mm:ss'), width: 32 },
+    { header: 'Gravité', value: (l) => (l.severity === 'error' ? 'ERREUR' : 'AVERTISSEMENT'), width: 26 },
+    { header: 'Module', value: (l) => l.module || '-', width: 28 },
+    { header: 'Action', value: (l) => l.action || '-', width: 50 },
+    { header: 'Détails', value: (l) => l.details || '-' },
+    { header: 'Utilisateur', value: (l) => l.userName || '-', width: 40 },
+  ];
+
+  const exportErrorLogs = (fileFormat: 'csv' | 'pdf') => {
+    const rows = visibleErrorLogs;
+    if (rows.length === 0) return;
+    const fileName = `aquapilote-journal-erreurs-${timestampSuffix()}`;
+    if (fileFormat === 'csv') {
+      exportRowsToCsv(rows, ERROR_LOG_COLUMNS, fileName);
+    } else {
+      exportRowsToPdf(rows, ERROR_LOG_COLUMNS, fileName, {
+        title: "Journal des erreurs et avertissements",
+        subtitle: 'Administration AquaPilote',
+      });
+    }
+    toast({ title: 'Export généré', description: `${rows.length} entrée(s) exportée(s) en ${fileFormat.toUpperCase()}.` });
   };
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [manageUnitsFor, setManageUnitsFor] = useState<{ id: string; name: string } | null>(null);
