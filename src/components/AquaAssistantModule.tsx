@@ -790,7 +790,7 @@ const AquaAssistantModule = () => {
                           size="sm"
                           variant="outline"
                           disabled={isLoading || !canRetryNow}
-                          onClick={() => sendMessage(lastAttempt, true)}
+                          onClick={() => sendMessage(lastAttempt)}
                         >
                           <RefreshCw className="w-3.5 h-3.5 mr-1" />
                           {canRetryNow ? 'Réessayer' : `Réessayer dans ${retryIn}s`}

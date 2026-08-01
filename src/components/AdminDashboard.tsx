@@ -1503,7 +1503,7 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                           <p className="font-medium mb-1">{log.action}</p>
-                          <p className="text-sm text-muted-foreground">{log.details}</p>
+                          <p className="text-sm text-muted-foreground break-words">{formatErrorDetails(log.details)}</p>
                           <p className="text-xs text-muted-foreground mt-2">
                             Utilisateur: {log.userName}
                           </p>

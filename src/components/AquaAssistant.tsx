@@ -778,7 +778,7 @@ const AquaAssistant = () => {
                           variant="outline"
                           className="h-7 text-[11px]"
                           disabled={isLoading || !canRetryNow}
-                          onClick={() => sendMessage(lastAttempt, true)}
+                          onClick={() => sendMessage(lastAttempt)}
                         >
                           <RefreshCw className="w-3 h-3 mr-1" />
                           {canRetryNow ? 'Réessayer' : `Réessayer dans ${retryIn}s`}
