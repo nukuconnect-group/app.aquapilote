@@ -15,6 +15,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
   const scannerRef = useRef<any>(null);
   const mountedRef = useRef(false);
   const runningRef = useRef(false);
+  const startingRef = useRef(false);
 
   const safeClear = (scanner: any) => {
     try {
@@ -28,12 +29,15 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
     if (!scanner) return;
     const clear = () => {
       runningRef.current = false;
+      startingRef.current = false;
       safeClear(scanner);
       if (scannerRef.current === scanner) scannerRef.current = null;
     };
 
     if (!runningRef.current) {
-      clear();
+      // Do not clear while html5-qrcode is still starting. The async setup
+      // will observe cancellation and stop itself once start() resolves.
+      if (!startingRef.current) clear();
       return;
     }
 
@@ -62,6 +66,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
         if (!el) return;
         const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, { verbose: false });
         scannerRef.current = scanner;
+        startingRef.current = true;
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 260, height: 160 } },
@@ -73,12 +78,19 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
           },
           () => undefined,
         );
+        startingRef.current = false;
         runningRef.current = true;
+        if (cancelled || !mountedRef.current) {
+          safeStopScanner(scanner);
+        }
       } catch (err) {
+        startingRef.current = false;
         runningRef.current = false;
         safeClear(scannerRef.current);
         scannerRef.current = null;
-        if (mountedRef.current) console.error('Scanner error:', err);
+        const message = err instanceof Error ? err.message : String(err);
+        const isBenignLifecycleError = message.includes('scanner is not running or paused');
+        if (mountedRef.current && !isBenignLifecycleError) console.error('Scanner error:', err);
       }
     })();
 
@@ -86,7 +98,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onScan }
       cancelled = true;
       mountedRef.current = false;
       const scanner = scannerRef.current;
-      safeStopScanner(scanner);
+      if (!startingRef.current) safeStopScanner(scanner);
     };
   }, [open, onClose, onScan]);
 

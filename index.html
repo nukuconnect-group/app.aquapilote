@@ -36,44 +36,6 @@
     <meta name="description" content="Application professionnelle de gestion aquacole avec monitoring IoT et analytics avancés">
     <meta name="author" content="AQUA PILOT Team" />
     
-    <script>
-      // Service Worker silencieux sans notifications
-      if ('serviceWorker' in navigator) {
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        
-        const registerSW = () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(() => {
-              // Enregistrement silencieux - pas de notifications
-            })
-            .catch(() => {
-              // Erreur silencieuse
-            });
-        };
-        
-        if (isIOS) {
-          setTimeout(registerSW, 2000);
-        } else {
-          registerSW();
-        }
-      }
-      
-      // Supprimer toutes les erreurs non critiques
-      window.addEventListener('error', (e) => {
-        if (e.message?.includes('LockManager') || e.message?.includes('ServiceWorker')) {
-          e.preventDefault();
-          return false;
-        }
-      });
-      
-      window.addEventListener('unhandledrejection', (e) => {
-        if (e.reason?.message?.includes('LockManager') || 
-            e.reason?.message?.includes('ServiceWorker')) {
-          e.preventDefault();
-          return false;
-        }
-      });
-    </script>
   
   
   
