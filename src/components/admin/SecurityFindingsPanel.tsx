@@ -115,7 +115,6 @@ const SecurityFindingsPanel: React.FC = () => {
   );
 
   const updateStatus = async (finding: SecurityFinding, status: 'open' | 'fixed' | 'ignored') => {
-    const _unused = undefined;
     const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('security_findings')
@@ -154,6 +153,24 @@ const SecurityFindingsPanel: React.FC = () => {
     setDraft({ title: '', description: '', severity: 'medium', source: '' });
     setAddOpen(false);
     reload();
+  };
+
+  const exportFindings = (fileFormat: 'csv' | 'pdf') => {
+    if (visible.length === 0) return;
+    const scope = filter === 'all' ? 'toutes' : filter;
+    const fileName = `aquapilote-securite-${scope}-${timestampSuffix()}`;
+    if (fileFormat === 'csv') {
+      exportRowsToCsv(visible, FINDING_COLUMNS, fileName);
+    } else {
+      exportRowsToPdf(visible, FINDING_COLUMNS, fileName, {
+        title: 'Alertes de sécurité',
+        subtitle: `Filtre : ${scope}`,
+      });
+    }
+    toast({
+      title: 'Export généré',
+      description: `${visible.length} alerte(s) exportée(s) en ${fileFormat.toUpperCase()}.`,
+    });
   };
 
   return (
