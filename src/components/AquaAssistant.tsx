@@ -476,7 +476,7 @@ const AquaAssistant = () => {
           }
         }
       }
-
+      markChatSuccess();
     } catch (error) {
       console.error('Assistant error:', error);
       failFromError(error, ctx.attempt);
