@@ -22,6 +22,15 @@ interface LogsContextType {
   getLogsByUser: (userId: string) => LogEntry[];
 }
 
+const OBSOLETE_ERROR_PATTERNS = [
+  'Cannot stop, scanner is not running or paused',
+];
+
+const isObsoleteError = (log: { action?: string | null; details?: string | null }) => {
+  const content = `${log.action || ''} ${log.details || ''}`;
+  return OBSOLETE_ERROR_PATTERNS.some((pattern) => content.includes(pattern));
+};
+
 const LogsContext = createContext<LogsContextType | undefined>(undefined);
 
 export const useLogs = () => {
@@ -52,7 +61,7 @@ export const LogsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (data && Array.isArray(data)) {
-          const formattedLogs = data.map((log: any) => ({
+          const formattedLogs = data.filter((log: any) => !isObsoleteError(log)).map((log: any) => ({
             id: log.id,
             timestamp: log.timestamp,
             userId: log.user_id || '',
@@ -86,6 +95,7 @@ export const LogsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (payload) => {
           console.log('New log received:', payload);
           const newLog = payload.new as any;
+          if (isObsoleteError(newLog)) return;
           const formattedLog: LogEntry = {
             id: newLog.id,
             timestamp: newLog.timestamp,

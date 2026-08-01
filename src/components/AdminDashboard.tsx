@@ -107,6 +107,17 @@ const AdminDashboard = () => {
     'Cannot stop, scanner is not running or paused',
   ];
 
+  const formatErrorDetails = (details: string) => {
+    if (!details) return 'Erreur interne sans détail disponible.';
+    try {
+      const payload = JSON.parse(details);
+      const message = payload?.data?.message || payload?.message;
+      return typeof message === 'string' ? message : 'Erreur interne détectée.';
+    } catch {
+      return details.length > 500 ? `${details.slice(0, 500)}…` : details;
+    }
+  };
+
   const visibleErrorLogs = React.useMemo(
     () =>
       logs.filter((log) => {
@@ -145,7 +156,7 @@ const AdminDashboard = () => {
     { header: 'Gravité', value: (l) => (l.severity === 'error' ? 'ERREUR' : 'AVERTISSEMENT'), width: 26 },
     { header: 'Module', value: (l) => l.module || '-', width: 28 },
     { header: 'Action', value: (l) => l.action || '-', width: 50 },
-    { header: 'Détails', value: (l) => l.details || '-' },
+    { header: 'Détails', value: (l) => formatErrorDetails(l.details) },
     { header: 'Utilisateur', value: (l) => l.userName || '-', width: 40 },
   ];
 

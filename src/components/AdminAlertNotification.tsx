@@ -13,6 +13,21 @@ interface CriticalError {
   timestamp: string;
 }
 
+const RESOLVED_TECHNICAL_ERRORS = [
+  'Cannot stop, scanner is not running or paused',
+];
+
+const getSafeSummary = (details: string) => {
+  if (!details) return 'Une erreur interne a été détectée.';
+  try {
+    const payload = JSON.parse(details);
+    const message = payload?.data?.message || payload?.message;
+    return typeof message === 'string' ? message : 'Une erreur interne a été détectée.';
+  } catch {
+    return details.length > 240 ? `${details.slice(0, 240)}…` : details;
+  }
+};
+
 const AdminAlertNotification = () => {
   const { logs } = useLogs();
   const [criticalErrors, setCriticalErrors] = useState<CriticalError[]>([]);
@@ -21,12 +36,16 @@ const AdminAlertNotification = () => {
   useEffect(() => {
     // Filtrer les erreurs critiques non lues
     const errors = logs
-      .filter(log => log.severity === 'error' && !dismissed.has(log.id))
+      .filter((log) => {
+        if (log.severity !== 'error' || dismissed.has(log.id)) return false;
+        const content = `${log.action} ${log.details}`;
+        return !RESOLVED_TECHNICAL_ERRORS.some((pattern) => content.includes(pattern));
+      })
       .map(log => ({
         id: log.id,
         action: log.action,
         module: log.module,
-        details: log.details,
+        details: getSafeSummary(log.details),
         timestamp: log.timestamp
       }))
       .slice(0, 5); // Limiter à 5 erreurs à la fois
