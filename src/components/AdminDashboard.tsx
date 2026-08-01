@@ -35,6 +35,7 @@ import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
 import AccessStatsPanel from './admin/AccessStatsPanel';
 import TeamMembersOverviewPanel from './admin/TeamMembersOverviewPanel';
 import FinanceOverviewPanel from './admin/FinanceOverviewPanel';
+import SecurityFindingsPanel from './admin/SecurityFindingsPanel';
 
 interface UserProfile {
   id: string;
@@ -716,6 +717,11 @@ const AdminDashboard = () => {
             <AlertTriangle className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Erreurs</span>
             <span className="sm:hidden">Bugs</span>
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Sécurité</span>
+            <span className="sm:hidden">Sécu</span>
           </TabsTrigger>
         </TabsList>
 
