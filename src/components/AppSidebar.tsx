@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTeamMemberAccess } from '@/hooks/useTeamMemberAccess';
 import { Badge } from '@/components/ui/badge';
 import { hasAssignedModule } from '@/lib/moduleAccess';
+import { useSecurityFindings } from '@/components/admin/SecurityFindingsPanel';
 
 interface AppSidebarProps {
   activeTab: string;
@@ -33,6 +34,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
 
   const isAdminView = activeTab === 'admin';
   const adminSection = searchParams.get('section') || 'overview';
+  const { newCount: newSecurityFindings } = useSecurityFindings();
 
   const goToAdminSection = (section: string) => {
     const next = new URLSearchParams(searchParams);
@@ -64,6 +66,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         { id: 'activity', label: 'Activités', icon: Activity },
         { id: 'privacy', label: 'Confidentialité', icon: Eye },
         { id: 'errors', label: 'Erreurs', icon: AlertTriangle },
+        { id: 'security', label: 'Sécurité', icon: Shield, badge: newSecurityFindings },
       ],
     },
   ];
@@ -110,6 +113,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                         >
                           <Icon className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">{item.label}</span>
+                          {'badge' in item && (item as { badge?: number }).badge ? (
+                            <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[10px]">
+                              {(item as { badge?: number }).badge}
+                            </Badge>
+                          ) : null}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
