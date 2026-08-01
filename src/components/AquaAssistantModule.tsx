@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X, Maximize2, Minimize2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { CHAT_ERROR_LABEL, type ChatError, type ChatErrorCause } from '@/lib/chatErrors';
+import { CHAT_ERROR_LABEL } from '@/lib/chatErrors';
+import { useChatGuard } from '@/hooks/useChatGuard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -160,8 +161,17 @@ const AquaAssistantModule = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatError, setChatError] = useState<ChatError | null>(null);
-  const [lastAttempt, setLastAttempt] = useState<string>('');
+  const {
+    chatError,
+    lastAttempt,
+    retryIn,
+    canRetryNow,
+    maxAttempts,
+    beginAttempt,
+    failFromError,
+    succeed: markChatSuccess,
+    clearError: clearChatError,
+  } = useChatGuard();
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(activeUnit?.id || null);
@@ -326,18 +336,11 @@ const AquaAssistantModule = () => {
   };
 
   const sendMessage = async (messageText?: string) => {
+    const isRetry = Boolean(messageText);
     const textToSend = messageText || input.trim();
     if (isLoading) return;
-    if (!textToSend) {
-      setChatError({
-        cause: 'validation',
-        message: 'Votre message est vide. Écrivez une question avant d\u2019envoyer.',
-        retryable: false,
-      });
-      return;
-    }
-    setChatError(null);
-    setLastAttempt(textToSend);
+    const ctx = beginAttempt(textToSend, isRetry);
+    if (!ctx) return;
 
     const selectedUnitName = units.find(u => u.id === selectedUnitId)?.name;
     const contextPrefix = selectedUnitId && selectedUnitName 
@@ -363,11 +366,9 @@ const AquaAssistantModule = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        setChatError({
-          cause: 'auth',
-          message: "Session expirée. Reconnectez-vous pour utiliser l'assistant.",
-          retryable: true,
-        });
+        const authErr = new Error("Session expirée. Reconnectez-vous pour utiliser l'assistant.");
+        (authErr as unknown as { status: number }).status = 401;
+        failFromError(authErr, ctx.attempt);
         setIsLoading(false);
         return;
       }
@@ -450,19 +451,10 @@ const AquaAssistantModule = () => {
           }
         }
       }
-
+      markChatSuccess();
     } catch (error) {
       console.error('Assistant error:', error);
-      const status = (error as any)?.status as number | undefined;
-      const raw = error instanceof Error ? error.message : String(error);
-      let cause: ChatErrorCause = 'network';
-      if (status === 401 || status === 403) cause = 'auth';
-      else if (status === 429) cause = 'rate_limit';
-      else if (status === 402) cause = 'credits';
-      else if (status === 400) cause = 'request';
-      else if (/timeout|abort/i.test(raw)) cause = 'timeout';
-      else if (/row-level security|RLS|permission/i.test(raw)) cause = 'rls';
-      setChatError({ cause, message: raw, retryable: true });
+      failFromError(error, ctx.attempt);
       if (!assistantContent) {
         setMessages(prev => prev.slice(0, -1));
       }
