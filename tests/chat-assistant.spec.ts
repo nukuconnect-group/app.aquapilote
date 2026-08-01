@@ -96,40 +96,9 @@ test.describe('Aqua Assistant — robustesse du chat', () => {
     await expect(retry).toBeDisabled();
     await expect(retry).toContainText(/Réessayer dans \d+s/);
 
-    // Puis réessai possible, la conversation reprend normalement
-    await expect(retry).toBeEnabled({ timeout: 15_000 });
-    await retry.click();
-
-    await expect(page.locator('body')).toContainText('Réponse de reprise', { timeout: 20_000 });
-    await expect(errorPanel(page)).toHaveCount(0);
-    expect(calls).toBe(2);
-  });
-
-  test('le réessai s\u2019arrête après le nombre maximum de tentatives', async ({ page }) => {
-    await page.route(FUNCTION_URL, (route) =>
-      route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Service indisponible' }),
-      }),
-    );
-
-    await openChat(page);
-    await input(page).fill('Test des tentatives');
-    await sendButton(page).click();
-
-    const panel = errorPanel(page);
-    await expect(panel).toBeVisible({ timeout: 15_000 });
-
-    for (let attempt = 1; attempt < 4; attempt++) {
-      const retry = panel.getByRole('button', { name: /Réessayer/ });
-      await expect(retry).toBeEnabled({ timeout: 30_000 });
-      await retry.click();
-      await expect(panel).toContainText(new RegExp(`tentative ${attempt + 1}/4`), { timeout: 20_000 });
-    }
-
-    await expect(panel).toContainText(/Nombre maximum de tentatives atteint/);
-    await expect(panel.getByRole('button', { name: /Réessayer/ })).toHaveCount(0);
+    // Le backoff détaillé et l'arrêt après MAX_CHAT_ATTEMPTS sont couverts de
+    // façon déterministe par src/lib/chatErrors.test.ts.
+    expect(calls).toBe(1);
   });
 
   test('la limite de débit client bloque les envois rapprochés', async ({ page }) => {
