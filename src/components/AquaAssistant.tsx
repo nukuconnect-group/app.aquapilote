@@ -345,7 +345,17 @@ const AquaAssistant = () => {
 
   const sendMessage = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
-    if (!textToSend || isLoading) return;
+    if (isLoading) return;
+    if (!textToSend) {
+      setChatError({
+        cause: 'validation',
+        message: 'Votre message est vide. Écrivez une question avant d\u2019envoyer.',
+        retryable: false,
+      });
+      return;
+    }
+    setChatError(null);
+    setLastAttempt(textToSend);
 
     const selectedUnitName = units.find(u => u.id === selectedUnitId)?.name;
     const contextPrefix = selectedUnitId && selectedUnitName 
@@ -372,10 +382,10 @@ const AquaAssistant = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          title: "Connexion requise",
-          description: "Vous devez être connecté pour utiliser l'assistant.",
-          variant: "destructive"
+        setChatError({
+          cause: 'auth',
+          message: "Session expirée. Reconnectez-vous pour utiliser l'assistant.",
+          retryable: true,
         });
         setIsLoading(false);
         return;
@@ -404,8 +414,16 @@ const AquaAssistant = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur de connexion');
+        let serverMessage = '';
+        try {
+          const errorData = await response.json();
+          serverMessage = errorData?.error || '';
+        } catch {
+          serverMessage = '';
+        }
+        const err = new Error(serverMessage || `Erreur serveur (${response.status})`);
+        (err as any).status = response.status;
+        throw err;
       }
 
       const reader = response.body?.getReader();
@@ -455,11 +473,16 @@ const AquaAssistant = () => {
 
     } catch (error) {
       console.error('Assistant error:', error);
-      toast({
-        title: t('error'),
-        description: error instanceof Error ? error.message : t('assistant_error'),
-        variant: "destructive"
-      });
+      const status = (error as any)?.status as number | undefined;
+      const raw = error instanceof Error ? error.message : String(error);
+      let cause: ChatErrorCause = 'network';
+      if (status === 401 || status === 403) cause = 'auth';
+      else if (status === 429) cause = 'rate_limit';
+      else if (status === 402) cause = 'credits';
+      else if (status === 400) cause = 'request';
+      else if (/timeout|abort/i.test(raw)) cause = 'timeout';
+      else if (/row-level security|RLS|permission/i.test(raw)) cause = 'rls';
+      setChatError({ cause, message: raw, retryable: true });
       if (!assistantContent) {
         setMessages(prev => prev.slice(0, -1));
       }
