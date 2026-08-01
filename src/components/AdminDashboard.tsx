@@ -1367,13 +1367,21 @@ const AdminDashboard = () => {
 
         <TabsContent value="errors" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Erreurs et avertissements</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isPurgingErrors}
+                onClick={purgeErrorLogs}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {logs
-                  .filter(log => log.severity === 'error' || log.severity === 'warning')
+                {visibleErrorLogs
                   .slice(0, 100)
                   .map(log => (
                     <div 
@@ -1407,7 +1415,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   ))}
-                {logs.filter(log => log.severity === 'error' || log.severity === 'warning').length === 0 && (
+                {visibleErrorLogs.length === 0 && (
                   <div className="text-center py-12">
                     <Activity className="w-12 h-12 mx-auto text-green-500 mb-3" />
                     <p className="text-lg font-medium text-green-600">Aucune erreur détectée</p>
@@ -1419,6 +1427,10 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4">
+          <SecurityFindingsPanel />
         </TabsContent>
       </Tabs>
 
