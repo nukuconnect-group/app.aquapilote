@@ -115,6 +115,7 @@ const SecurityFindingsPanel: React.FC = () => {
   );
 
   const updateStatus = async (finding: SecurityFinding, status: 'open' | 'fixed' | 'ignored') => {
+    const _unused = undefined;
     const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('security_findings')
