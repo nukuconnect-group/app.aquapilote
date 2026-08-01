@@ -760,6 +760,34 @@ const AquaAssistantModule = () => {
 
           {/* Input area */}
           <div className="p-4 border-t bg-background sticky bottom-0">
+            {chatError && (
+              <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-destructive">
+                      {CHAT_ERROR_LABEL[chatError.cause]}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">{chatError.message}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {chatError.retryable && lastAttempt && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isLoading}
+                          onClick={() => sendMessage(lastAttempt)}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 mr-1" /> Réessayer
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => setChatError(null)}>
+                        Fermer
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 variant={isListening ? 'destructive' : 'outline'}
