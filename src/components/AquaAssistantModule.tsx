@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X, Maximize2, Minimize2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { CHAT_ERROR_LABEL, type ChatError, type ChatErrorCause } from '@/lib/chatErrors';
+import { CHAT_ERROR_LABEL } from '@/lib/chatErrors';
+import { useChatGuard } from '@/hooks/useChatGuard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -160,8 +161,17 @@ const AquaAssistantModule = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatError, setChatError] = useState<ChatError | null>(null);
-  const [lastAttempt, setLastAttempt] = useState<string>('');
+  const {
+    chatError,
+    lastAttempt,
+    retryIn,
+    canRetryNow,
+    maxAttempts,
+    beginAttempt,
+    failFromError,
+    succeed: markChatSuccess,
+    clearError: clearChatError,
+  } = useChatGuard();
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(activeUnit?.id || null);
@@ -326,18 +336,11 @@ const AquaAssistantModule = () => {
   };
 
   const sendMessage = async (messageText?: string) => {
+    const isRetry = Boolean(messageText);
     const textToSend = messageText || input.trim();
     if (isLoading) return;
-    if (!textToSend) {
-      setChatError({
-        cause: 'validation',
-        message: 'Votre message est vide. Écrivez une question avant d\u2019envoyer.',
-        retryable: false,
-      });
-      return;
-    }
-    setChatError(null);
-    setLastAttempt(textToSend);
+    const ctx = beginAttempt(textToSend, isRetry);
+    if (!ctx) return;
 
     const selectedUnitName = units.find(u => u.id === selectedUnitId)?.name;
     const contextPrefix = selectedUnitId && selectedUnitName 
@@ -363,11 +366,9 @@ const AquaAssistantModule = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        setChatError({
-          cause: 'auth',
-          message: "Session expirée. Reconnectez-vous pour utiliser l'assistant.",
-          retryable: true,
-        });
+        const authErr = new Error("Session expirée. Reconnectez-vous pour utiliser l'assistant.");
+        (authErr as unknown as { status: number }).status = 401;
+        failFromError(authErr, ctx.attempt);
         setIsLoading(false);
         return;
       }
@@ -384,6 +385,7 @@ const AquaAssistantModule = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
+          'x-request-id': ctx.requestId,
         },
         body: JSON.stringify({ 
           messages: enrichedMessages,
@@ -450,19 +452,10 @@ const AquaAssistantModule = () => {
           }
         }
       }
-
+      markChatSuccess();
     } catch (error) {
       console.error('Assistant error:', error);
-      const status = (error as any)?.status as number | undefined;
-      const raw = error instanceof Error ? error.message : String(error);
-      let cause: ChatErrorCause = 'network';
-      if (status === 401 || status === 403) cause = 'auth';
-      else if (status === 429) cause = 'rate_limit';
-      else if (status === 402) cause = 'credits';
-      else if (status === 400) cause = 'request';
-      else if (/timeout|abort/i.test(raw)) cause = 'timeout';
-      else if (/row-level security|RLS|permission/i.test(raw)) cause = 'rls';
-      setChatError({ cause, message: raw, retryable: true });
+      failFromError(error, ctx.attempt);
       if (!assistantContent) {
         setMessages(prev => prev.slice(0, -1));
       }
@@ -761,26 +754,62 @@ const AquaAssistantModule = () => {
           {/* Input area */}
           <div className="p-4 border-t bg-background sticky bottom-0">
             {chatError && (
-              <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+              <div
+                className="mb-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3"
+                data-chat-error={chatError.cause}
+              >
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-destructive">
                       {CHAT_ERROR_LABEL[chatError.cause]}
+                      {chatError.attempt ? (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          (tentative {chatError.attempt}/{maxAttempts})
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-xs text-muted-foreground break-words">{chatError.message}</p>
+                    <dl className="mt-2 space-y-0.5 text-[11px] font-mono text-muted-foreground/90 break-all">
+                      {chatError.requestId && (
+                        <div className="flex gap-1">
+                          <dt className="shrink-0">request_id:</dt>
+                          <dd data-chat-request-id>{chatError.requestId}</dd>
+                        </div>
+                      )}
+                      {chatError.route && (
+                        <div className="flex gap-1">
+                          <dt className="shrink-0">route:</dt>
+                          <dd data-chat-route>{chatError.route}</dd>
+                        </div>
+                      )}
+                    </dl>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {chatError.retryable && lastAttempt && (
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={isLoading}
-                          onClick={() => sendMessage(lastAttempt)}
+                          disabled={isLoading || !canRetryNow}
+                          onClick={() => sendMessage(lastAttempt, true)}
                         >
-                          <RefreshCw className="w-3.5 h-3.5 mr-1" /> Réessayer
+                          <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                          {canRetryNow ? 'Réessayer' : `Réessayer dans ${retryIn}s`}
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => setChatError(null)}>
+                      {chatError.requestId && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            navigator.clipboard?.writeText(
+                              `request_id=${chatError.requestId} route=${chatError.route} cause=${chatError.cause} message=${chatError.message}`,
+                            )
+                          }
+                        >
+                          Copier le diagnostic
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={clearChatError}>
                         Fermer
                       </Button>
                     </div>
@@ -799,16 +828,19 @@ const AquaAssistantModule = () => {
               </Button>
               <Input
                 value={input}
-                onChange={(e) => { setInput(e.target.value); if (chatError) setChatError(null); }}
+                onChange={(e) => { setInput(e.target.value); if (chatError) clearChatError(); }}
                 onKeyDown={handleKeyPress}
                 placeholder="Posez votre question..."
                 className="flex-1"
                 disabled={isLoading}
+                data-chat-input
               />
               <Button
                 onClick={() => sendMessage()}
-                disabled={!input.trim() || isLoading}
+                disabled={isLoading}
                 className="shrink-0 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                aria-label="Envoyer le message"
+                data-chat-send
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>

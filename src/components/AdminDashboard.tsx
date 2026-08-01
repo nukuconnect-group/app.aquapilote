@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard, ClipboardList } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard, ClipboardList, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportRowsToCsv, exportRowsToPdf, timestampSuffix, type ExportColumn } from '@/lib/adminExportUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -137,6 +138,30 @@ const AdminDashboard = () => {
     } finally {
       setIsPurgingErrors(false);
     }
+  };
+
+  const ERROR_LOG_COLUMNS: ExportColumn<(typeof logs)[number]>[] = [
+    { header: 'Date', value: (l) => format(new Date(l.timestamp), 'dd/MM/yyyy HH:mm:ss'), width: 32 },
+    { header: 'Gravité', value: (l) => (l.severity === 'error' ? 'ERREUR' : 'AVERTISSEMENT'), width: 26 },
+    { header: 'Module', value: (l) => l.module || '-', width: 28 },
+    { header: 'Action', value: (l) => l.action || '-', width: 50 },
+    { header: 'Détails', value: (l) => l.details || '-' },
+    { header: 'Utilisateur', value: (l) => l.userName || '-', width: 40 },
+  ];
+
+  const exportErrorLogs = (fileFormat: 'csv' | 'pdf') => {
+    const rows = visibleErrorLogs;
+    if (rows.length === 0) return;
+    const fileName = `aquapilote-journal-erreurs-${timestampSuffix()}`;
+    if (fileFormat === 'csv') {
+      exportRowsToCsv(rows, ERROR_LOG_COLUMNS, fileName);
+    } else {
+      exportRowsToPdf(rows, ERROR_LOG_COLUMNS, fileName, {
+        title: "Journal des erreurs et avertissements",
+        subtitle: 'Administration AquaPilote',
+      });
+    }
+    toast({ title: 'Export généré', description: `${rows.length} entrée(s) exportée(s) en ${fileFormat.toUpperCase()}.` });
   };
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [manageUnitsFor, setManageUnitsFor] = useState<{ id: string; name: string } | null>(null);
@@ -1409,15 +1434,35 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Erreurs et avertissements</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isPurgingErrors}
-                onClick={purgeErrorLogs}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={visibleErrorLogs.length === 0}
+                  onClick={() => exportErrorLogs('csv')}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={visibleErrorLogs.length === 0}
+                  onClick={() => exportErrorLogs('pdf')}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isPurgingErrors}
+                  onClick={purgeErrorLogs}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">

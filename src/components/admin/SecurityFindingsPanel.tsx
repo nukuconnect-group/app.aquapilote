@@ -6,10 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ShieldAlert, ShieldCheck, EyeOff, Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, EyeOff, Plus, RefreshCw, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { exportRowsToCsv, exportRowsToPdf, timestampSuffix, type ExportColumn } from '@/lib/adminExportUtils';
+
+const FINDING_COLUMNS: ExportColumn<SecurityFinding>[] = [
+  { header: 'Détectée le', value: (f) => format(new Date(f.detected_at), 'dd/MM/yyyy HH:mm'), width: 30 },
+  { header: 'Gravité', value: (f) => f.severity.toUpperCase(), width: 22 },
+  { header: 'Statut', value: (f) => f.status, width: 20 },
+  { header: 'Scanner', value: (f) => f.scanner_name || '-', width: 32 },
+  { header: 'Identifiant', value: (f) => f.internal_id || '-', width: 36 },
+  { header: 'Titre', value: (f) => f.title, width: 55 },
+  { header: 'Description', value: (f) => f.description || '-' },
+  { header: 'Source', value: (f) => f.source || '-', width: 30 },
+  { header: 'Résolue le', value: (f) => (f.resolved_at ? format(new Date(f.resolved_at), 'dd/MM/yyyy HH:mm') : '-'), width: 30 },
+];
 
 export interface SecurityFinding {
   id: string;
@@ -142,6 +155,24 @@ const SecurityFindingsPanel: React.FC = () => {
     reload();
   };
 
+  const exportFindings = (fileFormat: 'csv' | 'pdf') => {
+    if (visible.length === 0) return;
+    const scope = filter === 'all' ? 'toutes' : filter;
+    const fileName = `aquapilote-securite-${scope}-${timestampSuffix()}`;
+    if (fileFormat === 'csv') {
+      exportRowsToCsv(visible, FINDING_COLUMNS, fileName);
+    } else {
+      exportRowsToPdf(visible, FINDING_COLUMNS, fileName, {
+        title: 'Alertes de sécurité',
+        subtitle: `Filtre : ${scope}`,
+      });
+    }
+    toast({
+      title: 'Export généré',
+      description: `${visible.length} alerte(s) exportée(s) en ${fileFormat.toUpperCase()}.`,
+    });
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -164,6 +195,22 @@ const SecurityFindingsPanel: React.FC = () => {
           </Select>
           <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={visible.length === 0}
+            onClick={() => exportFindings('csv')}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={visible.length === 0}
+            onClick={() => exportFindings('pdf')}
+          >
+            <FileText className="w-4 h-4 mr-1" /> PDF
           </Button>
           <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="w-4 h-4 mr-1" /> Ajouter

@@ -27,8 +27,48 @@ const getCorsHeaders = (origin: string | null) => {
   const allowedOrigin = isAllowedOrigin(origin) ? origin! : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-request-id",
+    "Access-Control-Expose-Headers": "x-request-id, retry-after",
   };
+};
+
+/**
+ * Limite de débit en mémoire, par utilisateur et par instance d'edge function.
+ * Le runtime n'offre pas de primitive de rate limiting partagée : cette barrière
+ * est volontairement simple et complète (sans la remplacer) la limite client.
+ */
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX_PER_WINDOW = 15;
+const RATE_MIN_INTERVAL_MS = 1_500;
+const rateBuckets = new Map<string, number[]>();
+
+const checkRateLimit = (userId: string): { allowed: boolean; retryAfterSec: number; reason: string } => {
+  const now = Date.now();
+  const hits = (rateBuckets.get(userId) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  const last = hits[hits.length - 1];
+
+  if (last !== undefined && now - last < RATE_MIN_INTERVAL_MS) {
+    rateBuckets.set(userId, hits);
+    return { allowed: false, retryAfterSec: 2, reason: "envois trop rapprochés" };
+  }
+  if (hits.length >= RATE_MAX_PER_WINDOW) {
+    rateBuckets.set(userId, hits);
+    return {
+      allowed: false,
+      retryAfterSec: Math.max(1, Math.ceil((RATE_WINDOW_MS - (now - hits[0])) / 1000)),
+      reason: "quota par minute atteint",
+    };
+  }
+
+  hits.push(now);
+  rateBuckets.set(userId, hits);
+  // Nettoyage opportuniste pour éviter la croissance illimitée de la Map.
+  if (rateBuckets.size > 500) {
+    for (const [key, value] of rateBuckets) {
+      if (value.every((t) => now - t >= RATE_WINDOW_MS)) rateBuckets.delete(key);
+    }
+  }
+  return { allowed: true, retryAfterSec: 0, reason: "" };
 };
 
 const systemPrompt = `Tu es AquaAssistant, un chatbot intelligent conçu pour aider des pisciculteurs
@@ -74,7 +114,8 @@ en donnant des réponses vocales simples, adaptées, et utiles.`;
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
+  const requestId = req.headers.get('x-request-id') ?? `req_srv_${crypto.randomUUID().slice(0, 12)}`;
+  const corsHeaders = { ...getCorsHeaders(origin), "x-request-id": requestId };
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -109,7 +150,26 @@ serve(async (req) => {
       });
     }
 
-    console.log("Authenticated user:", user.id);
+    console.log(`[${requestId}] Authenticated user:`, user.id);
+
+    const rate = checkRateLimit(user.id);
+    if (!rate.allowed) {
+      console.warn(`[${requestId}] Rate limited (${rate.reason}) for user`, user.id);
+      return new Response(
+        JSON.stringify({
+          error: `Trop de messages envoyés (${rate.reason}). Réessaie dans ${rate.retryAfterSec} s.`,
+          request_id: requestId,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rate.retryAfterSec),
+          },
+        },
+      );
+    }
 
     const { messages, language } = await req.json();
 
@@ -241,8 +301,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
-    console.error("Aqua assistant error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }), {
+    console.error(`[${requestId}] Aqua assistant error:`, error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue", request_id: requestId }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
