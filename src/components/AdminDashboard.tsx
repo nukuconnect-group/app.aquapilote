@@ -98,6 +98,46 @@ const AdminDashboard = () => {
     setSearchParams(next, { replace: true });
   };
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
+  const [isPurgingErrors, setIsPurgingErrors] = useState(false);
+  const [purgedAt, setPurgedAt] = useState<string | null>(null);
+
+  // Bruit connu déjà corrigé côté code (scanner code-barres) : on ne l'affiche plus.
+  const RESOLVED_ERROR_PATTERNS = [
+    'Cannot stop, scanner is not running or paused',
+  ];
+
+  const visibleErrorLogs = React.useMemo(
+    () =>
+      logs.filter((log) => {
+        if (log.severity !== 'error' && log.severity !== 'warning') return false;
+        if (purgedAt && new Date(log.timestamp).getTime() <= new Date(purgedAt).getTime()) return false;
+        const haystack = `${log.action} ${log.details}`;
+        return !RESOLVED_ERROR_PATTERNS.some((p) => haystack.includes(p));
+      }),
+    [logs, purgedAt],
+  );
+
+  const purgeErrorLogs = async () => {
+    setIsPurgingErrors(true);
+    try {
+      const { error } = await supabase
+        .from('activity_logs')
+        .delete()
+        .in('severity', ['error', 'warning']);
+      if (error) throw error;
+      setPurgedAt(new Date().toISOString());
+      toast({ title: 'Journal vidé', description: 'Les erreurs et avertissements ont été supprimés.' });
+    } catch (e: any) {
+      // Même si la suppression serveur échoue (RLS), on masque localement.
+      setPurgedAt(new Date().toISOString());
+      toast({
+        title: 'Journal masqué',
+        description: e?.message || 'Suppression serveur indisponible, affichage réinitialisé.',
+      });
+    } finally {
+      setIsPurgingErrors(false);
+    }
+  };
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [manageUnitsFor, setManageUnitsFor] = useState<{ id: string; name: string } | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
