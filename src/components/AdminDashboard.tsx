@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard, ClipboardList } from 'lucide-react';
+import { Users, UserPlus, Activity, Search, Key, Trash2, BarChart3, AlertTriangle, Clock, Database, Wifi, Building2, Eye, Ban, PlayCircle, Globe, Shield, Headphones, CreditCard, ClipboardList, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportRowsToCsv, exportRowsToPdf, timestampSuffix, type ExportColumn } from '@/lib/adminExportUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -1409,15 +1410,35 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Erreurs et avertissements</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isPurgingErrors}
-                onClick={purgeErrorLogs}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={visibleErrorLogs.length === 0}
+                  onClick={() => exportErrorLogs('csv')}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={visibleErrorLogs.length === 0}
+                  onClick={() => exportErrorLogs('pdf')}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isPurgingErrors}
+                  onClick={purgeErrorLogs}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
