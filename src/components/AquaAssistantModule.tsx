@@ -799,7 +799,7 @@ const AquaAssistantModule = () => {
               </Button>
               <Input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); if (chatError) setChatError(null); }}
                 onKeyDown={handleKeyPress}
                 placeholder="Posez votre question..."
                 className="flex-1"

@@ -793,7 +793,7 @@ const AquaAssistant = () => {
               </Button>
               <Input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); if (chatError) setChatError(null); }}
                 onKeyPress={handleKeyPress}
                 placeholder="Posez votre question..."
                 className="flex-1 h-9 sm:h-10 text-sm"
