@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Maximize2, Minimize2, Crown, Lock, Calculator, BarChart3, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CHAT_ERROR_LABEL, type ChatError, type ChatErrorCause } from '@/lib/chatErrors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,32 +22,6 @@ interface Message {
   unitId?: string;
 }
 
-type ChatErrorCause =
-  | 'validation'
-  | 'auth'
-  | 'request'
-  | 'rls'
-  | 'rate_limit'
-  | 'credits'
-  | 'timeout'
-  | 'network';
-
-interface ChatError {
-  cause: ChatErrorCause;
-  message: string;
-  retryable: boolean;
-}
-
-const CHAT_ERROR_LABEL: Record<ChatErrorCause, string> = {
-  validation: 'Message invalide',
-  auth: 'Authentification',
-  request: 'Requête refusée',
-  rls: 'Accès aux données (RLS)',
-  rate_limit: 'Trop de requêtes',
-  credits: 'Crédits IA épuisés',
-  timeout: 'Délai dépassé',
-  network: 'Réseau / serveur',
-};
 
 interface Category {
   id: string;
