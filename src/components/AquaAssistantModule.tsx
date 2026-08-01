@@ -385,6 +385,7 @@ const AquaAssistantModule = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
+          'x-request-id': ctx.requestId,
         },
         body: JSON.stringify({ 
           messages: enrichedMessages,
