@@ -741,31 +741,68 @@ const AquaAssistant = () => {
           {/* Input */}
           <div className="p-2.5 sm:p-4 border-t border-border bg-background">
             {chatError && (
-              <div className="mb-2 rounded-lg border border-destructive/40 bg-destructive/5 p-2.5 text-left">
+              <div
+                className="mb-2 rounded-lg border border-destructive/40 bg-destructive/5 p-2.5 text-left"
+                data-chat-error={chatError.cause}
+              >
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-destructive">
                       {CHAT_ERROR_LABEL[chatError.cause]}
+                      {chatError.attempt ? (
+                        <span className="ml-1 font-normal text-muted-foreground">
+                          (tentative {chatError.attempt}/{maxAttempts})
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-[11px] text-muted-foreground break-words">{chatError.message}</p>
+                    <dl className="mt-1.5 space-y-0.5 text-[10px] text-muted-foreground/90 font-mono break-all">
+                      {chatError.requestId && (
+                        <div className="flex gap-1">
+                          <dt className="shrink-0">request_id:</dt>
+                          <dd data-chat-request-id>{chatError.requestId}</dd>
+                        </div>
+                      )}
+                      {chatError.route && (
+                        <div className="flex gap-1">
+                          <dt className="shrink-0">route:</dt>
+                          <dd data-chat-route>{chatError.route}</dd>
+                        </div>
+                      )}
+                    </dl>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {chatError.retryable && lastAttempt && (
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-7 text-[11px]"
-                          disabled={isLoading}
+                          disabled={isLoading || !canRetryNow}
                           onClick={() => sendMessage(lastAttempt)}
                         >
-                          <RefreshCw className="w-3 h-3 mr-1" /> Réessayer
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          {canRetryNow ? 'Réessayer' : `Réessayer dans ${retryIn}s`}
+                        </Button>
+                      )}
+                      {chatError.requestId && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-[11px]"
+                          onClick={() =>
+                            navigator.clipboard?.writeText(
+                              `request_id=${chatError.requestId} route=${chatError.route} cause=${chatError.cause} message=${chatError.message}`,
+                            )
+                          }
+                        >
+                          Copier le diagnostic
                         </Button>
                       )}
                       <Button
                         size="sm"
                         variant="ghost"
                         className="h-7 text-[11px]"
-                        onClick={() => setChatError(null)}
+                        onClick={clearChatError}
                       >
                         Fermer
                       </Button>
@@ -786,17 +823,20 @@ const AquaAssistant = () => {
               </Button>
               <Input
                 value={input}
-                onChange={(e) => { setInput(e.target.value); if (chatError) setChatError(null); }}
+                onChange={(e) => { setInput(e.target.value); if (chatError) clearChatError(); }}
                 onKeyPress={handleKeyPress}
                 placeholder="Posez votre question..."
                 className="flex-1 h-9 sm:h-10 text-sm"
                 disabled={isLoading}
+                data-chat-input
               />
               <Button
                 onClick={() => sendMessage()}
-                disabled={!input.trim() || isLoading}
+                disabled={isLoading}
                 size="icon"
                 className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                aria-label="Envoyer le message"
+                data-chat-send
               >
                 {isLoading ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               </Button>
