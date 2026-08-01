@@ -35,6 +35,7 @@ import ManageUserUnitsDialog from './admin/ManageUserUnitsDialog';
 import AccessStatsPanel from './admin/AccessStatsPanel';
 import TeamMembersOverviewPanel from './admin/TeamMembersOverviewPanel';
 import FinanceOverviewPanel from './admin/FinanceOverviewPanel';
+import SecurityFindingsPanel from './admin/SecurityFindingsPanel';
 
 interface UserProfile {
   id: string;
@@ -97,6 +98,46 @@ const AdminDashboard = () => {
     setSearchParams(next, { replace: true });
   };
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; name: string } | null>(null);
+  const [isPurgingErrors, setIsPurgingErrors] = useState(false);
+  const [purgedAt, setPurgedAt] = useState<string | null>(null);
+
+  // Bruit connu déjà corrigé côté code (scanner code-barres) : on ne l'affiche plus.
+  const RESOLVED_ERROR_PATTERNS = [
+    'Cannot stop, scanner is not running or paused',
+  ];
+
+  const visibleErrorLogs = React.useMemo(
+    () =>
+      logs.filter((log) => {
+        if (log.severity !== 'error' && log.severity !== 'warning') return false;
+        if (purgedAt && new Date(log.timestamp).getTime() <= new Date(purgedAt).getTime()) return false;
+        const haystack = `${log.action} ${log.details}`;
+        return !RESOLVED_ERROR_PATTERNS.some((p) => haystack.includes(p));
+      }),
+    [logs, purgedAt],
+  );
+
+  const purgeErrorLogs = async () => {
+    setIsPurgingErrors(true);
+    try {
+      const { error } = await supabase
+        .from('activity_logs')
+        .delete()
+        .in('severity', ['error', 'warning']);
+      if (error) throw error;
+      setPurgedAt(new Date().toISOString());
+      toast({ title: 'Journal vidé', description: 'Les erreurs et avertissements ont été supprimés.' });
+    } catch (e: any) {
+      // Même si la suppression serveur échoue (RLS), on masque localement.
+      setPurgedAt(new Date().toISOString());
+      toast({
+        title: 'Journal masqué',
+        description: e?.message || 'Suppression serveur indisponible, affichage réinitialisé.',
+      });
+    } finally {
+      setIsPurgingErrors(false);
+    }
+  };
   const [selectedUserForUnits, setSelectedUserForUnits] = useState<AdminUser | null>(null);
   const [manageUnitsFor, setManageUnitsFor] = useState<{ id: string; name: string } | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
@@ -716,6 +757,11 @@ const AdminDashboard = () => {
             <AlertTriangle className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Erreurs</span>
             <span className="sm:hidden">Bugs</span>
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Sécurité</span>
+            <span className="sm:hidden">Sécu</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1361,13 +1407,21 @@ const AdminDashboard = () => {
 
         <TabsContent value="errors" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Erreurs et avertissements</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isPurgingErrors}
+                onClick={purgeErrorLogs}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isPurgingErrors ? 'Purge…' : 'Vider le journal'}
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {logs
-                  .filter(log => log.severity === 'error' || log.severity === 'warning')
+                {visibleErrorLogs
                   .slice(0, 100)
                   .map(log => (
                     <div 
@@ -1401,7 +1455,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   ))}
-                {logs.filter(log => log.severity === 'error' || log.severity === 'warning').length === 0 && (
+                {visibleErrorLogs.length === 0 && (
                   <div className="text-center py-12">
                     <Activity className="w-12 h-12 mx-auto text-green-500 mb-3" />
                     <p className="text-lg font-medium text-green-600">Aucune erreur détectée</p>
@@ -1413,6 +1467,10 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4">
+          <SecurityFindingsPanel />
         </TabsContent>
       </Tabs>
 

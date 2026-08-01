@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, Send, Mic, MicOff, Volume2, Loader2, Building2, Fish, Utensils, HeartPulse, TrendingUp, Settings, Sparkles, ChevronDown, Globe, Crown, Lock, Calculator, BarChart3, History, MessageSquarePlus, Trash2, X, Maximize2, Minimize2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CHAT_ERROR_LABEL, type ChatError, type ChatErrorCause } from '@/lib/chatErrors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -159,6 +160,8 @@ const AquaAssistantModule = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatError, setChatError] = useState<ChatError | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(activeUnit?.id || null);
@@ -324,7 +327,17 @@ const AquaAssistantModule = () => {
 
   const sendMessage = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
-    if (!textToSend || isLoading) return;
+    if (isLoading) return;
+    if (!textToSend) {
+      setChatError({
+        cause: 'validation',
+        message: 'Votre message est vide. Écrivez une question avant d\u2019envoyer.',
+        retryable: false,
+      });
+      return;
+    }
+    setChatError(null);
+    setLastAttempt(textToSend);
 
     const selectedUnitName = units.find(u => u.id === selectedUnitId)?.name;
     const contextPrefix = selectedUnitId && selectedUnitName 
@@ -350,10 +363,10 @@ const AquaAssistantModule = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          title: "Connexion requise",
-          description: "Vous devez être connecté pour utiliser l'assistant.",
-          variant: "destructive"
+        setChatError({
+          cause: 'auth',
+          message: "Session expirée. Reconnectez-vous pour utiliser l'assistant.",
+          retryable: true,
         });
         setIsLoading(false);
         return;
@@ -381,8 +394,16 @@ const AquaAssistantModule = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur de connexion');
+        let serverMessage = '';
+        try {
+          const errorData = await response.json();
+          serverMessage = errorData?.error || '';
+        } catch {
+          serverMessage = '';
+        }
+        const err = new Error(serverMessage || `Erreur serveur (${response.status})`);
+        (err as any).status = response.status;
+        throw err;
       }
 
       const reader = response.body?.getReader();
@@ -432,11 +453,16 @@ const AquaAssistantModule = () => {
 
     } catch (error) {
       console.error('Assistant error:', error);
-      toast({
-        title: t('error'),
-        description: error instanceof Error ? error.message : t('assistant_error'),
-        variant: "destructive"
-      });
+      const status = (error as any)?.status as number | undefined;
+      const raw = error instanceof Error ? error.message : String(error);
+      let cause: ChatErrorCause = 'network';
+      if (status === 401 || status === 403) cause = 'auth';
+      else if (status === 429) cause = 'rate_limit';
+      else if (status === 402) cause = 'credits';
+      else if (status === 400) cause = 'request';
+      else if (/timeout|abort/i.test(raw)) cause = 'timeout';
+      else if (/row-level security|RLS|permission/i.test(raw)) cause = 'rls';
+      setChatError({ cause, message: raw, retryable: true });
       if (!assistantContent) {
         setMessages(prev => prev.slice(0, -1));
       }
@@ -734,6 +760,34 @@ const AquaAssistantModule = () => {
 
           {/* Input area */}
           <div className="p-4 border-t bg-background sticky bottom-0">
+            {chatError && (
+              <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-destructive">
+                      {CHAT_ERROR_LABEL[chatError.cause]}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-words">{chatError.message}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {chatError.retryable && lastAttempt && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isLoading}
+                          onClick={() => sendMessage(lastAttempt)}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 mr-1" /> Réessayer
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => setChatError(null)}>
+                        Fermer
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 variant={isListening ? 'destructive' : 'outline'}
@@ -745,7 +799,7 @@ const AquaAssistantModule = () => {
               </Button>
               <Input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); if (chatError) setChatError(null); }}
                 onKeyDown={handleKeyPress}
                 placeholder="Posez votre question..."
                 className="flex-1"
