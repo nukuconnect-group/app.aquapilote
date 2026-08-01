@@ -25,7 +25,7 @@ const FAKE_SESSION = {
 const openChat = async (page: Page) => {
   await page.addInitScript(
     ([key, session]) => window.localStorage.setItem(key as string, session as string),
-    ['sb-hhsvraqchtqqgaezhnzn-auth-token', JSON.stringify(FAKE_SESSION)] as const,
+    ['aqua-pilot-auth', JSON.stringify(FAKE_SESSION)] as const,
   );
   await page.goto(CHAT_URL);
   await expect(page.locator('[data-chat-input]').first()).toBeVisible();
