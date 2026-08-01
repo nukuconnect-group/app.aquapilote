@@ -178,6 +178,22 @@ const SecurityFindingsPanel: React.FC = () => {
           <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={visible.length === 0}
+            onClick={() => exportFindings('csv')}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={visible.length === 0}
+            onClick={() => exportFindings('pdf')}
+          >
+            <FileText className="w-4 h-4 mr-1" /> PDF
+          </Button>
           <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="w-4 h-4 mr-1" /> Ajouter
           </Button>
