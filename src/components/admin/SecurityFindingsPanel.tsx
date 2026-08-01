@@ -6,10 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ShieldAlert, ShieldCheck, EyeOff, Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, EyeOff, Plus, RefreshCw, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/clientConfig';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { exportRowsToCsv, exportRowsToPdf, timestampSuffix, type ExportColumn } from '@/lib/adminExportUtils';
+
+const FINDING_COLUMNS: ExportColumn<SecurityFinding>[] = [
+  { header: 'Détectée le', value: (f) => format(new Date(f.detected_at), 'dd/MM/yyyy HH:mm'), width: 30 },
+  { header: 'Gravité', value: (f) => f.severity.toUpperCase(), width: 22 },
+  { header: 'Statut', value: (f) => f.status, width: 20 },
+  { header: 'Scanner', value: (f) => f.scanner_name || '-', width: 32 },
+  { header: 'Identifiant', value: (f) => f.internal_id || '-', width: 36 },
+  { header: 'Titre', value: (f) => f.title, width: 55 },
+  { header: 'Description', value: (f) => f.description || '-' },
+  { header: 'Source', value: (f) => f.source || '-', width: 30 },
+  { header: 'Résolue le', value: (f) => (f.resolved_at ? format(new Date(f.resolved_at), 'dd/MM/yyyy HH:mm') : '-'), width: 30 },
+];
 
 export interface SecurityFinding {
   id: string;
