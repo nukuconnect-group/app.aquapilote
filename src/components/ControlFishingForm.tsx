@@ -23,8 +23,8 @@ interface ControlFishingFormProps {
 interface SampleBatch {
   id: string;
   subjectCount: number;
-  individualWeight: number; // grammes
-  totalWeight: number; // grammes calculé automatiquement
+  totalWeight: number; // grammes (poids moyen général saisi pour le lot)
+  individualWeight: number; // grammes, calculé automatiquement (totalWeight / subjectCount)
 }
 
 const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps) => {
@@ -49,7 +49,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   const [sampleBatches, setSampleBatches] = useState<SampleBatch[]>([]);
   const [newBatch, setNewBatch] = useState({
     subjectCount: '',
-    individualWeight: ''
+    totalWeight: ''
   });
 
   const activeCycles = cycles.filter(c => c.status === 'active');
@@ -94,19 +94,19 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   // Ajouter un lot prélevé
   const handleAddSampleBatch = () => {
     const subjectCount = parseInt(newBatch.subjectCount) || 0;
-    const individualWeight = parseFloat(newBatch.individualWeight) || 0;
-    
-    if (subjectCount <= 0 || individualWeight <= 0) return;
-    
+    const totalWeight = parseFloat(newBatch.totalWeight) || 0;
+
+    if (subjectCount <= 0 || totalWeight <= 0) return;
+
     const newSampleBatch: SampleBatch = {
       id: Date.now().toString(),
       subjectCount,
-      individualWeight,
-      totalWeight: subjectCount * individualWeight
+      totalWeight,
+      individualWeight: totalWeight / subjectCount
     };
     
     setSampleBatches([...sampleBatches, newSampleBatch]);
-    setNewBatch({ subjectCount: '', individualWeight: '' });
+    setNewBatch({ subjectCount: '', totalWeight: '' });
   };
 
   // Supprimer un lot prélevé
@@ -124,7 +124,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     try {
       // Créer les notes avec les détails des lots prélevés
       const batchDetails = sampleBatches.map((b, i) => 
-        `Lot ${i + 1}: ${b.subjectCount} sujets × ${b.individualWeight}g = ${b.totalWeight}g`
+        `Lot ${i + 1}: ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
       ).join('\n');
       
       const calculationNotes = `
@@ -352,7 +352,8 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                 <CardContent className="space-y-4">
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-800">
-                      Ajoutez plusieurs lots prélevés. Le PMI (Poids Moyen Individuel) sera calculé automatiquement à partir du total.
+                      Saisissez le nombre de sujets prélevés et le <strong>poids total (général)</strong> du lot pesé.
+                      Le PMI (Poids Moyen Individuel) est calculé automatiquement : poids total ÷ nombre de sujets.
                     </p>
                   </div>
                   
@@ -369,21 +370,26 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                       />
                     </div>
                     <div className="col-span-4">
-                      <Label className="text-xs">Poids ind. (g)</Label>
+                      <Label className="text-xs">Poids total du lot (g)</Label>
                       <Input
                         type="number"
                         step="0.1"
                         min="0.1"
-                        value={newBatch.individualWeight}
-                        onChange={(e) => setNewBatch({...newBatch, individualWeight: e.target.value})}
-                        placeholder="50"
+                        value={newBatch.totalWeight}
+                        onChange={(e) => setNewBatch({...newBatch, totalWeight: e.target.value})}
+                        placeholder="10000"
                       />
+                      {Number(newBatch.subjectCount) > 0 && Number(newBatch.totalWeight) > 0 && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          PMI ≈ {(Number(newBatch.totalWeight) / Number(newBatch.subjectCount)).toFixed(2)} g
+                        </p>
+                      )}
                     </div>
                     <div className="col-span-4">
                       <Button 
                         type="button" 
                         onClick={handleAddSampleBatch}
-                        disabled={!newBatch.subjectCount || !newBatch.individualWeight}
+                        disabled={!newBatch.subjectCount || !newBatch.totalWeight}
                         className="w-full"
                         size="sm"
                       >
@@ -401,8 +407,8 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                           <TableRow>
                             <TableHead className="text-xs">Lot</TableHead>
                             <TableHead className="text-xs text-right">Sujets</TableHead>
-                            <TableHead className="text-xs text-right">Poids ind. (g)</TableHead>
-                            <TableHead className="text-xs text-right">Total (g)</TableHead>
+                            <TableHead className="text-xs text-right">Poids total (g)</TableHead>
+                            <TableHead className="text-xs text-right">PMI calculé (g)</TableHead>
                             <TableHead className="text-xs w-10"></TableHead>
                           </TableRow>
                         </TableHeader>
@@ -411,9 +417,9 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                             <TableRow key={batch.id}>
                               <TableCell className="font-medium">Lot {idx + 1}</TableCell>
                               <TableCell className="text-right">{batch.subjectCount}</TableCell>
-                              <TableCell className="text-right">{batch.individualWeight}</TableCell>
-                              <TableCell className="text-right font-medium">
-                                {batch.totalWeight.toLocaleString()}
+                              <TableCell className="text-right">{batch.totalWeight.toLocaleString()}</TableCell>
+                              <TableCell className="text-right font-medium text-primary">
+                                {batch.individualWeight.toFixed(2)}
                               </TableCell>
                               <TableCell>
                                 <Button 
