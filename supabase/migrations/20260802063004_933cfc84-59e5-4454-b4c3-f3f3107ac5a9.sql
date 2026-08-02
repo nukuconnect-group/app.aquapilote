@@ -1,0 +1,1 @@
+DELETE FROM public.activity_logs WHERE severity IN ('error','warning') AND (details ILIKE '%scanner is not running or paused%' OR action = 'module-error-boundary');
