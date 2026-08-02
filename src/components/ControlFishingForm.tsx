@@ -23,8 +23,8 @@ interface ControlFishingFormProps {
 interface SampleBatch {
   id: string;
   subjectCount: number;
-  individualWeight: number; // grammes
-  totalWeight: number; // grammes calculé automatiquement
+  totalWeight: number; // grammes (poids moyen général saisi pour le lot)
+  individualWeight: number; // grammes, calculé automatiquement (totalWeight / subjectCount)
 }
 
 const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps) => {
@@ -49,7 +49,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   const [sampleBatches, setSampleBatches] = useState<SampleBatch[]>([]);
   const [newBatch, setNewBatch] = useState({
     subjectCount: '',
-    individualWeight: ''
+    totalWeight: ''
   });
 
   const activeCycles = cycles.filter(c => c.status === 'active');
@@ -94,19 +94,19 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   // Ajouter un lot prélevé
   const handleAddSampleBatch = () => {
     const subjectCount = parseInt(newBatch.subjectCount) || 0;
-    const individualWeight = parseFloat(newBatch.individualWeight) || 0;
-    
-    if (subjectCount <= 0 || individualWeight <= 0) return;
-    
+    const totalWeight = parseFloat(newBatch.totalWeight) || 0;
+
+    if (subjectCount <= 0 || totalWeight <= 0) return;
+
     const newSampleBatch: SampleBatch = {
       id: Date.now().toString(),
       subjectCount,
-      individualWeight,
-      totalWeight: subjectCount * individualWeight
+      totalWeight,
+      individualWeight: totalWeight / subjectCount
     };
     
     setSampleBatches([...sampleBatches, newSampleBatch]);
-    setNewBatch({ subjectCount: '', individualWeight: '' });
+    setNewBatch({ subjectCount: '', totalWeight: '' });
   };
 
   // Supprimer un lot prélevé
@@ -124,7 +124,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     try {
       // Créer les notes avec les détails des lots prélevés
       const batchDetails = sampleBatches.map((b, i) => 
-        `Lot ${i + 1}: ${b.subjectCount} sujets × ${b.individualWeight}g = ${b.totalWeight}g`
+        `Lot ${i + 1}: ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
       ).join('\n');
       
       const calculationNotes = `
