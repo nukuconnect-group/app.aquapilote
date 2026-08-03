@@ -161,12 +161,19 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     try {
       // Créer les notes avec les détails des lots prélevés
       const batchDetails = sampleBatches.map((b, i) => 
-        `Lot ${i + 1}: ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
+        `Lot ${i + 1} (${b.species || 'Non précisée'}): ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
       ).join('\n');
-      
+
+      const speciesDetails = speciesCalculations.map((s) =>
+        `${s.species}: ${s.subjects} sujets — ${s.weight.toFixed(0)}g → PMI ${s.pmi.toFixed(2)}g`
+      ).join('\n');
+
       const calculationNotes = `
 === PRÉLÈVEMENT PAR LOTS ===
 ${batchDetails}
+
+=== PMI PAR ESPÈCE ===
+${speciesDetails}
 
 === CALCULS ===
 Total sujets prélevés: ${batchCalculations.totalSubjects}
@@ -389,14 +396,23 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                 <CardContent className="space-y-4">
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-800">
-                      Saisissez le nombre de sujets prélevés et le <strong>poids total (général)</strong> du lot pesé.
-                      Le PMI (Poids Moyen Individuel) est calculé automatiquement : poids total ÷ nombre de sujets.
+                      Saisissez l'espèce, le nombre de sujets prélevés et le <strong>poids TOTAL du lot pesé (pas le poids d'un poisson)</strong>.
+                      Le <strong>PMI (Poids Moyen Individuel)</strong> est calculé automatiquement : poids total ÷ nombre de sujets.
+                      Vous pouvez ajouter plusieurs lots (une ou plusieurs espèces) : le PMI est recalculé par espèce et au global.
                     </p>
                   </div>
                   
                   {/* Formulaire d'ajout de lot */}
                   <div className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
+                    <div className="col-span-12 sm:col-span-3">
+                      <Label className="text-xs">Espèce</Label>
+                      <Input
+                        value={newBatch.species}
+                        onChange={(e) => setNewBatch({...newBatch, species: e.target.value})}
+                        placeholder={attachedBatch?.species || 'Tilapia'}
+                      />
+                    </div>
+                    <div className="col-span-4 sm:col-span-3">
                       <Label className="text-xs">Nb sujets</Label>
                       <Input
                         type="number"
@@ -406,8 +422,8 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         placeholder="200"
                       />
                     </div>
-                    <div className="col-span-4">
-                      <Label className="text-xs">Poids total du lot (g)</Label>
+                    <div className="col-span-8 sm:col-span-4">
+                      <Label className="text-xs">Poids TOTAL du lot (g)</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -417,12 +433,12 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         placeholder="10000"
                       />
                       {Number(newBatch.subjectCount) > 0 && Number(newBatch.totalWeight) > 0 && (
-                        <p className="text-[11px] text-muted-foreground mt-1">
+                        <p className="text-[11px] text-primary font-medium mt-1">
                           PMI ≈ {(Number(newBatch.totalWeight) / Number(newBatch.subjectCount)).toFixed(2)} g
                         </p>
                       )}
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-12 sm:col-span-2">
                       <Button 
                         type="button" 
                         onClick={handleAddSampleBatch}
