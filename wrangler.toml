@@ -1,0 +1,9 @@
+name = "app-aquapilote"
+compatibility_date = "2026-08-03"
+type = "javascript"
+
+[build]
+command = "bun run build"
+
+[site]
+bucket = "./dist"
