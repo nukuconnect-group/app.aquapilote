@@ -584,7 +584,7 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         type="number"
                         min="1"
                         value={newBatch.subjectCount}
-                        onChange={(e) => setNewBatch({...newBatch, subjectCount: e.target.value})}
+                        onChange={(e) => { setBatchError(null); setNewBatch({...newBatch, subjectCount: e.target.value}); }}
                         placeholder="200"
                       />
                     </div>
@@ -595,7 +595,7 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         step="0.1"
                         min="0.1"
                         value={newBatch.totalWeight}
-                        onChange={(e) => setNewBatch({...newBatch, totalWeight: e.target.value})}
+                        onChange={(e) => { setBatchError(null); setNewBatch({...newBatch, totalWeight: e.target.value}); }}
                         placeholder="10000"
                       />
                       {Number(newBatch.subjectCount) > 0 && Number(newBatch.totalWeight) > 0 && (
@@ -608,7 +608,6 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                       <Button 
                         type="button" 
                         onClick={handleAddSampleBatch}
-                        disabled={!newBatch.subjectCount || !newBatch.totalWeight}
                         className="w-full"
                         size="sm"
                       >
@@ -617,6 +616,13 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                       </Button>
                     </div>
                   </div>
+
+                  {batchError && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <AlertDescription className="text-xs">{batchError}</AlertDescription>
+                    </Alert>
+                  )}
                   
                   {/* Tableau des lots prélevés */}
                   {sampleBatches.length > 0 && (
@@ -664,6 +670,9 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                               </TableCell>
                               <TableCell className="text-right font-medium text-primary">
                                 {batch.individualWeight.toFixed(2)}
+                                {rowErrors[batch.id] && (
+                                  <span className="block text-[10px] text-destructive font-normal">{rowErrors[batch.id]}</span>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Button 
@@ -817,7 +826,7 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={sampleBatches.length === 0}
+                disabled={sampleBatches.length === 0 || hasRowErrors || overSampled}
               >
                 {sampleBatches.length === 0 
                   ? 'Ajoutez au moins un lot prélevé' 
