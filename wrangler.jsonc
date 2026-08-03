@@ -2,7 +2,7 @@
   "name": "app-aquapilote",
   "compatibility_date": "2026-08-03",
   "build": {
-    "command": "bun run build"
+    "command": "npm run build"
   },
   "assets": {
     "directory": "./dist"
