@@ -342,6 +342,70 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Récapitulatif global en haut du formulaire */}
+          {sampleBatches.length > 0 && (
+            <Card className="border-primary/40 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between gap-2 flex-wrap">
+                  <span className="flex items-center gap-2">
+                    <Calculator className="w-4 h-4" />
+                    Récapitulatif en temps réel
+                  </span>
+                  <Button type="button" variant="outline" size="sm" onClick={handleExportPDF}>
+                    <FileDown className="w-4 h-4 mr-1" />
+                    Exporter en PDF
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg bg-background p-2">
+                    <span className="text-[11px] text-muted-foreground block">Total sujets</span>
+                    <p className="font-bold text-lg">{batchCalculations.totalSubjects.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2">
+                    <span className="text-[11px] text-muted-foreground block">Poids total</span>
+                    <p className="font-bold text-lg">{batchCalculations.totalWeightKg.toFixed(2)} kg</p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2">
+                    <span className="text-[11px] text-muted-foreground block">PMI global</span>
+                    <p className="font-bold text-lg text-primary">{batchCalculations.pmi.toFixed(2)} g</p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2">
+                    <span className="text-[11px] text-muted-foreground block">% prélevé</span>
+                    <p className="font-bold text-lg">{batchCalculations.samplePercentage.toFixed(2)}%</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Détail par espèce</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {speciesCalculations.map((s) => (
+                      <div key={s.species} className="flex items-center justify-between gap-2 text-xs bg-background rounded p-2">
+                        <span className="font-medium truncate">{s.species}</span>
+                        <span className="text-muted-foreground whitespace-nowrap">
+                          {s.subjects} sujets · {(s.weight / 1000).toFixed(2)} kg
+                        </span>
+                        <span className="font-bold text-primary whitespace-nowrap">PMI {s.pmi.toFixed(2)} g</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {(hasRowErrors || overSampled) && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription className="text-xs">
+                      {overSampled
+                        ? `Le total prélevé (${batchCalculations.totalSubjects}) dépasse les ${availableSubjects} sujets disponibles.`
+                        : 'Certains lots contiennent des valeurs invalides (vides, nulles ou négatives).'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Sélection du cycle */}
           <Card>
             <CardHeader className="pb-3">
