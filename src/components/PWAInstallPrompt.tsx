@@ -1,241 +1,124 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Smartphone, X, Monitor } from 'lucide-react';
 import aquaPilotLogo from '@/assets/aqua-pilot-logo-small.webp';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { detectDevice } from '@/lib/deviceDetection';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { usePWAInstallState, supportsInstallPrompt } from '@/hooks/usePWAInstallState';
 
 const PWAInstallPrompt: React.FC = () => {
-  const { isDemoMode, user } = useAuth();
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const { isInstalled, canPromptInstall, isReady, promptInstall } = usePWAInstallState();
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('pwa-install-dismissed') === 'true'; } catch { return false; }
+  });
+  const [delayElapsed, setDelayElapsed] = useState(false);
 
   useEffect(() => {
-    // Vérifier si l'app est déjà installée
-    const checkIfInstalled = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const isInWebAppiOS = (window.navigator as any).standalone;
-      const installed = isStandalone || isInWebAppiOS;
-      if (installed) {
-        try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
-      }
-      setIsInstalled(installed || localStorage.getItem('aqua-pwa-installed') === 'true');
-    };
+    const timer = window.setTimeout(() => setDelayElapsed(true), 5000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
-    checkIfInstalled();
-
-    // Écouter l'événement beforeinstallprompt
-    const handleBeforeInstallPrompt = (e: Event) => {
-      const event = e as BeforeInstallPromptEvent;
-      console.log('PWA install prompt available');
-      e.preventDefault();
-      setDeferredPrompt(event);
-      
-      // Attendre un peu avant de montrer le prompt pour ne pas être intrusif
-      // Afficher même en mode démo après 5 secondes
-      setTimeout(() => {
-        if (!isInstalled) {
-          setShowInstallPrompt(true);
+  const trackInstall = async () => {
+    try {
+      const device = detectDevice(navigator.userAgent);
+      let country = 'Inconnu';
+      let countryCode = 'XX';
+      try {
+        const resp = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/detect-country');
+        if (resp.ok) {
+          const data = await resp.json();
+          country = data.country || 'Inconnu';
+          countryCode = data.countryCode || 'XX';
         }
-      }, 5000);
-    };
-
-    // Écouter l'installation réussie
-    const handleAppInstalled = () => {
-      console.log('PWA was installed');
-      try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
-      setIsInstalled(true);
-      setShowInstallPrompt(false);
-      setDeferredPrompt(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Fallback pour les navigateurs qui ne déclenchent pas
-    // `beforeinstallprompt` (Safari desktop/iOS, Firefox, certains
-    // navigateurs embarqués). On affiche quand même une bannière avec
-    // les instructions manuelles au bout de ~8 secondes.
-    const fallbackTimer = window.setTimeout(() => {
-      if (isInstalled) return;
-      if (localStorage.getItem('aqua-pwa-installed') === 'true') return;
-      if (sessionStorage.getItem('pwa-install-dismissed') === 'true') return;
-      setShowInstallPrompt(true);
-    }, 8000);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      window.clearTimeout(fallbackTimer);
-    };
-  }, [isInstalled]);
+      } catch {}
+      await supabase.from('pwa_installs' as any).insert({
+        session_id: `pwa-${Date.now()}`,
+        device_type: device.deviceType,
+        device_info: device.deviceInfo,
+        country,
+        country_code: countryCode,
+        user_agent: navigator.userAgent.substring(0, 500),
+      });
+    } catch (e) {
+      console.error('Error tracking PWA install:', e);
+    }
+  };
 
   const handleInstallClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!deferredPrompt) {
-      console.log('No deferred prompt available');
-      return;
-    }
-
-    try {
-      console.log('Triggering install prompt');
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      console.log(`User response to install prompt: ${outcome}`);
-      
-      if (outcome === 'accepted') {
-        setShowInstallPrompt(false);
-        sessionStorage.setItem('pwa-install-dismissed', 'true');
-        // Track the installation
-        try {
-          const device = detectDevice(navigator.userAgent);
-          let country = 'Inconnu';
-          let countryCode = 'XX';
-          try {
-            const resp = await fetch('https://hhsvraqchtqqgaezhnzn.supabase.co/functions/v1/detect-country');
-            if (resp.ok) {
-              const data = await resp.json();
-              country = data.country || 'Inconnu';
-              countryCode = data.countryCode || 'XX';
-            }
-          } catch {}
-          await supabase.from('pwa_installs' as any).insert({
-            session_id: `pwa-${Date.now()}`,
-            device_type: device.deviceType,
-            device_info: device.deviceInfo,
-            country,
-            country_code: countryCode,
-            user_agent: navigator.userAgent.substring(0, 500),
-          });
-        } catch (e) {
-          console.error('Error tracking PWA install:', e);
-        }
-      }
-      
-      setDeferredPrompt(null);
-    } catch (error) {
-      console.error('Error installing PWA:', error);
+    const outcome = await promptInstall();
+    if (outcome === 'accepted') {
+      setDismissed(true);
+      trackInstall();
     }
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('PWA prompt dismissed');
-    setShowInstallPrompt(false);
-    setDeferredPrompt(null);
-    // Ne plus montrer pendant cette session
-    sessionStorage.setItem('pwa-install-dismissed', 'true');
+    setDismissed(true);
+    try { sessionStorage.setItem('pwa-install-dismissed', 'true'); } catch {}
   };
 
-  // Afficher seulement si :
-  // - L'app n'est pas déjà installée
-  // - Le prompt n'a pas été dismissé cette session
-  // - showInstallPrompt est true
-  if (
-    isInstalled ||
-    localStorage.getItem('aqua-pwa-installed') === 'true' ||
-    sessionStorage.getItem('pwa-install-dismissed') === 'true'
-  ) {
-    return null;
-  }
+  // Ne jamais proposer l'installation si l'app est déjà installée / lancée en mode app
+  if (isInstalled || dismissed || !isReady || !delayElapsed) return null;
 
-  if (!showInstallPrompt) {
-    return null;
-  }
+  // Sur navigateurs Chromium, on n'affiche la bannière que si une installation
+  // native est réellement possible (sinon = déjà installée ou non éligible).
+  const manualOnly = !supportsInstallPrompt();
+  if (!canPromptInstall && !manualOnly) return null;
 
-  const getDeviceType = () => {
-    const userAgent = navigator.userAgent.toLowerCase();
-    if (/mobile|android|iphone|ipad|phone/.test(userAgent)) {
-      return 'mobile';
-    }
-    return 'desktop';
-  };
-
-  const deviceType = getDeviceType();
-  const DeviceIcon = deviceType === 'mobile' ? Smartphone : Monitor;
+  const isMobile = /mobile|android|iphone|ipad|phone/.test(navigator.userAgent.toLowerCase());
+  const DeviceIcon = isMobile ? Smartphone : Monitor;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 flex justify-center md:left-auto md:right-4 md:max-w-sm">
-      <Card className="w-full max-w-sm shadow-2xl border-aqua-200 bg-white/95 backdrop-blur-sm">
+      <Card className="w-full max-w-sm shadow-2xl border-aqua-200 bg-card/95 backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <img 
-                src={aquaPilotLogo} 
-                alt="AQUAPILOTE" 
-                className="w-10 h-10 rounded-lg"
-              />
-            </div>
-            
+            <img src={aquaPilotLogo} alt="AQUAPILOTE" className="w-10 h-10 rounded-lg flex-shrink-0" />
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">
-                  Installer AQUAPILOTE
-                </h3>
+                <h3 className="text-sm font-semibold truncate">Installer AQUAPILOTE</h3>
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                  className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md"
                   aria-label="Fermer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              
-              <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                {deviceType === 'mobile' 
+
+              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                {isMobile
                   ? "Installez l'app sur votre téléphone pour un accès rapide et hors-ligne"
                   : "Installez l'app sur votre ordinateur pour un accès rapide depuis le bureau"}
-                {!deferredPrompt && " (Utilisez le menu de votre navigateur)"}
+                {manualOnly && " (via le menu de votre navigateur)"}
               </p>
-              
+
               <div className="flex gap-2">
-                {deferredPrompt ? (
-                  <Button
-                    onClick={handleInstallClick}
-                    size="sm"
-                    className="flex-1 bg-gradient-aqua text-white text-xs h-8"
-                  >
+                {canPromptInstall ? (
+                  <Button onClick={handleInstallClick} size="sm" className="flex-1 bg-gradient-aqua text-primary-foreground text-xs h-8">
                     <Download className="w-3 h-3 mr-1" />
                     Installer
                   </Button>
                 ) : (
-                  <Button
-                    onClick={handleDismiss}
-                    size="sm"
-                    className="flex-1 bg-gradient-aqua text-white text-xs h-8"
-                  >
+                  <Button onClick={handleDismiss} size="sm" className="flex-1 bg-gradient-aqua text-primary-foreground text-xs h-8">
                     J'ai compris
                   </Button>
                 )}
-                
-                <Button
-                  onClick={handleDismiss}
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-8 px-3"
-                >
+                <Button onClick={handleDismiss} variant="ghost" size="sm" className="text-xs h-8 px-3">
                   Plus tard
                 </Button>
               </div>
-              
-              <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                 <DeviceIcon className="w-3 h-3" />
-                <span>
-                  {deviceType === 'mobile' ? 'Ajout à l\'écran d\'accueil' : 'Application de bureau'}
-                </span>
+                <span>{isMobile ? "Ajout à l'écran d'accueil" : 'Application de bureau'}</span>
               </div>
             </div>
           </div>
