@@ -459,6 +459,7 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         <TableHeader>
                           <TableRow>
                             <TableHead className="text-xs">Lot</TableHead>
+                            <TableHead className="text-xs">Espèce</TableHead>
                             <TableHead className="text-xs text-right">Sujets</TableHead>
                             <TableHead className="text-xs text-right">Poids total (g)</TableHead>
                             <TableHead className="text-xs text-right">PMI calculé (g)</TableHead>
@@ -469,8 +470,32 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                           {sampleBatches.map((batch, idx) => (
                             <TableRow key={batch.id}>
                               <TableCell className="font-medium">Lot {idx + 1}</TableCell>
-                              <TableCell className="text-right">{batch.subjectCount}</TableCell>
-                              <TableCell className="text-right">{batch.totalWeight.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-8 text-xs"
+                                  value={batch.species}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'species', e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  className="h-8 text-xs text-right"
+                                  value={batch.subjectCount || ''}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'subjectCount', e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0.1"
+                                  className="h-8 text-xs text-right"
+                                  value={batch.totalWeight || ''}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'totalWeight', e.target.value)}
+                                />
+                              </TableCell>
                               <TableCell className="text-right font-medium text-primary">
                                 {batch.individualWeight.toFixed(2)}
                               </TableCell>
@@ -493,10 +518,27 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                   
                   {/* Résumé des calculs */}
                   {sampleBatches.length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <h5 className="text-xs font-semibold text-muted-foreground">PMI par espèce (temps réel)</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {speciesCalculations.map((s) => (
+                          <div key={s.species} className="flex items-center justify-between text-sm bg-muted/50 rounded p-2">
+                            <span className="font-medium">{s.species}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {s.subjects} sujets · {(s.weight / 1000).toFixed(2)} kg
+                            </span>
+                            <span className="font-bold text-primary">PMI {s.pmi.toFixed(2)} g</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sampleBatches.length > 0 && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
                       <h5 className="font-semibold text-sm flex items-center gap-2 text-green-800">
                         <Calculator className="w-4 h-4" />
-                        Calculs automatiques
+                        Calculs automatiques (global)
                       </h5>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                         <div>
