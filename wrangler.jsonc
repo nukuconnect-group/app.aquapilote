@@ -1,0 +1,7 @@
+{
+  "name": "app-aquapilote",
+  "compatibility_date": "2026-08-03",
+  "assets": {
+    "directory": "./dist"
+  }
+}
