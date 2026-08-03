@@ -7,13 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Fish, Trash2, Calculator, Scale, Info } from 'lucide-react';
+import { Plus, Fish, Trash2, Calculator, Scale, Info, FileDown, AlertTriangle } from 'lucide-react';
 import { useProductionCycles } from '@/hooks/useProductionCycles';
 import { useCycleInfrastructures } from '@/hooks/useCycleInfrastructures';
 import { useHealthRecords } from '@/hooks/useHealthRecords';
 import { useLivestockBatches } from '@/hooks/useLivestockBatches';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { exportControlFishingPDF } from '@/lib/controlFishingPdf';
+import { useToast } from '@/hooks/use-toast';
 
 interface ControlFishingFormProps {
   unitId: string;
@@ -30,6 +32,7 @@ interface SampleBatch {
 
 const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
   const { cycles } = useProductionCycles(unitId);
   const [selectedCycleId, setSelectedCycleId] = useState('');
   const { infrastructures } = useCycleInfrastructures(selectedCycleId);
