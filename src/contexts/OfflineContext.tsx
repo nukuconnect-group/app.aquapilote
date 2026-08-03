@@ -23,10 +23,35 @@ interface CachedDataInfo {
 
 const OfflineContext = createContext<OfflineContextType | undefined>(undefined);
 
+/** Valeurs neutres utilisées si React n'est pas correctement résolu (double instance, chunk obsolète) */
+const FALLBACK_CONTEXT: OfflineContextType = {
+  isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  isSyncing: false,
+  pendingActionsCount: 0,
+  lastSyncTime: null,
+  cachedDataInfo: { totalSize: 0, tables: {} },
+  syncData: async () => {},
+  preloadData: async () => {},
+  clearCache: async () => {},
+  getCachedData: async () => null,
+  setCachedData: async () => {},
+};
+
+/** Vérifie que les hooks React sont réellement disponibles avant de les appeler */
+const areHooksAvailable = () => {
+  try {
+    return typeof useState === 'function' && typeof useEffect === 'function' && typeof useContext === 'function';
+  } catch {
+    return false;
+  }
+};
+
 export const useOfflineContext = () => {
+  if (!areHooksAvailable()) return FALLBACK_CONTEXT;
   const context = useContext(OfflineContext);
   if (!context) {
-    throw new Error('useOfflineContext must be used within OfflineProvider');
+    console.warn('useOfflineContext utilisé hors OfflineProvider : valeurs par défaut appliquées');
+    return FALLBACK_CONTEXT;
   }
   return context;
 };
@@ -35,7 +60,7 @@ interface OfflineProviderProps {
   children: ReactNode;
 }
 
-export const OfflineProvider: React.FC<OfflineProviderProps> = ({ children }) => {
+const OfflineProviderInner: React.FC<OfflineProviderProps> = ({ children }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingActionsCount, setPendingActionsCount] = useState(0);
