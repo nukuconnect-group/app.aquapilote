@@ -306,3 +306,16 @@ const OfflineProviderInner: React.FC<OfflineProviderProps> = ({ children }) => {
     </OfflineContext.Provider>
   );
 };
+
+/**
+ * Provider résilient : si les hooks React ne sont pas résolus correctement
+ * (double instance de React, cache de dépendances obsolète), on rend les enfants
+ * avec un contexte neutre au lieu de planter sur `useState` de null.
+ */
+export const OfflineProvider: React.FC<OfflineProviderProps> = ({ children }) => {
+  if (!areHooksAvailable()) {
+    console.error('[OfflineProvider] Hooks React indisponibles — mode dégradé activé');
+    return <OfflineContext.Provider value={FALLBACK_CONTEXT}>{children}</OfflineContext.Provider>;
+  }
+  return <OfflineProviderInner>{children}</OfflineProviderInner>;
+};
