@@ -22,6 +22,7 @@ interface ControlFishingFormProps {
 
 interface SampleBatch {
   id: string;
+  species: string;
   subjectCount: number;
   totalWeight: number; // grammes (poids moyen général saisi pour le lot)
   individualWeight: number; // grammes, calculé automatiquement (totalWeight / subjectCount)
@@ -48,6 +49,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   // Système de prélèvement par lots
   const [sampleBatches, setSampleBatches] = useState<SampleBatch[]>([]);
   const [newBatch, setNewBatch] = useState({
+    species: '',
     subjectCount: '',
     totalWeight: ''
   });
@@ -91,6 +93,22 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     };
   }, [sampleBatches, availableSubjects]);
 
+  // PMI par espèce (recalculé en temps réel)
+  const speciesCalculations = useMemo(() => {
+    const map = new Map<string, { species: string; subjects: number; weight: number }>();
+    sampleBatches.forEach((b) => {
+      const key = (b.species || 'Non précisée').trim() || 'Non précisée';
+      const entry = map.get(key) || { species: key, subjects: 0, weight: 0 };
+      entry.subjects += b.subjectCount;
+      entry.weight += b.totalWeight;
+      map.set(key, entry);
+    });
+    return Array.from(map.values()).map((e) => ({
+      ...e,
+      pmi: e.subjects > 0 ? e.weight / e.subjects : 0,
+    }));
+  }, [sampleBatches]);
+
   // Ajouter un lot prélevé
   const handleAddSampleBatch = () => {
     const subjectCount = parseInt(newBatch.subjectCount) || 0;
@@ -100,13 +118,32 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
 
     const newSampleBatch: SampleBatch = {
       id: Date.now().toString(),
+      species: (newBatch.species || attachedBatch?.species || 'Non précisée').trim(),
       subjectCount,
       totalWeight,
       individualWeight: totalWeight / subjectCount
     };
     
     setSampleBatches([...sampleBatches, newSampleBatch]);
-    setNewBatch({ subjectCount: '', totalWeight: '' });
+    setNewBatch({ species: newBatch.species, subjectCount: '', totalWeight: '' });
+  };
+
+  // Modifier un lot existant : le PMI est toujours recalculé
+  const handleUpdateSampleBatch = (id: string, field: 'species' | 'subjectCount' | 'totalWeight', value: string) => {
+    setSampleBatches((prev) =>
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        const updated: SampleBatch = {
+          ...b,
+          species: field === 'species' ? value : b.species,
+          subjectCount: field === 'subjectCount' ? parseInt(value) || 0 : b.subjectCount,
+          totalWeight: field === 'totalWeight' ? parseFloat(value) || 0 : b.totalWeight,
+          individualWeight: 0,
+        };
+        updated.individualWeight = updated.subjectCount > 0 ? updated.totalWeight / updated.subjectCount : 0;
+        return updated;
+      })
+    );
   };
 
   // Supprimer un lot prélevé
