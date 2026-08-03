@@ -56,6 +56,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     subjectCount: '',
     totalWeight: ''
   });
+  const [batchError, setBatchError] = useState<string | null>(null);
 
   const activeCycles = cycles.filter(c => c.status === 'active');
   const selectedCycle = cycles.find(c => c.id === selectedCycleId);
@@ -112,12 +113,58 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     }));
   }, [sampleBatches]);
 
+  // Erreurs de saisie sur les lots déjà ajoutés (recalculées en temps réel)
+  const rowErrors = useMemo(() => {
+    const map: Record<string, string> = {};
+    sampleBatches.forEach((b) => {
+      if (!Number.isFinite(b.subjectCount) || b.subjectCount <= 0) {
+        map[b.id] = 'Le nombre de sujets doit être un entier supérieur à 0.';
+      } else if (!Number.isFinite(b.totalWeight) || b.totalWeight <= 0) {
+        map[b.id] = 'Le poids total du lot doit être supérieur à 0 g.';
+      } else if (b.totalWeight / b.subjectCount > 100000) {
+        map[b.id] = 'PMI incohérent : vérifiez le poids total (en grammes) et le nombre de sujets.';
+      }
+    });
+    return map;
+  }, [sampleBatches]);
+
+  const hasRowErrors = Object.keys(rowErrors).length > 0;
+
+  const overSampled =
+    availableSubjects > 0 && batchCalculations.totalSubjects > availableSubjects;
+
+  // Validation de la saisie d'un nouveau lot
+  const validateNewBatch = (): string | null => {
+    if (!newBatch.subjectCount.trim() && !newBatch.totalWeight.trim()) {
+      return 'Renseignez le nombre de sujets et le poids total du lot.';
+    }
+    const subjectCount = Number(newBatch.subjectCount);
+    const totalWeight = Number(newBatch.totalWeight);
+    if (!newBatch.subjectCount.trim() || !Number.isFinite(subjectCount)) {
+      return 'Le nombre de sujets prélevés est obligatoire.';
+    }
+    if (!Number.isInteger(subjectCount)) return 'Le nombre de sujets doit être un nombre entier.';
+    if (subjectCount <= 0) return 'Le nombre de sujets doit être supérieur à 0 (valeur négative ou nulle refusée).';
+    if (!newBatch.totalWeight.trim() || !Number.isFinite(totalWeight)) {
+      return 'Le poids TOTAL du lot (en grammes) est obligatoire.';
+    }
+    if (totalWeight <= 0) return 'Le poids total doit être supérieur à 0 g (valeur négative ou nulle refusée).';
+    if (availableSubjects > 0 && batchCalculations.totalSubjects + subjectCount > availableSubjects) {
+      return `Le total prélevé (${batchCalculations.totalSubjects + subjectCount}) dépasse les ${availableSubjects} sujets disponibles.`;
+    }
+    return null;
+  };
+
   // Ajouter un lot prélevé
   const handleAddSampleBatch = () => {
-    const subjectCount = parseInt(newBatch.subjectCount) || 0;
-    const totalWeight = parseFloat(newBatch.totalWeight) || 0;
-
-    if (subjectCount <= 0 || totalWeight <= 0) return;
+    const error = validateNewBatch();
+    if (error) {
+      setBatchError(error);
+      return;
+    }
+    setBatchError(null);
+    const subjectCount = parseInt(newBatch.subjectCount, 10);
+    const totalWeight = parseFloat(newBatch.totalWeight);
 
     const newSampleBatch: SampleBatch = {
       id: Date.now().toString(),
@@ -158,6 +205,24 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     e.preventDefault();
     
     if (sampleBatches.length === 0) {
+      return;
+    }
+
+    if (hasRowErrors) {
+      toast({
+        title: 'Saisie invalide',
+        description: 'Corrigez les lots en erreur avant d’enregistrer la pêche de contrôle.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (overSampled) {
+      toast({
+        title: 'Échantillon trop important',
+        description: `Le total prélevé dépasse les ${availableSubjects} sujets disponibles.`,
+        variant: 'destructive',
+      });
       return;
     }
     
@@ -222,6 +287,40 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
       setSelectedCycleId('');
     } catch (error) {
       console.error('Error creating control fishing record:', error);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (sampleBatches.length === 0) {
+      toast({ title: 'Aucun lot', description: 'Ajoutez au moins un lot prélevé avant d’exporter.', variant: 'destructive' });
+      return;
+    }
+    try {
+      exportControlFishingPDF({
+        cycleName: selectedCycle ? `${selectedCycle.name} - ${selectedCycle.species}` : undefined,
+        infrastructureName: selectedInfrastructure?.infrastructure_name,
+        date: formData.date,
+        availableSubjects,
+        batches: sampleBatches.map((b) => ({
+          species: b.species,
+          subjectCount: b.subjectCount,
+          totalWeight: b.totalWeight,
+          individualWeight: b.individualWeight,
+        })),
+        speciesRows: speciesCalculations,
+        totals: batchCalculations,
+        environment: {
+          temperature: formData.temperature,
+          ph: formData.ph,
+          oxygen: formData.oxygen,
+          mortality: formData.mortality,
+        },
+        notes: formData.notes,
+      });
+      toast({ title: 'PDF généré', description: 'Le rapport de pêche de contrôle a été téléchargé.' });
+    } catch (err) {
+      console.error('Erreur export PDF pêche de contrôle', err);
+      toast({ title: 'Export impossible', description: 'Une erreur est survenue pendant la génération du PDF.', variant: 'destructive' });
     }
   };
 
