@@ -342,9 +342,9 @@ const Dashboard: React.FC = () => {
           {/* Main Content avec padding-top pour compenser le header fixe sur mobile */}
           <main
             className="flex-1 overflow-y-auto px-2 sm:p-4 lg:p-6 pt-[3.75rem] sm:pt-[5rem] md:pt-2"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 9.5rem)' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 11rem)' }}
           >
-            <div className="w-full max-w-none">
+            <div className="w-full max-w-none pb-6 md:pb-0">
               {isLoadingAccess ? (
                 <div className="min-h-[50vh] flex items-center justify-center text-muted-foreground">
                   <Loader2 className="w-6 h-6 animate-spin mr-2" />

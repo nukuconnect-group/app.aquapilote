@@ -22,6 +22,7 @@ interface ControlFishingFormProps {
 
 interface SampleBatch {
   id: string;
+  species: string;
   subjectCount: number;
   totalWeight: number; // grammes (poids moyen général saisi pour le lot)
   individualWeight: number; // grammes, calculé automatiquement (totalWeight / subjectCount)
@@ -48,6 +49,7 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
   // Système de prélèvement par lots
   const [sampleBatches, setSampleBatches] = useState<SampleBatch[]>([]);
   const [newBatch, setNewBatch] = useState({
+    species: '',
     subjectCount: '',
     totalWeight: ''
   });
@@ -91,6 +93,22 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     };
   }, [sampleBatches, availableSubjects]);
 
+  // PMI par espèce (recalculé en temps réel)
+  const speciesCalculations = useMemo(() => {
+    const map = new Map<string, { species: string; subjects: number; weight: number }>();
+    sampleBatches.forEach((b) => {
+      const key = (b.species || 'Non précisée').trim() || 'Non précisée';
+      const entry = map.get(key) || { species: key, subjects: 0, weight: 0 };
+      entry.subjects += b.subjectCount;
+      entry.weight += b.totalWeight;
+      map.set(key, entry);
+    });
+    return Array.from(map.values()).map((e) => ({
+      ...e,
+      pmi: e.subjects > 0 ? e.weight / e.subjects : 0,
+    }));
+  }, [sampleBatches]);
+
   // Ajouter un lot prélevé
   const handleAddSampleBatch = () => {
     const subjectCount = parseInt(newBatch.subjectCount) || 0;
@@ -100,13 +118,32 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
 
     const newSampleBatch: SampleBatch = {
       id: Date.now().toString(),
+      species: (newBatch.species || attachedBatch?.species || 'Non précisée').trim(),
       subjectCount,
       totalWeight,
       individualWeight: totalWeight / subjectCount
     };
     
     setSampleBatches([...sampleBatches, newSampleBatch]);
-    setNewBatch({ subjectCount: '', totalWeight: '' });
+    setNewBatch({ species: newBatch.species, subjectCount: '', totalWeight: '' });
+  };
+
+  // Modifier un lot existant : le PMI est toujours recalculé
+  const handleUpdateSampleBatch = (id: string, field: 'species' | 'subjectCount' | 'totalWeight', value: string) => {
+    setSampleBatches((prev) =>
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        const updated: SampleBatch = {
+          ...b,
+          species: field === 'species' ? value : b.species,
+          subjectCount: field === 'subjectCount' ? parseInt(value) || 0 : b.subjectCount,
+          totalWeight: field === 'totalWeight' ? parseFloat(value) || 0 : b.totalWeight,
+          individualWeight: 0,
+        };
+        updated.individualWeight = updated.subjectCount > 0 ? updated.totalWeight / updated.subjectCount : 0;
+        return updated;
+      })
+    );
   };
 
   // Supprimer un lot prélevé
@@ -124,12 +161,19 @@ const ControlFishingForm = ({ unitId, onRecordCreated }: ControlFishingFormProps
     try {
       // Créer les notes avec les détails des lots prélevés
       const batchDetails = sampleBatches.map((b, i) => 
-        `Lot ${i + 1}: ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
+        `Lot ${i + 1} (${b.species || 'Non précisée'}): ${b.subjectCount} sujets — poids total ${b.totalWeight}g → PMI ${b.individualWeight.toFixed(2)}g`
       ).join('\n');
-      
+
+      const speciesDetails = speciesCalculations.map((s) =>
+        `${s.species}: ${s.subjects} sujets — ${s.weight.toFixed(0)}g → PMI ${s.pmi.toFixed(2)}g`
+      ).join('\n');
+
       const calculationNotes = `
 === PRÉLÈVEMENT PAR LOTS ===
 ${batchDetails}
+
+=== PMI PAR ESPÈCE ===
+${speciesDetails}
 
 === CALCULS ===
 Total sujets prélevés: ${batchCalculations.totalSubjects}
@@ -352,14 +396,23 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                 <CardContent className="space-y-4">
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-800">
-                      Saisissez le nombre de sujets prélevés et le <strong>poids total (général)</strong> du lot pesé.
-                      Le PMI (Poids Moyen Individuel) est calculé automatiquement : poids total ÷ nombre de sujets.
+                      Saisissez l'espèce, le nombre de sujets prélevés et le <strong>poids TOTAL du lot pesé (pas le poids d'un poisson)</strong>.
+                      Le <strong>PMI (Poids Moyen Individuel)</strong> est calculé automatiquement : poids total ÷ nombre de sujets.
+                      Vous pouvez ajouter plusieurs lots (une ou plusieurs espèces) : le PMI est recalculé par espèce et au global.
                     </p>
                   </div>
                   
                   {/* Formulaire d'ajout de lot */}
                   <div className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
+                    <div className="col-span-12 sm:col-span-3">
+                      <Label className="text-xs">Espèce</Label>
+                      <Input
+                        value={newBatch.species}
+                        onChange={(e) => setNewBatch({...newBatch, species: e.target.value})}
+                        placeholder={attachedBatch?.species || 'Tilapia'}
+                      />
+                    </div>
+                    <div className="col-span-4 sm:col-span-3">
                       <Label className="text-xs">Nb sujets</Label>
                       <Input
                         type="number"
@@ -369,8 +422,8 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         placeholder="200"
                       />
                     </div>
-                    <div className="col-span-4">
-                      <Label className="text-xs">Poids total du lot (g)</Label>
+                    <div className="col-span-8 sm:col-span-4">
+                      <Label className="text-xs">Poids TOTAL du lot (g)</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -380,12 +433,12 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         placeholder="10000"
                       />
                       {Number(newBatch.subjectCount) > 0 && Number(newBatch.totalWeight) > 0 && (
-                        <p className="text-[11px] text-muted-foreground mt-1">
+                        <p className="text-[11px] text-primary font-medium mt-1">
                           PMI ≈ {(Number(newBatch.totalWeight) / Number(newBatch.subjectCount)).toFixed(2)} g
                         </p>
                       )}
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-12 sm:col-span-2">
                       <Button 
                         type="button" 
                         onClick={handleAddSampleBatch}
@@ -406,6 +459,7 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                         <TableHeader>
                           <TableRow>
                             <TableHead className="text-xs">Lot</TableHead>
+                            <TableHead className="text-xs">Espèce</TableHead>
                             <TableHead className="text-xs text-right">Sujets</TableHead>
                             <TableHead className="text-xs text-right">Poids total (g)</TableHead>
                             <TableHead className="text-xs text-right">PMI calculé (g)</TableHead>
@@ -416,8 +470,32 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                           {sampleBatches.map((batch, idx) => (
                             <TableRow key={batch.id}>
                               <TableCell className="font-medium">Lot {idx + 1}</TableCell>
-                              <TableCell className="text-right">{batch.subjectCount}</TableCell>
-                              <TableCell className="text-right">{batch.totalWeight.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-8 text-xs"
+                                  value={batch.species}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'species', e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  className="h-8 text-xs text-right"
+                                  value={batch.subjectCount || ''}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'subjectCount', e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0.1"
+                                  className="h-8 text-xs text-right"
+                                  value={batch.totalWeight || ''}
+                                  onChange={(e) => handleUpdateSampleBatch(batch.id, 'totalWeight', e.target.value)}
+                                />
+                              </TableCell>
                               <TableCell className="text-right font-medium text-primary">
                                 {batch.individualWeight.toFixed(2)}
                               </TableCell>
@@ -440,10 +518,27 @@ ${formData.notes ? `=== OBSERVATIONS ===\n${formData.notes}` : ''}
                   
                   {/* Résumé des calculs */}
                   {sampleBatches.length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <h5 className="text-xs font-semibold text-muted-foreground">PMI par espèce (temps réel)</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {speciesCalculations.map((s) => (
+                          <div key={s.species} className="flex items-center justify-between text-sm bg-muted/50 rounded p-2">
+                            <span className="font-medium">{s.species}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {s.subjects} sujets · {(s.weight / 1000).toFixed(2)} kg
+                            </span>
+                            <span className="font-bold text-primary">PMI {s.pmi.toFixed(2)} g</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sampleBatches.length > 0 && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
                       <h5 className="font-semibold text-sm flex items-center gap-2 text-green-800">
                         <Calculator className="w-4 h-4" />
-                        Calculs automatiques
+                        Calculs automatiques (global)
                       </h5>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                         <div>

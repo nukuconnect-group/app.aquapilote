@@ -47,6 +47,8 @@ const AppContent: React.FC = () => {
         {/* Page d'authentification */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/connexion" element={<Navigate to="/auth" replace />} />
+        <Route path="/inscription" element={<Navigate to="/auth?mode=register" replace />} />
         
         {/* Dashboard protégé par authentification */}
         <Route 
