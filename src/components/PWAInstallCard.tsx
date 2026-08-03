@@ -4,11 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Smartphone, Monitor, CheckCircle2, Apple, Chrome, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { usePWAInstallState } from '@/hooks/usePWAInstallState';
 
 type Platform = 'android' | 'ios' | 'desktop-chrome' | 'desktop-safari' | 'desktop-firefox' | 'other';
 
@@ -84,53 +80,24 @@ const PLATFORM_STEPS: Record<Platform, { title: string; icon: React.ElementType;
 
 const PWAInstallCard: React.FC = () => {
   const { toast } = useToast();
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const { isInstalled, canPromptInstall, promptInstall } = usePWAInstallState();
   const [platform, setPlatform] = useState<Platform>('other');
 
   useEffect(() => {
     setPlatform(detectPlatform());
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true ||
-      localStorage.getItem('aqua-pwa-installed') === 'true';
-    setIsInstalled(standalone);
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      try { localStorage.setItem('aqua-pwa-installed', 'true'); } catch {}
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-      toast({ title: 'Application installée', description: 'AQUAPILOTE est prête à être utilisée depuis votre écran d\'accueil.' });
-    };
-    window.addEventListener('beforeinstallprompt', onPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
-  }, [toast]);
+  }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) {
+    if (!canPromptInstall) {
       toast({
         title: 'Installation manuelle',
         description: 'Suivez les instructions ci-dessous pour votre appareil.',
       });
       return;
     }
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        toast({ title: 'Installation lancée', description: 'AQUAPILOTE s\'installe sur votre appareil.' });
-      }
-      setDeferredPrompt(null);
-    } catch (err) {
-      console.error('PWA install error', err);
+    const outcome = await promptInstall();
+    if (outcome === 'accepted') {
+      toast({ title: 'Installation lancée', description: "AQUAPILOTE s'installe sur votre appareil." });
     }
   };
 
@@ -171,12 +138,12 @@ const PWAInstallCard: React.FC = () => {
               onClick={handleInstall}
               className="w-full sm:w-auto"
               size="lg"
-              disabled={!deferredPrompt && platform === 'ios'}
+              disabled={!canPromptInstall && platform === 'ios'}
             >
               <Download className="w-4 h-4 mr-2" />
-              {deferredPrompt ? "Installer l'application" : "Voir les instructions"}
+              {canPromptInstall ? "Installer l'application" : "Voir les instructions"}
             </Button>
-            {!deferredPrompt && (
+            {!canPromptInstall && (
               <p className="text-xs text-muted-foreground">
                 Le bouton d'installation direct n'est pas disponible sur ce navigateur. Suivez les étapes ci-dessous.
               </p>
